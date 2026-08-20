@@ -111,16 +111,26 @@ export async function newWindow(): Promise<void> {
 }
 
 export async function openDocument(
-  path: string
+  path: string,
+  safeMode = false
 ): Promise<{ document: DocumentView; path: string }> {
-  return invoke("open_document", { path });
+  return invoke("open_document", { path, safeMode });
 }
 
-export async function openDocumentDialog(): Promise<{
+export async function openDocumentDialog(safeMode = false): Promise<{
   document: DocumentView;
   path: string;
 } | null> {
-  return invoke("open_document_dialog");
+  return invoke("open_document_dialog", { safeMode });
+}
+
+/**
+ * Turns evaluation back on for a document opened in safe mode. The returned
+ * view runs the whole document, so this is the moment a repair is proven --
+ * or the moment it hangs again exactly as the first open would have.
+ */
+export async function exitSafeMode(): Promise<DocumentView> {
+  return invoke("exit_safe_mode");
 }
 
 export async function newDocumentDialog(

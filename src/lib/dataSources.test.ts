@@ -47,6 +47,7 @@ function documentOf(
     formulaFunctions: [],
     canUndo: false,
     canRedo: false,
+    safeMode: false,
   };
 }
 

@@ -2766,3 +2766,40 @@ fn staleness_inherits_and_refreshing_walks_the_lineage_from_the_top() {
         "and the live frame below them stops warning once they are current"
     );
 }
+
+#[test]
+fn safe_mode_opens_the_structure_without_evaluating_it() {
+    let mut store = Store::new(Document::demo());
+
+    // A normal view evaluates: the demo document's frames come back computed.
+    let live = store.view();
+    assert!(!live.safe_mode);
+    assert!(
+        !live.computed_frames.is_empty(),
+        "the demo document has frames that evaluate in a normal view"
+    );
+    let object_count = live.document.objects.len();
+    assert!(object_count > 0);
+
+    // Safe mode returns the same structure with nothing computed -- the
+    // recovery hatch a poisoned document opens through.
+    store.set_safe_mode(true);
+    let safe = store.view();
+    assert!(safe.safe_mode);
+    assert!(safe.computed_frames.is_empty());
+    assert!(safe.computed_results.is_empty());
+    assert!(safe.computed_blocks.is_empty());
+    assert!(safe.computed_texts.is_empty());
+    assert_eq!(
+        safe.document.objects.len(),
+        object_count,
+        "every object is still there to be selected, edited, and deleted"
+    );
+
+    // Turning evaluation back on evaluates again -- the moment a repair is
+    // proven.
+    store.set_safe_mode(false);
+    let relit = store.view();
+    assert!(!relit.safe_mode);
+    assert!(!relit.computed_frames.is_empty());
+}

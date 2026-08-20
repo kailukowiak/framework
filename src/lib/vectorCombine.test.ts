@@ -9,6 +9,7 @@ function document(overrides: Partial<DocumentView> = {}): DocumentView {
     revision: 1,
     canUndo: false,
     canRedo: false,
+    safeMode: false,
     formulaFunctions: [],
     computedResults: {},
     computedBlocks: {},

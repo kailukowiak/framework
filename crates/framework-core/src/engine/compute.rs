@@ -19,6 +19,10 @@ pub struct DocumentView {
     pub formula_functions: Vec<FormulaFunction>,
     pub can_undo: bool,
     pub can_redo: bool,
+    /// True when the document was opened without evaluation, so the interface
+    /// can say so and offer to turn it back on. The computed maps above are
+    /// empty in that state, not merely not-yet-filled.
+    pub safe_mode: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

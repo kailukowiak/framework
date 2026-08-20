@@ -84,6 +84,57 @@ function mergeVegaConfig(
   return merged;
 }
 
+// A paged frame's rows only exist as pages, so a plot has to pull them itself.
+// Pull them all, not one page: a chart aggregates (a bar total, a mean, a
+// line) over the rows it is handed, and handing it only the thousand rows the
+// grid happens to be showing makes every aggregate wrong for the frame behind
+// them. Pages come in large chunks to keep the round trips down, and stop at a
+// ceiling so a multi-million-row frame cannot lock the SVG renderer -- when
+// that ceiling is hit the chart says so rather than quietly plotting a slice.
+const PLOT_PAGE_SIZE = 10000;
+// Above this many rows, the cost of shipping every row to the browser just so
+// Vega can reduce them there is worth a word to the user. It is a warning, not
+// a cap: the chart still loads the whole frame. A plot that draws all four
+// million rows and hangs is an honest sharp edge -- the fix is a Summarize
+// step, which this note names -- not a silently truncated chart that lies by
+// showing a slice.
+const PLOT_AGG_WARN_ROWS = 50000;
+// Above this many rows a paged frame does not auto-load when the card mounts;
+// it waits for a click. This is the recovery hatch, not a data cap: a plot
+// bound to a pathological frame would otherwise re-crash the session on every
+// open, before the user could reach the frame to fix it. Holding the fetch
+// until asked keeps the document openable; clicking still loads every row and
+// may still hang -- the sharp edge is intact, it just needs consent.
+const PLOT_AUTORENDER_ROWS = 200000;
+
+// Whether the Vega-Lite spec reduces its data in the browser -- an encoding
+// channel or transform carrying `aggregate` or `bin`. When it does, every raw
+// row has to reach the chart only to be collapsed there; a Summarize step on
+// the source frame does the same reduction in the engine, over the whole
+// frame, for a fraction of the cost. We don't forbid the Vega path -- an
+// Excel-style `y: {aggregate: "sum"}` bar chart is one line of spec and the
+// convenient way to draw one -- we just say so once the frame is big enough to
+// feel it.
+function specAggregates(spec: Record<string, unknown>): boolean {
+  let found = false;
+  const visit = (node: unknown) => {
+    if (found || !node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if ((key === "aggregate" || key === "bin") && value) {
+        found = true;
+        return;
+      }
+      visit(value);
+    }
+  };
+  visit(spec);
+  return found;
+}
+
 function VegaChart({
   plot,
   frame,
@@ -97,27 +148,65 @@ function VegaChart({
   const isDark = usePrefersDarkMode();
   const [renderError, setRenderError] = useState<string | null>(null);
   const [fileRows, setFileRows] = useState<Array<Record<string, unknown>>>([]);
+  const [confirmedRender, setConfirmedRender] = useState(false);
   const regularRows = useMemo(() => plotRows(frame, computed), [computed, frame]);
   const rows = computed.paged ? fileRows : regularRows;
+  const aggregates = useMemo(() => specAggregates(plot.spec), [plot.spec]);
+
+  // A paged frame this large does not draw itself on open -- it waits behind a
+  // click so a poisoned plot cannot re-crash the session before the user can
+  // reach the frame. The gate is per-mount state, never persisted, so a fresh
+  // open always starts closed and there is always a way back in.
+  const totalRows = computed.totalRows ?? frame.rows.length;
+  const gated =
+    computed.paged && totalRows > PLOT_AUTORENDER_ROWS && !confirmedRender;
+
+  // Reset the gate whenever the bound frame changes: the new frame's size, not
+  // the last one's, decides whether it draws on its own.
+  useEffect(() => {
+    setConfirmedRender(false);
+  }, [frame.id]);
+
+  // Advisory only -- the chart draws the whole frame regardless. When it is
+  // reducing a large frame in the browser that the engine could reduce first,
+  // point at the cheaper path before the row count makes the chart crawl.
+  const note =
+    computed.paged && aggregates && rows.length >= PLOT_AGG_WARN_ROWS
+      ? `Aggregating ${rows.length.toLocaleString()} rows in the chart. A Summarize step on the frame is faster for data this size.`
+      : null;
 
   useEffect(() => {
-    if (!computed.paged) return;
+    if (!computed.paged || gated) return;
     let disposed = false;
-    void getFramePage(frame.id, 0, 1000)
-      .then((page) => {
-        if (!disposed) setFileRows(plotRowsFromPage(frame.columns, page));
-      })
-      .catch((reason) => {
-        if (!disposed) setRenderError(String(reason).replace(/^Error:\s*/, ""));
-      });
+    async function loadAllRows() {
+      const collected: Array<Record<string, unknown>> = [];
+      let offset = 0;
+      let total = Infinity;
+      while (!disposed && offset < total) {
+        const page = await getFramePage(frame.id, offset, PLOT_PAGE_SIZE);
+        total = page.totalRows;
+        if (page.rows.length === 0) break;
+        collected.push(...plotRowsFromPage(frame.columns, page));
+        offset += page.rows.length;
+      }
+      if (disposed) return;
+      setFileRows(collected);
+    }
+    void loadAllRows().catch((reason) => {
+      if (!disposed) setRenderError(String(reason).replace(/^Error:\s*/, ""));
+    });
     return () => {
       disposed = true;
     };
-  }, [computed.paged, frame.id, frame.columns]);
+    // Keyed on frame.id so an unrelated canvas edit that only changes the
+    // frame object's identity doesn't re-scan every row of a large import.
+    // `gated` is here so clicking Render (which clears it) starts the load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computed.paged, frame.id, gated]);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || gated) return;
     const host = window.document.createElement("div");
     host.className = "plot-embed-host";
     container.append(host);
@@ -178,11 +267,34 @@ function VegaChart({
       finalize?.();
       host.remove();
     };
-  }, [plot.spec, rows, isDark]);
+  }, [plot.spec, rows, isDark, gated]);
+
+  if (gated) {
+    return (
+      <div className="plot-visual-shell">
+        <div className="plot-gate">
+          <p>This chart plots {totalRows.toLocaleString()} rows.</p>
+          <button
+            className="secondary-action"
+            onClick={() => setConfirmedRender(true)}
+          >
+            Render chart
+          </button>
+          {aggregates && (
+            <small>
+              A Summarize step on the frame draws it faster, and for far more
+              rows.
+            </small>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="plot-visual-shell">
       <div className="plot-visual" ref={containerRef} />
+      {note && <div className="plot-render-note">{note}</div>}
       {renderError && (
         <div className="plot-render-error">
           <CircleAlert size={16} />

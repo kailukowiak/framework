@@ -12,6 +12,19 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Plots chart the whole frame. A plot on a file-backed frame was quietly
+  charting only the first 1,000 rows, so every aggregate was computed over a
+  slice. Charts now load every row; a chart that aggregates a very large
+  frame in the browser gets an inline note pointing at the faster Summarize
+  step, and a frame past 200,000 rows waits behind a Render click instead of
+  drawing itself on open.
+
+- Safe mode: hold ⌥ while opening a document to load it with nothing
+  evaluated and no data read. A document that hangs or crashes on open can
+  be reached, repaired, and saved; a banner offers "Turn on evaluation" to
+  recompute in place. Every open action in the Data Library supports it, and
+  a hint under the file picker says so.
+
 - A Wrangle formula the engine or the parser refuses now says so in the
   formula bar itself, next to the formula, and keeps you editing. Before,
   the error only appeared inside the Wrangle panel — with the panel closed,

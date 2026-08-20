@@ -529,6 +529,10 @@ button.block-gutter-row.frozen::after, button.block-gutter-row.stale::after { co
 .plot-visual .vega-embed > svg, .plot-visual .vega-embed > canvas { display: block; max-width: 100%; max-height: 100%; }
 .plot-visual .vega-actions { position: absolute; top: 7px; right: 7px; }
 .plot-render-error { position: absolute; z-index: 2; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 20px; background: light-dark(#fff7f3, #3a2019); color: light-dark(#934221, #e2775a); font-size: var(--text-base); text-align: center; }
+.plot-render-note { position: absolute; z-index: 2; bottom: 6px; left: 8px; color: light-dark(#7c7a6e, #b9b6a8); font-size: var(--text-sm); pointer-events: none; }
+.plot-gate { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center; }
+.plot-gate p { font-size: var(--text-base); color: light-dark(#33342a, #eeece2); }
+.plot-gate small { max-width: 34ch; font-size: var(--text-sm); color: light-dark(#7c7a6e, #b9b6a8); }
 /* Dragging across cells selects a *range*, not the text inside them. Without
    this the browser's own text selection runs first, and it flows like prose
    -- starting mid-row, swallowing whole rows, ending mid-row -- which is not
@@ -1144,6 +1148,15 @@ small.vector-dragging { cursor: grabbing; }
 .dataset-file-picker:hover { border-color: light-dark(#8ca293, #4a6354); background: light-dark(#f4f8f5, #223229); }
 .dataset-file-picker > svg { color: var(--accent); }
 .dataset-file-picker strong, .dataset-file-picker small { display: block; }
+.dataset-safe-mode-hint { margin-top: 8px; font-size: var(--text-sm); line-height: 1.5; color: light-dark(#7c7a6e, #b9b6a8); }
+.dataset-safe-mode-hint kbd { font: inherit; padding: 0 4px; border: 1px solid light-dark(#d9d6cd, #4a4c3e); border-radius: 4px; background: light-dark(#f4f2ec, #33342a); }
+.dataset-safe-mode-hint strong { color: light-dark(#33342a, #eeece2); }
+/* A canvas-width strip above the formula bar, not a boxed alert: safe mode is
+   a mode the whole document is in, so it reads as chrome, not as one error. */
+.safe-mode-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; background: light-dark(#fbf3e3, #3a3320); color: light-dark(#7a5a1e, #e6c98a); border-bottom: 1px solid light-dark(#e9dcc0, #4a4028); font-size: var(--text-sm); }
+.safe-mode-banner span { display: inline-flex; align-items: center; gap: 7px; }
+.safe-mode-banner svg { flex: none; }
+.safe-mode-banner button { flex: none; }
 .dataset-file-picker strong { font-size: var(--text-base); }
 .dataset-file-picker small { margin-top: 2px; color: light-dark(#8b8d85, #787a72); font-size: var(--text-sm); }
 .dataset-document-picker { margin-bottom: 18px; }

@@ -57,7 +57,10 @@ describe("DatasetDialog", () => {
 
     await userEvent.click(await screen.findByText("Q3 forecast"));
 
-    expect(openDocument).toHaveBeenCalledWith({ path: "/somewhere/q3.fw" });
+    expect(openDocument).toHaveBeenCalledWith({
+      path: "/somewhere/q3.fw",
+      safeMode: false,
+    });
     expect(onOpened).toHaveBeenCalledWith({
       document: fixtures.blank,
       path: "/somewhere/q3.fw",

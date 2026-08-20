@@ -35,6 +35,7 @@ import {
 } from "./CliConnectorDialog";
 import { connectorSourceLabel } from "./lib/dataSources";
 import { DatabaseConnectorDialog } from "./DatabaseConnectorDialog";
+import { RecentDocuments } from "./RecentDocuments";
 
 type AddDataSourceKind = "database" | CommandSourceKind;
 
@@ -423,11 +424,14 @@ export function DatasetDialog({
     }
   };
 
-  const openRecent = async (recent: RecentDocument) => {
+  // `safeMode` is passed by holding ⌥ while opening: the document loads
+  // without evaluating or ingesting anything, so one that would otherwise hang
+  // on open can still be reached and repaired. See the hint by the file picker.
+  const openRecent = async (recent: RecentDocument, safeMode = false) => {
     setOpening(recent.path);
     setLibraryError(null);
     try {
-      onOpened(await openDocument(recent.path));
+      onOpened(await openDocument(recent.path, safeMode));
     } catch (reason) {
       setLibraryError(String(reason).replace(/^Error:\s*/, ""));
       setOpening(null);
@@ -470,11 +474,11 @@ export function DatasetDialog({
     }
   };
 
-  const chooseDocument = async () => {
+  const chooseDocument = async (safeMode = false) => {
     setOpening("__path__");
     setLibraryError(null);
     try {
-      const opened = await openDocumentDialog();
+      const opened = await openDocumentDialog(safeMode);
       if (opened) onOpened(opened);
       else setOpening(null);
     } catch (reason) {
@@ -519,7 +523,8 @@ export function DatasetDialog({
         <button
           className="dataset-file-picker dataset-document-picker"
           disabled={opening !== null}
-          onClick={() => void chooseDocument()}
+          title="Hold ⌥ to open in safe mode (no evaluation or data loading)"
+          onClick={(event) => void chooseDocument(event.altKey)}
         >
           <FrameIcon size={15} />
           <span>
@@ -527,37 +532,12 @@ export function DatasetDialog({
           </span>
           <ArrowDownToLine size={14} />
         </button>
-        <div className="dataset-section-heading">
-          <strong>Recent documents</strong>
-          <span>On this device</span>
-        </div>
-        <div className="recent-document-list">
-          {loading && (
-            <div className="sample-loading">Looking for recent documents…</div>
-          )}
-          {!loading && recents.length === 0 && (
-            <div className="sample-loading">
-              Documents you open or create will appear here.
-            </div>
-          )}
-          {recents.map((recent) => (
-            <button
-              className="recent-document"
-              key={recent.path}
-              disabled={opening !== null}
-              onClick={() => void openRecent(recent)}
-            >
-              <span className="sample-icon">
-                <FolderOpen size={16} />
-              </span>
-              <span>
-                <strong>{recent.title}</strong>
-                <small>{recent.path}</small>
-              </span>
-              <ChevronRight size={14} />
-            </button>
-          ))}
-        </div>
+        <RecentDocuments
+          loading={loading}
+          recents={recents}
+          opening={opening}
+          onOpen={(recent, safeMode) => void openRecent(recent, safeMode)}
+        />
         <LearningLibrary
           samples={samples}
           tutorials={tutorials}
@@ -575,6 +555,14 @@ export function DatasetDialog({
           opening={opening}
           onChange={(frame) => void changeSource(frame)}
         />
+        {/* A modifier is invisible, so the recovery path needs saying out
+            loud: this is how someone whose document hangs on open gets back
+            in. It applies to every open action above, not just one picker. */}
+        <p className="dataset-safe-mode-hint">
+          Hold <kbd>⌥</kbd> while opening to load a document in <strong>safe
+          mode</strong> — nothing is evaluated and no data is read, so a file
+          that hangs on open can still be repaired.
+        </p>
         {libraryError && (
           <div className="formula-editor-error">
             <CircleAlert size={12} />

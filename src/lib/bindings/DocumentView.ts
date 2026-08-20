@@ -18,6 +18,12 @@ export type DocumentView = {
   formulaFunctions: Array<FormulaFunction>;
   canUndo: boolean;
   canRedo: boolean;
+  /**
+   * True when the document was opened without evaluation, so the interface
+   * can say so and offer to turn it back on. The computed maps above are
+   * empty in that state, not merely not-yet-filled.
+   */
+  safeMode: boolean;
   id: string;
   name: string;
   /**

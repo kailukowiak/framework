@@ -115,6 +115,7 @@ import {
 import { CellAwareFormulaBar } from "./CellAwareFormulaBar";
 import type { CellFormulaRequest } from "./CellFormulaController";
 import { InferredSeriesMenuAction } from "./InferredSeriesMenuAction";
+import { SafeModeBanner } from "./SafeModeBanner";
 import {
   applyOperation,
   exportFrameCsv,
@@ -1098,6 +1099,7 @@ export default function App() {
       onContextMenu={openContextMenu}
       onPointerDownCapture={handleFormulaPointerDown}
     >
+      <SafeModeBanner document={document} onDocument={setDocument} onError={setError} />
       <CellAwareFormulaBar
         context={selectedGridContext}
         focus={gridFocus}

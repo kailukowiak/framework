@@ -36,6 +36,13 @@ pub struct Store {
     pub(crate) undo: Vec<HistoryEntry>,
     pub(crate) redo: Vec<HistoryEntry>,
     pub(crate) sorted_page_cache: SortedPageCache,
+    /// When set, [`Store::view`] returns the document structure without
+    /// evaluating anything — no derivations run, no formulas resolve, no
+    /// source is materialized. It is the recovery hatch: a document whose
+    /// evaluation would hang or exhaust memory still opens, so the object
+    /// behind the trouble can be found, edited, and saved. Ingest paths
+    /// (paging, refresh, import) are refused separately, at the boundary.
+    pub(crate) safe_mode: bool,
 }
 
 impl Store {
@@ -52,6 +59,7 @@ impl Store {
             undo: Vec::new(),
             redo: Vec::new(),
             sorted_page_cache: SortedPageCache::default(),
+            safe_mode: false,
         }
     }
 
@@ -120,6 +128,7 @@ impl Store {
             undo: Vec::new(),
             redo: Vec::new(),
             sorted_page_cache: SortedPageCache::default(),
+            safe_mode: false,
         })
     }
 
@@ -721,6 +730,9 @@ impl Store {
     }
 
     pub fn view(&self) -> DocumentView {
+        if self.safe_mode {
+            return self.view_skeleton();
+        }
         let document = self.document.materialized_for_view();
         DocumentView {
             computed_frames: document.compute_frames(),
@@ -732,7 +744,42 @@ impl Store {
             formula_functions: formula_function_catalog(),
             can_undo: !self.undo.is_empty(),
             can_redo: !self.redo.is_empty(),
+            safe_mode: false,
         }
+    }
+
+    /// The document structure with nothing evaluated: no derivation is
+    /// materialized, no formula resolved, no source read. Every card renders
+    /// from its stored shape and its computed body is simply absent, which is
+    /// what lets a poisoned document open far enough to be repaired. The
+    /// counterpart guards on ingest keep the empty maps from being refilled
+    /// behind the interface's back.
+    fn view_skeleton(&self) -> DocumentView {
+        DocumentView {
+            document: self.document.clone(),
+            computed_frames: HashMap::new(),
+            computed_results: HashMap::new(),
+            computed_blocks: HashMap::new(),
+            computed_texts: HashMap::new(),
+            computed_calculation_matrices: HashMap::new(),
+            formula_functions: formula_function_catalog(),
+            can_undo: !self.undo.is_empty(),
+            can_redo: !self.redo.is_empty(),
+            safe_mode: true,
+        }
+    }
+
+    /// Whether this store is evaluating. Read at the command boundary to
+    /// refuse ingest while a document is being recovered.
+    pub fn safe_mode(&self) -> bool {
+        self.safe_mode
+    }
+
+    /// Turns evaluation off (recovery) or back on. Turning it back on is the
+    /// live moment the fix is tested: the next [`Store::view`] runs the whole
+    /// document again, and either comes up clean or hangs exactly as before.
+    pub fn set_safe_mode(&mut self, safe_mode: bool) {
+        self.safe_mode = safe_mode;
     }
 
     pub fn version_vector(&self) -> &VersionVector {

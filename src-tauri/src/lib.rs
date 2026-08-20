@@ -389,6 +389,7 @@ fn get_frame_page(
 ) -> Result<framework_core::FramePage, String> {
     let session = state.document_for(window.label())?;
     let session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     session
         .store
         .get_frame_page(&frame_id, offset, limit)
@@ -403,6 +404,7 @@ fn get_frame_summary(
 ) -> Result<framework_core::FrameSummary, String> {
     let session = state.document_for(window.label())?;
     let session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     session
         .store
         .get_frame_summary(&frame_id)
@@ -476,6 +478,7 @@ fn preview_frame_pipeline(
 ) -> Result<framework_core::PipelineSchema, String> {
     let session = state.document_for(window.label())?;
     let session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     session
         .store
         .preview_frame_pipeline(&frame_id, steps)
@@ -611,16 +614,18 @@ fn should_open_library(window: tauri::WebviewWindow, state: State<'_, AppState>)
 #[tauri::command]
 fn open_document(
     path: String,
+    safe_mode: bool,
     window: tauri::WebviewWindow,
     app: AppHandle,
 ) -> Result<OpenedDocument, String> {
-    let opened = open_document_at(&app, window.label(), PathBuf::from(path), false)?;
+    let opened = open_document_at(&app, window.label(), PathBuf::from(path), false, safe_mode)?;
     let _ = remember_recent_document(&app, &opened);
     Ok(opened)
 }
 
 #[tauri::command]
 fn open_document_dialog(
+    safe_mode: bool,
     window: tauri::WebviewWindow,
     app: AppHandle,
 ) -> Result<Option<OpenedDocument>, String> {
@@ -630,7 +635,7 @@ fn open_document_dialog(
     else {
         return Ok(None);
     };
-    let opened = open_document_at(&app, window.label(), path, false)?;
+    let opened = open_document_at(&app, window.label(), path, false, safe_mode)?;
     let _ = remember_recent_document(&app, &opened);
     Ok(Some(opened))
 }
@@ -662,7 +667,7 @@ fn new_document_dialog(
 
     let store = Store::new(Document::blank(name));
     store.save(&path).map_err(|error| error.to_string())?;
-    let opened = open_document_at(&app, window.label(), path, false)?;
+    let opened = open_document_at(&app, window.label(), path, false, false)?;
     let _ = remember_recent_document(&app, &opened);
     Ok(Some(opened))
 }
@@ -1153,7 +1158,7 @@ fn open_sample_document(
         .unwrap_or("sample");
     let working_path = working_directory.join(format!("{stem}-{}.fw", Uuid::new_v4()));
     copy_sample_document(&source_path, &working_path)?;
-    open_document_at(&app, window.label(), working_path, false)
+    open_document_at(&app, window.label(), working_path, false, false)
 }
 
 /// A sample document can own imported Parquet artifacts just like any other
@@ -1178,6 +1183,36 @@ fn apply_operation(
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     apply_session_operation(&window, &mut session, &state.writer_id, operation)
+}
+
+/// Refuses an ingest or evaluation request while a document is open in safe
+/// mode. Safe mode's promise is that nothing scans a source or runs the
+/// engine, so paging, refreshing, importing and materializing all wait until
+/// evaluation is turned back on — structural edits (which never evaluate) do
+/// not pass through here.
+fn ensure_live(session: &DocumentSession) -> Result<(), String> {
+    if session.store.safe_mode() {
+        return Err(
+            "This document is open in safe mode. Turn evaluation back on to load or change data."
+                .into(),
+        );
+    }
+    Ok(())
+}
+
+/// Turns evaluation back on and recomputes. This is the moment the repair is
+/// tested: the returned view runs the whole document, and either comes up
+/// clean or hangs exactly as the first open would have — in which case the
+/// user force-quits and reopens in safe mode to keep working.
+#[tauri::command]
+fn exit_safe_mode(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<DocumentView, String> {
+    let session = state.document_for(window.label())?;
+    let mut session = session.lock().map_err(|error| error.to_string())?;
+    session.store.set_safe_mode(false);
+    Ok(session.store.view())
 }
 
 /// Imports a data file, either linked to it or holding its own copy.
@@ -1229,6 +1264,7 @@ fn import_dataset_file(
         .to_string();
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let artifact = stage_import_file(&session.path, session.store.document_id(), &path)?;
     let operation = Operation::ImportFrameFromArtifact {
         name,
@@ -1267,6 +1303,7 @@ async fn import_cli_source(
     let session = state.document_for(window.label())?;
     let (document_path, document_id) = {
         let session = session.lock().map_err(|error| error.to_string())?;
+        ensure_live(&session)?;
         (
             session.path.clone(),
             session.store.document_id().to_string(),
@@ -1405,6 +1442,7 @@ fn import_excel_range(
 ) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
@@ -1465,6 +1503,7 @@ fn import_and_append_dataset_file(
     };
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let result = import_and_append_file(
         &mut session,
         &state.writer_id,
@@ -1629,6 +1668,7 @@ async fn refresh_frame_connector(
     let session = state.document_for(window.label())?;
     let (document_path, document_id, connector) = {
         let session = session.lock().map_err(|error| error.to_string())?;
+        ensure_live(&session)?;
         let connector = session
             .store
             .frame_connector(&frame_id)
@@ -1782,6 +1822,7 @@ fn materialize_frame(
 ) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
@@ -1837,6 +1878,7 @@ fn refresh_stale_snapshots(
 ) -> Result<SnapshotRefresh, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
@@ -1898,6 +1940,7 @@ fn adopt_frame_rows(
 ) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
@@ -1974,6 +2017,7 @@ fn package_document(
 ) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
@@ -2022,6 +2066,7 @@ fn compact_document_data(
 ) -> Result<ArtifactSweep, String> {
     let session = state.document_for(window.label())?;
     let session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
@@ -2104,6 +2149,7 @@ fn export_frame_csv(
             let suggested = {
                 let session = state.document_for(window.label())?;
                 let session = session.lock().map_err(|error| error.to_string())?;
+                ensure_live(&session)?;
                 session
                     .store
                     .view()
@@ -2376,6 +2422,7 @@ fn open_document_at(
     window_label: &str,
     path: PathBuf,
     emit_opened_event: bool,
+    safe_mode: bool,
 ) -> Result<OpenedDocument, String> {
     if !is_framework_document_path(&path) {
         return Err("FrameWork documents must use the .fw extension".into());
@@ -2385,7 +2432,11 @@ fn open_document_at(
     }
     let mut store = Store::load(&path).map_err(|error| error.to_string())?;
     let journal =
-        EventJournal::open(&path, &store.view().document.id).map_err(|error| error.to_string())?;
+        EventJournal::open(&path, store.document_id()).map_err(|error| error.to_string())?;
+    // In safe mode the journal is still merged -- replaying recorded edits is
+    // structural, not evaluation -- but the store is put in safe mode first so
+    // nothing that merge or save touches tries to evaluate the document.
+    store.set_safe_mode(safe_mode);
     let merge = journal
         .merge_into(&mut store)
         .map_err(|error| error.to_string())?;
@@ -2815,6 +2866,7 @@ pub fn run() {
             create_tutorial_documents,
             reset_tutorial_documents,
             apply_operation,
+            exit_safe_mode,
             import_dataset_file,
             import_cli_source,
             import_database_source,
