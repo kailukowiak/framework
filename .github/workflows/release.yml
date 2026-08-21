@@ -20,8 +20,39 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # The bug this catches: moving the tag without moving the version. Every
+  # asset name and, more importantly, latest.json take their number from
+  # tauri.conf.json rather than from the tag, so a v0.1.2 tag on a 0.1.1
+  # working tree publishes a release that announces itself as 0.1.1. Installed
+  # copies then compare their own version against an identical one and
+  # correctly conclude there is nothing to install. Nothing about that looks
+  # broken from the outside -- the release page is fine, the assets are fine,
+  # updates simply never arrive -- so it is worth twenty seconds here rather
+  # than three platforms spending an hour building an unusable release.
+  verify-version:
+    name: Tag matches app version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Compare tag against tauri.conf.json
+        # Via the environment, not interpolated into the script: a tag name is
+        # attacker-controlled to anyone who can push one.
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version=$(jq -r .version src-tauri/tauri.conf.json)
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::Tag $TAG does not match version $version in src-tauri/tauri.conf.json. Bump the version, commit, and move the tag onto that commit."
+            exit 1
+          fi
+          echo "$TAG matches src-tauri/tauri.conf.json ($version)."
+
   bundle:
     name: ${{ matrix.label }}
+    needs: verify-version
     # Every entry passes src-tauri/tauri.release.conf.json, which is the only
     # place createUpdaterArtifacts is turned on. It cannot live in
     # tauri.conf.json: the moment a pubkey is configured, producing an updater
