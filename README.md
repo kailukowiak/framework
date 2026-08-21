@@ -29,7 +29,7 @@ The current vertical slice proves the most important parts of the concept:
 
 | Your system | File to pick |
 | --- | --- |
-| macOS (Intel or Apple Silicon) | the one ending in **`.dmg`** |
+| macOS (Apple Silicon: M1 or later) | the one ending in **`.dmg`** |
 | Windows | the one ending in **`-setup.exe`** |
 | Ubuntu / Debian / Mint | the one ending in **`.deb`** |
 | Fedora / RHEL / openSUSE | the one ending in **`.rpm`** |
