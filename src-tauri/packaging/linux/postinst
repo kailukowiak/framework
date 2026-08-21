@@ -1,0 +1,23 @@
+#!/bin/sh
+# Tauri's deb and rpm bundlers add no maintainer scripts of their own, so
+# without this the desktop entry, the icons, and the .fw MIME type all land on
+# disk and none of them are visible: menus read a cached desktop database, icon
+# themes read a cached index, and nothing maps *.fw to FrameWork until the mime
+# database is rebuilt. Every command is guarded because a minimal container or a
+# non-GNOME desktop may not ship all three, and a missing cache tool must not
+# fail the install.
+set -e
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
+fi
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -qtf /usr/share/icons/hicolor || true
+fi
+
+if command -v update-mime-database >/dev/null 2>&1; then
+    update-mime-database /usr/share/mime || true
+fi
+
+exit 0

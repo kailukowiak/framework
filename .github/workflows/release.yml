@@ -234,7 +234,11 @@ jobs:
 
             ## Opening documents
 
-            FrameWork documents are `.fw` files and are registered by the
-            installer, so double-clicking one opens it. Launching FrameWork on
-            its own starts a throwaway canvas and raises the Data library —
-            Save As is what turns it into a real document.
+            FrameWork documents are `.fw` files. The `.dmg`, `-setup.exe`,
+            `.deb` and `.rpm` installers register the file type, so
+            double-clicking a document opens it. The `.AppImage` does not — an
+            AppImage installs nothing system-wide, so open documents from
+            inside the app.
+
+            Launching FrameWork on its own starts a throwaway canvas and raises
+            the Data library — Save As is what turns it into a real document.

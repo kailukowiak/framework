@@ -1,0 +1,21 @@
+[Desktop Entry]
+# Not a launcher. Tauri always generates
+# /usr/share/applications/<productName>.desktop and offers no way to change
+# that name, so this file neutralises the generated FrameWork.desktop rather
+# than leaving a second, wrongly-named launcher beside
+# com.framework.canvas.desktop. Hidden=true is the desktop-entry spec's "treat
+# this entry as if it did not exist", so menus, MIME handling and window
+# matching all skip it and only the reverse-DNS entry is live.
+#
+# It is wired in twice because the two bundlers resolve a collision in opposite
+# directions. The deb bundler copies bundle.linux.deb.files over the data
+# directory after generating the desktop file, so last write wins and this is
+# listed there as a file. The rpm bundler collects entries into a map with
+# `.entry().or_insert()`, so first write wins and a custom file would be
+# silently dropped -- there it has to be the desktopTemplate instead, which is
+# what generates the entry in the first place.
+Type=Application
+Name=FrameWork
+NoDisplay=true
+Hidden=true
+Exec=framework-desktop

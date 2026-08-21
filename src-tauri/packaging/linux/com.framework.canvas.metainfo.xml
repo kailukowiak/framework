@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.framework.canvas</id>
+
+  <name>FrameWork</name>
+  <summary>A free-form canvas for structured data</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+
+  <developer id="com.framework">
+    <name>Kai Lukowiak</name>
+  </developer>
+
+  <description>
+    <p>
+      FrameWork is a desktop canvas for people who reach for a spreadsheet because
+      they want to see and touch their data directly, but who think in dataframes
+      rather than in cell addresses.
+    </p>
+    <p>
+      Tables and calculation blocks sit on a movable canvas. Cells are identified by
+      table, row, and column rather than by a global grid position, so formulas keep
+      pointing at what you meant after a rename, a sort, or an inserted row.
+      Calculated columns hold parsed expressions, not text, and the dependency graph
+      is checked well enough to refuse a circular reference and to warn before a
+      deletion breaks something downstream.
+    </p>
+    <p>Alongside the canvas:</p>
+    <ul>
+      <li>Import from CSV, TSV, Parquet, and Excel ranges, or straight from a database connection</li>
+      <li>Categorical columns with persisted, ordered allowed values and dropdown editing</li>
+      <li>Exact left and inner joins with enforced unique lookup keys and match previews</li>
+      <li>Visible, one-cell formula overrides that never hide themselves</li>
+      <li>Charts built on a grammar of graphics, with Polars doing the aggregation</li>
+      <li>A local, structured MCP API so AI agents and scripts can drive a document</li>
+    </ul>
+    <p>
+      This is an early prototype. Documents are stored locally and the file format
+      is still moving.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.framework.canvas.desktop</launchable>
+
+  <provides>
+    <binary>framework-desktop</binary>
+    <mediatype>application/x-framework-document</mediatype>
+  </provides>
+
+  <url type="homepage">https://github.com/kailukowiak/framework</url>
+  <url type="bugtracker">https://github.com/kailukowiak/framework/issues</url>
+  <url type="vcs-browser">https://github.com/kailukowiak/framework</url>
+
+  <categories>
+    <category>Office</category>
+    <category>Spreadsheet</category>
+  </categories>
+
+  <keywords>
+    <keyword>spreadsheet</keyword>
+    <keyword>dataframe</keyword>
+    <keyword>data</keyword>
+    <keyword>canvas</keyword>
+    <keyword>analysis</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+
+  <!-- Flathub additionally requires at least one screenshot with a reachable
+       https URL. There is no hosted screenshot yet, so this component validates
+       as AppStream but is not yet submittable to Flathub. Add, for example:
+
+       <screenshots>
+         <screenshot type="default">
+           <image>https://raw.githubusercontent.com/kailukowiak/framework/main/docs/screenshots/canvas.png</image>
+           <caption>Tables and calculation blocks on the canvas</caption>
+         </screenshot>
+       </screenshots>
+  -->
+
+  <releases>
+    <release version="0.1.2" date="2026-08-21">
+      <description>
+        <p>Prototype release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

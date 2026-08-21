@@ -2644,6 +2644,7 @@ version = "0.1.2"
 dependencies = [
  "connectorx",
  "framework-core",
+ "glib 0.18.5",
  "parquet",
  "rfd",
  "serde",
