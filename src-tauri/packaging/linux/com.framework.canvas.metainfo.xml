@@ -80,6 +80,15 @@
   -->
 
   <releases>
+    <release version="0.1.3" date="2026-08-21">
+      <description>
+        <p>
+          Linux desktops now recognise the application and its documents: the
+          window matches its launcher instead of falling back to a generic
+          icon, and double-clicking a .fw file opens it.
+        </p>
+      </description>
+    </release>
     <release version="0.1.2" date="2026-08-21">
       <description>
         <p>Prototype release.</p>
