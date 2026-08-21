@@ -112,6 +112,21 @@ jobs:
           # which GitHub runners do not provide. This tells it to unpack and
           # run instead.
           APPIMAGE_EXTRACT_AND_RUN: 1
+          # Ad-hoc sign the macOS bundle. Without this the bundler ships
+          # whatever the linker produced, which on arm64 is a signature over
+          # the executable alone with no seal covering the bundle's resources.
+          # `codesign --verify` rejects that outright ("code has no resources
+          # but signature indicates they must be present"), and a quarantined
+          # copy is reported to the user as "FrameWork is damaged and can't be
+          # opened" with no Open Anyway offered — macOS treats it as corrupt
+          # rather than merely unidentified, so there is nothing to override.
+          # Signing the bundle makes verification pass; Gatekeeper still
+          # declines it for having no Developer ID, which is the recoverable
+          # path the release notes describe. This is the same signature
+          # `npm run sign:e2e` applies locally for the same reason. Replace
+          # with a real identity plus notarization credentials to remove the
+          # warning entirely.
+          APPLE_SIGNING_IDENTITY: '-'
         with:
           args: ${{ matrix.args }}
           tagName: ${{ inputs.tag || github.ref_name }}
