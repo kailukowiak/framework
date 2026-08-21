@@ -1,0 +1,112 @@
+# Flatpak manifest for FrameWork.
+#
+# UNVERIFIED. This was written on macOS and has never been through
+# `flatpak-builder`. Treat it as a starting point that still needs one pass on
+# a Linux box; the two things most likely to be wrong are the runtime version
+# and the webkit2gtk API version it provides. See "Verify first" below.
+#
+# Why Flatpak at all: the app id below becomes the .desktop stem, the icon
+# name, and the AppStream component id by construction, so the class of bug
+# that put a gear on the COSMIC dock cannot recur here. Note that it does NOT
+# set the Wayland app_id for you -- that still comes from the program name the
+# app sets itself, in `run()` in src-tauri/src/lib.rs. The two agree because
+# both are `com.framework.canvas`, not because Flatpak enforces it.
+#
+# Verify first, on Linux:
+#   flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
+#   flatpak-builder --force-clean --repo=repo build src-tauri/packaging/flatpak/com.framework.canvas.yml
+#   flatpak build-bundle repo FrameWork.flatpak com.framework.canvas
+#   flatpak install --user FrameWork.flatpak && flatpak run com.framework.canvas
+# If the build fails to find webkit2gtk-4.1, try runtime-version '46' or '45':
+# Tauri's Linux backend is GTK3/webkit2gtk-4.1, not the GTK4/webkitgtk-6.0 that
+# newer GNOME runtimes lead with.
+
+app-id: com.framework.canvas
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+  - org.freedesktop.Sdk.Extension.node22
+command: framework-desktop
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+
+  # Database connectors (connectorx) dial out, and the release build's update
+  # check talks to GitHub.
+  - --share=network
+
+  # The sandbox hole, and it is deliberate. FrameWork does not keep a document
+  # in a single file: saving `~/work/Orders.fw` also creates and writes
+  # `~/work/.framework/<document-uuid>/` beside it (see
+  # CollaborationPaths::for_document in crates/framework-core). A file chosen
+  # through the XDG portal grants a handle to that one file and nothing around
+  # it, so a portal-only sandbox can open a document and then fail to save it.
+  # Until documents are self-contained, host filesystem access is what makes
+  # the app work at all. Flathub will flag this; the answer they accept is the
+  # one an editor gives, which is that the app's whole job is user files.
+  - --filesystem=host
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/node22/bin
+  env:
+    CARGO_HOME: /run/build/framework/cargo
+  # Cargo and npm both fetch during this build, which is fine locally and in
+  # CI. Flathub builds are offline, so a submission there needs vendored cargo
+  # sources and a generated node sources manifest instead of this line.
+  build-args:
+    - --share=network
+
+modules:
+  - name: framework
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ../../..
+    build-commands:
+      - npm ci
+      - cargo build --release --manifest-path src-tauri/Cargo.toml --locked
+      - install -Dm755 target/release/framework-desktop /app/bin/framework-desktop
+      - install -Dm644 src-tauri/packaging/linux/com.framework.canvas.desktop
+        /app/share/applications/com.framework.canvas.desktop
+      - install -Dm644 src-tauri/packaging/linux/com.framework.canvas.metainfo.xml
+        /app/share/metainfo/com.framework.canvas.metainfo.xml
+      - install -Dm644 src-tauri/packaging/linux/com.framework.canvas.xml
+        /app/share/mime/packages/com.framework.canvas.xml
+      - install -Dm644 src-tauri/packaging/linux/framework-desktop.svg
+        /app/share/icons/hicolor/scalable/apps/com.framework.canvas.svg
+      # Flatpak requires every exported icon and the desktop entry to be named
+      # for the app id, so the PNGs are renamed on the way in rather than
+      # keeping the `framework-desktop` name the .deb uses. The desktop entry
+      # installed above therefore needs its Icon= key rewritten to match.
+      - |
+        set -eu
+        for size in 16 24 32 48 64 128 256; do
+          install -Dm644 "src-tauri/icons/${size}x${size}.png" \
+            "/app/share/icons/hicolor/${size}x${size}/apps/com.framework.canvas.png"
+        done
+        install -Dm644 src-tauri/icons/icon.png \
+          /app/share/icons/hicolor/512x512/apps/com.framework.canvas.png
+        sed -i 's/^Icon=.*/Icon=com.framework.canvas/' \
+          /app/share/applications/com.framework.canvas.desktop
+
+# Known gaps before this is a good Flatpak, in priority order:
+#
+# 1. Check for Updates must be turned off here. A Flatpak cannot replace its
+#    own binary, so tauri-plugin-updater will download and then fail in a way
+#    src/lib/updates.ts reports as "failed" rather than "unsupported". Gate the
+#    check on the FLATPAK_ID environment variable and report "unsupported".
+#    Flatpak updates come from the repo, not from the app.
+#
+# 2. The MCP server is unreachable from outside. installed_mcp_executable() in
+#    src-tauri/src/lib.rs finds a sibling binary and shows its path, which
+#    inside the sandbox is /app/bin/framework-mcp -- a path no external MCP
+#    client can run. Under Flatpak the command it should print is
+#    `flatpak run --command=framework-mcp com.framework.canvas`.
+#
+# 3. Flathub additionally requires at least one screenshot with a reachable
+#    https URL in the metainfo, and an offline build (see build-args above).
