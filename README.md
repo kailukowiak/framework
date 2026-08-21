@@ -49,7 +49,24 @@ a document opens it.
 
 ## Run it from source
 
-Requirements: Node.js, npm, and the Rust toolchain.
+Requirements: Node.js, npm, and the Rust toolchain — the channel is pinned by
+`rust-toolchain.toml`, so rustup provisions it for you.
+
+On Linux the webview and two of connectorx's backends additionally need system
+packages. On Debian and Ubuntu:
+
+```sh
+sudo apt-get install -y \
+  libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+  libxdo-dev libssl-dev libkrb5-dev libgtk-3-dev \
+  build-essential curl wget file patchelf
+```
+
+`libssl-dev` and `libkrb5-dev` are the two that are easy to miss: connectorx
+reaches OpenSSL for TLS and, through its SQL Server backend, GSSAPI for
+Kerberos. macOS and Windows need no equivalent step, because both resolve
+against the platform's own stack — Security.framework and GSS.framework on
+macOS, Schannel and SSPI on Windows.
 
 ```sh
 npm install
