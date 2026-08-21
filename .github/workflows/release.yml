@@ -92,9 +92,17 @@ jobs:
         if: runner.os == 'macOS'
         run: rustup target add aarch64-apple-darwin
 
+      # Restore only, never save. The `-release` key means these caches are
+      # readable by no run except another release of the same platform, which
+      # happens rarely enough that they have almost always expired by then --
+      # but each release still writes ~2.7 GB into a repository cache budget
+      # of 10 GB, evicting the CI caches that every push does read. Giving up
+      # a restore that never hits costs nothing; the eviction was costing
+      # every subsequent CI run a cold build.
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.platform }}-release
+          save-if: false
 
       - uses: actions/setup-node@v7
         with:
