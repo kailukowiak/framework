@@ -51,6 +51,7 @@ struct CanvasMenuItems<R: Runtime> {
     zoom_in: MenuItem<R>,
     zoom_out: MenuItem<R>,
     zoom_reset: MenuItem<R>,
+    check_for_updates: MenuItem<R>,
 }
 
 impl<R: Runtime> CanvasMenuItems<R> {
@@ -87,9 +88,13 @@ impl<R: Runtime> CanvasMenuItems<R> {
     }
 
     fn help_menu(&self, app: &AppHandle<R>) -> tauri::Result<Submenu<R>> {
-        SubmenuBuilder::new(app, "Help")
-            .item(&self.keyboard_shortcuts)
-            .build()
+        let help = SubmenuBuilder::new(app, "Help").item(&self.keyboard_shortcuts);
+        // macOS keeps Check for Updates in the application menu next to About,
+        // which is the first place a Mac user looks; everywhere else Help is
+        // where it has always lived. Same command id from either position.
+        #[cfg(not(target_os = "macos"))]
+        let help = help.separator().item(&self.check_for_updates);
+        help.build()
     }
 }
 
@@ -133,6 +138,10 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
         zoom_in: item("zoom-in", "Zoom In", "CmdOrCtrl+Equal")?,
         zoom_out: item("zoom-out", "Zoom Out", "CmdOrCtrl+Minus")?,
         zoom_reset: item("zoom-reset", "Actual Size", "CmdOrCtrl+Digit0")?,
+        // No accelerator: this is a rare, deliberate action, and every
+        // chord spent here is one unavailable to the canvas.
+        check_for_updates: MenuItemBuilder::with_id("check-for-updates", "Check for Updates…")
+            .build(app)?,
     })
 }
 
@@ -239,6 +248,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     {
         let application = SubmenuBuilder::new(app, "FrameWork")
             .about(None)
+            .item(&canvas.check_for_updates)
             .separator()
             .item(&preferences)
             .separator()

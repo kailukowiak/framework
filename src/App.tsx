@@ -47,6 +47,7 @@ import {
 import { ReferenceHighlights } from "./ReferenceHighlights";
 import { PreferencesDialog } from "./PreferencesDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
+import { UpdateDialog } from "./UpdateDialog";
 import { useApplicationMenu } from "./useApplicationMenu";
 import { useFitViewToWindow } from "./useFitViewToWindow";
 import { useCanvasNavigation } from "./useCanvasNavigation";
@@ -63,6 +64,7 @@ import {
   type RearrangeColumnsEditorRequest,
 } from "./hooks/usePipelineColumnRequests";
 import { useContextMenu } from "./hooks/useContextMenu";
+import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useScratchwork } from "./hooks/useScratchwork";
 import { useImportFlow } from "./hooks/useImportFlow";
 import { useGridClipboard } from "./hooks/useGridClipboard";
@@ -777,6 +779,10 @@ export default function App() {
     zoomCanvas,
   ]);
 
+  // Checks once when this window opens, throttled across windows and
+  // launches; the menu item asks outright and bypasses that.
+  const updates = useUpdateCheck();
+
   const selectedCommandView = selectedCanvasView(document, selection);
   useApplicationMenu(hasNativeMenu(), {
     "new-window": () => void newWindow().catch((reason) => setError(String(reason))),
@@ -787,6 +793,7 @@ export default function App() {
     "compact-data": () => void compactData(),
     preferences: () => { setPreferencesPage("settings"); setPreferencesOpen(true); },
     "keyboard-shortcuts": () => { setPreferencesPage("shortcuts"); setPreferencesOpen(true); },
+    "check-for-updates": () => updates.check(),
     undo: () => void navigateHistory("undo"),
     redo: () => void navigateHistory("redo"),
     "data-library": () => setDatasetLibrary(true),
@@ -1508,6 +1515,16 @@ export default function App() {
       )}
       {preferencesOpen && preferencesPage === "shortcuts" && (
         <KeyboardShortcutsDialog onClose={() => setPreferencesOpen(false)} />
+      )}
+
+      {updates.status.kind !== "idle" && (
+        <UpdateDialog
+          status={updates.status}
+          progress={updates.progress}
+          onInstall={updates.install}
+          onSkip={updates.skip}
+          onDismiss={updates.dismiss}
+        />
       )}
 
       {newDocumentOpen && (

@@ -112,6 +112,16 @@ jobs:
           # which GitHub runners do not provide. This tells it to unpack and
           # run instead.
           APPIMAGE_EXTRACT_AND_RUN: 1
+          # The updater accepts nothing this key did not sign. That signature
+          # is the only thing between an update endpoint and arbitrary code
+          # running on someone's machine, so it is not optional in the way an
+          # OS code signature is: without these secrets the build still
+          # succeeds and still produces installers, but the update artifacts
+          # go out unsigned and every installed client rejects them. Lose the
+          # key and no future release can ever be accepted by an existing
+          # install.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # Ad-hoc sign the macOS bundle. Without this the bundler ships
           # whatever the linker produced, which on arm64 is a signature over
           # the executable alone with no seal covering the bundle's resources.
@@ -135,9 +145,12 @@ jobs:
           # review the assets on the Releases page, then click Publish.
           releaseDraft: true
           prerelease: false
-          # No updater endpoint is configured, so there is no latest.json to
-          # emit and nothing that would prompt installed copies to self-update.
-          includeUpdaterJson: false
+          # latest.json is the manifest installed copies read to learn a
+          # newer release exists. tauri.conf.json points the updater at
+          # releases/latest/download/latest.json, which GitHub resolves to
+          # whichever release is currently latest — so a draft release is
+          # invisible to installed copies until it is published.
+          includeUpdaterJson: true
           releaseBody: |
             ## Download
 

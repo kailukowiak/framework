@@ -25,12 +25,21 @@ export type ApplicationShortcut =
   | "zoom-reset";
 
 /**
+ * Whether this is the real desktop shell: inside Tauri, and not the menu-less
+ * e2e variant. More than one thing turns on this — the platform menu owning
+ * application shortcuts, and anything that calls a Tauri plugin the browser
+ * dev server has no counterpart for — so it is named for the condition rather
+ * than for the first caller that needed it.
+ */
+export const isDesktopShell = () =>
+  "__TAURI_INTERNALS__" in window &&
+  import.meta.env.VITE_FRAMEWORK_E2E !== "true";
+
+/**
  * Whether the platform menu owns application shortcuts in this build.
  * The browser dev server and menu-less e2e shell keep them in the webview.
  */
-export const hasNativeMenu = () =>
-  "__TAURI_INTERNALS__" in window &&
-  import.meta.env.VITE_FRAMEWORK_E2E !== "true";
+export const hasNativeMenu = isDesktopShell;
 
 const PLAIN: Record<string, ApplicationShortcut> = {
   z: "undo", n: "new", o: "open", s: "save", ",": "settings",

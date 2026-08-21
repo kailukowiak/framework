@@ -2603,6 +2603,19 @@ pub fn run() {
         });
     }));
 
+    // The updater never acts on its own. It is registered so the webview can
+    // ask — from Check for Updates, or once when a window opens — and it does
+    // nothing until asked. It stays compiled into e2e builds on purpose:
+    // capabilities/ is checked against the plugins that exist, so excluding it
+    // here would make `updater:default` name a plugin the test build lacks.
+    // The frontend is what declines to check under e2e, which is where the
+    // decision belongs anyway. tauri_plugin_process is here only so a staged
+    // update can relaunch the app.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+
     // The native menu owns accelerators like ⌘J and ⌘Z: macOS consumes the
     // key before the webview sees it, so the window's own keydown handler
     // defers whenever a menu exists. WebDriver, in turn, synthesizes DOM
