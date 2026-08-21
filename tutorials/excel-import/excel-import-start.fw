@@ -1,0 +1,37 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 1,
+  "document": {
+    "id": "4b172d2a-7678-4322-89ca-7a3851c468e2",
+    "name": "Importing an Excel workbook",
+    "revision": 4,
+    "objects": [
+      {
+        "kind": "text",
+        "id": "c6a78412-444d-45fc-a400-ed5e21477092",
+        "name": "Import steps",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "# Importing Excel data\n\nTwo example workbooks are beside this FrameWork file. Excel is an interchange source here: FrameWork imports cached cell values from one explicit table or range. It does not copy Excel formulas, formatting, or workbook logic.\n\n## 1. Import one clean table\n\n1. Open **Data Library** and choose **Excel range…**.\n2. Choose `simple-customers.xlsx` beside this file.\n3. Select `CustomersTable` — or enter `Customers!A4:D11` with **First row contains headers** enabled.\n4. Preview the values, name the table `Customers`, and import it.\n\n## 2. Import several defined tables from one workbook\n\nChoose `multi-table-operations.xlsx`. Import each named Excel Table separately:\n\n- `InventoryTable` from `Operations!A4:F10`;\n- `SuppliersTable` from `Operations!H4:L8`;\n- `OrdersTable` from `Sales!B5:I25`.\n\n## 3. Import pasted ranges without Excel Tables\n\nThe same workbook also contains two ordinary rectangular blocks. They are not defined Excel Tables. Choose them under **Suggested region**:\n\n- `Operations!A15:D23`, named `Adjustments`;\n- `Sales!P15:S25`, named `Targets`.\n\nThe note in `Operations!N2` is intentionally ignored. Suggestions are conservative starting points: preview them before importing, and type a manual range when a workbook is too irregular.\n\n## Checkpoint\n\nYou should have six static FrameWork tables: `Customers`, `Inventory`, `Suppliers`, `Orders`, `Adjustments`, and `Targets`. `Orders.Revenue` contains cached numeric results; its Excel formulas were not imported.\n"
+          }
+        ]
+      }
+    ],
+    "views": [
+      {
+        "id": "71130b41-dec7-4d27-ac67-d42307857c27",
+        "objectId": "c6a78412-444d-45fc-a400-ed5e21477092",
+        "x": 60.0,
+        "y": 50.0,
+        "width": 920.0,
+        "height": 770.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {}
+  },
+  "versionVector": {}
+}

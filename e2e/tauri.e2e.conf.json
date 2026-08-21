@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.framework.canvas.e2e",
+  "build": {
+    "beforeBuildCommand": "bun run build:e2e"
+  },
+  "app": {
+    "withGlobalTauri": true
+  }
+}

@@ -1,0 +1,597 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 1,
+  "document": {
+    "id": "04a87db7-400d-440f-8cfa-9fc5336896da",
+    "name": "Your first FrameWork workbook",
+    "revision": 22,
+    "objects": [
+      {
+        "kind": "frame",
+        "id": "3963505d-e9d4-4624-b38a-c83250f21ac2",
+        "name": "Monthly sales",
+        "columns": [
+          {
+            "id": "month~nmf9rv",
+            "name": "Month",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "region~met9vj",
+            "name": "Region",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "revenue~8k4r9j",
+            "name": "Revenue",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": {
+              "style": "accounting",
+              "decimals": 0,
+              "scale": "units",
+              "negativeParens": true,
+              "zeroDash": true,
+              "currencyCode": "USD"
+            },
+            "formula": null
+          },
+          {
+            "id": "cost~xyakrr",
+            "name": "Cost",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": {
+              "style": "accounting",
+              "decimals": 0,
+              "scale": "units",
+              "negativeParens": true,
+              "zeroDash": true,
+              "currencyCode": "USD"
+            },
+            "formula": null
+          },
+          {
+            "id": "profit~gayjam",
+            "name": "Profit",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": {
+              "style": "accounting",
+              "decimals": 0,
+              "scale": "units",
+              "negativeParens": true,
+              "zeroDash": true,
+              "currencyCode": "USD"
+            },
+            "formula": {
+              "expression": {
+                "kind": "binary",
+                "operator": "subtract",
+                "left": {
+                  "kind": "column",
+                  "column_id": "revenue~8k4r9j"
+                },
+                "right": {
+                  "kind": "column",
+                  "column_id": "cost~xyakrr"
+                }
+              }
+            }
+          }
+        ],
+        "rows": [
+          {
+            "id": "2c97b26a-9874-4f55-9106-45f7b6d1be1a",
+            "cells": {
+              "cost~xyakrr": {
+                "raw": "91000",
+                "overrideFormula": null
+              },
+              "month~nmf9rv": {
+                "raw": "2026-04",
+                "overrideFormula": null
+              },
+              "profit~gayjam": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "region~met9vj": {
+                "raw": "West",
+                "overrideFormula": null
+              },
+              "revenue~8k4r9j": {
+                "raw": "142000",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "f4aa2c8b-81ad-41fc-87c9-33e0c46bbdb3",
+            "cells": {
+              "cost~xyakrr": {
+                "raw": "76000",
+                "overrideFormula": null
+              },
+              "month~nmf9rv": {
+                "raw": "2026-01",
+                "overrideFormula": null
+              },
+              "profit~gayjam": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "region~met9vj": {
+                "raw": "East",
+                "overrideFormula": null
+              },
+              "revenue~8k4r9j": {
+                "raw": "118000",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "740ee907-ef4c-495d-9ef8-121ebc038f28",
+            "cells": {
+              "cost~xyakrr": {
+                "raw": "104000",
+                "overrideFormula": null
+              },
+              "month~nmf9rv": {
+                "raw": "2026-06",
+                "overrideFormula": null
+              },
+              "profit~gayjam": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "region~met9vj": {
+                "raw": "East",
+                "overrideFormula": null
+              },
+              "revenue~8k4r9j": {
+                "raw": "168000",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "bbb86af4-2850-4110-9415-266889e81009",
+            "cells": {
+              "cost~xyakrr": {
+                "raw": "85000",
+                "overrideFormula": null
+              },
+              "month~nmf9rv": {
+                "raw": "2026-03",
+                "overrideFormula": null
+              },
+              "profit~gayjam": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "region~met9vj": {
+                "raw": "East",
+                "overrideFormula": null
+              },
+              "revenue~8k4r9j": {
+                "raw": "136000",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "8b12e415-40d4-4851-8026-b7df74cbabfe",
+            "cells": {
+              "cost~xyakrr": {
+                "raw": "79000",
+                "overrideFormula": null
+              },
+              "month~nmf9rv": {
+                "raw": "2026-02",
+                "overrideFormula": null
+              },
+              "profit~gayjam": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "region~met9vj": {
+                "raw": "West",
+                "overrideFormula": null
+              },
+              "revenue~8k4r9j": {
+                "raw": "124000",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "eca45b14-44d5-4fee-b71a-21f8120a0ff6",
+            "cells": {
+              "cost~xyakrr": {
+                "raw": "96000",
+                "overrideFormula": null
+              },
+              "month~nmf9rv": {
+                "raw": "2026-05",
+                "overrideFormula": null
+              },
+              "profit~gayjam": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "region~met9vj": {
+                "raw": "East",
+                "overrideFormula": null
+              },
+              "revenue~8k4r9j": {
+                "raw": "151000",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "steps": [
+          {
+            "kind": "sort",
+            "keys": [
+              {
+                "columnId": "month~nmf9rv",
+                "descending": false
+              }
+            ]
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "block",
+        "id": "ae3854a3-19ec-4812-ad70-6e8f684ddab8",
+        "name": "Assumptions",
+        "lines": [
+          {
+            "id": "079af8d0-7614-49a2-bd07-d732d1a0675d",
+            "name": "Target margin",
+            "named": true,
+            "nameQuoted": false,
+            "source": "30%",
+            "formula": {
+              "expression": {
+                "kind": "percentage",
+                "value": 0.3
+              }
+            },
+            "error": null
+          },
+          {
+            "id": "1ff49210-eba1-4ac0-b075-78eb4e63cf34",
+            "name": "January profit",
+            "named": true,
+            "nameQuoted": false,
+            "source": "$118000 - $76000",
+            "formula": {
+              "expression": {
+                "kind": "binary",
+                "operator": "subtract",
+                "left": {
+                  "kind": "money",
+                  "value": 118000.0
+                },
+                "right": {
+                  "kind": "money",
+                  "value": 76000.0
+                }
+              }
+            },
+            "error": null
+          }
+        ]
+      },
+      {
+        "kind": "frame",
+        "id": "ff3205ee-5e75-42eb-b345-388f21885c16",
+        "name": "East only",
+        "columns": [
+          {
+            "id": "month~f6jsde",
+            "name": "Month",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "region~0thfex",
+            "name": "Region",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "revenue~k3tcv7",
+            "name": "Revenue",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": {
+              "style": "accounting",
+              "decimals": 0,
+              "scale": "units",
+              "negativeParens": true,
+              "zeroDash": true,
+              "currencyCode": "USD"
+            },
+            "formula": null
+          },
+          {
+            "id": "cost~qm2n7z",
+            "name": "Cost",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": {
+              "style": "accounting",
+              "decimals": 0,
+              "scale": "units",
+              "negativeParens": true,
+              "zeroDash": true,
+              "currencyCode": "USD"
+            },
+            "formula": null
+          },
+          {
+            "id": "profit~j0ptzk",
+            "name": "Profit",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": {
+              "style": "accounting",
+              "decimals": 0,
+              "scale": "units",
+              "negativeParens": true,
+              "zeroDash": true,
+              "currencyCode": "USD"
+            },
+            "formula": null
+          }
+        ],
+        "rows": [],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": {
+          "sourceFrameId": "3963505d-e9d4-4624-b38a-c83250f21ac2",
+          "join": null,
+          "steps": [
+            {
+              "kind": "withColumns",
+              "columns": [
+                {
+                  "outputColumnId": "month~f6jsde",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "month~nmf9rv"
+                  }
+                },
+                {
+                  "outputColumnId": "region~0thfex",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "region~met9vj"
+                  }
+                },
+                {
+                  "outputColumnId": "revenue~k3tcv7",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "revenue~8k4r9j"
+                  }
+                },
+                {
+                  "outputColumnId": "cost~qm2n7z",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "cost~xyakrr"
+                  }
+                },
+                {
+                  "outputColumnId": "profit~j0ptzk",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "profit~gayjam"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "select",
+              "columnIds": [
+                "month~f6jsde",
+                "region~0thfex",
+                "revenue~k3tcv7",
+                "cost~qm2n7z",
+                "profit~j0ptzk"
+              ]
+            },
+            {
+              "kind": "filter",
+              "predicates": [
+                {
+                  "kind": "binary",
+                  "operator": "equal",
+                  "left": {
+                    "kind": "column",
+                    "column_id": "region~0thfex"
+                  },
+                  "right": {
+                    "kind": "string",
+                    "value": "East"
+                  }
+                }
+              ],
+              "matchAll": true
+            }
+          ]
+        },
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "text",
+        "id": "3cc9205f-9956-4b91-9b07-1aef7f4494e2",
+        "name": "Sales narrative",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "## Monthly sales\n\nRevenue is "
+          },
+          {
+            "kind": "formula",
+            "formula": {
+              "expression": {
+                "kind": "method",
+                "input": {
+                  "kind": "foreignColumn",
+                  "frame_id": "3963505d-e9d4-4624-b38a-c83250f21ac2",
+                  "column_id": "revenue~8k4r9j"
+                },
+                "path": [
+                  "sum"
+                ],
+                "arguments": [],
+                "keyword_arguments": []
+              }
+            }
+          },
+          {
+            "kind": "literal",
+            "text": " and profit is "
+          },
+          {
+            "kind": "formula",
+            "formula": {
+              "expression": {
+                "kind": "method",
+                "input": {
+                  "kind": "foreignColumn",
+                  "frame_id": "3963505d-e9d4-4624-b38a-c83250f21ac2",
+                  "column_id": "profit~gayjam"
+                },
+                "path": [
+                  "sum"
+                ],
+                "arguments": [],
+                "keyword_arguments": []
+              }
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "kind": "plot",
+        "id": "bba036cc-8720-4131-8b7f-1a9fec4800f6",
+        "name": "Profit by month",
+        "sourceFrameId": "3963505d-e9d4-4624-b38a-c83250f21ac2",
+        "spec": {
+          "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+          "mark": {
+            "type": "line",
+            "tooltip": true,
+            "point": true
+          },
+          "encoding": {
+            "x": {
+              "field": "month~nmf9rv",
+              "type": "nominal",
+              "title": "Month",
+              "sort": null
+            },
+            "y": {
+              "field": "profit~gayjam",
+              "type": "quantitative",
+              "title": "Profit"
+            },
+            "color": {
+              "field": "region~met9vj",
+              "type": "nominal",
+              "title": "Region"
+            }
+          }
+        }
+      }
+    ],
+    "views": [
+      {
+        "id": "f61329b1-ee62-4fa0-8707-5e4db47c69f4",
+        "objectId": "ff3205ee-5e75-42eb-b345-388f21885c16",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 910.0,
+        "height": 464.0,
+        "collapsed": false,
+        "tabObjectIds": [
+          "3963505d-e9d4-4624-b38a-c83250f21ac2",
+          "ff3205ee-5e75-42eb-b345-388f21885c16"
+        ]
+      },
+      {
+        "id": "ae43197b-d79a-4072-a2df-9c5692700369",
+        "objectId": "ae3854a3-19ec-4812-ad70-6e8f684ddab8",
+        "x": 77.0,
+        "y": 669.0,
+        "width": 520.0,
+        "height": 180.0,
+        "collapsed": false
+      },
+      {
+        "id": "ceaf5c42-3fc9-4d0f-8ccf-195e9f7fd918",
+        "objectId": "3cc9205f-9956-4b91-9b07-1aef7f4494e2",
+        "x": 620.0,
+        "y": 669.0,
+        "width": 520.0,
+        "height": 240.0,
+        "collapsed": false
+      },
+      {
+        "id": "71b6767d-1305-41b6-b194-22e4c3044b4a",
+        "objectId": "bba036cc-8720-4131-8b7f-1a9fec4800f6",
+        "x": 976.0,
+        "y": 57.0,
+        "width": 360.0,
+        "height": 330.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {}
+  },
+  "versionVector": {}
+}

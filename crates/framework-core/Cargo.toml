@@ -1,0 +1,29 @@
+[package]
+name = "framework-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+autotests = false
+
+[lints]
+workspace = true
+
+[dependencies]
+calamine.workspace = true
+chrono.workspace = true
+fuzzy-matcher.workspace = true
+polars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+thiserror.workspace = true
+ts-rs.workspace = true
+uuid.workspace = true
+zip.workspace = true
+
+# Each file directly under tests/ would otherwise become a separate executable
+# containing the full Polars-backed engine. One harness preserves the topical
+# source files and test filtering while paying that link cost only once.
+[[test]]
+name = "integration"
+path = "tests/integration.rs"

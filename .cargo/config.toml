@@ -1,0 +1,6 @@
+# ts-rs writes the TypeScript mirror of the document model here. `relative`
+# resolves against this file's directory, so the path is the same wherever
+# cargo is invoked from — which is what lets the regeneration command in
+# src/lib/types.ts be a bare `cargo test` with nothing to remember.
+[env]
+TS_RS_EXPORT_DIR = { value = "src/lib/bindings", relative = true }

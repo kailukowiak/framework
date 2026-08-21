@@ -1,0 +1,129 @@
+Department,Code,Project,Status
+R&D,762,Probe Development RNDE,Active
+R&D,809,Easy Log RNDE,Active
+R&D,873,Ferroscope Product Development RNDE,Active
+R&D,884,Internal Bracelet Probe Development,Active
+R&D,903,Sidewinder,Active
+R&D,906,Navigator - Acoustic Leak Detector Development,Active
+R&D,913,Free Simmer NFT Tool Pipe Diver,Active
+R&D,914,SeeSnake Electronics Updates,Active
+R&D,915,Analyzer Development for Navigator Data RNDE,Active
+R&D,916,Analyzer Modifications for RFT Data RNDE,Active
+R&D,917 A,HEX EMIT - A,Active
+R&D,917 48-64,HEX EMIT - 48-64 Small Tool Build Configuration,Active
+R&D,917 66-84,HEX EMIT - 66-84 Medium Tool Build Configuration,Active
+R&D,917 86-96,HEX EMIT - 86-96 Large Tood Build Configuration,Active
+R&D,919,Chimera Tool Developments,Active
+R&D,920,"36"" RAFT Improvement",Active
+R&D,922,Winch - New Design,Active
+R&D,923,Yellow AGM Update,Active
+R&D,924,Tow Pig Design,Active
+R&D,926,Analyzer Software Development,Active
+R&D,927,Eddy Current Array (ECA) Probe Development,Active
+R&D,928,Submersible NFT Tool Remora Sunfish,Active
+R&D,929,Existing NFT Tool Development,Active
+R&D,930,HSI External PCAT-CL Development,Active
+R&D,931,HSI External PCAT-CL Parts & Labor,Active
+Manufacturing,730,Ferroscope 308 Manufacture,Active
+Manufacturing,730,Ferroscope EMI Manufacture,Active
+Manufacturing,730,Russell paperwork,Active
+Manufacturing,730,customer repair,Active
+Manufacturing,730,Ferroscope probe manufacture,Active
+Manufacturing,730,ET Probe Manufacture,Active
+Manufacturing,730,Calibration Tubes & Blocks,Active
+Manufacturing,1780,See Snake tools General,Active
+Manufacturing,1780-3,See Snake tools 3-Inch,Active
+Manufacturing,1780-4,See Snake tools 4-Inch,Active
+Manufacturing,1780-6,See Snake tools 6-Inch,Active
+Manufacturing,1805,12-inch See Snake,Active
+Manufacturing,1810,IMU Tool Manufacturing,Active
+Manufacturing,1813a,F308 Detector Board Manufacture and Testing,Active
+Manufacturing,1813b,F308 Exciter Board Manufacture,Active
+Manufacturing,1813c,F308 Backplane Manufacture,Active
+Manufacturing,1813d,F308 ECT Board Manufacture and Testing,Active
+Manufacturing,1815,"6"" HydraSnake Tool",Active
+Manufacturing,1816,"8"" HydraSnake Tool",Active
+Manufacturing,1824,Reversible 32-36” Tool (Chimera),Active
+Manufacturing,1825,Reversible 20-26” Tool (Chimera),Active
+Manufacturing,1826,Reversible 16-18” Tool (Chimera),Active
+Manufacturing,1828,Roped Pigs Small (2”-6”) Please specify size,Active
+Manufacturing,1829,Roped Pigs Medium (8”-14”) Please specify size,Active
+Manufacturing,1830,Roped Pigs 16”,Active
+Manufacturing,1831,Roped Pigs 18”,Active
+Manufacturing,1832,Tow Pigs (2”-6”) Please specify size,Active
+Manufacturing,1833,Tow Pigs (8”,Active
+Manufacturing,1834,Tow Pigs 18”,Active
+Manufacturing,1835,Tow Pigs 20”,Active
+Manufacturing,1836,Tow Pigs 24”,Active
+Manufacturing,1837,Tow Pigs 30”,Active
+Manufacturing,1838,Tow Pigs 36”,Active
+Manufacturing,1839,Gauge Pigs (2”-6”) Please specify size,Active
+Manufacturing,1840,Gauge Pigs (8”-14”) Please specify size,Active
+Manufacturing,1841,Gauge Pigs 16”,Active
+Manufacturing,1842,Gauge Pigs 18”,Active
+Manufacturing,1843,Gauge Pigs 20”,Active
+Manufacturing,1844,Gauge Pigs 24”,Active
+Manufacturing,1845,Gauge Pigs 30”,Active
+Manufacturing,1846,Gauge Pigs 36”,Active
+Manufacturing,1849,"14"" See Snake Manufacturing",Active
+Manufacturing,1851,3D Printer Maintenance,Active
+Manufacturing,1852,Collapsible I-Pit Probe Russe.,Active
+Manufacturing,1855,CCTV/Laser Profilometry Maintenance and Upgrades,Active
+Manufacturing,1856,LiDAR System Profilometry,Active
+Manufacturing,1857,36-48 inch RAFT Tool - Repairs & Maintenance,Active
+Manufacturing,1858,"EMIT 48""-64"" Potable",Active
+Manufacturing,1859,Winch Tool Build,Active
+Manufacturing,1860,Add on Battery Module for Chimera,Active
+Manufacturing,1861,2025 Gen 3 Winch Tool Build,Active
+Manufacturing,1866,Navigator Unit Supply,Active
+Manufacturing,1867,NFT Tool Repairs,Active
+Manufacturing,5120,Equipment for Resale,Active
+Manufacturing,5191,Materials & Supplies for Services Dept Russell,Active
+Manufacturing,5191P,Materials & Supplies for Services Dept PICA,Active
+Manufacturing,730,Other,Active
+Services,710,Inspections,Active
+Services,710,Teachings,Active
+Services,711,Analysis,Active
+Services,9500,RNDE General Services,Active
+Services,9194,HSI Group Technician Support,Active
+Services,9203,GPR Inspections Ongoing,Active
+Services,9204,GPR Shop Time Ongoing,Active
+Services,9229,Video Inspection - On going,Active
+Services,9236,Laser Profilometry On going,Active
+Services,25-9019,"Flexsteel Phase 2: 8"" 1500 psi Edmonton",Active
+Services,25-9012,Grande Pairie CCTV Avodahtec,Active
+Services,26-9001,Catepillar Carburizaton Detection & Sizing for Bushings,Active
+Services,25-9005,Sungrow,Active
+Services,25-8000,AB Cavvy Energy Carbondale,Active
+Services,25-8017,AB Drayton - Pembina Pipeline,Active
+Services,25-8012,"EPCOR Cloverbar Sludge Line 12""",Active
+Services,26-8999,Generic Canadian or International Potential Deal Project Code,Active
+Services,26-6000,GNPD - Aboitiz,Active
+Services,25-8018,ON Ottawa Stantec 350mm DHPE FM,Active
+Services,25-8016,Town of Caster Self Deployed Navigator,Active
+Services,26-7009,CA SDCWA BP TO-1,Active
+Services,26-7001,"CA Vallecitos Water District 18"" BWP",Active
+Services,24-7010,CA Valley Water,Active
+Services,25-7018,"FL CDM Smith - Palm Beach Braclet 24"" PCCP FM",Active
+Services,25-7022,"FL GLWA EMIT plus Lidar 54""",Active
+Services,26-7999,Generic US Potential Deal Project Code,Active
+Services,26-7002,Laverne 2026,Active
+Services,25-7017,MA Rockport Doc - PICA Deployed Navigator,Active
+Services,26-7003,"Mesa Projects 1 30"" CCP Chimera",Active
+Services,26-7006,"Mesa Projects 3 - 42"" RAFT PCCP/ 18"" CCP Chimera",Active
+Services,26-7007,"Mesa Projects 4 - 36"" CCP Chimera",Active
+Services,26-7008,"Mesa Projects 6 - 36"" CCP Chimera",Active
+Services,7126,NC Fayetteville Force Main Cleaning and Inspection,Active
+Services,25-7026,"NC CFPUA McKim Creed 48"" PCCP",Active
+Services,25-7003,"SFPUC M30 to M50 60""",Active
+Services,25-7009,"SFPUC M40 to M60 60""",Active
+Services,25-7004,"SFPUC 90/79"" Fontenoy",Active
+Services,25-7005,"SFPUC 79"" Hernandez",Active
+Services,24-7012,SWSC CCTV Phase 2,Active
+Services,25-7020,TX North Texas (Haltom City HDR Self Deployed Navigator,Active
+Services,26-7004,Valley Water - Penitendia PDL PFM EPL SBA - Part 1,Active
+Services,26-7005,Valley Water - Penitendia PDL PFM EPL SBA - Part 2,Active
+Services,24-7022,Valley Wsaer - West Pipeline Past II,Active
+Services,7139,"West County Wastewater FM - Chimera 18""",Active
+Services,25-7015,"West County Receive Assembly Design, Plan & Spefications",Active
+Services,25-7016,West County Wastewater Navigator,Active

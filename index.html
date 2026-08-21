@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f0e9" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>FrameWork</title>
+  </head>
+  <!-- Formulas, ids, and column names are what gets typed here, and the
+       OS treating them as prose - capitalizing `x`, "correcting" a column
+       name mid-keystroke - rewrites the one thing this app must take
+       literally. WKWebView (macOS) honours these three attributes
+       inherited from the body; WebView2 (Windows) only ever adds spelling
+       squiggles, which spellcheck=false removes. -->
+  <body autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

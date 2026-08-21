@@ -1,0 +1,6053 @@
+{
+  "id": "068cece8-f995-480f-9f4f-84a2e42362e8",
+  "name": "Fixture",
+  "revision": 3,
+  "objects": [
+    {
+      "kind": "frame",
+      "id": "177abc64-4773-466b-9d99-732b18f873d8",
+      "name": "Monthly sales",
+      "columns": [
+        {
+          "id": "month~zdxtjg",
+          "name": "Month",
+          "sourceName": null,
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "region~jay6cb",
+          "name": "Region",
+          "sourceName": null,
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "revenue~mvwsbb",
+          "name": "Revenue",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "cost~vcbjfx",
+          "name": "Cost",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        }
+      ],
+      "rows": [
+        {
+          "id": "cda4f240-79fa-47ac-b4fb-ee51a5bfd1a5",
+          "cells": {
+            "cost~vcbjfx": {
+              "raw": "91000",
+              "overrideFormula": null
+            },
+            "month~zdxtjg": {
+              "raw": "2026-04",
+              "overrideFormula": null
+            },
+            "region~jay6cb": {
+              "raw": "West",
+              "overrideFormula": null
+            },
+            "revenue~mvwsbb": {
+              "raw": "142000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "fe4c06b3-02cd-4ae7-8970-c3c9fa2f5e31",
+          "cells": {
+            "cost~vcbjfx": {
+              "raw": "76000",
+              "overrideFormula": null
+            },
+            "month~zdxtjg": {
+              "raw": "2026-01",
+              "overrideFormula": null
+            },
+            "region~jay6cb": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~mvwsbb": {
+              "raw": "118000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "9682ecef-0aa5-4d00-a2bd-644a761fb9a6",
+          "cells": {
+            "cost~vcbjfx": {
+              "raw": "104000",
+              "overrideFormula": null
+            },
+            "month~zdxtjg": {
+              "raw": "2026-06",
+              "overrideFormula": null
+            },
+            "region~jay6cb": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~mvwsbb": {
+              "raw": "168000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "f813b889-0c50-413f-bc7c-854da15c65ea",
+          "cells": {
+            "cost~vcbjfx": {
+              "raw": "85000",
+              "overrideFormula": null
+            },
+            "month~zdxtjg": {
+              "raw": "2026-03",
+              "overrideFormula": null
+            },
+            "region~jay6cb": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~mvwsbb": {
+              "raw": "136000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "8e2e9368-08ab-4546-a25b-b3a60a952d7c",
+          "cells": {
+            "cost~vcbjfx": {
+              "raw": "79000",
+              "overrideFormula": null
+            },
+            "month~zdxtjg": {
+              "raw": "2026-02",
+              "overrideFormula": null
+            },
+            "region~jay6cb": {
+              "raw": "West",
+              "overrideFormula": null
+            },
+            "revenue~mvwsbb": {
+              "raw": "124000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "9262ac65-ea24-4b2c-9521-cbd4b4dd1279",
+          "cells": {
+            "cost~vcbjfx": {
+              "raw": "96000",
+              "overrideFormula": null
+            },
+            "month~zdxtjg": {
+              "raw": "2026-05",
+              "overrideFormula": null
+            },
+            "region~jay6cb": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~mvwsbb": {
+              "raw": "151000",
+              "overrideFormula": null
+            }
+          }
+        }
+      ],
+      "sourceFile": null,
+      "artifact": null,
+      "connector": null,
+      "derivation": null,
+      "materialization": null,
+      "uniqueKeys": [],
+      "summaries": []
+    },
+    {
+      "kind": "block",
+      "id": "3beb4413-d1c8-4348-8e83-ddc3a6414b65",
+      "name": "Checks",
+      "lines": [
+        {
+          "id": "33945fd0-9742-413d-81e7-78c2e3bc8856",
+          "name": "Total revenue",
+          "named": true,
+          "nameQuoted": false,
+          "source": "`Monthly sales`.`Revenue`.sum()",
+          "formula": {
+            "expression": {
+              "kind": "method",
+              "input": {
+                "kind": "foreignColumn",
+                "frame_id": "177abc64-4773-466b-9d99-732b18f873d8",
+                "column_id": "revenue~mvwsbb"
+              },
+              "path": [
+                "sum"
+              ],
+              "arguments": [],
+              "keyword_arguments": []
+            }
+          },
+          "error": null
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "bf85f6d3-dd10-486c-b641-c49b8adc71b4",
+      "objectId": "177abc64-4773-466b-9d99-732b18f873d8",
+      "x": 80.0,
+      "y": 80.0,
+      "width": 648.0,
+      "height": 300.0,
+      "collapsed": false
+    },
+    {
+      "id": "cee00972-8183-4caf-8bae-3f7a642358fa",
+      "objectId": "3beb4413-d1c8-4348-8e83-ddc3a6414b65",
+      "x": 80.0,
+      "y": 430.0,
+      "width": 340.0,
+      "height": 220.0,
+      "collapsed": false
+    }
+  ],
+  "frozenValues": {},
+  "computedFrames": {
+    "177abc64-4773-466b-9d99-732b18f873d8": {
+      "fingerprint": "de9c603a0e83b202",
+      "formulas": {},
+      "overrideFormulas": {},
+      "rows": {
+        "f813b889-0c50-413f-bc7c-854da15c65ea": {
+          "region~jay6cb": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "East"
+            },
+            "display": "East",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~mvwsbb": {
+            "value": 136000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 136000.0
+            },
+            "display": "136000",
+            "error": null,
+            "isOverride": false
+          },
+          "month~zdxtjg": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-03"
+            },
+            "display": "2026-03",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~vcbjfx": {
+            "value": 85000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 85000.0
+            },
+            "display": "85000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "9682ecef-0aa5-4d00-a2bd-644a761fb9a6": {
+          "region~jay6cb": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "East"
+            },
+            "display": "East",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~mvwsbb": {
+            "value": 168000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 168000.0
+            },
+            "display": "168000",
+            "error": null,
+            "isOverride": false
+          },
+          "month~zdxtjg": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-06"
+            },
+            "display": "2026-06",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~vcbjfx": {
+            "value": 104000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 104000.0
+            },
+            "display": "104000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "fe4c06b3-02cd-4ae7-8970-c3c9fa2f5e31": {
+          "cost~vcbjfx": {
+            "value": 76000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 76000.0
+            },
+            "display": "76000",
+            "error": null,
+            "isOverride": false
+          },
+          "region~jay6cb": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "East"
+            },
+            "display": "East",
+            "error": null,
+            "isOverride": false
+          },
+          "month~zdxtjg": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-01"
+            },
+            "display": "2026-01",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~mvwsbb": {
+            "value": 118000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 118000.0
+            },
+            "display": "118000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "8e2e9368-08ab-4546-a25b-b3a60a952d7c": {
+          "revenue~mvwsbb": {
+            "value": 124000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 124000.0
+            },
+            "display": "124000",
+            "error": null,
+            "isOverride": false
+          },
+          "region~jay6cb": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "West"
+            },
+            "display": "West",
+            "error": null,
+            "isOverride": false
+          },
+          "month~zdxtjg": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-02"
+            },
+            "display": "2026-02",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~vcbjfx": {
+            "value": 79000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 79000.0
+            },
+            "display": "79000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "9262ac65-ea24-4b2c-9521-cbd4b4dd1279": {
+          "revenue~mvwsbb": {
+            "value": 151000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 151000.0
+            },
+            "display": "151000",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~vcbjfx": {
+            "value": 96000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 96000.0
+            },
+            "display": "96000",
+            "error": null,
+            "isOverride": false
+          },
+          "region~jay6cb": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "East"
+            },
+            "display": "East",
+            "error": null,
+            "isOverride": false
+          },
+          "month~zdxtjg": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-05"
+            },
+            "display": "2026-05",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "cda4f240-79fa-47ac-b4fb-ee51a5bfd1a5": {
+          "cost~vcbjfx": {
+            "value": 91000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 91000.0
+            },
+            "display": "91000",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~mvwsbb": {
+            "value": 142000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 142000.0
+            },
+            "display": "142000",
+            "error": null,
+            "isOverride": false
+          },
+          "month~zdxtjg": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-04"
+            },
+            "display": "2026-04",
+            "error": null,
+            "isOverride": false
+          },
+          "region~jay6cb": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "West"
+            },
+            "display": "West",
+            "error": null,
+            "isOverride": false
+          }
+        }
+      },
+      "summaries": {},
+      "derivation": null,
+      "totalRows": 6,
+      "paged": false,
+      "editing": {
+        "cells": true,
+        "rows": true,
+        "overrides": true
+      }
+    }
+  },
+  "computedResults": {},
+  "computedBlocks": {
+    "3beb4413-d1c8-4348-8e83-ddc3a6414b65": {
+      "source": "Total revenue = `Monthly sales`.`Revenue`.sum()",
+      "lines": [
+        {
+          "id": "33945fd0-9742-413d-81e7-78c2e3bc8856",
+          "name": "Total revenue",
+          "text": "Total revenue = `Monthly sales`.`Revenue`.sum()",
+          "comment": false,
+          "blank": false,
+          "dataType": "integer",
+          "value": 839000.0,
+          "typedValue": {
+            "type": "number",
+            "value": 839000.0
+          },
+          "display": "839000",
+          "error": null,
+          "isOverride": false
+        }
+      ]
+    }
+  },
+  "computedTexts": {},
+  "formulaFunctions": [
+    {
+      "id": "root.sum_horizontal",
+      "name": "sum_horizontal",
+      "aliases": [
+        "row sum"
+      ],
+      "category": "Horizontal",
+      "signature": "sum_horizontal([expressions], ignore_nulls=True)",
+      "description": "Sum expressions across each row.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "number",
+      "nullBehavior": "configurable Polars behavior",
+      "arguments": [
+        {
+          "name": "expressions",
+          "required": true,
+          "description": "One or more column or value expressions; use [ ] where the signature shows it.",
+          "example": "[`Revenue`, `Cost`]"
+        },
+        {
+          "name": "ignore_nulls",
+          "required": false,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "root.mean_horizontal",
+      "name": "mean_horizontal",
+      "aliases": [
+        "row mean"
+      ],
+      "category": "Horizontal",
+      "signature": "mean_horizontal([expressions], ignore_nulls=True)",
+      "description": "Average expressions across each row.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "number",
+      "nullBehavior": "configurable Polars behavior",
+      "arguments": [
+        {
+          "name": "expressions",
+          "required": true,
+          "description": "One or more column or value expressions; use [ ] where the signature shows it.",
+          "example": "[`Revenue`, `Cost`]"
+        },
+        {
+          "name": "ignore_nulls",
+          "required": false,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "root.min_horizontal",
+      "name": "min_horizontal",
+      "aliases": [
+        "row minimum"
+      ],
+      "category": "Horizontal",
+      "signature": "min_horizontal([expressions])",
+      "description": "Find the row-wise minimum.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "number",
+      "nullBehavior": "configurable Polars behavior",
+      "arguments": [
+        {
+          "name": "expressions",
+          "required": true,
+          "description": "One or more column or value expressions; use [ ] where the signature shows it.",
+          "example": "[`Revenue`, `Cost`]"
+        }
+      ]
+    },
+    {
+      "id": "root.max_horizontal",
+      "name": "max_horizontal",
+      "aliases": [
+        "row maximum"
+      ],
+      "category": "Horizontal",
+      "signature": "max_horizontal([expressions])",
+      "description": "Find the row-wise maximum.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "number",
+      "nullBehavior": "configurable Polars behavior",
+      "arguments": [
+        {
+          "name": "expressions",
+          "required": true,
+          "description": "One or more column or value expressions; use [ ] where the signature shows it.",
+          "example": "[`Revenue`, `Cost`]"
+        }
+      ]
+    },
+    {
+      "id": "root.coalesce",
+      "name": "coalesce",
+      "aliases": [
+        "first non-null"
+      ],
+      "category": "Nulls",
+      "signature": "coalesce([expressions])",
+      "description": "Return the first non-null expression.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "dynamic",
+      "nullBehavior": "returns first non-null",
+      "arguments": [
+        {
+          "name": "expressions",
+          "required": true,
+          "description": "One or more column or value expressions; use [ ] where the signature shows it.",
+          "example": "[`Revenue`, `Cost`]"
+        }
+      ]
+    },
+    {
+      "id": "root.sequence",
+      "name": "sequence",
+      "aliases": [
+        "range",
+        "number series",
+        "date range",
+        "Excel SEQUENCE"
+      ],
+      "category": "Generators",
+      "signature": "sequence(start, stop=None, step=1, periods=None)",
+      "description": "Generate numbers or dates up to, but not including, stop. For a date fill, periods=frame.len() makes exactly one date per row.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "start",
+          "required": true,
+          "description": "First number or date in the sequence.",
+          "example": "1 or 2026-01-01"
+        },
+        {
+          "name": "stop",
+          "required": false,
+          "description": "Exclusive endpoint; use the same kind of value as start.",
+          "example": "13 or 2027-01-01"
+        },
+        {
+          "name": "step",
+          "required": false,
+          "description": "Increment between values; dates need a duration.",
+          "example": "1, 2, or 1mo"
+        },
+        {
+          "name": "periods",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "root.recur",
+      "name": "recur",
+      "aliases": [
+        "recurrence",
+        "calculate down rows",
+        "recursive column",
+        "carry forward"
+      ],
+      "category": "Row order",
+      "signature": "recur(first, next, restart_by=[columns])",
+      "description": "Start a column with one value, then calculate each later row from previous() and the current row.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "first",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "next",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "restart_by",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.previous",
+      "name": "previous",
+      "aliases": [
+        "previous result",
+        "prior result",
+        "row above"
+      ],
+      "category": "Row order",
+      "signature": "previous()",
+      "description": "Read the result calculated for the preceding row inside recur(...).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "root.frame_len",
+      "name": "frame.len",
+      "aliases": [
+        "row count",
+        "frame length",
+        "rows",
+        "n_rows",
+        "frame.n_rows"
+      ],
+      "category": "Generators",
+      "signature": "frame.len()",
+      "description": "Count rows at the current point in this frame's transformation chain.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "integer",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "root.format",
+      "name": "format",
+      "aliases": [
+        "concat",
+        "concatenate",
+        "join text",
+        "text",
+        "&"
+      ],
+      "category": "String namespace",
+      "signature": "format(\"Q{}\", value)",
+      "description": "Fill the ‘{}’ in a pattern with values, written as this document writes them.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "string",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "\"Q{}\"",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "expr.cast",
+      "name": ".cast",
+      "aliases": [
+        "convert",
+        "type",
+        "to text",
+        "to number",
+        "tonumber",
+        "value"
+      ],
+      "category": "Conversion",
+      "signature": ".cast(\"string\")",
+      "description": "Convert to another type: \"string\", \"integer\", \"number\", \"date\" or \"boolean\".",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "\"string\"",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.show",
+      "name": ".show",
+      "aliases": [
+        "money",
+        "currency",
+        "dollars",
+        "percent",
+        "percentage",
+        "plain",
+        "format as",
+        "display as"
+      ],
+      "category": "Conversion",
+      "signature": ".show(\"percent\")",
+      "description": "Write this number as \"money\", \"percent\", or \"plain\". Changes how the answer reads, never what it is — and overrides whatever the arithmetic worked out.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "\"percent\"",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.when",
+      "name": "when",
+      "aliases": [
+        "conditional"
+      ],
+      "category": "Conditional",
+      "signature": "when(condition).then(value).otherwise(value)",
+      "description": "Build a Polars conditional expression.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "condition).then(value).otherwise(value",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.date",
+      "name": "date",
+      "aliases": [
+        "make date"
+      ],
+      "category": "Dates",
+      "signature": "date(year, month, day)",
+      "description": "Construct a Date expression.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "date",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "year",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "month",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "day",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.today",
+      "name": "today",
+      "aliases": [
+        "current date"
+      ],
+      "category": "Dates",
+      "signature": "today()",
+      "description": "Today's date, read when the frame is read.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "never null",
+      "arguments": []
+    },
+    {
+      "id": "root.now",
+      "name": "now",
+      "aliases": [
+        "current time"
+      ],
+      "category": "Dates",
+      "signature": "now()",
+      "description": "The current date and time, read when the frame is read.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "never null",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_between",
+      "name": ".is_between",
+      "aliases": [
+        "range",
+        "within"
+      ],
+      "category": "Comparison",
+      "signature": ".is_between(lower, upper, closed=\"both\")",
+      "description": "Test whether values fall in a range, ends included.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "boolean",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "lower",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "upper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "closed",
+          "required": false,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.is_in",
+      "name": ".is_in",
+      "aliases": [
+        "one of",
+        "member of"
+      ],
+      "category": "Comparison",
+      "signature": ".is_in([values])",
+      "description": "Test whether values appear in a list.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "expr.filter",
+      "name": ".filter",
+      "aliases": [
+        "sumif",
+        "sumifs",
+        "countif",
+        "countifs",
+        "averageif",
+        "averageifs",
+        "maxifs",
+        "minifs",
+        "conditional aggregate",
+        "where"
+      ],
+      "category": "Conditional",
+      "signature": ".filter(predicate)",
+      "description": "Keep values whose matching rows meet a condition; chain .sum(), .mean(), or another aggregate.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "predicate",
+          "required": true,
+          "description": "A true/false expression, usually a comparison on a column.",
+          "example": "`Region` == \"East\""
+        }
+      ]
+    },
+    {
+      "id": "expr.abs",
+      "name": ".abs",
+      "aliases": [
+        "absolute"
+      ],
+      "category": "Numeric methods",
+      "signature": ".abs()",
+      "description": "Return absolute values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.sign",
+      "name": ".sign",
+      "aliases": [
+        "signum"
+      ],
+      "category": "Numeric methods",
+      "signature": ".sign()",
+      "description": "Return each value's sign.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.round",
+      "name": ".round",
+      "aliases": [
+        "rounded"
+      ],
+      "category": "Numeric methods",
+      "signature": ".round(decimals=0)",
+      "description": "Round numeric values.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "decimals",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.normalize",
+      "name": ".normalize",
+      "aliases": [
+        "rescale",
+        "scale",
+        "heatmap"
+      ],
+      "category": "Numeric methods",
+      "signature": ".normalize(low, high)",
+      "description": "Where each value sits between two numbers, from 0 to 1. With no arguments the column's own smallest and largest; with center= the given number lands at 0.5 and the two directions away from it get equal room.",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "low",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "high",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.round_sig_figs",
+      "name": ".round_sig_figs",
+      "aliases": [
+        "significant figures"
+      ],
+      "category": "Numeric methods",
+      "signature": ".round_sig_figs(digits)",
+      "description": "Round to significant figures.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "digits",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.truncate",
+      "name": ".truncate",
+      "aliases": [
+        "trunc"
+      ],
+      "category": "Numeric methods",
+      "signature": ".truncate(decimals=0)",
+      "description": "Truncate numeric values.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "decimals",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.floor",
+      "name": ".floor",
+      "aliases": [],
+      "category": "Numeric methods",
+      "signature": ".floor()",
+      "description": "Round down.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.ceil",
+      "name": ".ceil",
+      "aliases": [
+        "ceiling"
+      ],
+      "category": "Numeric methods",
+      "signature": ".ceil()",
+      "description": "Round up.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.sqrt",
+      "name": ".sqrt",
+      "aliases": [
+        "square root"
+      ],
+      "category": "Numeric methods",
+      "signature": ".sqrt()",
+      "description": "Compute square roots.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.cbrt",
+      "name": ".cbrt",
+      "aliases": [
+        "cube root"
+      ],
+      "category": "Numeric methods",
+      "signature": ".cbrt()",
+      "description": "Compute cube roots.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.pow",
+      "name": ".pow",
+      "aliases": [
+        "power"
+      ],
+      "category": "Numeric methods",
+      "signature": ".pow(exponent)",
+      "description": "Raise values to a power.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "exponent",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.exp",
+      "name": ".exp",
+      "aliases": [
+        "exponential"
+      ],
+      "category": "Logs",
+      "signature": ".exp()",
+      "description": "Raise e to each value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.log",
+      "name": ".log",
+      "aliases": [
+        "ln",
+        "logarithm"
+      ],
+      "category": "Logs",
+      "signature": ".log(base=e)",
+      "description": "Compute logarithms.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "base",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.log1p",
+      "name": ".log1p",
+      "aliases": [
+        "ln one plus"
+      ],
+      "category": "Logs",
+      "signature": ".log1p()",
+      "description": "Compute ln(1+x).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.clip",
+      "name": ".clip",
+      "aliases": [
+        "clamp"
+      ],
+      "category": "Numeric methods",
+      "signature": ".clip(lower, upper)",
+      "description": "Clip values to bounds.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "lower",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "upper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.clip_min",
+      "name": ".clip_min",
+      "aliases": [
+        "at least"
+      ],
+      "category": "Numeric methods",
+      "signature": ".clip_min(lower)",
+      "description": "Clip to a lower bound.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "lower",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.clip_max",
+      "name": ".clip_max",
+      "aliases": [
+        "at most"
+      ],
+      "category": "Numeric methods",
+      "signature": ".clip_max(upper)",
+      "description": "Clip to an upper bound.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "upper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.floor_div",
+      "name": ".floor_div",
+      "aliases": [
+        "floor division"
+      ],
+      "category": "Numeric methods",
+      "signature": ".floor_div(divisor)",
+      "description": "Floor-divide values.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "divisor",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.sin",
+      "name": ".sin",
+      "aliases": [
+        "sine"
+      ],
+      "category": "Trigonometry",
+      "signature": ".sin()",
+      "description": "Compute sine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.cos",
+      "name": ".cos",
+      "aliases": [
+        "cosine"
+      ],
+      "category": "Trigonometry",
+      "signature": ".cos()",
+      "description": "Compute cosine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.tan",
+      "name": ".tan",
+      "aliases": [
+        "tangent"
+      ],
+      "category": "Trigonometry",
+      "signature": ".tan()",
+      "description": "Compute tangent.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.cot",
+      "name": ".cot",
+      "aliases": [
+        "cotangent"
+      ],
+      "category": "Trigonometry",
+      "signature": ".cot()",
+      "description": "Compute cotangent.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arcsin",
+      "name": ".arcsin",
+      "aliases": [
+        "inverse sine"
+      ],
+      "category": "Trigonometry",
+      "signature": ".arcsin()",
+      "description": "Compute inverse sine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arccos",
+      "name": ".arccos",
+      "aliases": [
+        "inverse cosine"
+      ],
+      "category": "Trigonometry",
+      "signature": ".arccos()",
+      "description": "Compute inverse cosine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arctan",
+      "name": ".arctan",
+      "aliases": [
+        "inverse tangent"
+      ],
+      "category": "Trigonometry",
+      "signature": ".arctan()",
+      "description": "Compute inverse tangent.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arctan2",
+      "name": ".arctan2",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".arctan2(x)",
+      "description": "Compute quadrant-aware inverse tangent.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "x",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.sinh",
+      "name": ".sinh",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".sinh()",
+      "description": "Compute hyperbolic sine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.cosh",
+      "name": ".cosh",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".cosh()",
+      "description": "Compute hyperbolic cosine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.tanh",
+      "name": ".tanh",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".tanh()",
+      "description": "Compute hyperbolic tangent.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arcsinh",
+      "name": ".arcsinh",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".arcsinh()",
+      "description": "Compute inverse hyperbolic sine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arccosh",
+      "name": ".arccosh",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".arccosh()",
+      "description": "Compute inverse hyperbolic cosine.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.arctanh",
+      "name": ".arctanh",
+      "aliases": [],
+      "category": "Trigonometry",
+      "signature": ".arctanh()",
+      "description": "Compute inverse hyperbolic tangent.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.degrees",
+      "name": ".degrees",
+      "aliases": [
+        "to degrees"
+      ],
+      "category": "Trigonometry",
+      "signature": ".degrees()",
+      "description": "Convert radians to degrees.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.radians",
+      "name": ".radians",
+      "aliases": [
+        "to radians"
+      ],
+      "category": "Trigonometry",
+      "signature": ".radians()",
+      "description": "Convert degrees to radians.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_null",
+      "name": ".is_null",
+      "aliases": [
+        "is missing"
+      ],
+      "category": "Nulls",
+      "signature": ".is_null()",
+      "description": "Test for null values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "inspects null",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_not_null",
+      "name": ".is_not_null",
+      "aliases": [
+        "is present"
+      ],
+      "category": "Nulls",
+      "signature": ".is_not_null()",
+      "description": "Test for non-null values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "inspects null",
+      "arguments": []
+    },
+    {
+      "id": "expr.fill_null",
+      "name": ".fill_null",
+      "aliases": [
+        "replace null"
+      ],
+      "category": "Nulls",
+      "signature": ".fill_null(value)",
+      "description": "Replace null values.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "replaces nulls",
+      "arguments": [
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "expr.shift",
+      "name": ".shift",
+      "aliases": [
+        "lag",
+        "lead"
+      ],
+      "category": "Window",
+      "signature": ".shift(periods)",
+      "description": "Shift values by row position.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "periods",
+          "required": true,
+          "description": "Rows to move: positive reads an earlier row, negative a later one.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.over",
+      "name": ".over",
+      "aliases": [
+        "window",
+        "partition"
+      ],
+      "category": "Window",
+      "signature": ".over([columns])",
+      "description": "Evaluate over partition groups.",
+      "minimumArguments": 1,
+      "maximumArguments": 64,
+      "returnType": "dynamic",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "columns",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.sum",
+      "name": ".sum",
+      "aliases": [
+        "total"
+      ],
+      "category": "Aggregation",
+      "signature": ".sum()",
+      "description": "Sum a column expression.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.mean",
+      "name": ".mean",
+      "aliases": [
+        "average"
+      ],
+      "category": "Aggregation",
+      "signature": ".mean()",
+      "description": "Average a column expression.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.quantile",
+      "name": ".quantile",
+      "aliases": [
+        "percentile",
+        "quartile"
+      ],
+      "category": "Aggregation",
+      "signature": ".quantile(fraction)",
+      "description": "Find a percentile using linear interpolation; 0.25 is the first quartile.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "fraction",
+          "required": true,
+          "description": "A decimal proportion between 0 and 1.",
+          "example": "0.5"
+        }
+      ]
+    },
+    {
+      "id": "expr.min",
+      "name": ".min",
+      "aliases": [
+        "minimum"
+      ],
+      "category": "Aggregation",
+      "signature": ".min()",
+      "description": "Find a column minimum.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.max",
+      "name": ".max",
+      "aliases": [
+        "maximum"
+      ],
+      "category": "Aggregation",
+      "signature": ".max()",
+      "description": "Find a column maximum.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.count",
+      "name": ".count",
+      "aliases": [],
+      "category": "Aggregation",
+      "signature": ".count()",
+      "description": "Count non-null values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.len",
+      "name": ".len",
+      "aliases": [
+        "length"
+      ],
+      "category": "Aggregation",
+      "signature": ".len()",
+      "description": "Count values including nulls.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.null_count",
+      "name": ".null_count",
+      "aliases": [],
+      "category": "Aggregation",
+      "signature": ".null_count()",
+      "description": "Count null values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "expr.rolling_mean",
+      "name": ".rolling_mean",
+      "aliases": [
+        "moving average"
+      ],
+      "category": "Rolling",
+      "signature": ".rolling_mean(window_size, min_periods=1, center=False)",
+      "description": "Compute a rolling mean.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "window_size",
+          "required": true,
+          "description": "Positive number of rows in each moving window.",
+          "example": "3"
+        },
+        {
+          "name": "min_periods",
+          "required": false,
+          "description": "Minimum non-null rows before a rolling result is returned.",
+          "example": "1"
+        },
+        {
+          "name": "center",
+          "required": false,
+          "description": "True centers a rolling window on its row; False uses prior rows.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.rolling_sum",
+      "name": ".rolling_sum",
+      "aliases": [
+        "moving sum"
+      ],
+      "category": "Rolling",
+      "signature": ".rolling_sum(window_size, min_periods=1, center=False)",
+      "description": "Compute a rolling sum.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "window_size",
+          "required": true,
+          "description": "Positive number of rows in each moving window.",
+          "example": "3"
+        },
+        {
+          "name": "min_periods",
+          "required": false,
+          "description": "Minimum non-null rows before a rolling result is returned.",
+          "example": "1"
+        },
+        {
+          "name": "center",
+          "required": false,
+          "description": "True centers a rolling window on its row; False uses prior rows.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.rolling_min",
+      "name": ".rolling_min",
+      "aliases": [
+        "moving minimum"
+      ],
+      "category": "Rolling",
+      "signature": ".rolling_min(window_size, min_periods=1, center=False)",
+      "description": "Compute a rolling minimum.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "window_size",
+          "required": true,
+          "description": "Positive number of rows in each moving window.",
+          "example": "3"
+        },
+        {
+          "name": "min_periods",
+          "required": false,
+          "description": "Minimum non-null rows before a rolling result is returned.",
+          "example": "1"
+        },
+        {
+          "name": "center",
+          "required": false,
+          "description": "True centers a rolling window on its row; False uses prior rows.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.rolling_max",
+      "name": ".rolling_max",
+      "aliases": [
+        "moving maximum"
+      ],
+      "category": "Rolling",
+      "signature": ".rolling_max(window_size, min_periods=1, center=False)",
+      "description": "Compute a rolling maximum.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "window_size",
+          "required": true,
+          "description": "Positive number of rows in each moving window.",
+          "example": "3"
+        },
+        {
+          "name": "min_periods",
+          "required": false,
+          "description": "Minimum non-null rows before a rolling result is returned.",
+          "example": "1"
+        },
+        {
+          "name": "center",
+          "required": false,
+          "description": "True centers a rolling window on its row; False uses prior rows.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "dt.year",
+      "name": ".dt.year",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.year()",
+      "description": "Extract calendar year.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.iso_year",
+      "name": ".dt.iso_year",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.iso_year()",
+      "description": "Extract ISO year.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.quarter",
+      "name": ".dt.quarter",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.quarter()",
+      "description": "Extract quarter.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.month",
+      "name": ".dt.month",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.month()",
+      "description": "Extract month.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.week",
+      "name": ".dt.week",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.week()",
+      "description": "Extract ISO week.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.weekday",
+      "name": ".dt.weekday",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.weekday()",
+      "description": "Extract weekday.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.ordinal_day",
+      "name": ".dt.ordinal_day",
+      "aliases": [
+        "day of year"
+      ],
+      "category": "Date namespace",
+      "signature": ".dt.ordinal_day()",
+      "description": "Extract ordinal day.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.is_leap_year",
+      "name": ".dt.is_leap_year",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.is_leap_year()",
+      "description": "Test for leap years.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.days_in_month",
+      "name": ".dt.days_in_month",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.days_in_month()",
+      "description": "Count days in the month.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.date",
+      "name": ".dt.date",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.date()",
+      "description": "Extract Date from Datetime.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.month_start",
+      "name": ".dt.month_start",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.month_start()",
+      "description": "Move to the month's first day.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.month_end",
+      "name": ".dt.month_end",
+      "aliases": [],
+      "category": "Date namespace",
+      "signature": ".dt.month_end()",
+      "description": "Move to the month's last day.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "dt.offset_by",
+      "name": ".dt.offset_by",
+      "aliases": [
+        "date offset",
+        "add days",
+        "shift date"
+      ],
+      "category": "Date namespace",
+      "signature": ".dt.offset_by(offset)",
+      "description": "Offset dates by a duration string such as 1mo, or by an integer day count. `date + n` also adds n days.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "offset",
+          "required": true,
+          "description": "A calendar duration such as days, months, or years.",
+          "example": "1mo"
+        }
+      ]
+    },
+    {
+      "id": "str.to_uppercase",
+      "name": ".str.to_uppercase",
+      "aliases": [
+        "uppercase"
+      ],
+      "category": "String namespace",
+      "signature": ".str.to_uppercase()",
+      "description": "Convert strings to uppercase.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "str.to_lowercase",
+      "name": ".str.to_lowercase",
+      "aliases": [
+        "lowercase"
+      ],
+      "category": "String namespace",
+      "signature": ".str.to_lowercase()",
+      "description": "Convert strings to lowercase.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "str.to_date",
+      "name": ".str.to_date",
+      "aliases": [
+        "ISO date",
+        "parse ISO date",
+        "text to date",
+        "convert text date",
+        "datevalue",
+        "Excel DATEVALUE (ISO only)"
+      ],
+      "category": "String namespace",
+      "signature": ".str.to_date()",
+      "description": "Parse strict ISO date text (YYYY-MM-DD). For other formats, normalize the text first; this is the same conversion as .cast(\"date\").",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "propagates null",
+      "arguments": []
+    },
+    {
+      "id": "str.contains",
+      "name": ".str.contains",
+      "aliases": [
+        "string contains"
+      ],
+      "category": "String namespace",
+      "signature": ".str.contains(pattern, strict=True)",
+      "description": "Test strings against a pattern.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "pattern",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "strict",
+          "required": false,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.not",
+      "name": ".not",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".not()",
+      "description": "Negate `Expr`.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.drop_nulls",
+      "name": ".drop_nulls",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".drop_nulls()",
+      "description": "Drop null values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.drop_nans",
+      "name": ".drop_nans",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".drop_nans()",
+      "description": "Drop NaN values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.n_unique",
+      "name": ".n_unique",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".n_unique()",
+      "description": "Get the number of unique values in the groups.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.first",
+      "name": ".first",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".first()",
+      "description": "Get the first value in the group.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.first_non_null",
+      "name": ".first_non_null",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".first_non_null()",
+      "description": "Get the first non-nullvalue in the group.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.last",
+      "name": ".last",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".last()",
+      "description": "Get the last value in the group.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.last_non_null",
+      "name": ".last_non_null",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".last_non_null()",
+      "description": "Get the last non-null value in the group.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.item",
+      "name": ".item",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".item(allow_empty)",
+      "description": "Get the single value in the group. If there are multiple values, an error is returned.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "allow_empty",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.implode",
+      "name": ".implode",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".implode(maintain_order)",
+      "description": "Implode into a list scalar.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "maintain_order",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.agg_groups",
+      "name": ".agg_groups",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".agg_groups()",
+      "description": "Get the group indexes of the group by operation.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.rechunk",
+      "name": ".rechunk",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".rechunk()",
+      "description": "Collect all chunks into a single chunk before continuing.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.head",
+      "name": ".head",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".head(length?)",
+      "description": "Get the first `n` elements of the Expr result.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "length",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.tail",
+      "name": ".tail",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".tail(length?)",
+      "description": "Get the last `n` elements of the Expr result.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "length",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.unique",
+      "name": ".unique",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".unique()",
+      "description": "Get unique values of this expression.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.unique_stable",
+      "name": ".unique_stable",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".unique_stable()",
+      "description": "Get unique values of this expression, while maintaining order. This requires more work than [`Expr::unique`].",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.arg_unique",
+      "name": ".arg_unique",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".arg_unique()",
+      "description": "Get the first index of unique values of this expression.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.arg_min",
+      "name": ".arg_min",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".arg_min()",
+      "description": "Get the index value that has the minimum value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.arg_max",
+      "name": ".arg_max",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".arg_max()",
+      "description": "Get the index value that has the maximum value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.arg_sort",
+      "name": ".arg_sort",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".arg_sort(descending, nulls_last)",
+      "description": "Get the index values that would sort this expression.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "descending",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        },
+        {
+          "name": "nulls_last",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.top_k",
+      "name": ".top_k",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".top_k(k)",
+      "description": "Returns the `k` largest elements.  This has time complexity `O(n + k log(n))`.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "k",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.bottom_k",
+      "name": ".bottom_k",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bottom_k(k)",
+      "description": "Returns the `k` smallest elements.  This has time complexity `O(n + k log(n))`.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "k",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.reverse",
+      "name": ".reverse",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".reverse()",
+      "description": "Reverse column",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_finite",
+      "name": ".is_finite",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_finite()",
+      "description": "Get mask of finite values if dtype is Float.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_infinite",
+      "name": ".is_infinite",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_infinite()",
+      "description": "Get mask of infinite values if dtype is Float.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_nan",
+      "name": ".is_nan",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_nan()",
+      "description": "Get mask of NaN values if dtype is Float.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_not_nan",
+      "name": ".is_not_nan",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_not_nan()",
+      "description": "Get inverse mask of NaN values if dtype is Float.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.cumulative_eval",
+      "name": ".cumulative_eval",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".cumulative_eval(evaluation, min_samples)",
+      "description": "Cumulatively count values from 0 to len.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "evaluation",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "min_samples",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.cum_count",
+      "name": ".cum_count",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".cum_count(reverse)",
+      "description": "Cumulatively count values from 0 to len.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "reverse",
+          "required": true,
+          "description": "True accumulates from the last row upward; False accumulates top to bottom.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.cum_sum",
+      "name": ".cum_sum",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".cum_sum(reverse)",
+      "description": "Get an array with the cumulative sum computed at every element.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "reverse",
+          "required": true,
+          "description": "True accumulates from the last row upward; False accumulates top to bottom.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.cum_prod",
+      "name": ".cum_prod",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".cum_prod(reverse)",
+      "description": "Get an array with the cumulative product computed at every element.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "reverse",
+          "required": true,
+          "description": "True accumulates from the last row upward; False accumulates top to bottom.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.cum_min",
+      "name": ".cum_min",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".cum_min(reverse)",
+      "description": "Get an array with the cumulative min computed at every element.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "reverse",
+          "required": true,
+          "description": "True accumulates from the last row upward; False accumulates top to bottom.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.cum_max",
+      "name": ".cum_max",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".cum_max(reverse)",
+      "description": "Get an array with the cumulative max computed at every element.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "reverse",
+          "required": true,
+          "description": "True accumulates from the last row upward; False accumulates top to bottom.",
+          "example": "False"
+        }
+      ]
+    },
+    {
+      "id": "expr.product",
+      "name": ".product",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".product()",
+      "description": "Get the product aggregation of an expression.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_duplicated",
+      "name": ".is_duplicated",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_duplicated()",
+      "description": "Get a mask of duplicated values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_unique",
+      "name": ".is_unique",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_unique()",
+      "description": "Get a mask of unique values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_sorted",
+      "name": ".is_sorted",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_sorted(descending?, nulls_last?)",
+      "description": "is_sorted (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "descending",
+          "required": false,
+          "description": "True or False.",
+          "example": "True"
+        },
+        {
+          "name": "nulls_last",
+          "required": false,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.approx_n_unique",
+      "name": ".approx_n_unique",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".approx_n_unique()",
+      "description": "Get the approximate count of unique values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_first_distinct",
+      "name": ".is_first_distinct",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_first_distinct()",
+      "description": "Get a mask of the first unique value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.is_last_distinct",
+      "name": ".is_last_distinct",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_last_distinct()",
+      "description": "Get a mask of the last unique value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.mode",
+      "name": ".mode",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".mode(maintain_order)",
+      "description": "Compute the mode(s) of this column. This is the most occurring value.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "maintain_order",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.interpolate_by",
+      "name": ".interpolate_by",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".interpolate_by(by)",
+      "description": "Interpolate intermediate values. Nulls at the beginning and end of the series remain null. The `by` column provides the x-coordinates for interpolation and must not contain nulls.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        }
+      ]
+    },
+    {
+      "id": "expr.peak_min",
+      "name": ".peak_min",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".peak_min()",
+      "description": "peak_min (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.peak_max",
+      "name": ".peak_max",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".peak_max()",
+      "description": "peak_max (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.rle",
+      "name": ".rle",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".rle()",
+      "description": "Get the lengths of runs of identical values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.rle_id",
+      "name": ".rle_id",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".rle_id()",
+      "description": "Similar to `rle`, but maps values to run IDs.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.pct_change",
+      "name": ".pct_change",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".pct_change(n)",
+      "description": "Computes percentage change between values.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "Rows back to compare; 1 means change from the preceding row.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.skew",
+      "name": ".skew",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".skew(bias)",
+      "description": "Compute the sample skewness of a data set.  For normally distributed data, the skewness should be about zero. For uni-modal continuous distributions, a skewness value greater than zero means that there is more weight in ",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "bias",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.kurtosis",
+      "name": ".kurtosis",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".kurtosis(fisher, bias)",
+      "description": "Compute the kurtosis (Fisher or Pearson).  Kurtosis is the fourth central moment divided by the square of the variance. If Fisher's definition is used, then 3.0 is subtracted from the result to give 0.0 for a normal dist",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fisher",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "bias",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.upper_bound",
+      "name": ".upper_bound",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".upper_bound()",
+      "description": "Get maximal value that could be hold by this dtype.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.lower_bound",
+      "name": ".lower_bound",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".lower_bound()",
+      "description": "Get minimal value that could be hold by this dtype.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.any",
+      "name": ".any",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".any(ignore_nulls)",
+      "description": "Returns whether any of the values in the column are `true`.  If `ignore_nulls` is `False`, [Kleene logic] is used to deal with nulls: if the column contains any null values and no `true` values, the output is null.  [Kle",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ignore_nulls",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.all",
+      "name": ".all",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".all(ignore_nulls)",
+      "description": "Returns whether all values in the column are `true`.  If `ignore_nulls` is `False`, [Kleene logic] is used to deal with nulls: if the column contains any null values and no `false` values, the output is null.  [Kleene lo",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ignore_nulls",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.is_empty",
+      "name": ".is_empty",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".is_empty(ignore_nulls)",
+      "description": "Returns whether this column is empty.  If `ignore_nulls` is True, the column is also considered empty if it only consists of nulls.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ignore_nulls",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.has_nulls",
+      "name": ".has_nulls",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".has_nulls()",
+      "description": "Returns whether the column contains one or more null values.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.unique_counts",
+      "name": ".unique_counts",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".unique_counts()",
+      "description": "Returns a count of the unique values in the order of appearance. This method differs from [`Expr::value_counts`] in that it does not return the values, only the counts and might be faster.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.entropy",
+      "name": ".entropy",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".entropy(base, normalize)",
+      "description": "Compute the entropy as `-sum(pk * log(pk))`. where `pk` are discrete probabilities.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "base",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "normalize",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "expr.hash",
+      "name": ".hash",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".hash(k0, k1, k2, k3)",
+      "description": "Compute the hash of every element.",
+      "minimumArguments": 4,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "k0",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "k1",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "k2",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "k3",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.to_physical",
+      "name": ".to_physical",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".to_physical()",
+      "description": "to_physical (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.gather_every",
+      "name": ".gather_every",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".gather_every(n, offset)",
+      "description": "gather_every (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "offset",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.extend_constant",
+      "name": ".extend_constant",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".extend_constant(value, n)",
+      "description": "extend_constant (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.bitwise_count_ones",
+      "name": ".bitwise_count_ones",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_count_ones()",
+      "description": "Evaluate the number of set bits.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_count_zeros",
+      "name": ".bitwise_count_zeros",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_count_zeros()",
+      "description": "Evaluate the number of unset bits.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_leading_ones",
+      "name": ".bitwise_leading_ones",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_leading_ones()",
+      "description": "Evaluate the number most-significant set bits before seeing an unset bit.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_leading_zeros",
+      "name": ".bitwise_leading_zeros",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_leading_zeros()",
+      "description": "Evaluate the number most-significant unset bits before seeing an set bit.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_trailing_ones",
+      "name": ".bitwise_trailing_ones",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_trailing_ones()",
+      "description": "Evaluate the number least-significant set bits before seeing an unset bit.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_trailing_zeros",
+      "name": ".bitwise_trailing_zeros",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_trailing_zeros()",
+      "description": "Evaluate the number least-significant unset bits before seeing an set bit.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_and",
+      "name": ".bitwise_and",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_and()",
+      "description": "Perform an aggregation of bitwise ANDs",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_or",
+      "name": ".bitwise_or",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_or()",
+      "description": "Perform an aggregation of bitwise ORs",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.bitwise_xor",
+      "name": ".bitwise_xor",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".bitwise_xor()",
+      "description": "Perform an aggregation of bitwise XORs",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.std",
+      "name": ".std",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".std(ddof)",
+      "description": "Standard deviation of the values of the Series.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "Degrees of freedom: 1 gives the usual sample statistic, 0 the population one.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.var",
+      "name": ".var",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".var(ddof)",
+      "description": "Variance of the values of the Series.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "Degrees of freedom: 1 gives the usual sample statistic, 0 the population one.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "expr.min_by",
+      "name": ".min_by",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".min_by(by)",
+      "description": "Get minimum value, ordered by another expression.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        }
+      ]
+    },
+    {
+      "id": "expr.max_by",
+      "name": ".max_by",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".max_by(by)",
+      "description": "Get maximum value, ordered by another expression.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        }
+      ]
+    },
+    {
+      "id": "expr.nan_min",
+      "name": ".nan_min",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".nan_min()",
+      "description": "Reduce groups to minimal value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.nan_max",
+      "name": ".nan_max",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".nan_max()",
+      "description": "Reduce groups to maximum value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.median",
+      "name": ".median",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".median()",
+      "description": "Reduce groups to the median value.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "expr.hist",
+      "name": ".hist",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".hist(bins?, bin_count?, include_category, include_breakpoint)",
+      "description": "Compute the histogram of a dataset.",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "bins",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "bin_count",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "include_category",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "include_breakpoint",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.shuffle",
+      "name": ".shuffle",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".shuffle(seed?)",
+      "description": "shuffle (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "seed",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.sample_n",
+      "name": ".sample_n",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".sample_n(n, with_replacement, shuffle?, seed?)",
+      "description": "sample_n (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "with_replacement",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "shuffle",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "seed",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.sample_frac",
+      "name": ".sample_frac",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".sample_frac(frac, with_replacement, shuffle?, seed?)",
+      "description": "sample_frac (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "frac",
+          "required": true,
+          "description": "A decimal proportion between 0 and 1.",
+          "example": "0.5"
+        },
+        {
+          "name": "with_replacement",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "shuffle",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "seed",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "expr.true_div",
+      "name": ".true_div",
+      "aliases": [],
+      "category": "Generated expression methods",
+      "signature": ".true_div(rhs)",
+      "description": "True divide `self` by `rhs`",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "rhs",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "str.contains_literal",
+      "name": ".str.contains_literal",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.contains_literal(pat)",
+      "description": "Check if a string value contains a literal substring.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "str.contains_any",
+      "name": ".str.contains_any",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.contains_any(patterns, ascii_case_insensitive)",
+      "description": "Uses aho-corasick to find many patterns.  # Arguments - `patterns`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case insensitive matching. When this option is enabled, s",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "patterns",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "ascii_case_insensitive",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.replace_many",
+      "name": ".str.replace_many",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.replace_many(patterns, replace_with, ascii_case_insensitive, leftmost)",
+      "description": "Uses aho-corasick to replace many patterns. # Arguments - `patterns`: an expression that evaluates to a String column - `replace_with`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable A",
+      "minimumArguments": 4,
+      "maximumArguments": 4,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "patterns",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "replace_with",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "ascii_case_insensitive",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "leftmost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.extract_many",
+      "name": ".str.extract_many",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.extract_many(patterns, ascii_case_insensitive, overlapping, leftmost)",
+      "description": "Uses aho-corasick to replace many patterns. # Arguments - `patterns`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case-insensitive matching. When this option is enabled,",
+      "minimumArguments": 4,
+      "maximumArguments": 4,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "patterns",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "ascii_case_insensitive",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "overlapping",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "leftmost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.find_many",
+      "name": ".str.find_many",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.find_many(patterns, ascii_case_insensitive, overlapping, leftmost)",
+      "description": "Uses aho-corasick to find many patterns. # Arguments - `patterns`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case-insensitive matching. When this option is enabled, se",
+      "minimumArguments": 4,
+      "maximumArguments": 4,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "patterns",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "ascii_case_insensitive",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "overlapping",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "leftmost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.ends_with",
+      "name": ".str.ends_with",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.ends_with(sub)",
+      "description": "Check if a string value ends with the `sub` string.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "sub",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.starts_with",
+      "name": ".str.starts_with",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.starts_with(sub)",
+      "description": "Check if a string value starts with the `sub` string.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "sub",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.hex_encode",
+      "name": ".str.hex_encode",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.hex_encode()",
+      "description": "hex_encode (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "str.hex_decode",
+      "name": ".str.hex_decode",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.hex_decode(strict)",
+      "description": "hex_decode (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "strict",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.base64_encode",
+      "name": ".str.base64_encode",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.base64_encode()",
+      "description": "base64_encode (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "str.base64_decode",
+      "name": ".str.base64_decode",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.base64_decode(strict)",
+      "description": "base64_decode (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "strict",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.extract",
+      "name": ".str.extract",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.extract(pat, group_index)",
+      "description": "Extract a regex pattern from the a string value. If `group_index` is out of bounds, null is returned.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "group_index",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.zfill",
+      "name": ".str.zfill",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.zfill(length)",
+      "description": "Pad the start of the string with zeros until it reaches the given length.  A sign prefix (`-`) is handled by inserting the padding after the sign character rather than before. Strings with length equal to or greater than",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "length",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.find_literal",
+      "name": ".str.find_literal",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.find_literal(pat)",
+      "description": "Find the index of a literal substring within another string value.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "str.find",
+      "name": ".str.find",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.find(pat, strict)",
+      "description": "Find the index of a substring defined by a regular expressions within another string value.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "strict",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.extract_all",
+      "name": ".str.extract_all",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.extract_all(pat)",
+      "description": "Extract each successive non-overlapping match in an individual string as an array",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "str.count_matches",
+      "name": ".str.count_matches",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.count_matches(pat, literal)",
+      "description": "Count all successive non-overlapping regex matches.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "literal",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.to_decimal",
+      "name": ".str.to_decimal",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.to_decimal(scale)",
+      "description": "Convert a String column into a Decimal column.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "scale",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.split",
+      "name": ".str.split",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.split(by)",
+      "description": "Split the string by a substring. The resulting dtype is `List<String>`.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        }
+      ]
+    },
+    {
+      "id": "str.split_inclusive",
+      "name": ".str.split_inclusive",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.split_inclusive(by)",
+      "description": "Split the string by a substring and keep the substring. The resulting dtype is `List<String>`.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        }
+      ]
+    },
+    {
+      "id": "str.split_exact",
+      "name": ".str.split_exact",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.split_exact(by, n)",
+      "description": "Split exactly `n` times by a given substring. The resulting dtype is [`DataType::Struct`].",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.split_exact_inclusive",
+      "name": ".str.split_exact_inclusive",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.split_exact_inclusive(by, n)",
+      "description": "Split exactly `n` times by a given substring and keep the substring. The resulting dtype is [`DataType::Struct`].",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.splitn",
+      "name": ".str.splitn",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.splitn(by, n)",
+      "description": "Split by a given substring, returning exactly `n` items. If there are more possible splits, keeps the remainder of the string intact. The resulting dtype is [`DataType::Struct`].",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "by",
+          "required": true,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.split_regex",
+      "name": ".str.split_regex",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.split_regex(pat, strict)",
+      "description": "Split the string by a regex pattern. The resulting dtype is `List<String>`.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "strict",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.split_regex_inclusive",
+      "name": ".str.split_regex_inclusive",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.split_regex_inclusive(pat, strict)",
+      "description": "Split the string by a regex pattern and keep the matched substrings. The resulting dtype is `List<String>`.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "strict",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.replace",
+      "name": ".str.replace",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.replace(pat, value, literal)",
+      "description": "Replace values that match a regex `pat` with a `value`.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "literal",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.replace_n",
+      "name": ".str.replace_n",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.replace_n(pat, value, literal, n)",
+      "description": "Replace values that match a regex `pat` with a `value`.",
+      "minimumArguments": 4,
+      "maximumArguments": 4,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "literal",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.replace_all",
+      "name": ".str.replace_all",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.replace_all(pat, value, literal)",
+      "description": "Replace all values that match a regex `pat` with a `value`.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "literal",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "str.reverse",
+      "name": ".str.reverse",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.reverse()",
+      "description": "Reverse each string",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "str.strip_chars",
+      "name": ".str.strip_chars",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.strip_chars(matches)",
+      "description": "Remove leading and trailing characters, or whitespace if matches is None.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "matches",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.strip_chars_start",
+      "name": ".str.strip_chars_start",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.strip_chars_start(matches)",
+      "description": "Remove leading characters, or whitespace if matches is None.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "matches",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.strip_chars_end",
+      "name": ".str.strip_chars_end",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.strip_chars_end(matches)",
+      "description": "Remove trailing characters, or whitespace if matches is None.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "matches",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "str.strip_prefix",
+      "name": ".str.strip_prefix",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.strip_prefix(prefix)",
+      "description": "Remove prefix.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "prefix",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "str.strip_suffix",
+      "name": ".str.strip_suffix",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.strip_suffix(suffix)",
+      "description": "Remove suffix.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "suffix",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "str.len_bytes",
+      "name": ".str.len_bytes",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.len_bytes()",
+      "description": "Return the length of each string as the number of bytes.  When working with non-ASCII text, the length in bytes is not the same as the length in characters. You may want to use [`len_chars`] instead. Note that `len_bytes",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "str.len_chars",
+      "name": ".str.len_chars",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.len_chars()",
+      "description": "Return the length of each string as the number of characters.  When working with ASCII text, use [`len_bytes`] instead to achieve equivalent output with much better performance: [`len_bytes`] runs in _O(1)_, while `len_c",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "str.slice",
+      "name": ".str.slice",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.slice(offset, length)",
+      "description": "Slice the string values.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "offset",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "length",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.head",
+      "name": ".str.head",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.head(n)",
+      "description": "Take the first `n` characters of the string values.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.tail",
+      "name": ".str.tail",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.tail(n)",
+      "description": "Take the last `n` characters of the string values.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "str.json_path_match",
+      "name": ".str.json_path_match",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.json_path_match(pat)",
+      "description": "json_path_match (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "pat",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "str.escape_regex",
+      "name": ".str.escape_regex",
+      "aliases": [],
+      "category": "Generated string namespace",
+      "signature": ".str.escape_regex()",
+      "description": "escape_regex (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "string",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.millennium",
+      "name": ".dt.millennium",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.millennium()",
+      "description": "Get the millennium of a Date/Datetime",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.century",
+      "name": ".dt.century",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.century()",
+      "description": "Get the century of a Date/Datetime",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.day",
+      "name": ".dt.day",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.day()",
+      "description": "Get the month of a Date/Datetime.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.time",
+      "name": ".dt.time",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.time()",
+      "description": "Get the (local) time of a Date/Datetime/Time.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.datetime",
+      "name": ".dt.datetime",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.datetime()",
+      "description": "Get the (local) datetime of a Datetime.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.hour",
+      "name": ".dt.hour",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.hour()",
+      "description": "Get the hour of a Datetime/Time64.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.minute",
+      "name": ".dt.minute",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.minute()",
+      "description": "Get the minute of a Datetime/Time64.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.second",
+      "name": ".dt.second",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.second()",
+      "description": "Get the second of a Datetime/Time64.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.millisecond",
+      "name": ".dt.millisecond",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.millisecond()",
+      "description": "Get the millisecond of a Time64 (scaled from nanosecs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.microsecond",
+      "name": ".dt.microsecond",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.microsecond()",
+      "description": "Get the microsecond of a Time64 (scaled from nanosecs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.nanosecond",
+      "name": ".dt.nanosecond",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.nanosecond()",
+      "description": "Get the nanosecond part of a Time64.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.truncate",
+      "name": ".dt.truncate",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.truncate(every)",
+      "description": "Truncate the Datetime/Date range into buckets.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "every",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        }
+      ]
+    },
+    {
+      "id": "dt.base_utc_offset",
+      "name": ".dt.base_utc_offset",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.base_utc_offset()",
+      "description": "Get the base offset from UTC.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.dst_offset",
+      "name": ".dt.dst_offset",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.dst_offset()",
+      "description": "Get the additional offset from UTC currently in effect (usually due to daylight saving time).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "dt.round",
+      "name": ".dt.round",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.round(every)",
+      "description": "Round the Datetime/Date range into buckets.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "every",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        }
+      ]
+    },
+    {
+      "id": "dt.total_days",
+      "name": ".dt.total_days",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_days(fractional)",
+      "description": "Express a Duration in terms of its total number of integer days.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.total_hours",
+      "name": ".dt.total_hours",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_hours(fractional)",
+      "description": "Express a Duration in terms of its total number of integer hours.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.total_minutes",
+      "name": ".dt.total_minutes",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_minutes(fractional)",
+      "description": "Express a Duration in terms of its total number of integer minutes.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.total_seconds",
+      "name": ".dt.total_seconds",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_seconds(fractional)",
+      "description": "Express a Duration in terms of its total number of integer seconds.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.total_milliseconds",
+      "name": ".dt.total_milliseconds",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_milliseconds(fractional)",
+      "description": "Express a Duration in terms of its total number of milliseconds.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.total_microseconds",
+      "name": ".dt.total_microseconds",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_microseconds(fractional)",
+      "description": "Express a Duration in terms of its total number of microseconds.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.total_nanoseconds",
+      "name": ".dt.total_nanoseconds",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.total_nanoseconds(fractional)",
+      "description": "Express a Duration in terms of its total number of nanoseconds.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fractional",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "dt.replace",
+      "name": ".dt.replace",
+      "aliases": [],
+      "category": "Generated date namespace",
+      "signature": ".dt.replace(year, month, day, hour, minute, second, microsecond, ambiguous)",
+      "description": "Replace the time units of a value",
+      "minimumArguments": 8,
+      "maximumArguments": 8,
+      "returnType": "date",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "year",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "month",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "day",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "hour",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "minute",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "second",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "microsecond",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "ambiguous",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "list.drop_nulls",
+      "name": ".list.drop_nulls",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.drop_nulls()",
+      "description": "drop_nulls (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.sample_n",
+      "name": ".list.sample_n",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.sample_n(n, with_replacement, shuffle?, seed?)",
+      "description": "sample_n (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "with_replacement",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "shuffle",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "seed",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "list.sample_fraction",
+      "name": ".list.sample_fraction",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.sample_fraction(fraction, with_replacement, shuffle?, seed?)",
+      "description": "sample_fraction (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fraction",
+          "required": true,
+          "description": "A decimal proportion between 0 and 1.",
+          "example": "0.5"
+        },
+        {
+          "name": "with_replacement",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "shuffle",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "seed",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "list.len",
+      "name": ".list.len",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.len()",
+      "description": "Return the number of elements in each list.  Null values are treated like regular elements in this context.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.max",
+      "name": ".list.max",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.max()",
+      "description": "Compute the maximum of the items in every sublist.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.min",
+      "name": ".list.min",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.min()",
+      "description": "Compute the minimum of the items in every sublist.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.sum",
+      "name": ".list.sum",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.sum()",
+      "description": "Compute the sum the items in every sublist.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.mean",
+      "name": ".list.mean",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.mean()",
+      "description": "Compute the mean of every sublist and return a `Series` of dtype `Float64`",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.median",
+      "name": ".list.median",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.median()",
+      "description": "median (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.std",
+      "name": ".list.std",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.std(ddof)",
+      "description": "std (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "list.var",
+      "name": ".list.var",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.var(ddof)",
+      "description": "var (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "list.get",
+      "name": ".list.get",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.get(index, null_on_oob)",
+      "description": "Get items in every sublist by index.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "index",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "null_on_oob",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "list.gather",
+      "name": ".list.gather",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.gather(index, null_on_oob)",
+      "description": "Get items in every sublist by multiple indexes.  # Arguments - `null_on_oob`: Return a null when an index is out of bounds. This behavior is more expensive than defaulting to returning an `Error`.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "index",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "null_on_oob",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "list.gather_every",
+      "name": ".list.gather_every",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.gather_every(n, offset)",
+      "description": "gather_every (see Polars docs).",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "offset",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "list.first",
+      "name": ".list.first",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.first()",
+      "description": "Get first item of every sublist.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.last",
+      "name": ".list.last",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.last()",
+      "description": "Get last item of every sublist.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.join",
+      "name": ".list.join",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.join(separator, ignore_nulls)",
+      "description": "Join all string items in a sublist and place a separator between them. # Error This errors if inner type of list `!= DataType::String`.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "separator",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "ignore_nulls",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "list.arg_min",
+      "name": ".list.arg_min",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.arg_min()",
+      "description": "Return the index of the minimal value of every sublist",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.arg_max",
+      "name": ".list.arg_max",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.arg_max()",
+      "description": "Return the index of the maximum value of every sublist",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "list.shift",
+      "name": ".list.shift",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.shift(periods)",
+      "description": "Shift every sublist.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "periods",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "list.slice",
+      "name": ".list.slice",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.slice(offset, length)",
+      "description": "Slice every sublist.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "offset",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "length",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "list.head",
+      "name": ".list.head",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.head(n)",
+      "description": "Get the head of every sublist",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "list.tail",
+      "name": ".list.tail",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.tail(n)",
+      "description": "Get the tail of every sublist",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "list.to_array",
+      "name": ".list.to_array",
+      "aliases": [],
+      "category": "Generated list namespace",
+      "signature": ".list.to_array(width)",
+      "description": "Convert a List column into an Array column with the same inner data type.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "width",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "arr.len",
+      "name": ".arr.len",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.len()",
+      "description": "Compute the length of every subarray.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.max",
+      "name": ".arr.max",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.max()",
+      "description": "Compute the maximum of the items in every subarray.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.min",
+      "name": ".arr.min",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.min()",
+      "description": "Compute the minimum of the items in every subarray.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.sum",
+      "name": ".arr.sum",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.sum()",
+      "description": "Compute the sum of the items in every subarray.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.std",
+      "name": ".arr.std",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.std(ddof)",
+      "description": "Compute the std of the items in every subarray.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "arr.var",
+      "name": ".arr.var",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.var(ddof)",
+      "description": "Compute the var of the items in every subarray.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "arr.mean",
+      "name": ".arr.mean",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.mean()",
+      "description": "Compute the mean of the items in every subarray.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.median",
+      "name": ".arr.median",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.median()",
+      "description": "Compute the median of the items in every subarray.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.to_list",
+      "name": ".arr.to_list",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.to_list()",
+      "description": "Cast the Array column to List column with the same inner data type.",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.arg_min",
+      "name": ".arr.arg_min",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.arg_min()",
+      "description": "arg_min (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.arg_max",
+      "name": ".arr.arg_max",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.arg_max()",
+      "description": "arg_max (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "arr.get",
+      "name": ".arr.get",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.get(index, null_on_oob)",
+      "description": "Get items in every sub-array by index.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "index",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "null_on_oob",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "arr.join",
+      "name": ".arr.join",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.join(separator, ignore_nulls)",
+      "description": "Join all string items in a sub-array and place a separator between them. # Error Raise if inner type of array is not `DataType::String`.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "separator",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        },
+        {
+          "name": "ignore_nulls",
+          "required": true,
+          "description": "True or False.",
+          "example": "True"
+        }
+      ]
+    },
+    {
+      "id": "arr.slice",
+      "name": ".arr.slice",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.slice(offset, length, as_array)",
+      "description": "Slice every subarray.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "offset",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "length",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "as_array",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "arr.head",
+      "name": ".arr.head",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.head(n, as_array)",
+      "description": "Get the head of every subarray",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "as_array",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "arr.tail",
+      "name": ".arr.tail",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.tail(n, as_array)",
+      "description": "Get the tail of every subarray",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "as_array",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "arr.shift",
+      "name": ".arr.shift",
+      "aliases": [],
+      "category": "Generated array namespace",
+      "signature": ".arr.shift(n)",
+      "description": "Shift every sub-array.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "struct.field_by_index",
+      "name": ".struct.field_by_index",
+      "aliases": [],
+      "category": "Generated struct namespace",
+      "signature": ".struct.field_by_index(index)",
+      "description": "field_by_index (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "index",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "struct.json_encode",
+      "name": ".struct.json_encode",
+      "aliases": [],
+      "category": "Generated struct namespace",
+      "signature": ".struct.json_encode()",
+      "description": "json_encode (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "struct.with_fields",
+      "name": ".struct.with_fields",
+      "aliases": [],
+      "category": "Generated struct namespace",
+      "signature": ".struct.with_fields(fields)",
+      "description": "with_fields (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "fields",
+          "required": true,
+          "description": "One or more column or value expressions; use [ ] where the signature shows it.",
+          "example": "[`Revenue`, `Cost`]"
+        }
+      ]
+    },
+    {
+      "id": "cat.get_categories",
+      "name": ".cat.get_categories",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.get_categories()",
+      "description": "get_categories (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "cat.len_bytes",
+      "name": ".cat.len_bytes",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.len_bytes()",
+      "description": "len_bytes (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "cat.len_chars",
+      "name": ".cat.len_chars",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.len_chars()",
+      "description": "len_chars (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "cat.starts_with",
+      "name": ".cat.starts_with",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.starts_with(prefix)",
+      "description": "starts_with (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "prefix",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "cat.ends_with",
+      "name": ".cat.ends_with",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.ends_with(suffix)",
+      "description": "ends_with (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "boolean",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "suffix",
+          "required": true,
+          "description": "Quoted text; pattern arguments may use regular-expression syntax.",
+          "example": "\"CAD\""
+        }
+      ]
+    },
+    {
+      "id": "cat.slice",
+      "name": ".cat.slice",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.slice(offset, length?)",
+      "description": "slice (see Polars docs).",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "offset",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "length",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "cat.physical",
+      "name": ".cat.physical",
+      "aliases": [],
+      "category": "Generated categorical namespace",
+      "signature": ".cat.physical()",
+      "description": "physical (see Polars docs).",
+      "minimumArguments": 0,
+      "maximumArguments": 0,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": []
+    },
+    {
+      "id": "root.cov",
+      "name": "cov",
+      "aliases": [],
+      "category": "Generated root functions",
+      "signature": "cov(a, b, ddof)",
+      "description": "Compute the covariance between two columns.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "a",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "b",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "ddof",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "root.pearson_corr",
+      "name": "pearson_corr",
+      "aliases": [],
+      "category": "Generated root functions",
+      "signature": "pearson_corr(a, b)",
+      "description": "Compute the pearson correlation between two columns.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "a",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "b",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.spearman_rank_corr",
+      "name": "spearman_rank_corr",
+      "aliases": [],
+      "category": "Generated root functions",
+      "signature": "spearman_rank_corr(a, b, propagate_nans)",
+      "description": "Compute the spearman rank correlation between two columns. Missing data will be excluded from the computation. # Arguments * propagate_nans If `true` any `NaN` encountered will lead to `NaN` in the output. If to `false` ",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "dynamic",
+      "nullBehavior": "native Polars behavior",
+      "arguments": [
+        {
+          "name": "a",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "b",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "propagate_nans",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    }
+  ],
+  "canUndo": true,
+  "canRedo": false
+}

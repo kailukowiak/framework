@@ -1,0 +1,4897 @@
+{
+  "counts": {
+    "bound": 200,
+    "deferred": 106,
+    "enumerated": 306
+  },
+  "generator": "tools/generate_expr_bindings.py",
+  "methods": [
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Negate `Expr`.",
+      "fallible": false,
+      "id": "expr.not",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "not",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Drop null values.",
+      "fallible": false,
+      "id": "expr.drop_nulls",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "drop_nulls",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Drop NaN values.",
+      "fallible": false,
+      "id": "expr.drop_nans",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "drop_nans",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the number of unique values in the groups.",
+      "fallible": false,
+      "id": "expr.n_unique",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "n_unique",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the first value in the group.",
+      "fallible": false,
+      "id": "expr.first",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "first",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the first non-nullvalue in the group.",
+      "fallible": false,
+      "id": "expr.first_non_null",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "first_non_null",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the last value in the group.",
+      "fallible": false,
+      "id": "expr.last",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "last",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the last non-null value in the group.",
+      "fallible": false,
+      "id": "expr.last_non_null",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "last_non_null",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "allow_empty",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get the single value in the group. If there are multiple values, an error is returned.",
+      "fallible": false,
+      "id": "expr.item",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "item",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "maintain_order",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Implode into a list scalar.",
+      "fallible": false,
+      "id": "expr.implode",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "implode",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Compute the quantile per group.",
+      "fallible": false,
+      "id": "expr.quantile",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "quantile",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the group indexes of the group by operation.",
+      "fallible": false,
+      "id": "expr.agg_groups",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "agg_groups",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Explode the String/List column.",
+      "fallible": false,
+      "id": "expr.explode",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "explode",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Collect all chunks into a single chunk before continuing.",
+      "fallible": false,
+      "id": "expr.rechunk",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "rechunk",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "length",
+          "rust_type": "Option<usize>"
+        }
+      ],
+      "doc": "Get the first `n` elements of the Expr result.",
+      "fallible": false,
+      "id": "expr.head",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "head",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "length",
+          "rust_type": "Option<usize>"
+        }
+      ],
+      "doc": "Get the last `n` elements of the Expr result.",
+      "fallible": false,
+      "id": "expr.tail",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "tail",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get unique values of this expression.",
+      "fallible": false,
+      "id": "expr.unique",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "unique",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get unique values of this expression, while maintaining order. This requires more work than [`Expr::unique`].",
+      "fallible": false,
+      "id": "expr.unique_stable",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "unique_stable",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the first index of unique values of this expression.",
+      "fallible": false,
+      "id": "expr.arg_unique",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "arg_unique",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the index value that has the minimum value.",
+      "fallible": false,
+      "id": "expr.arg_min",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "arg_min",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the index value that has the maximum value.",
+      "fallible": false,
+      "id": "expr.arg_max",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "arg_max",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "descending",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "nulls_last",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get the index values that would sort this expression.",
+      "fallible": false,
+      "id": "expr.arg_sort",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "arg_sort",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Cast expression to another data type. Throws an error if conversion had overflows. Returns an Error if cast is invalid on rows after predicates are pushed down.",
+      "fallible": false,
+      "id": "expr.strict_cast",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "strict_cast",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Cast expression to another data type.",
+      "fallible": false,
+      "id": "expr.cast",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "cast",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Cast expression to another data type.",
+      "fallible": false,
+      "id": "expr.cast_with_options",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "cast_with_options",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Sort with given options.  # Example  ```rust # use polars_core::prelude::*; # use polars_lazy::prelude::*; # fn main() -> PolarsResult<()> { let lf = df! { \"a\" => [Some(5), Some(4), Some(3), Some(2), None] }? .lazy();  let sorted = lf .select( vec![col(\"a\").sort(SortOptions::default())], ) .collect()?;  assert_eq!( sorted, df! { \"a\" => [None, Some(2), Some(3), Some(4), Some(5)] }? ); # Ok(()) # } ``` See [`SortOptions`] for more options.",
+      "fallible": false,
+      "id": "expr.sort",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "sort",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "k",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Returns the `k` largest elements.  This has time complexity `O(n + k log(n))`.",
+      "fallible": false,
+      "id": "expr.top_k",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "top_k",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "k",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Returns the `k` smallest elements.  This has time complexity `O(n + k log(n))`.",
+      "fallible": false,
+      "id": "expr.bottom_k",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bottom_k",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Reverse column",
+      "fallible": false,
+      "id": "expr.reverse",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "reverse",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a function/closure once the logical plan get executed.  This function is very similar to [`Expr::apply`], but differs in how it handles aggregations.  * `map` should be used for operations that are independent of groups, e.g. `multiply * 2`, or `raise to the power` * `apply` should be used for operations that work on a group of data. e.g. `sum`, `count`, etc.  It is the responsibility of the caller that the schema is correct by giving the correct output_type. If None given the output type of the input expr is used.",
+      "fallible": false,
+      "id": "expr.map",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "map",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.agg_with_fmt_str",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "agg_with_fmt_str",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get mask of finite values if dtype is Float.",
+      "fallible": false,
+      "id": "expr.is_finite",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_finite",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get mask of infinite values if dtype is Float.",
+      "fallible": false,
+      "id": "expr.is_infinite",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_infinite",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get mask of NaN values if dtype is Float.",
+      "fallible": false,
+      "id": "expr.is_nan",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_nan",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get inverse mask of NaN values if dtype is Float.",
+      "fallible": false,
+      "id": "expr.is_not_nan",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_not_nan",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "evaluation",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "min_samples",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Cumulatively count values from 0 to len.",
+      "fallible": false,
+      "id": "expr.cumulative_eval",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "cumulative_eval",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "reverse",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Cumulatively count values from 0 to len.",
+      "fallible": false,
+      "id": "expr.cum_count",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "cum_count",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "reverse",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get an array with the cumulative sum computed at every element.",
+      "fallible": false,
+      "id": "expr.cum_sum",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "cum_sum",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "reverse",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get an array with the cumulative product computed at every element.",
+      "fallible": false,
+      "id": "expr.cum_prod",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "cum_prod",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "reverse",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get an array with the cumulative min computed at every element.",
+      "fallible": false,
+      "id": "expr.cum_min",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "cum_min",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "reverse",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get an array with the cumulative max computed at every element.",
+      "fallible": false,
+      "id": "expr.cum_max",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "cum_max",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the product aggregation of an expression.",
+      "fallible": false,
+      "id": "expr.product",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "product",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Constant Pi",
+      "fallible": false,
+      "id": "expr.pi",
+      "namespace": "expr",
+      "reason": "associated function without a self receiver (constructor, not an instance method)",
+      "rust_name": "pi",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.rolling",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.fill_null_with_strategy",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "fill_null_with_strategy",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get a mask of duplicated values.",
+      "fallible": false,
+      "id": "expr.is_duplicated",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_duplicated",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get a mask of unique values.",
+      "fallible": false,
+      "id": "expr.is_unique",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_unique",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": "bool",
+          "kind": "optional",
+          "name": "descending",
+          "rust_type": "Option<bool>"
+        },
+        {
+          "inner_kind": "bool",
+          "kind": "optional",
+          "name": "nulls_last",
+          "rust_type": "Option<bool>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_sorted",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_sorted",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the approximate count of unique values.",
+      "fallible": false,
+      "id": "expr.approx_n_unique",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "approx_n_unique",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get a mask of the first unique value.",
+      "fallible": false,
+      "id": "expr.is_first_distinct",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_first_distinct",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get a mask of the last unique value.",
+      "fallible": false,
+      "id": "expr.is_last_distinct",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_last_distinct",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "maintain_order",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Compute the mode(s) of this column. This is the most occurring value.",
+      "fallible": false,
+      "id": "expr.mode",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "mode",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Interpolate intermediate values. Nulls at the beginning and end of the series remain null.",
+      "fallible": false,
+      "id": "expr.interpolate",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "interpolate",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Interpolate intermediate values. Nulls at the beginning and end of the series remain null. The `by` column provides the x-coordinates for interpolation and must not contain nulls.",
+      "fallible": false,
+      "id": "expr.interpolate_by",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "interpolate_by",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling minimum based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_min_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_min_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling maximum based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_max_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_max_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling mean based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_mean_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_mean_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling sum based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_sum_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_sum_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling quantile based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_quantile_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_quantile_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling variance based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_var_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_var_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling std-dev based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_std_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_std_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling median based on another column.",
+      "fallible": false,
+      "id": "expr.rolling_median_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_median_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.rolling_rank_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_rank_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling median.  See: [`RollingAgg::rolling_median`]",
+      "fallible": false,
+      "id": "expr.rolling_median",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_median",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling quantile.  See: [`RollingAgg::rolling_quantile`]",
+      "fallible": false,
+      "id": "expr.rolling_quantile",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_quantile",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling variance.",
+      "fallible": false,
+      "id": "expr.rolling_var",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_var",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling std-dev.",
+      "fallible": false,
+      "id": "expr.rolling_std",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_std",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.rolling_rank",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_rank",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling skew.",
+      "fallible": false,
+      "id": "expr.rolling_skew",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_skew",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a rolling skew.",
+      "fallible": false,
+      "id": "expr.rolling_kurtosis",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_kurtosis",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Apply a custom function over a rolling/ moving window of the array. This has quite some dynamic dispatch, so prefer rolling_min, max, mean, sum over this.",
+      "fallible": false,
+      "id": "expr.rolling_map",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rolling_map",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.peak_min",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "peak_min",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.peak_max",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "peak_max",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Assign ranks to data, dealing with ties appropriately.",
+      "fallible": false,
+      "id": "expr.rank",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rank",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Bin continuous values into discrete categories.",
+      "fallible": false,
+      "id": "expr.cut",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "cut",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Bin continuous values into discrete categories based on their quantiles.",
+      "fallible": false,
+      "id": "expr.qcut",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "qcut",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Bin continuous values into discrete categories using uniform quantile probabilities.",
+      "fallible": false,
+      "id": "expr.qcut_uniform",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "qcut_uniform",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the lengths of runs of identical values.",
+      "fallible": false,
+      "id": "expr.rle",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "rle",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Similar to `rle`, but maps values to run IDs.",
+      "fallible": false,
+      "id": "expr.rle_id",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "rle_id",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the n-th discrete difference between values.",
+      "fallible": false,
+      "id": "expr.diff",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "diff",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Computes percentage change between values.",
+      "fallible": false,
+      "id": "expr.pct_change",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "pct_change",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "bias",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Compute the sample skewness of a data set.  For normally distributed data, the skewness should be about zero. For uni-modal continuous distributions, a skewness value greater than zero means that there is more weight in the right tail of the distribution. The function `skewtest` can be used to determine if the skewness value is close enough to zero, statistically speaking.  see: [scipy](https://github.com/scipy/scipy/blob/47bb6febaa10658c72962b9615d5d5aa2513fa3a/scipy/stats/stats.py#L1024)",
+      "fallible": false,
+      "id": "expr.skew",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "skew",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fisher",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "bias",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Compute the kurtosis (Fisher or Pearson).  Kurtosis is the fourth central moment divided by the square of the variance. If Fisher's definition is used, then 3.0 is subtracted from the result to give 0.0 for a normal distribution. If bias is False then the kurtosis is calculated using k statistics to eliminate bias coming from biased moment estimators.",
+      "fallible": false,
+      "id": "expr.kurtosis",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "kurtosis",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get maximal value that could be hold by this dtype.",
+      "fallible": false,
+      "id": "expr.upper_bound",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "upper_bound",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get minimal value that could be hold by this dtype.",
+      "fallible": false,
+      "id": "expr.lower_bound",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "lower_bound",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.reshape",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "reshape",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the exponentially-weighted moving average.",
+      "fallible": false,
+      "id": "expr.ewm_mean",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "ewm_mean",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the exponentially-weighted moving average by a time column.",
+      "fallible": false,
+      "id": "expr.ewm_mean_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "ewm_mean_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the exponentially-weighted moving sum.",
+      "fallible": false,
+      "id": "expr.ewm_sum",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "ewm_sum",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the exponentially-weighted moving sum by a time column.",
+      "fallible": false,
+      "id": "expr.ewm_sum_by",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "ewm_sum_by",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the exponentially-weighted moving standard deviation.",
+      "fallible": false,
+      "id": "expr.ewm_std",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "ewm_std",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Calculate the exponentially-weighted moving variance.",
+      "fallible": false,
+      "id": "expr.ewm_var",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "ewm_var",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ignore_nulls",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Returns whether any of the values in the column are `true`.  If `ignore_nulls` is `False`, [Kleene logic] is used to deal with nulls: if the column contains any null values and no `true` values, the output is null.  [Kleene logic]: https://en.wikipedia.org/wiki/Three-valued_logic",
+      "fallible": false,
+      "id": "expr.any",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "any",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ignore_nulls",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Returns whether all values in the column are `true`.  If `ignore_nulls` is `False`, [Kleene logic] is used to deal with nulls: if the column contains any null values and no `false` values, the output is null.  [Kleene logic]: https://en.wikipedia.org/wiki/Three-valued_logic",
+      "fallible": false,
+      "id": "expr.all",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "all",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ignore_nulls",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Returns whether this column is empty.  If `ignore_nulls` is True, the column is also considered empty if it only consists of nulls.",
+      "fallible": false,
+      "id": "expr.is_empty",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "is_empty",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Returns whether the column contains one or more null values.",
+      "fallible": false,
+      "id": "expr.has_nulls",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "has_nulls",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Count all unique values and create a struct mapping value to count. (Note that it is better to turn parallel off in the aggregation context). The name of the struct field with the counts is given by the parameter `name`.",
+      "fallible": false,
+      "id": "expr.value_counts",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "value_counts",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Returns a count of the unique values in the order of appearance. This method differs from [`Expr::value_counts`] in that it does not return the values, only the counts and might be faster.",
+      "fallible": false,
+      "id": "expr.unique_counts",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "unique_counts",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "float",
+          "name": "base",
+          "rust_type": "f64"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "normalize",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Compute the entropy as `-sum(pk * log(pk))`. where `pk` are discrete probabilities.",
+      "fallible": false,
+      "id": "expr.entropy",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "entropy",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Set this `Series` as `sorted` so that downstream code can use fast paths for sorted arrays. # Warning This can lead to incorrect results if this `Series` is not sorted!! Use with care!",
+      "fallible": false,
+      "id": "expr.set_sorted_flag",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "set_sorted_flag",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "k0",
+          "rust_type": "u64"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "k1",
+          "rust_type": "u64"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "k2",
+          "rust_type": "u64"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "k3",
+          "rust_type": "u64"
+        }
+      ],
+      "doc": "Compute the hash of every element.",
+      "fallible": false,
+      "id": "expr.hash",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "hash",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.to_physical",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "to_physical",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "n",
+          "rust_type": "usize"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "offset",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.gather_every",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "gather_every",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.reinterpret",
+      "namespace": "expr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "reinterpret",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "value",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.extend_constant",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "extend_constant",
+      "source_file": "mod.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`string::StringNameSpace`]",
+      "fallible": false,
+      "id": "expr.str",
+      "namespace": "expr",
+      "reason": "return type `string::StringNameSpace` is not Expr/Self",
+      "rust_name": "str",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`binary::BinaryNameSpace`]",
+      "fallible": false,
+      "id": "expr.binary",
+      "namespace": "expr",
+      "reason": "return type `binary::BinaryNameSpace` is not Expr/Self",
+      "rust_name": "binary",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`dt::DateLikeNameSpace`]",
+      "fallible": false,
+      "id": "expr.dt",
+      "namespace": "expr",
+      "reason": "return type `dt::DateLikeNameSpace` is not Expr/Self",
+      "rust_name": "dt",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`list::ListNameSpace`]",
+      "fallible": false,
+      "id": "expr.list",
+      "namespace": "expr",
+      "reason": "return type `list::ListNameSpace` is not Expr/Self",
+      "rust_name": "list",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`name::ExprNameNameSpace`]",
+      "fallible": false,
+      "id": "expr.name",
+      "namespace": "expr",
+      "reason": "return type `name::ExprNameNameSpace` is not Expr/Self",
+      "rust_name": "name",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`array::ArrayNameSpace`].",
+      "fallible": false,
+      "id": "expr.arr",
+      "namespace": "expr",
+      "reason": "return type `array::ArrayNameSpace` is not Expr/Self",
+      "rust_name": "arr",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`CategoricalNameSpace`].",
+      "fallible": false,
+      "id": "expr.cat",
+      "namespace": "expr",
+      "reason": "return type `cat::CategoricalNameSpace` is not Expr/Self",
+      "rust_name": "cat",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`extension::ExtensionNameSpace`].",
+      "fallible": false,
+      "id": "expr.ext",
+      "namespace": "expr",
+      "reason": "return type `extension::ExtensionNameSpace` is not Expr/Self",
+      "rust_name": "ext",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`struct_::StructNameSpace`].",
+      "fallible": false,
+      "id": "expr.struct_",
+      "namespace": "expr",
+      "reason": "return type `struct_::StructNameSpace` is not Expr/Self",
+      "rust_name": "struct_",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the [`meta::MetaNameSpace`]",
+      "fallible": false,
+      "id": "expr.meta",
+      "namespace": "expr",
+      "reason": "return type `meta::MetaNameSpace` is not Expr/Self",
+      "rust_name": "meta",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Evaluate the number of set bits.",
+      "fallible": false,
+      "id": "expr.bitwise_count_ones",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_count_ones",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Evaluate the number of unset bits.",
+      "fallible": false,
+      "id": "expr.bitwise_count_zeros",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_count_zeros",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Evaluate the number most-significant set bits before seeing an unset bit.",
+      "fallible": false,
+      "id": "expr.bitwise_leading_ones",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_leading_ones",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Evaluate the number most-significant unset bits before seeing an set bit.",
+      "fallible": false,
+      "id": "expr.bitwise_leading_zeros",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_leading_zeros",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Evaluate the number least-significant set bits before seeing an unset bit.",
+      "fallible": false,
+      "id": "expr.bitwise_trailing_ones",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_trailing_ones",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Evaluate the number least-significant unset bits before seeing an set bit.",
+      "fallible": false,
+      "id": "expr.bitwise_trailing_zeros",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_trailing_zeros",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Perform an aggregation of bitwise ANDs",
+      "fallible": false,
+      "id": "expr.bitwise_and",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_and",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Perform an aggregation of bitwise ORs",
+      "fallible": false,
+      "id": "expr.bitwise_or",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_or",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Perform an aggregation of bitwise XORs",
+      "fallible": false,
+      "id": "expr.bitwise_xor",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "bitwise_xor",
+      "source_file": "bitwise.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "Standard deviation of the values of the Series.",
+      "fallible": false,
+      "id": "expr.std",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "std",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "Variance of the values of the Series.",
+      "fallible": false,
+      "id": "expr.var",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "var",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Self"
+        }
+      ],
+      "doc": "Get minimum value, ordered by another expression.",
+      "fallible": false,
+      "id": "expr.min_by",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "min_by",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Self"
+        }
+      ],
+      "doc": "Get maximum value, ordered by another expression.",
+      "fallible": false,
+      "id": "expr.max_by",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "max_by",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Reduce groups to minimal value.",
+      "fallible": false,
+      "id": "expr.nan_min",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "nan_min",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Reduce groups to maximum value.",
+      "fallible": false,
+      "id": "expr.nan_max",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "nan_max",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Reduce groups to the median value.",
+      "fallible": false,
+      "id": "expr.median",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "median",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": "expr",
+          "kind": "optional",
+          "name": "bins",
+          "rust_type": "Option<Expr>"
+        },
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "bin_count",
+          "rust_type": "Option<usize>"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "include_category",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "include_breakpoint",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Compute the histogram of a dataset.",
+      "fallible": false,
+      "id": "expr.hist",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "hist",
+      "source_file": "statistics.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "seed",
+          "rust_type": "Option<u64>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.shuffle",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "shuffle",
+      "source_file": "random.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "with_replacement",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": "bool",
+          "kind": "optional",
+          "name": "shuffle",
+          "rust_type": "Option<bool>"
+        },
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "seed",
+          "rust_type": "Option<u64>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.sample_n",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "sample_n",
+      "source_file": "random.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "frac",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "with_replacement",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": "bool",
+          "kind": "optional",
+          "name": "shuffle",
+          "rust_type": "Option<bool>"
+        },
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "seed",
+          "rust_type": "Option<u64>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.sample_frac",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "sample_frac",
+      "source_file": "random.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "rhs",
+          "rust_type": "Self"
+        }
+      ],
+      "doc": "True divide `self` by `rhs`",
+      "fallible": false,
+      "id": "expr.true_div",
+      "namespace": "expr",
+      "reason": "",
+      "rust_name": "true_div",
+      "source_file": "arithmetic.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get Field result of the expression. The schema is the input data.",
+      "fallible": false,
+      "id": "expr.to_field",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<Field>` is not Expr/Self",
+      "rust_name": "to_field",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.into_selector",
+      "namespace": "expr",
+      "reason": "return type `Option<Selector>` is not Expr/Self",
+      "rust_name": "into_selector",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.try_into_selector",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<Selector>` is not Expr/Self",
+      "rust_name": "try_into_selector",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Extract a constant usize from an expression.",
+      "fallible": false,
+      "id": "expr.extract_usize",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<usize>` is not Expr/Self",
+      "rust_name": "extract_usize",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.extract_i64",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<i64>` is not Expr/Self",
+      "rust_name": "extract_i64",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.n_ary",
+      "namespace": "expr",
+      "reason": "associated function without a self receiver (constructor, not an instance method)",
+      "rust_name": "n_ary",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.to_name",
+      "namespace": "expr",
+      "reason": "return type `&'static str` is not Expr/Self",
+      "rust_name": "to_name",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the `DataType` of the `pl.element()` value.",
+      "fallible": false,
+      "id": "expr.element_dtype",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<&'a DataType>` is not Expr/Self",
+      "rust_name": "element_dtype",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Get the output datatype from the output element datatype",
+      "fallible": false,
+      "id": "expr.output_dtype",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<DataType>` is not Expr/Self",
+      "rust_name": "output_dtype",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_elementwise",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_elementwise",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_row_separable",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_row_separable",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_comparison",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_comparison",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Comparisons that unconditionally propagate nulls: a null operand gives a null result. Excludes the validity variants (`EqValidity` / `NotEqValidity`), which treat null as a regular value.",
+      "fallible": false,
+      "id": "expr.is_null_propagating_comparison",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_null_propagating_comparison",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_bitwise",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_bitwise",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_comparison_or_bitwise",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_comparison_or_bitwise",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "The operator such that `b op.swap_operands() a` is equivalent to `a op b`; `None` for non-commutative arithmetic, where no such operator exists (swapping requires rewriting an operand: `a - b == -b + a`).",
+      "fallible": false,
+      "id": "expr.swap_operands",
+      "namespace": "expr",
+      "reason": "return type `Option<Self>` is not Expr/Self",
+      "rust_name": "swap_operands",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "The complementary comparison, such that `!(a op b)` is equivalent to `a op.negate() b`; `None` for non-comparison operators. Exact because nulls stay null under negation (Kleene logic) and Polars orders floats totally, unlike IEEE (where `!(a < b)` does not imply `a >= b` for NaN).",
+      "fallible": false,
+      "id": "expr.negate",
+      "namespace": "expr",
+      "reason": "return type `Option<Self>` is not Expr/Self",
+      "rust_name": "negate",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.is_arithmetic",
+      "namespace": "expr",
+      "reason": "return type `bool` is not Expr/Self",
+      "rust_name": "is_arithmetic",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "expr.call",
+      "namespace": "expr",
+      "reason": "return type `PolarsResult<PlSmallStr>` is not Expr/Self",
+      "rust_name": "call",
+      "source_file": "mod.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Check if a string value contains a literal substring.",
+      "fallible": false,
+      "id": "str.contains_literal",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "contains_literal",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "patterns",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ascii_case_insensitive",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Uses aho-corasick to find many patterns.  # Arguments - `patterns`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case insensitive matching. When this option is enabled, searching will be performed without respect to case for ASCII letters (a-z and A-Z) only.",
+      "fallible": false,
+      "id": "str.contains_any",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "contains_any",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "patterns",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "replace_with",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ascii_case_insensitive",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "leftmost",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Uses aho-corasick to replace many patterns. # Arguments - `patterns`: an expression that evaluates to a String column - `replace_with`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case-insensitive matching. When this option is enabled, searching will be performed without respect to case for ASCII letters (a-z and A-Z) only.",
+      "fallible": false,
+      "id": "str.replace_many",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "replace_many",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "patterns",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ascii_case_insensitive",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "overlapping",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "leftmost",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Uses aho-corasick to replace many patterns. # Arguments - `patterns`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case-insensitive matching. When this option is enabled, searching will be performed without respect to case for ASCII letters (a-z and A-Z) only. - `overlapping`: Whether matches may overlap.",
+      "fallible": false,
+      "id": "str.extract_many",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "extract_many",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "patterns",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ascii_case_insensitive",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "overlapping",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "leftmost",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Uses aho-corasick to find many patterns. # Arguments - `patterns`: an expression that evaluates to a String column - `ascii_case_insensitive`: Enable ASCII-aware case-insensitive matching. When this option is enabled, searching will be performed without respect to case for ASCII letters (a-z and A-Z) only. - `overlapping`: Whether matches may overlap.",
+      "fallible": false,
+      "id": "str.find_many",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "find_many",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "sub",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Check if a string value ends with the `sub` string.",
+      "fallible": false,
+      "id": "str.ends_with",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "ends_with",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "sub",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Check if a string value starts with the `sub` string.",
+      "fallible": false,
+      "id": "str.starts_with",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "starts_with",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "str.hex_encode",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "hex_encode",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "strict",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "str.hex_decode",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "hex_decode",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "str.base64_encode",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "base64_encode",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "strict",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "str.base64_decode",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "base64_decode",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "group_index",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Extract a regex pattern from the a string value. If `group_index` is out of bounds, null is returned.",
+      "fallible": false,
+      "id": "str.extract",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "extract",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "str.extract_groups",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "extract_groups",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Pad the start of the string until it reaches the given length.  Padding is done using the specified `fill_char`. Strings with length equal to or greater than the given length are returned as-is.",
+      "fallible": false,
+      "id": "str.pad_start",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "pad_start",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Pad the end of the string until it reaches the given length.  Padding is done using the specified `fill_char`. Strings with length equal to or greater than the given length are returned as-is.",
+      "fallible": false,
+      "id": "str.pad_end",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "pad_end",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "length",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Pad the start of the string with zeros until it reaches the given length.  A sign prefix (`-`) is handled by inserting the padding after the sign character rather than before. Strings with length equal to or greater than the given length are returned as-is.",
+      "fallible": false,
+      "id": "str.zfill",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "zfill",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Find the index of a literal substring within another string value.",
+      "fallible": false,
+      "id": "str.find_literal",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "find_literal",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "strict",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Find the index of a substring defined by a regular expressions within another string value.",
+      "fallible": false,
+      "id": "str.find",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "find",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Extract each successive non-overlapping match in an individual string as an array",
+      "fallible": false,
+      "id": "str.extract_all",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "extract_all",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "literal",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Count all successive non-overlapping regex matches.",
+      "fallible": false,
+      "id": "str.count_matches",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "count_matches",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Convert a String column into a Date/Datetime/Time column.",
+      "fallible": false,
+      "id": "str.strptime",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "strptime",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Convert a String column into a Date column.",
+      "fallible": false,
+      "id": "str.to_date",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_date",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Convert a String column into a Datetime column.",
+      "fallible": false,
+      "id": "str.to_datetime",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_datetime",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Convert a String column into a Time column.",
+      "fallible": false,
+      "id": "str.to_time",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_time",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "scale",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Convert a String column into a Decimal column.",
+      "fallible": false,
+      "id": "str.to_decimal",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "to_decimal",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Concat the values into a string array. # Arguments  * `delimiter` - A string that will act as delimiter between values.",
+      "fallible": false,
+      "id": "str.join",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "join",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Split the string by a substring. The resulting dtype is `List<String>`.",
+      "fallible": false,
+      "id": "str.split",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "split",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Split the string by a substring and keep the substring. The resulting dtype is `List<String>`.",
+      "fallible": false,
+      "id": "str.split_inclusive",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "split_inclusive",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "n",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Split exactly `n` times by a given substring. The resulting dtype is [`DataType::Struct`].",
+      "fallible": false,
+      "id": "str.split_exact",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "split_exact",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "n",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Split exactly `n` times by a given substring and keep the substring. The resulting dtype is [`DataType::Struct`].",
+      "fallible": false,
+      "id": "str.split_exact_inclusive",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "split_exact_inclusive",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "by",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "n",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Split by a given substring, returning exactly `n` items. If there are more possible splits, keeps the remainder of the string intact. The resulting dtype is [`DataType::Struct`].",
+      "fallible": false,
+      "id": "str.splitn",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "splitn",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "strict",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Split the string by a regex pattern. The resulting dtype is `List<String>`.",
+      "fallible": false,
+      "id": "str.split_regex",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "split_regex",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "strict",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Split the string by a regex pattern and keep the matched substrings. The resulting dtype is `List<String>`.",
+      "fallible": false,
+      "id": "str.split_regex_inclusive",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "split_regex_inclusive",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "value",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "literal",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Replace values that match a regex `pat` with a `value`.",
+      "fallible": false,
+      "id": "str.replace",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "replace",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "value",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "literal",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "n",
+          "rust_type": "i64"
+        }
+      ],
+      "doc": "Replace values that match a regex `pat` with a `value`.",
+      "fallible": false,
+      "id": "str.replace_n",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "replace_n",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "value",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "literal",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Replace all values that match a regex `pat` with a `value`.",
+      "fallible": false,
+      "id": "str.replace_all",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "replace_all",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Normalize each string",
+      "fallible": false,
+      "id": "str.normalize",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "normalize",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Reverse each string",
+      "fallible": false,
+      "id": "str.reverse",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "reverse",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "matches",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Remove leading and trailing characters, or whitespace if matches is None.",
+      "fallible": false,
+      "id": "str.strip_chars",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "strip_chars",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "matches",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Remove leading characters, or whitespace if matches is None.",
+      "fallible": false,
+      "id": "str.strip_chars_start",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "strip_chars_start",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "matches",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Remove trailing characters, or whitespace if matches is None.",
+      "fallible": false,
+      "id": "str.strip_chars_end",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "strip_chars_end",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "prefix",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Remove prefix.",
+      "fallible": false,
+      "id": "str.strip_prefix",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "strip_prefix",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "suffix",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Remove suffix.",
+      "fallible": false,
+      "id": "str.strip_suffix",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "strip_suffix",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Parse string in base radix into decimal. The resulting dtype is `dtype`",
+      "fallible": false,
+      "id": "str.to_integer",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_integer",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Return the length of each string as the number of bytes.  When working with non-ASCII text, the length in bytes is not the same as the length in characters. You may want to use [`len_chars`] instead. Note that `len_bytes` is much more performant (_O(1)_) than [`len_chars`] (_O(n)_).  [`len_chars`]: StringNameSpace::len_chars",
+      "fallible": false,
+      "id": "str.len_bytes",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "len_bytes",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "Return the length of each string as the number of characters.  When working with ASCII text, use [`len_bytes`] instead to achieve equivalent output with much better performance: [`len_bytes`] runs in _O(1)_, while `len_chars` runs in _O(n)_.  [`len_bytes`]: StringNameSpace::len_bytes",
+      "fallible": false,
+      "id": "str.len_chars",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "len_chars",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "offset",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "length",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Slice the string values.",
+      "fallible": false,
+      "id": "str.slice",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "slice",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Take the first `n` characters of the string values.",
+      "fallible": false,
+      "id": "str.head",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "head",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Take the last `n` characters of the string values.",
+      "fallible": false,
+      "id": "str.tail",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "tail",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "str.json_decode",
+      "namespace": "str",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "json_decode",
+      "source_file": "string.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "str",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "pat",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "str.json_path_match",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "json_path_match",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "str",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "str.escape_regex",
+      "namespace": "str",
+      "reason": "",
+      "rust_name": "escape_regex",
+      "source_file": "string.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Add a given number of business days.",
+      "fallible": false,
+      "id": "dt.add_business_days",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "add_business_days",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Convert from Date/Time/Datetime into String with the given format. See [chrono strftime/strptime](https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html).",
+      "fallible": false,
+      "id": "dt.to_string",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_string",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Convert from Date/Time/Datetime into String with the given format. See [chrono strftime/strptime](https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html).  Alias for `to_string`.",
+      "fallible": false,
+      "id": "dt.strftime",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "strftime",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Change the underlying [`TimeUnit`]. And update the data accordingly.",
+      "fallible": false,
+      "id": "dt.cast_time_unit",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "cast_time_unit",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Change the underlying [`TimeUnit`] of the [`Series`]. This does not modify the data.",
+      "fallible": false,
+      "id": "dt.with_time_unit",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "with_time_unit",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Change the underlying [`TimeZone`] of the [`Series`]. This does not modify the data.",
+      "fallible": false,
+      "id": "dt.convert_time_zone",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "convert_time_zone",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the millennium of a Date/Datetime",
+      "fallible": false,
+      "id": "dt.millennium",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "millennium",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the century of a Date/Datetime",
+      "fallible": false,
+      "id": "dt.century",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "century",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Determine whether days are business days.",
+      "fallible": false,
+      "id": "dt.is_business_day",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "is_business_day",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the month of a Date/Datetime.",
+      "fallible": false,
+      "id": "dt.day",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "day",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the (local) time of a Date/Datetime/Time.",
+      "fallible": false,
+      "id": "dt.time",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "time",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the (local) datetime of a Datetime.",
+      "fallible": false,
+      "id": "dt.datetime",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "datetime",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the hour of a Datetime/Time64.",
+      "fallible": false,
+      "id": "dt.hour",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "hour",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the minute of a Datetime/Time64.",
+      "fallible": false,
+      "id": "dt.minute",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "minute",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the second of a Datetime/Time64.",
+      "fallible": false,
+      "id": "dt.second",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "second",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the millisecond of a Time64 (scaled from nanosecs).",
+      "fallible": false,
+      "id": "dt.millisecond",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "millisecond",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the microsecond of a Time64 (scaled from nanosecs).",
+      "fallible": false,
+      "id": "dt.microsecond",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "microsecond",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the nanosecond part of a Time64.",
+      "fallible": false,
+      "id": "dt.nanosecond",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "nanosecond",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Return the timestamp (UNIX epoch) of a Datetime/Date.",
+      "fallible": false,
+      "id": "dt.timestamp",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "timestamp",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "every",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Truncate the Datetime/Date range into buckets.",
+      "fallible": false,
+      "id": "dt.truncate",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "truncate",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the base offset from UTC.",
+      "fallible": false,
+      "id": "dt.base_utc_offset",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "base_utc_offset",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Get the additional offset from UTC currently in effect (usually due to daylight saving time).",
+      "fallible": false,
+      "id": "dt.dst_offset",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "dst_offset",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "every",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Round the Datetime/Date range into buckets.",
+      "fallible": false,
+      "id": "dt.round",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "round",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "dt.replace_time_zone",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "replace_time_zone",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [],
+      "doc": "Combine an existing Date/Datetime with a Time, creating a new Datetime value.",
+      "fallible": false,
+      "id": "dt.combine",
+      "namespace": "dt",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "combine",
+      "source_file": "dt.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of integer days.",
+      "fallible": false,
+      "id": "dt.total_days",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_days",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of integer hours.",
+      "fallible": false,
+      "id": "dt.total_hours",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_hours",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of integer minutes.",
+      "fallible": false,
+      "id": "dt.total_minutes",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_minutes",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of integer seconds.",
+      "fallible": false,
+      "id": "dt.total_seconds",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_seconds",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of milliseconds.",
+      "fallible": false,
+      "id": "dt.total_milliseconds",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_milliseconds",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of microseconds.",
+      "fallible": false,
+      "id": "dt.total_microseconds",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_microseconds",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "fractional",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Express a Duration in terms of its total number of nanoseconds.",
+      "fallible": false,
+      "id": "dt.total_nanoseconds",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "total_nanoseconds",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "dt",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "year",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "month",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "day",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "hour",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "minute",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "second",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "microsecond",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "ambiguous",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Replace the time units of a value",
+      "fallible": false,
+      "id": "dt.replace",
+      "namespace": "dt",
+      "reason": "",
+      "rust_name": "replace",
+      "source_file": "dt.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "list.drop_nulls",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "drop_nulls",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "with_replacement",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": "bool",
+          "kind": "optional",
+          "name": "shuffle",
+          "rust_type": "Option<bool>"
+        },
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "seed",
+          "rust_type": "Option<u64>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "list.sample_n",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "sample_n",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "fraction",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "with_replacement",
+          "rust_type": "bool"
+        },
+        {
+          "inner_kind": "bool",
+          "kind": "optional",
+          "name": "shuffle",
+          "rust_type": "Option<bool>"
+        },
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "seed",
+          "rust_type": "Option<u64>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "list.sample_fraction",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "sample_fraction",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Return the number of elements in each list.  Null values are treated like regular elements in this context.",
+      "fallible": false,
+      "id": "list.len",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "len",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Compute the maximum of the items in every sublist.",
+      "fallible": false,
+      "id": "list.max",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "max",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Compute the minimum of the items in every sublist.",
+      "fallible": false,
+      "id": "list.min",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "min",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Compute the sum the items in every sublist.",
+      "fallible": false,
+      "id": "list.sum",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "sum",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Compute the mean of every sublist and return a `Series` of dtype `Float64`",
+      "fallible": false,
+      "id": "list.mean",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "mean",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "list.median",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "median",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "list.std",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "std",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "list.var",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "var",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Sort every sublist.",
+      "fallible": false,
+      "id": "list.sort",
+      "namespace": "list",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "sort",
+      "source_file": "list.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "index",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "null_on_oob",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get items in every sublist by index.",
+      "fallible": false,
+      "id": "list.get",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "get",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "index",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "null_on_oob",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get items in every sublist by multiple indexes.  # Arguments - `null_on_oob`: Return a null when an index is out of bounds. This behavior is more expensive than defaulting to returning an `Error`.",
+      "fallible": false,
+      "id": "list.gather",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "gather",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "offset",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "list.gather_every",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "gather_every",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Get first item of every sublist.",
+      "fallible": false,
+      "id": "list.first",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "first",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Get last item of every sublist.",
+      "fallible": false,
+      "id": "list.last",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "last",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "separator",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ignore_nulls",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Join all string items in a sublist and place a separator between them. # Error This errors if inner type of list `!= DataType::String`.",
+      "fallible": false,
+      "id": "list.join",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "join",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Return the index of the minimal value of every sublist",
+      "fallible": false,
+      "id": "list.arg_min",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "arg_min",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Return the index of the maximum value of every sublist",
+      "fallible": false,
+      "id": "list.arg_max",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "arg_max",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Diff every sublist.",
+      "fallible": false,
+      "id": "list.diff",
+      "namespace": "list",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "diff",
+      "source_file": "list.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "periods",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Shift every sublist.",
+      "fallible": false,
+      "id": "list.shift",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "shift",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "offset",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "length",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Slice every sublist.",
+      "fallible": false,
+      "id": "list.slice",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "slice",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Get the head of every sublist",
+      "fallible": false,
+      "id": "list.head",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "head",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Get the tail of every sublist",
+      "fallible": false,
+      "id": "list.tail",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "tail",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "width",
+          "rust_type": "usize"
+        }
+      ],
+      "doc": "Convert a List column into an Array column with the same inner data type.",
+      "fallible": false,
+      "id": "list.to_array",
+      "namespace": "list",
+      "reason": "",
+      "rust_name": "to_array",
+      "source_file": "list.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "list",
+      "args": [],
+      "doc": "Convert this `List` to a `Series` of type `Struct`. The width will be determined according to `ListToStructWidthStrategy` and the names of the fields determined by the given `name_generator`.  # Schema  A polars `LazyFrame` needs to know the schema at all time. The caller therefore must provide an `upper_bound` of struct fields that will be set. If this is incorrectly downstream operation may fail. For instance an `all().sum()` expression will look in the current schema to determine which columns to select.",
+      "fallible": false,
+      "id": "list.to_struct",
+      "namespace": "list",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_struct",
+      "source_file": "list.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Compute the length of every subarray.",
+      "fallible": false,
+      "id": "arr.len",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "len",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Compute the maximum of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.max",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "max",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Compute the minimum of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.min",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "min",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Compute the sum of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.sum",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "sum",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "Compute the std of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.std",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "std",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "Compute the var of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.var",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "var",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Compute the mean of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.mean",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "mean",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Compute the median of the items in every subarray.",
+      "fallible": false,
+      "id": "arr.median",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "median",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Cast the Array column to List column with the same inner data type.",
+      "fallible": false,
+      "id": "arr.to_list",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "to_list",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "arr.sort",
+      "namespace": "arr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "sort",
+      "source_file": "array.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "arr.arg_min",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "arg_min",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "arr.arg_max",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "arg_max",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "index",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "null_on_oob",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get items in every sub-array by index.",
+      "fallible": false,
+      "id": "arr.get",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "get",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "separator",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "ignore_nulls",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Join all string items in a sub-array and place a separator between them. # Error Raise if inner type of array is not `DataType::String`.",
+      "fallible": false,
+      "id": "arr.join",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "join",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "arr.to_struct",
+      "namespace": "arr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to_struct",
+      "source_file": "array.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "offset",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "length",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "as_array",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Slice every subarray.",
+      "fallible": true,
+      "id": "arr.slice",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "slice",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "as_array",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get the head of every subarray",
+      "fallible": true,
+      "id": "arr.head",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "head",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "as_array",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Get the tail of every subarray",
+      "fallible": true,
+      "id": "arr.tail",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "tail",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "n",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Shift every sub-array.",
+      "fallible": false,
+      "id": "arr.shift",
+      "namespace": "arr",
+      "reason": "",
+      "rust_name": "shift",
+      "source_file": "array.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "arr",
+      "args": [],
+      "doc": "Returns a column with a separate row for every array element.",
+      "fallible": false,
+      "id": "arr.explode",
+      "namespace": "arr",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "explode",
+      "source_file": "array.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "struct_",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "index",
+          "rust_type": "i64"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "struct.field_by_index",
+      "namespace": "struct",
+      "reason": "",
+      "rust_name": "field_by_index",
+      "source_file": "struct_.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "struct_",
+      "args": [],
+      "doc": "Retrieve one or multiple of the fields of this [`StructChunked`] as a new Series. This expression also expands the `\"*\"` wildcard column.",
+      "fallible": false,
+      "id": "struct.field_by_names",
+      "namespace": "struct",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "field_by_names",
+      "source_file": "struct_.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "struct_",
+      "args": [],
+      "doc": "Retrieve one of the fields of this [`StructChunked`] as a new Series. This expression also supports wildcard \"*\" and regex expansion.",
+      "fallible": false,
+      "id": "struct.field_by_name",
+      "namespace": "struct",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "field_by_name",
+      "source_file": "struct_.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "struct_",
+      "args": [],
+      "doc": "Rename the fields of the [`StructChunked`].",
+      "fallible": false,
+      "id": "struct.rename_fields",
+      "namespace": "struct",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "rename_fields",
+      "source_file": "struct_.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "struct_",
+      "args": [],
+      "doc": "Drop the given fields from the [`StructChunked`].",
+      "fallible": false,
+      "id": "struct.drop",
+      "namespace": "struct",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "drop",
+      "source_file": "struct_.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "struct_",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "struct.json_encode",
+      "namespace": "struct",
+      "reason": "",
+      "rust_name": "json_encode",
+      "source_file": "struct_.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "struct_",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "exprs",
+          "name": "fields",
+          "rust_type": "Vec<Expr>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "struct.with_fields",
+      "namespace": "struct",
+      "reason": "",
+      "rust_name": "with_fields",
+      "source_file": "struct_.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.get_categories",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "get_categories",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.len_bytes",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "len_bytes",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.len_chars",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "len_chars",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "string",
+          "name": "prefix",
+          "rust_type": "String"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.starts_with",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "starts_with",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "string",
+          "name": "suffix",
+          "rust_type": "String"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.ends_with",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "ends_with",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "offset",
+          "rust_type": "i64"
+        },
+        {
+          "inner_kind": "int",
+          "kind": "optional",
+          "name": "length",
+          "rust_type": "Option<usize>"
+        }
+      ],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.slice",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "slice",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": "cat",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.to",
+      "namespace": "cat",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "to",
+      "source_file": "cat.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": "cat",
+      "args": [],
+      "doc": "",
+      "fallible": false,
+      "id": "cat.physical",
+      "namespace": "cat",
+      "reason": "",
+      "rust_name": "physical",
+      "source_file": "cat.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [],
+      "doc": "Format the results of an array of expressions using a format string",
+      "fallible": false,
+      "id": "root.format_str",
+      "namespace": "root_fn",
+      "reason": "argument signature does not fit the generic expr/literal/list shapes",
+      "rust_name": "format_str",
+      "source_file": "concat.rs",
+      "status": "deferred"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "a",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "b",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "int",
+          "name": "ddof",
+          "rust_type": "u8"
+        }
+      ],
+      "doc": "Compute the covariance between two columns.",
+      "fallible": false,
+      "id": "root.cov",
+      "namespace": "root_fn",
+      "reason": "",
+      "rust_name": "cov",
+      "source_file": "correlation.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "a",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "b",
+          "rust_type": "Expr"
+        }
+      ],
+      "doc": "Compute the pearson correlation between two columns.",
+      "fallible": false,
+      "id": "root.pearson_corr",
+      "namespace": "root_fn",
+      "reason": "",
+      "rust_name": "pearson_corr",
+      "source_file": "correlation.rs",
+      "status": "bound"
+    },
+    {
+      "accessor": null,
+      "args": [
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "a",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "expr",
+          "name": "b",
+          "rust_type": "Expr"
+        },
+        {
+          "inner_kind": null,
+          "kind": "bool",
+          "name": "propagate_nans",
+          "rust_type": "bool"
+        }
+      ],
+      "doc": "Compute the spearman rank correlation between two columns. Missing data will be excluded from the computation. # Arguments * propagate_nans If `true` any `NaN` encountered will lead to `NaN` in the output. If to `false` then `NaN` are regarded as larger than any finite number and thus lead to the highest rank.",
+      "fallible": false,
+      "id": "root.spearman_rank_corr",
+      "namespace": "root_fn",
+      "reason": "",
+      "rust_name": "spearman_rank_corr",
+      "source_file": "correlation.rs",
+      "status": "bound"
+    }
+  ],
+  "polars_version": "0.55.2",
+  "skipped_files_note": "meta.rs (meta namespace), udf.rs (python/UDF plugin), serializable_plan.rs, python_dsl/, scan_sources.rs, builder_dsl.rs (LazyFrame builder, not Expr), selector.rs (selectors, not bindable as calculated-column methods), datatype_expr.rs (DataTypeExpr, a different expression type), name.rs (mostly closures/renaming)."
+}

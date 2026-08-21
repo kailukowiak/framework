@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "framework-dev-attach",
+      "url": "http://127.0.0.1:1420",
+      "port": 1420
+    },
+    {
+      "name": "framework-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 1420
+    }
+  ]
+}

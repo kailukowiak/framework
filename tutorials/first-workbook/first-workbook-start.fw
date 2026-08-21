@@ -1,0 +1,100 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 1,
+  "document": {
+    "id": "7da703f3-c48d-4eec-b79c-d57c28684439",
+    "name": "Your first FrameWork workbook",
+    "revision": 2,
+    "objects": [
+      {
+        "kind": "frame",
+        "id": "00d7d30e-be15-4964-91b9-2cd2dbb806ff",
+        "name": "Monthly sales",
+        "columns": [
+          {
+            "id": "column_1~4rte3t",
+            "name": "Column 1",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "column_2~ysh91t",
+            "name": "Column 2",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "636c6f8f-500b-4208-b71c-3b479953535c",
+            "cells": {
+              "column_1~4rte3t": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "column_2~ysh91t": {
+                "raw": "",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "5547de68-a3cb-400b-a9d6-704e6af7281f",
+            "cells": {
+              "column_1~4rte3t": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "column_2~ysh91t": {
+                "raw": "",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "block",
+        "id": "4c682029-d2ac-456c-82b2-1faabfa47b6d",
+        "name": "Assumptions",
+        "lines": []
+      }
+    ],
+    "views": [
+      {
+        "id": "4cae1689-4254-464d-aed3-3656c5d835bb",
+        "objectId": "00d7d30e-be15-4964-91b9-2cd2dbb806ff",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 420.0,
+        "height": 300.0,
+        "collapsed": false
+      },
+      {
+        "id": "c13a1720-22ab-49bd-9ba5-f29c8c24f514",
+        "objectId": "4c682029-d2ac-456c-82b2-1faabfa47b6d",
+        "x": 70.0,
+        "y": 420.0,
+        "width": 340.0,
+        "height": 220.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {}
+  },
+  "versionVector": {}
+}

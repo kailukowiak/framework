@@ -1,0 +1,7 @@
+# Copy this file to .codex/config.toml and replace all absolute placeholder paths.
+# Project-scoped MCP configuration is loaded only for trusted projects.
+
+[mcp_servers.framework]
+command = "/ABSOLUTE/PATH/TO/FrameWork/target/debug/framework-mcp"
+args = ["--document", "/ABSOLUTE/PATH/TO/FrameWork/framework.document.json"]
+default_tools_approval_mode = "prompt"
