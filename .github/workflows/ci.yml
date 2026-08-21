@@ -23,14 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # No `cache: npm`: it derives its cache key from a lockfile and fails
-      # outright when there is none. The npm install below is seconds against
-      # the Rust compile, so nothing here is worth caching around.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - run: npm install
+      - run: npm ci
 
       - name: Typecheck
         run: npx tsc --noEmit
@@ -82,19 +80,17 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      # No `cache: npm`: it derives its cache key from a lockfile and fails
-      # outright when there is none. The npm install below is seconds against
-      # the Rust compile, so nothing here is worth caching around.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       # src-tauri/src/lib.rs calls `tauri::generate_context!()`, which embeds
       # the built frontend at compile time. Without dist/ on disk the whole
       # workspace fails to compile, so the frontend build is a prerequisite
       # for every cargo command below — not just for bundling.
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build frontend (required by generate_context!)
         run: npm run build
