@@ -85,10 +85,12 @@ jobs:
         with:
           key: ${{ matrix.platform }}-release
 
+      # No `cache: npm`: it derives its cache key from a lockfile and fails
+      # outright when there is none. The npm install below is seconds against
+      # the Rust compile, so nothing here is worth caching around.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       # tauri.conf.json's beforeBuildCommand is `bun run build`, so bun has to
       # be on PATH even though dependencies are installed from the npm
@@ -99,7 +101,7 @@ jobs:
           bun-version: latest
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build and bundle installers
         uses: tauri-apps/tauri-action@v0

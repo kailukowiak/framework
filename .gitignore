@@ -13,6 +13,15 @@ target
 # Contains mutation testing data
 **/mutants.out*/
 
+# JavaScript lockfiles. Deliberately untracked: this repo carried both an npm
+# and a bun lockfile, and two of them cannot be kept honest at once. Installs
+# resolve from package.json, so CI uses `npm install` rather than `npm ci`
+# (which requires a lockfile), and actions/setup-node runs without its npm
+# cache (which derives its key from one). Cargo.lock stays tracked: it has no
+# rival, and it pins what actually goes into a shipped binary.
+package-lock.json
+bun.lock
+
 # Frontend / desktop build artifacts
 node_modules/
 dist/
