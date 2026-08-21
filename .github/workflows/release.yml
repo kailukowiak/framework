@@ -130,9 +130,18 @@ jobs:
       # of 10 GB, evicting the CI caches that every push does read. Giving up
       # a restore that never hits costs nothing; the eviction was costing
       # every subsequent CI run a cold build.
+      # Restore only, never save. GitHub scopes a cache to the ref that wrote
+      # it, and a run may read only its own ref or the default branch — so a
+      # cache saved while building tag v0.1.1 is invisible to tag v0.1.2, and
+      # to every tag after it. Releases are therefore always cold whatever we
+      # do here, and saving merely writes ~0.9 GB per platform that nothing
+      # can ever read, evicting the main-branch CI cache that genuinely is
+      # reused. Restoring is still worth attempting: a cache published by the
+      # default branch would be readable if one ever matched this key.
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.platform }}-release
+          save-if: false
           save-if: false
 
       - uses: actions/setup-node@v7
