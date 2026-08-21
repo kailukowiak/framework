@@ -1864,7 +1864,7 @@ impl FrameworkMcp {
 
 #[tool_handler(
     name = "framework",
-    version = "0.1.1",
+    version = "0.1.2",
     instructions = "FrameWork is a local structured-data canvas. Use inspect_document first, then get_frame when row-level context is needed. Prefer stable IDs returned by reads, include expectedRevision on writes, and read back changed frames after formula edits. Cells are addressed by frame, row, and column rather than screen coordinates. Mutating tools persist immediately and support undo/redo. Friendly task-level tools cover common work; call describe_operations then apply_operation for complete mutation functionality."
 )]
 impl ServerHandler for FrameworkMcp {}
