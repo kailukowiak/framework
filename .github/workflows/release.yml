@@ -123,25 +123,18 @@ jobs:
         if: runner.os == 'macOS'
         run: rustup target add aarch64-apple-darwin
 
-      # Restore only, never save. The `-release` key means these caches are
-      # readable by no run except another release of the same platform, which
-      # happens rarely enough that they have almost always expired by then --
-      # but each release still writes ~2.7 GB into a repository cache budget
-      # of 10 GB, evicting the CI caches that every push does read. Giving up
-      # a restore that never hits costs nothing; the eviction was costing
-      # every subsequent CI run a cold build.
       # Restore only, never save. GitHub scopes a cache to the ref that wrote
       # it, and a run may read only its own ref or the default branch — so a
-      # cache saved while building tag v0.1.1 is invisible to tag v0.1.2, and
-      # to every tag after it. Releases are therefore always cold whatever we
-      # do here, and saving merely writes ~0.9 GB per platform that nothing
-      # can ever read, evicting the main-branch CI cache that genuinely is
-      # reused. Restoring is still worth attempting: a cache published by the
-      # default branch would be readable if one ever matched this key.
+      # cache saved while building tag v0.1.1 is invisible to tag v0.1.2 and
+      # to every tag after it, whether or not it has expired. Releases are
+      # therefore always cold whatever this says, and saving merely wrote
+      # ~0.9 GB per platform that nothing could ever read, evicting by LRU the
+      # main-branch CI caches that every push does reuse. Restoring still
+      # costs nothing and would pay off if a matching default-branch cache
+      # ever existed.
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.platform }}-release
-          save-if: false
           save-if: false
 
       - uses: actions/setup-node@v7
