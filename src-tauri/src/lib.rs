@@ -23,10 +23,10 @@ const SCRATCH_DOCUMENT_NAME: &str = "untitled.fw";
 const BLANK_DOCUMENT_TITLE: &str = "Untitled";
 const DOCUMENT_OPENED_EVENT: &str = "framework-document-opened";
 const DOCUMENT_OPEN_FAILED_EVENT: &str = "framework-document-open-failed";
-/// The application identifier. On Linux this one string has to appear in four
+/// The application identifier. On Linux this one string has to appear in three
 /// places or the desktop does not recognise its own app: the Wayland app_id,
-/// the `.desktop` file stem, the AppStream component id, and the Flatpak app
-/// id. It is the same value as `identifier` in tauri.conf.json.
+/// the `.desktop` file stem, and the AppStream component id. It is the same
+/// value as `identifier` in tauri.conf.json.
 #[cfg(target_os = "linux")]
 const APP_ID: &str = "com.framework.canvas";
 const DOCUMENT_CHANGED_EVENT: &str = "framework-document-changed";
@@ -2586,8 +2586,7 @@ pub fn run() {
     // the match with the entry's StartupWMClass; COSMIC does not, which is why
     // the same install looks right on one desktop and shows a gear on the next.
     // Setting the program name before any window is mapped is what makes the
-    // two strings agree, and it is also what the Flatpak build needs, where the
-    // app ID has to be `com.framework.canvas` throughout.
+    // two strings agree.
     #[cfg(target_os = "linux")]
     glib::set_prgname(Some(APP_ID));
 
