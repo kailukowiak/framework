@@ -25,7 +25,7 @@ The current vertical slice proves the most important parts of the concept:
 
 ## Download
 
-[**Download the latest build**](https://github.com/kailukowiak/framework/releases) — no account, terminal, or toolchain required.
+[**Download the latest release**](https://github.com/kailukowiak/framework/releases/latest) — no account, terminal, or toolchain required.
 
 | Your system | File to pick |
 | --- | --- |
