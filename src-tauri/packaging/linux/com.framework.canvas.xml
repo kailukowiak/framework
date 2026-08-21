@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-framework-document">
+    <comment>FrameWork workbook</comment>
+    <!-- A .fw file is a JSON manifest; the frames it describes live in a
+         sibling .framework/ directory. Declaring the JSON subclass lets text
+         tools and previewers treat it sensibly instead of as opaque bytes. -->
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.fw"/>
+    <icon name="framework-desktop"/>
+    <generic-icon name="x-office-spreadsheet"/>
+  </mime-type>
+</mime-info>

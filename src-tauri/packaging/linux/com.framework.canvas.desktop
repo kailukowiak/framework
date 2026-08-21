@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=FrameWork
+GenericName=Data Canvas
+Comment=A free-form canvas for structured data
+Exec=framework-desktop %F
+Icon=framework-desktop
+StartupWMClass=com.framework.canvas
+StartupNotify=true
+Terminal=false
+Categories=Office;Spreadsheet;
+Keywords=spreadsheet;dataframe;data;canvas;analysis;table;csv;parquet;
+MimeType=application/x-framework-document;

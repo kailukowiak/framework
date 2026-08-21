@@ -23,6 +23,12 @@ const SCRATCH_DOCUMENT_NAME: &str = "untitled.fw";
 const BLANK_DOCUMENT_TITLE: &str = "Untitled";
 const DOCUMENT_OPENED_EVENT: &str = "framework-document-opened";
 const DOCUMENT_OPEN_FAILED_EVENT: &str = "framework-document-open-failed";
+/// The application identifier. On Linux this one string has to appear in three
+/// places or the desktop does not recognise its own app: the Wayland app_id,
+/// the `.desktop` file stem, and the AppStream component id. It is the same
+/// value as `identifier` in tauri.conf.json.
+#[cfg(target_os = "linux")]
+const APP_ID: &str = "com.framework.canvas";
 const DOCUMENT_CHANGED_EVENT: &str = "framework-document-changed";
 const COLLABORATION_FAILED_EVENT: &str = "framework-collaboration-failed";
 const WRITER_ID_NAME: &str = "writer-id";
@@ -2571,6 +2577,19 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // The app_id a Wayland compositor sees is GLib's program name, which
+    // defaults to the executable's basename -- `framework-desktop`. Desktop
+    // environments map a window to its launcher by matching that app_id
+    // against a .desktop file's stem, and the entry this app installs is
+    // `com.framework.canvas.desktop`, so the default leaves every window
+    // unmatched and wearing the generic fallback icon. GNOME usually rescues
+    // the match with the entry's StartupWMClass; COSMIC does not, which is why
+    // the same install looks right on one desktop and shows a gear on the next.
+    // Setting the program name before any window is mapped is what makes the
+    // two strings agree.
+    #[cfg(target_os = "linux")]
+    glib::set_prgname(Some(APP_ID));
+
     let builder = tauri::Builder::default();
 
     // The e2e harness talks W3C WebDriver to a server the first plugin runs

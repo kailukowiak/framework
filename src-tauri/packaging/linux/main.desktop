@@ -1,0 +1,40 @@
+[Desktop Entry]
+{{!-- Handlebars template for the .desktop file Tauri generates. Tauri's own
+  template writes the Exec line with no argument placeholder, which is why a .fw
+  file double-clicked in a file manager never reached the app: the launcher had
+  nowhere to put the path. It also emits no Keywords, no StartupNotify, and an
+  empty Categories line unless bundle.category is set.
+
+  %F, not %U. The app parses argv into a PathBuf (document_path_from_arguments
+  in src/lib.rs), so it needs local paths. %U would hand it a file:// URL, which
+  still ends in .fw and so is accepted, and which then fails to open because no
+  file by that name exists. %F is the placeholder for local paths, and it lets
+  the file manager mount remote locations first.
+
+  StartupWMClass is written out literally rather than taken from the exec
+  variable, because the app sets its own GLib program name to the app id -- see
+  the comment in run().
+
+  The available variables are categories, comment, exec, icon, name, mime_type
+  and long_description. There is no variable for the file name, which is always
+  <productName>.desktop, so the deb and rpm neutralise this entry and ship
+  com.framework.canvas.desktop instead. What this template is really for is the
+  AppImage, which reuses the deb's data directory but not its custom file list
+  and so has no other way to get a correct entry. --}}
+Type=Application
+Version=1.0
+Name={{name}}
+GenericName=Data Canvas
+{{#if comment}}
+Comment={{comment}}
+{{/if}}
+Exec={{exec}} %F
+Icon={{icon}}
+StartupWMClass=com.framework.canvas
+StartupNotify=true
+Terminal=false
+Categories=Office;Spreadsheet;
+Keywords=spreadsheet;dataframe;data;canvas;analysis;table;csv;parquet;
+{{#if mime_type}}
+MimeType={{mime_type}};
+{{/if}}
