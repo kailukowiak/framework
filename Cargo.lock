@@ -2593,7 +2593,7 @@ dependencies = [
 
 [[package]]
 name = "framework-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "calamine",
  "chrono",
@@ -2610,7 +2610,7 @@ dependencies = [
 
 [[package]]
 name = "framework-desktop"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "connectorx",
  "framework-core",
@@ -2629,7 +2629,7 @@ dependencies = [
 
 [[package]]
 name = "framework-mcp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "dirs",
  "framework-core",
