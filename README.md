@@ -1,5 +1,7 @@
 # FrameWork
 
+[![CI](https://github.com/kailukowiak/framework/actions/workflows/ci.yml/badge.svg)](https://github.com/kailukowiak/framework/actions/workflows/ci.yml)
+
 FrameWork is an early desktop prototype of a free-form canvas for structured data. It is aimed first at dataframe-literate analysts who repeatedly reach for Excel or Google Sheets because they want to see and manipulate their data directly.
 
 The current vertical slice proves the most important parts of the concept:
@@ -21,7 +23,31 @@ The current vertical slice proves the most important parts of the concept:
 - a FrameWork context menu for canvas and table actions;
 - circular column dependency rejection.
 
-## Run it
+## Download
+
+[**Download the latest build**](https://github.com/kailukowiak/framework/releases) — no account, terminal, or toolchain required.
+
+| Your system | File to pick |
+| --- | --- |
+| macOS (Intel or Apple Silicon) | `FrameWork_*_universal.dmg` |
+| Windows | `FrameWork_*_x64-setup.exe` |
+| Ubuntu / Debian / Mint | `FrameWork_*_amd64.deb` |
+| Fedora / RHEL / openSUSE | `FrameWork-*.x86_64.rpm` |
+| Any other Linux | `FrameWork_*_amd64.AppImage` |
+
+These builds are not code-signed yet, so the first launch takes one extra
+confirmation — an unsigned application is simply one that has not paid for a
+certificate, and you only do this once. On macOS, drag FrameWork to
+Applications, let the first launch be refused, then open **System Settings →
+Privacy & Security** and click **Open Anyway**. On Windows, click **More info**
+and then **Run anyway** on the blue SmartScreen box. On Linux the `.deb` and
+`.rpm` install through the usual software centre; an `.AppImage` needs to be
+marked executable first (right-click → Properties → Permissions).
+
+Installed builds register `.fw` as a FrameWork document type, so double-clicking
+a document opens it.
+
+## Run it from source
 
 Requirements: Node.js, npm, and the Rust toolchain.
 

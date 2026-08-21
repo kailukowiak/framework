@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch supersedes an in-flight run. Release runs
+# are a separate workflow and are never cancelled by this.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  frontend:
+    name: Frontend — tsc, eslint, vitest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # eslint's workspace config reports structural smells (long functions,
+      # file length, complexity) as warnings, not errors, so this fails only
+      # on real errors. That is deliberate: AGENTS.md asks new work to leave
+      # the warning set no worse than it found it, which is a review
+      # judgement, not something a gate can decide.
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+  rust:
+    name: Rust — fmt, clippy, tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # src-tauri is a workspace member, so even `cargo test --workspace`
+      # links the Linux webview stack. These are the Tauri v2 system
+      # dependencies; libssl-dev is additionally required because connectorx
+      # reaches native-tls, which uses OpenSSL on Linux (Schannel on Windows
+      # and Security.framework on macOS, so those targets need nothing).
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            build-essential curl wget file
+
+      # rust-toolchain.toml pins the channel and the clippy/rustfmt
+      # components. `rustup show` provisions exactly that, so the pin lives
+      # in one place and CI cannot drift from a local checkout.
+      - name: Install pinned Rust toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # src-tauri/src/lib.rs calls `tauri::generate_context!()`, which embeds
+      # the built frontend at compile time. Without dist/ on disk the whole
+      # workspace fails to compile, so the frontend build is a prerequisite
+      # for every cargo command below — not just for bundling.
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend (required by generate_context!)
+        run: npm run build
+
+      - name: Formatting
+        run: cargo fmt --all --check
+
+      # No -D warnings: the workspace intentionally sets structural lints
+      # (too_many_lines, cognitive_complexity, ...) to warn because the long
+      # dispatch functions are tracked debt. Failing on them would block
+      # unrelated work.
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets
+
+      - name: Tests
+        run: cargo test --workspace
