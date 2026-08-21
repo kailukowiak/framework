@@ -29,11 +29,11 @@ The current vertical slice proves the most important parts of the concept:
 
 | Your system | File to pick |
 | --- | --- |
-| macOS (Intel or Apple Silicon) | `FrameWork_*_universal.dmg` |
-| Windows | `FrameWork_*_x64-setup.exe` |
-| Ubuntu / Debian / Mint | `FrameWork_*_amd64.deb` |
-| Fedora / RHEL / openSUSE | `FrameWork-*.x86_64.rpm` |
-| Any other Linux | `FrameWork_*_amd64.AppImage` |
+| macOS (Intel or Apple Silicon) | the one ending in **`.dmg`** |
+| Windows | the one ending in **`-setup.exe`** |
+| Ubuntu / Debian / Mint | the one ending in **`.deb`** |
+| Fedora / RHEL / openSUSE | the one ending in **`.rpm`** |
+| Any other Linux | the one ending in **`.AppImage`** |
 
 These builds are not code-signed yet, so the first launch takes one extra
 confirmation — an unsigned application is simply one that has not paid for a

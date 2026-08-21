@@ -126,11 +126,11 @@ jobs:
 
             | Your system | Download |
             | --- | --- |
-            | **macOS** (Intel or Apple Silicon) | `FrameWork_*_universal.dmg` |
-            | **Windows** | `FrameWork_*_x64-setup.exe` |
-            | **Ubuntu / Debian / Mint** | `FrameWork_*_amd64.deb` |
-            | **Fedora / RHEL / openSUSE** | `FrameWork-*.x86_64.rpm` |
-            | **Any other Linux** | `FrameWork_*_amd64.AppImage` |
+            | **macOS** (Intel or Apple Silicon) | the one ending in `.dmg` |
+            | **Windows** | the one ending in `-setup.exe` |
+            | **Ubuntu / Debian / Mint** | the one ending in `.deb` |
+            | **Fedora / RHEL / openSUSE** | the one ending in `.rpm` |
+            | **Any other Linux** | the one ending in `.AppImage` |
 
             ## First launch
 
