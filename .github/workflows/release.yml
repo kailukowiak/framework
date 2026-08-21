@@ -22,6 +22,14 @@ env:
 jobs:
   bundle:
     name: ${{ matrix.label }}
+    # Every entry passes src-tauri/tauri.release.conf.json, which is the only
+    # place createUpdaterArtifacts is turned on. It cannot live in
+    # tauri.conf.json: the moment a pubkey is configured, producing an updater
+    # artifact means signing it, and `tauri build` fails outright with "a
+    # public key has been found, but no private key" on any machine without
+    # the release key. That would break `npm run test:e2e` and every local
+    # bundle for anyone but the release signer, to serve a file only CI has
+    # any use for.
     strategy:
       # One platform failing should not deny the others their installers —
       # a partially populated draft release is still worth inspecting.
@@ -35,11 +43,11 @@ jobs:
           # add x86_64-apple-darwin to the rustup step below.
           - platform: macos-latest
             label: macOS (Apple Silicon .dmg)
-            args: --target aarch64-apple-darwin
+            args: --target aarch64-apple-darwin --config src-tauri/tauri.release.conf.json
 
           - platform: windows-latest
             label: Windows (.exe + .msi)
-            args: ''
+            args: --config src-tauri/tauri.release.conf.json
 
           # Built on the oldest supported Ubuntu on purpose: glibc is
           # backwards compatible, so a 22.04 build runs on 24.04 and later,
@@ -48,7 +56,7 @@ jobs:
           # else respectively.
           - platform: ubuntu-22.04
             label: Linux (.deb + .rpm + .AppImage)
-            args: ''
+            args: --config src-tauri/tauri.release.conf.json
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
