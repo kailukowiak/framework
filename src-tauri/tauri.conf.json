@@ -45,11 +45,21 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["fw"],
-        "name": "FrameWork Document",
+        "ext": [
+          "fw"
+        ],
+        "name": "FrameWork.Document",
         "description": "FrameWork structured-data canvas",
         "mimeType": "application/x-framework-document",
-        "role": "Editor"
+        "role": "Editor",
+        "rank": "Owner",
+        "exportedType": {
+          "identifier": "com.framework.canvas.document",
+          "conformsTo": [
+            "public.json",
+            "public.content"
+          ]
+        }
       }
     ]
   },
