@@ -14,6 +14,8 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## 0.1.4
 
+- Opening FrameWork on Windows no longer leaves a terminal window sitting
+  behind it.
 - Release notes in the update dialog render as markdown — headings, lists,
   tables, and links, wrapped to the dialog — instead of a block of raw text.
 - The update offer no longer repeats the download and first-launch
