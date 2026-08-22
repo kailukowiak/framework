@@ -1,5 +1,6 @@
 import { Download, X } from "lucide-react";
 import { useEffect } from "react";
+import { Markdown } from "./Markdown";
 import type { UpdateProgress, UpdateStatus } from "./hooks/useUpdateCheck";
 
 function formatBytes(bytes: number): string {
@@ -93,11 +94,12 @@ export function UpdateDialog({
 
         {(status.kind === "available" || status.kind === "installing") && (
           <>
-            <p>
-              A new version is available. Installing takes a moment and
-              restarts FrameWork; open documents are already saved.
-            </p>
-            {status.notes && <pre className="update-notes">{status.notes}</pre>}
+            <p>Installing restarts FrameWork; open documents are saved.</p>
+            {status.notes && (
+              <div className="update-notes">
+                <Markdown source={status.notes} />
+              </div>
+            )}
             {progress && <p className="update-progress">{progressLabel(progress)}</p>}
           </>
         )}

@@ -115,7 +115,7 @@ button:disabled { cursor: default; opacity: .35; }
 .menu-separator { display: block; height: 1px; margin: 5px 6px; background: light-dark(#e2dfd7, #1c1d17); }
 .toolbar-button, .primary-action {
   height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 9px;
-  background: var(--ink-fill); color: #fff; font-size: var(--text-base); font-weight: 600; box-shadow: 0 1px 2px light-dark(rgba(0,0,0,.12), rgba(0,0,0,0.222));
+  background: var(--ink-fill); color: #fff; font-size: var(--text-base); font-weight: 600; white-space: nowrap; box-shadow: 0 1px 2px light-dark(rgba(0,0,0,.12), rgba(0,0,0,0.222));
 }
 .icon-button { width: 34px; height: 34px; display: inline-grid; place-items: center; background: transparent; border-radius: 8px; }
 .icon-button:hover:not(:disabled) { background: light-dark(#eeece7, #1c1d17); }
@@ -1183,10 +1183,12 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .interpretation { display: flex; align-items: center; gap: 7px; margin-top: -5px; padding: 10px 11px; border-radius: 8px; background: light-dark(#eceee9, #1c1d17); color: light-dark(#6e706a, #93958f); font-size: var(--text-sm); }
 .interpretation svg { color: var(--accent); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-.secondary-action { height: 38px; padding: 0 16px; border: 1px solid light-dark(#d6d3ca, #3a3c30); border-radius: 8px; background: light-dark(#fff, #2c2d24); font-size: var(--text-base); }
+.secondary-action { height: 38px; white-space: nowrap; padding: 0 16px; border: 1px solid light-dark(#d6d3ca, #3a3c30); border-radius: 8px; background: light-dark(#fff, #2c2d24); font-size: var(--text-base); }
 .primary-action { padding: 0 16px; }
 .connector-refresh-confirm .connector-refresh-subject { max-height: 220px; margin: 12px 0; padding: 12px; overflow: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid light-dark(#d6d3ca, #3a3c30); border-radius: 8px; background: light-dark(#f3f2ec, #1c1d17); font-size: var(--text-sm); }
-.update-dialog .update-notes { max-height: 180px; margin: 12px 0; padding: 12px; overflow: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid light-dark(#d6d3ca, #3a3c30); border-radius: 8px; background: light-dark(#f3f2ec, #1c1d17); font-size: var(--text-sm); }
+.update-dialog .update-notes { max-height: 180px; margin: 12px 0; padding: 12px; overflow: auto; overflow-wrap: break-word; border: 1px solid light-dark(#d6d3ca, #3a3c30); border-radius: 8px; background: light-dark(#f3f2ec, #1c1d17); }
+.update-dialog .update-notes .markdown-body { font-size: var(--text-sm); }
+.update-dialog .update-notes .markdown-body h1, .update-dialog .update-notes .markdown-body h2, .update-dialog .update-notes .markdown-body h3, .update-dialog .update-notes .markdown-body h4 { font-size: var(--text-sm); }
 .update-dialog .update-progress { margin: 12px 0 0; font-variant-numeric: tabular-nums; font-size: var(--text-sm); }
 
 .error-toast { position: fixed; z-index: 120; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: 560px; display: flex; align-items: center; gap: 9px; padding: 12px 13px; border: 1px solid light-dark(#e2b39d, #6b4132); border-radius: 10px; background: light-dark(#fff3ee, #3a2019); color: light-dark(#8b3d1d, #e2775a); box-shadow: 0 10px 30px light-dark(rgba(85,39,20,.16), rgba(85,39,20,0.296)); font-size: var(--text-base); }
@@ -1227,6 +1229,9 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .markdown-body li { margin: 1px 0; }
 .markdown-body code { padding: 0 3px; border-radius: 4px; background: light-dark(#efeee8, #2c2d26); font: 500 var(--text-sm) "DM Mono", monospace; }
 .markdown-body a { color: var(--accent); }
+.markdown-body table { width: 100%; margin: 0 0 6px; border-collapse: collapse; }
+.markdown-body th, .markdown-body td { padding: 2px 6px; border: 1px solid light-dark(#dcd9d0, #3a3c30); text-align: left; vertical-align: top; }
+.markdown-body th { font-weight: 650; }
 
 /* A hole's answer: marked just enough to say "this number is alive". */
 .text-hole { padding: 0 2px; border-radius: 4px; background: var(--accent-soft); font-variant-numeric: tabular-nums; }

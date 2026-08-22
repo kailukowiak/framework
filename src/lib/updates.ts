@@ -44,6 +44,40 @@ export function clearSkippedUpdateVersion(): void {
   }
 }
 
+/**
+ * A release body is written for the Releases page, where the reader has no
+ * copy of FrameWork yet: which file to download, how to get past the
+ * unsigned-app warning, how a `.fw` file opens. Someone reading the same text
+ * inside a running FrameWork has already answered all three and is one click
+ * from an install that happens by itself — those sections are answers to
+ * questions they are not asking, and they push whatever the release actually
+ * says about the new version out of view.
+ *
+ * So the offer keeps only the sections that are about the release, and shows
+ * no notes at all when nothing is left. The headings are the ones written in
+ * .github/workflows/release.yml; a heading that drifts out of this set shows
+ * too much, never too little.
+ */
+const INSTALLER_ONLY_SECTIONS = new Set([
+  "download",
+  "first launch",
+  "opening documents",
+]);
+
+export function releaseNotesForUpdate(body: string | null | undefined): string | null {
+  if (!body) return null;
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of body.split("\n")) {
+    const heading = line.match(/^#{1,6}\s+(.*)$/);
+    if (heading)
+      skipping = INSTALLER_ONLY_SECTIONS.has(heading[1].trim().toLowerCase());
+    if (!skipping) kept.push(line);
+  }
+  const notes = kept.join("\n").trim();
+  return notes === "" ? null : notes;
+}
+
 export type UpdateOutcome =
   | { kind: "available"; version: string; notes: string | null; update: Update }
   | { kind: "up-to-date" }
@@ -61,7 +95,7 @@ export async function checkForUpdate(): Promise<UpdateOutcome> {
     return {
       kind: "available",
       version: update.version,
-      notes: update.body ?? null,
+      notes: releaseNotesForUpdate(update.body),
       update,
     };
   } catch (reason) {

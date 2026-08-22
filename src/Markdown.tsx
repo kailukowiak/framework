@@ -82,7 +82,17 @@ function renderInline(
 type Block =
   | { kind: "heading"; level: number; text: string }
   | { kind: "list"; ordered: boolean; items: string[] }
+  | { kind: "table"; header: string[]; rows: string[][] }
   | { kind: "paragraph"; text: string };
+
+// A pipe row splits on unescaped pipes, with the optional leading and
+// trailing pipe dropped so `| a | b |` and `a | b` give the same cells.
+function tableCells(line: string): string[] {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return trimmed.split("|").map((cell) => cell.trim());
+}
+
+const TABLE_DIVIDER = /^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$/;
 
 function parseBlocks(source: string): Block[] {
   const blocks: Block[] = [];
@@ -92,7 +102,29 @@ function parseBlocks(source: string): Block[] {
       blocks.push({ kind: "paragraph", text: paragraph.join(" ") });
     paragraph = [];
   };
-  for (const line of source.split("\n")) {
+  const lines = source.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    // A header row is only a table if the next line is the dash divider —
+    // otherwise a sentence containing a pipe would become a one-cell table.
+    if (
+      line.includes("|") &&
+      index + 1 < lines.length &&
+      TABLE_DIVIDER.test(lines[index + 1]) &&
+      lines[index + 1].includes("-")
+    ) {
+      flush();
+      const header = tableCells(line);
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && lines[index].includes("|")) {
+        rows.push(tableCells(lines[index]));
+        index += 1;
+      }
+      index -= 1;
+      blocks.push({ kind: "table", header, rows });
+      continue;
+    }
     const heading = line.match(/^(#{1,4})\s+(.*)$/);
     if (heading) {
       flush();
@@ -138,6 +170,32 @@ export function Markdown({
         if (block.kind === "heading") {
           const Tag = (["h1", "h2", "h3", "h4"] as const)[block.level - 1];
           return <Tag key={key}>{renderInline(block.text, values, key)}</Tag>;
+        }
+        if (block.kind === "table") {
+          return (
+            <table key={key}>
+              <thead>
+                <tr>
+                  {block.header.map((cell, cellIndex) => (
+                    <th key={cellIndex}>
+                      {renderInline(cell, values, `${key}.h${cellIndex}`)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {block.rows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={cellIndex}>
+                        {renderInline(cell, values, `${key}.${rowIndex}.${cellIndex}`)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
         }
         if (block.kind === "list") {
           const Tag = block.ordered ? "ol" : "ul";

@@ -5,6 +5,7 @@ import {
   classifyUpdateFailure,
   clearSkippedUpdateVersion,
   recordUpdateCheck,
+  releaseNotesForUpdate,
   shouldCheckInBackground,
   skipUpdateVersion,
   skippedUpdateVersion,
@@ -90,5 +91,43 @@ describe("shouldCheckInBackground", () => {
   it("checks when the stored timestamp is unusable", () => {
     window.localStorage.setItem("framework.lastUpdateCheck", "not-a-number");
     expect(shouldCheckInBackground(1_000_000)).toBe(true);
+  });
+});
+
+describe("releaseNotesForUpdate", () => {
+  const installerBody = [
+    "## Download",
+    "",
+    "| Your system | Download |",
+    "| --- | --- |",
+    "| **macOS** | the one ending in `.dmg` |",
+    "",
+    "## First launch",
+    "",
+    "These builds are not code-signed yet.",
+    "",
+    "## Opening documents",
+    "",
+    "FrameWork documents are `.fw` files.",
+  ].join("\n");
+
+  it("drops the sections that only matter before you have the app", () => {
+    const body = `${installerBody}\n\n## What's new\n\n- Faster unpivot`;
+    expect(releaseNotesForUpdate(body)).toBe("## What's new\n\n- Faster unpivot");
+  });
+
+  // A body that is nothing but install instructions has nothing to tell
+  // someone who is one click from an automatic install.
+  it("shows no notes when only installer sections remain", () => {
+    expect(releaseNotesForUpdate(installerBody)).toBeNull();
+  });
+
+  it("keeps a body that never mentions installing", () => {
+    expect(releaseNotesForUpdate("Fixes the grid.")).toBe("Fixes the grid.");
+  });
+
+  it("treats a missing body as no notes", () => {
+    expect(releaseNotesForUpdate(null)).toBeNull();
+    expect(releaseNotesForUpdate("   ")).toBeNull();
   });
 });

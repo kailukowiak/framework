@@ -46,6 +46,25 @@ describe("UpdateDialog", () => {
     expect(screen.getByText("Fixes the grid.")).toBeTruthy();
   });
 
+  it("renders release notes as markdown rather than preformatted text", () => {
+    render(
+      <UpdateDialog
+        status={{
+          kind: "available",
+          version: "0.1.2",
+          notes: "## Download\n\n| System | File |\n| --- | --- |\n| macOS | `.dmg` |",
+        }}
+        progress={null}
+        onInstall={noop}
+        onSkip={noop}
+        onDismiss={noop}
+      />
+    );
+    expect(screen.getByRole("heading", { name: "Download" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "System" })).toBeTruthy();
+    expect(screen.getByRole("cell", { name: "macOS" })).toBeTruthy();
+  });
+
   it("reports download progress against the total once it is known", () => {
     render(
       <UpdateDialog
