@@ -928,52 +928,6 @@ fn a_list_spreads_across_the_columns_it_is_pointed_at() {
     );
 }
 
-/// The length check is the whole safety of a positional spread, so it says
-/// both counts and names the columns rather than padding, recycling, or
-/// truncating.
-#[test]
-fn a_list_that_does_not_match_the_columns_is_refused_with_both_counts() {
-    let mut store = blank_store();
-    store
-        .apply(Operation::AddFrame {
-            name: "Sales".into(),
-            grid: vec![
-                vec!["Q1".into(), "Q2".into(), "Q3".into()],
-                vec!["10".into(), "20".into(), "30".into()],
-            ],
-            x: 0.0,
-            y: 0.0,
-        })
-        .unwrap();
-    let sales_id = frame_named(store.document(), "Sales").id.clone();
-    store
-        .apply(Operation::AddLinkedFrame {
-            source_frame_id: sales_id,
-            name: "Scaled".into(),
-            x: 0.0,
-            y: 400.0,
-        })
-        .unwrap();
-    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
-    let failure = store.apply(Operation::SetFramePipeline {
-        frame_id: scaled_id,
-        steps: vec![FrameStepInput::Broadcast {
-            columns: "`Q1`, `Q2`, `Q3`".into(),
-            vector: "[1, 2]".into(),
-            operator: BroadcastOperator::Multiply,
-        }],
-    });
-    match failure {
-        Err(CoreError::Formula(message)) => {
-            assert!(
-                message.contains('2') && message.contains('3') && message.contains("Q2"),
-                "the refusal should carry both counts and the columns, said: {message}"
-            );
-        }
-        other => panic!("expected a length refusal, got {other:?}"),
-    }
-}
-
 /// One value is not a list. Broadcasting a scalar is already what plain
 /// arithmetic does, so pointing this gesture at one is a mistake worth
 /// saying out loud rather than quietly doing nothing interesting.
@@ -1171,5 +1125,119 @@ fn a_list_edited_shorter_reports_on_the_column_that_ran_off_the_end() {
             );
         }
         Ok(page) => panic!("expected the short list to be caught, got {:?}", page.rows),
+    }
+}
+
+/// Four quarterly factors across twelve monthly columns: the list repeats,
+/// and the repeat is written into the formulas rather than hidden in the
+/// step. The fifth column says `.at(1)` in the text a person reads, which
+/// is what makes this safe where R's silent recycling is not.
+#[test]
+fn a_shorter_list_repeats_over_the_columns_and_says_so_in_the_formulas() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![
+                vec!["M1".into(), "M2".into(), "M3".into(), "M4".into()],
+                vec!["10".into(), "10".into(), "10".into(), "10".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: scaled_id.clone(),
+            steps: vec![FrameStepInput::Broadcast {
+                columns: "`M1`, `M2`, `M3`, `M4`".into(),
+                vector: "[2, 3]".into(),
+                operator: BroadcastOperator::Multiply,
+            }],
+        })
+        .unwrap();
+
+    assert_eq!(
+        store.get_frame_page(&scaled_id, 0, 10).unwrap().rows[0],
+        vec!["20", "30", "20", "30"],
+        "the two factors should alternate across the four columns"
+    );
+
+    // The wrap is legible without any interface: the third column's own
+    // formula names position 1 again.
+    let view = store.view();
+    let positions: Vec<String> = view.computed_frames[&scaled_id]
+        .steps
+        .iter()
+        .filter_map(|step| match step {
+            RenderedFrameStep::WithColumns { columns } => Some(columns),
+            _ => None,
+        })
+        .flatten()
+        .map(|column| column.formula.clone())
+        .filter(|formula| formula.contains(".at("))
+        .collect();
+    assert_eq!(
+        positions.iter().filter(|f| f.contains(".at(1)")).count(),
+        2,
+        "position 1 should be taken twice, once per pass over the list: {positions:?}"
+    );
+}
+
+/// A list that leaves a remainder is refused: half a pattern landing on the
+/// end of the frame is the shape of a mistake, not something anyone asks
+/// for.
+#[test]
+fn a_list_that_leaves_a_remainder_over_the_columns_is_refused() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![
+                vec!["M1".into(), "M2".into(), "M3".into()],
+                vec!["10".into(), "10".into(), "10".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    let failure = store.apply(Operation::SetFramePipeline {
+        frame_id: scaled_id,
+        steps: vec![FrameStepInput::Broadcast {
+            columns: "`M1`, `M2`, `M3`".into(),
+            vector: "[2, 3]".into(),
+            operator: BroadcastOperator::Multiply,
+        }],
+    });
+    match failure {
+        Err(CoreError::Formula(message)) => assert!(
+            message.contains("evenly")
+                && message.contains('2')
+                && message.contains('3')
+                && message.contains("M2"),
+            "the refusal should say why, and carry both counts and the columns, \
+             said: {message}"
+        ),
+        other => panic!("expected an even-division refusal, got {other:?}"),
     }
 }

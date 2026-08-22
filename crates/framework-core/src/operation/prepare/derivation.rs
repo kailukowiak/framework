@@ -894,13 +894,21 @@ impl Document {
     /// The drag-across, expanded: one formula per column, each naming the
     /// list and the position it took from it.
     ///
-    /// The length check is the whole safety of the thing. Nothing here
-    /// matches a value to a column by anything but position, which is the
-    /// alignment this model refuses everywhere else — so it is allowed only
-    /// where the person doing it can see both sides, and only when the two
-    /// counts agree exactly. A list one short of the columns is not padded,
-    /// recycled, or truncated: R recycles and it is one of the most
-    /// reliable sources of wrong answers in that language.
+    /// A list shorter than the columns repeats over them, but only a whole
+    /// number of times — four quarterly factors across twelve monthly
+    /// columns, never five across twelve. Recycling is what makes R's
+    /// vectors one of the most reliable sources of wrong answers in that
+    /// language, and the difference here is that the repeat cannot hide:
+    /// the step expands into per-column formulas, so the fifth column's
+    /// formula says `.at(1)` in writing. A repeat somebody did not mean is
+    /// visible in the thing itself rather than in a warning they had to be
+    /// watching for.
+    ///
+    /// The even-division rule is what is left of the length check, and it
+    /// is doing the real work. Nothing here matches a value to a column by
+    /// anything but position — the alignment this model refuses everywhere
+    /// else — so a leftover is the shape of a mistake: half a pattern
+    /// landing on the end of the frame is not something anyone asks for.
     fn prepare_broadcast_step(
         &self,
         columns: &str,
@@ -926,7 +934,7 @@ impl Document {
             .map_err(CoreError::Formula)?
             .1
             .len();
-        if length != column_ids.len() {
+        if length == 0 || !column_ids.len().is_multiple_of(length) {
             let name_of = |column_id: &Id| {
                 scope
                     .columns
@@ -936,8 +944,9 @@ impl Document {
                     .unwrap_or_else(|| column_id.clone())
             };
             return Err(CoreError::Formula(format!(
-                "‘{vector}’ has {length} value{}, but this spreads across {} column{} \
-                 ({}). They have to match one for one.",
+                "‘{vector}’ has {length} value{}, which does not go evenly into {} \
+                 column{} ({}). A list either matches the columns or repeats a whole \
+                 number of times over them.",
                 if length == 1 { "" } else { "s" },
                 column_ids.len(),
                 if column_ids.len() == 1 { "" } else { "s" },
@@ -962,7 +971,7 @@ impl Document {
                             input: Box::new(expression.clone()),
                             path: vec!["at".into()],
                             arguments: vec![Expr::Integer {
-                                value: index as i64 + 1,
+                                value: (index % length) as i64 + 1,
                             }],
                             keyword_arguments: Vec::new(),
                         }),
