@@ -32,6 +32,8 @@ jobs:
   verify-version:
     name: Tag matches app version
     runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.notes.outputs.notes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,6 +51,24 @@ jobs:
             exit 1
           fi
           echo "$TAG matches src-tauri/tauri.conf.json ($version)."
+
+      # The same argument as the version check, for the other half of a
+      # release: notes written at tag time are notes written by whoever is
+      # cutting it, at the moment they have least context about what went in.
+      # CHANGELOG.md is written alongside the change, so it is what the
+      # release body and the in-app update offer are both built from -- and a
+      # release that cannot say what changed stops here rather than after
+      # three platforms have spent an hour building installers for it.
+      - name: Take the release notes from CHANGELOG.md
+        id: notes
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          {
+            echo 'notes<<CHANGELOG_SECTION_EOF'
+            node scripts/changelog-section.mjs "$TAG"
+            echo 'CHANGELOG_SECTION_EOF'
+          } >> "$GITHUB_OUTPUT"
 
   bundle:
     name: ${{ matrix.label }}
@@ -200,6 +220,11 @@ jobs:
           # whichever release is currently latest — so a draft release is
           # invisible to installed copies until it is published.
           includeUpdaterJson: true
+          # The in-app update dialog renders this same body, minus the
+          # sections that are only about obtaining and first-launching the app
+          # (src/lib/updates.ts drops them by heading). Anything that belongs
+          # in front of someone who is already running FrameWork goes under a
+          # heading outside that set.
           releaseBody: |
             ## Download
 
@@ -242,3 +267,9 @@ jobs:
 
             Launching FrameWork on its own starts a throwaway canvas and raises
             the Data library — Save As is what turns it into a real document.
+
+            ## What's new
+
+            ${{ needs.verify-version.outputs.notes }}
+
+            [Every version](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)

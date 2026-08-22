@@ -45,7 +45,8 @@ and then **Run anyway** on the blue SmartScreen box. On Linux the `.deb` and
 marked executable first (right-click → Properties → Permissions).
 
 Installed builds register `.fw` as a FrameWork document type, so double-clicking
-a document opens it.
+a document opens it. Installed copies offer their own updates; what each release
+changed is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Run it from source
 
@@ -122,6 +123,7 @@ crates/framework-mcp/    Local AI/programmatic MCP adapter
 src-tauri/               Thin desktop command and persistence adapter
 src/                     React canvas and inspectors
 docs/                    Product and architecture decisions
+CHANGELOG.md             What changed in each release; the source of every release note
 ProjectSpec.md           Full product vision, living roadmap/backlog (§34), decision log (§35)
 ```
 

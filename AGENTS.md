@@ -240,6 +240,18 @@ a live-frame cell click is refused without disabling any non-cell operation.
   measures discoverability, which no scripted test can; it costs a model run,
   so it is on-demand, not CI. Its README carries the grading rules and the
   scenario recipe.
+- Anything someone using FrameWork would notice gets a line under
+  `## Unreleased` in `CHANGELOG.md`, in the same commit as the change. Not
+  refactors, tests, CI, or comments — a behaviour, an interface, or a fix that
+  changes what happens when they use the app. This is not bookkeeping: the
+  release workflow lifts the section matching the tag into the GitHub release
+  body and, through `src/lib/updates.ts`, into the in-app update offer, and it
+  refuses to build a release whose version has no section. So an entry left
+  unwritten is not a tidy file with a gap in it — it is either a release that
+  cannot describe itself or one that never builds. Write it for the person
+  using the app: what is different now, not which module moved. Cutting a
+  release renames `## Unreleased` to the version being tagged and opens a
+  fresh one above it.
 - Comments in this codebase explain *why*, at length, in prose. Match that.
   A rule that took an argument to arrive at should carry the argument.
 
