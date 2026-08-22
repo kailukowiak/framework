@@ -51,14 +51,18 @@ describe("changelogSection", () => {
     expect(changelogSection(CHANGELOG, "0.1.1")).toBeNull();
   });
 
-  // The file this repo actually ships. A release cannot describe itself if
-  // the heading shape drifts away from what the workflow greps for.
-  it("finds the real changelog's current sections", () => {
+  // The file this repo actually ships, at the version it currently carries:
+  // a release cannot describe itself if the heading shape drifts away from
+  // what the workflow greps for, or if the bump was made without one.
+  it("has an entry for the version this working tree is at", () => {
     const real = readFileSync(
       new URL("../CHANGELOG.md", import.meta.url),
       "utf8"
     );
-    expect(changelogSection(real, "Unreleased")).toBeTruthy();
+    const { version } = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8")
+    );
+    expect(changelogSection(real, version)).toBeTruthy();
     expect(changelogSection(real, "0.1.3")).toBeTruthy();
   });
 });

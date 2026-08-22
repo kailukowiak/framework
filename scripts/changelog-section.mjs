@@ -15,6 +15,7 @@
  *     node scripts/changelog-section.mjs 0.1.3 [path/to/CHANGELOG.md]
  */
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 /** The section body under `## <version>`, up to the next `##`, or null. */
 export function changelogSection(markdown, version) {
@@ -38,7 +39,7 @@ export function changelogSection(markdown, version) {
 
 // Node runs this file both as a module (the test imports it) and as a
 // command (the release workflow runs it); only the latter should exit.
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split("/").pop())) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const [version, path = "CHANGELOG.md"] = process.argv.slice(2);
   if (!version) {
     console.error("usage: node scripts/changelog-section.mjs <version> [changelog]");

@@ -12,6 +12,8 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.4
+
 - Release notes in the update dialog render as markdown — headings, lists,
   tables, and links, wrapped to the dialog — instead of a block of raw text.
 - The update offer no longer repeats the download and first-launch

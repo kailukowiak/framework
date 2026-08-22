@@ -252,6 +252,18 @@ a live-frame cell click is refused without disabling any non-cell operation.
   using the app: what is different now, not which module moved. Cutting a
   release renames `## Unreleased` to the version being tagged and opens a
   fresh one above it.
+- Cutting a release is two things in one commit and then a tag.
+  `npm run version:set 0.1.4` writes the number into all five places it is
+  spelled — package.json, the Cargo workspace, tauri.conf.json, the MCP
+  server's advertised version, and the changelog, whose `## Unreleased`
+  becomes `## 0.1.4` with a fresh empty one above it — and refreshes both
+  lockfiles. Commit that, push it, and only then `git tag v0.1.4 && git push
+  origin v0.1.4`. The tag is what starts the build, and the workflow refuses
+  a tag whose number disagrees with tauri.conf.json or that has no changelog
+  section, so a tag pushed onto the wrong commit fails loudly rather than
+  publishing a release that announces the previous version. The release is
+  drafted, not published: check the assets on the Releases page, then click
+  Publish, which is the moment installed copies start being offered it.
 - Comments in this codebase explain *why*, at length, in prose. Match that.
   A rule that took an argument to arrive at should carry the argument.
 
