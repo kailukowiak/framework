@@ -33,6 +33,14 @@ describe("closeUnreleased", () => {
     expect(changelogSection(after, "0.1.3")).toBe("- Something that already shipped");
   });
 
+  // Running the bump twice must not open a second, empty 0.1.4 section: the
+  // workflow reads the first heading it finds, so the release would fail on
+  // notes sitting a few lines further down the same file.
+  it("refuses to close a section the version already has", () => {
+    const after = closeUnreleased(CHANGELOG, "0.1.4");
+    expect(closeUnreleased(after, "0.1.4")).toBeNull();
+  });
+
   it("reports a changelog with no Unreleased section rather than guessing", () => {
     expect(closeUnreleased("# Changelog\n\n## 0.1.3\n\n- Shipped\n", "0.1.4")).toBeNull();
   });
