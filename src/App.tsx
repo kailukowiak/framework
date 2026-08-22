@@ -62,6 +62,8 @@ import {
   type FilterColumnEditorRequest,
   type HidePipelineColumnEditorRequest,
   type RearrangeColumnsEditorRequest,
+  type ApplyVectorEditorRequest,
+  type PairVectorEditorRequest,
 } from "./hooks/usePipelineColumnRequests";
 import { useContextMenu } from "./hooks/useContextMenu";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
@@ -111,6 +113,7 @@ import {
   type TakeOwnershipHandler,
 } from "./FrameGrid";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
+import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
 import {
   useActiveFormulaEditorCommands,
   useActiveFormulaEditorPresence,
@@ -160,7 +163,14 @@ import type {
   ContainerObject,
 } from "./lib/types";
 
-export type JoinState = { primaryFrameId: string; x: number; y: number } | null;
+export type JoinState = {
+  primaryFrameId: string;
+  x: number;
+  y: number;
+  lookupFrameId?: string;
+  primaryKeyId?: string;
+  lookupKeyId?: string;
+} | null;
 /**
  * Which panel is open beside the canvas, if any.
  *
@@ -367,11 +377,15 @@ export default function App() {
     filterColumnRequest,
     hidePipelineColumnRequest,
     rearrangeColumnsRequest,
+    applyVectorRequest,
+    pairVectorRequest,
     clearAddCalculatedColumnRequest,
     clearTransformColumnRequest,
     clearFilterColumnRequest,
     clearHidePipelineColumnRequest,
     clearRearrangeColumnsRequest,
+    clearApplyVectorRequest,
+    clearPairVectorRequest,
     requestAddCalculatedColumn,
     requestColumnTransformation,
     requestColumnFill,
@@ -379,6 +393,8 @@ export default function App() {
     requestCalculatedColumnEdit,
     requestHidePipelineColumn,
     requestRearrangeColumns,
+    requestApplyVector,
+    requestPairVector,
     transformColumnToken,
     setTransformColumnRequest,
   } = usePipelineColumnRequests({
@@ -1146,6 +1162,14 @@ export default function App() {
         }}
         onDragOver={(event) => {
           if (
+            hasVectorDrag(event.dataTransfer) &&
+            !(event.target as HTMLElement).closest(".canvas-object")
+          ) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "link";
+            return;
+          }
+          if (
             hasFrameTabDrag(event) &&
             !(event.target as HTMLElement).closest(".canvas-object")
           ) {
@@ -1155,6 +1179,31 @@ export default function App() {
         }}
         onDrop={(event) => {
           if ((event.target as HTMLElement).closest(".canvas-object")) return;
+          const vector = readVectorDrag(event.dataTransfer);
+          if (vector) {
+            event.preventDefault();
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const dropped = canvasPoint(
+              { x: event.clientX, y: event.clientY },
+              {
+                left: bounds.left,
+                top: bounds.top,
+                scrollLeft: event.currentTarget.scrollLeft,
+                scrollTop: event.currentTarget.scrollTop,
+              },
+              canvasZoomRef.current
+            );
+            setSelection(null);
+            void run({
+              type: "addGeneratorFrame",
+              name: `${vector.name} table`,
+              formula: vector.formula,
+              columnName: vector.name,
+              x: Math.max(0, dropped.x - 100),
+              y: Math.max(0, dropped.y - 16),
+            });
+            return;
+          }
           const payload = readFrameTabDrag(event);
           if (!payload) return;
           event.preventDefault();
@@ -1297,6 +1346,44 @@ export default function App() {
                 onRearrangeColumns={(frameId, columnIds) =>
                   requestRearrangeColumns(frameId, columnIds, view.id)
                 }
+                onApplyVector={(frame, columnIds, vector, expectedLength) =>
+                  requestApplyVector(
+                    frame.id,
+                    columnIds,
+                    vector,
+                    expectedLength,
+                    view.id
+                  )
+                }
+                onPairVector={(frame, name, vector, expectedLength) =>
+                  requestPairVector(
+                    frame.id,
+                    name,
+                    vector,
+                    expectedLength,
+                    view.id
+                  )
+                }
+                onJoinColumns={(
+                  primaryFrameId,
+                  primaryColumnId,
+                  lookupFrameId,
+                  lookupColumnId
+                ) => {
+                  const primaryView = document.views.find(
+                    (candidate) => candidate.objectId === primaryFrameId
+                  );
+                  setJoin({
+                    primaryFrameId,
+                    lookupFrameId,
+                    primaryKeyId: primaryColumnId,
+                    lookupKeyId: lookupColumnId,
+                    x: primaryView
+                      ? primaryView.x + primaryView.width + 100
+                      : view.x + view.width + 100,
+                    y: primaryView?.y ?? view.y,
+                  });
+                }}
                 onFilterColumn={(frame, column) =>
                   requestColumnFilter(frame, column, view.id)
                 }
@@ -1394,6 +1481,16 @@ export default function App() {
             selectedObject.id
           )}
           onRearrangeColumnsRequestHandled={clearRearrangeColumnsRequest}
+          applyVectorRequest={scopedPipelineRequest(
+            applyVectorRequest,
+            selectedObject.id
+          )}
+          onApplyVectorRequestHandled={clearApplyVectorRequest}
+          pairVectorRequest={scopedPipelineRequest(
+            pairVectorRequest,
+            selectedObject.id
+          )}
+          onPairVectorRequestHandled={clearPairVectorRequest}
           onOperation={run}
           onSourceChanged={changeFrameSource}
           onSetCached={setFrameCached}
@@ -2362,6 +2459,10 @@ type InspectorProps = {
   onHidePipelineColumnRequestHandled: () => void;
   rearrangeColumnsRequest?: RearrangeColumnsEditorRequest;
   onRearrangeColumnsRequestHandled: () => void;
+  applyVectorRequest?: ApplyVectorEditorRequest;
+  onApplyVectorRequestHandled: () => void;
+  pairVectorRequest?: PairVectorEditorRequest;
+  onPairVectorRequestHandled: () => void;
   onOperation: OperationHandler;
   onSourceChanged: SetFrameSourceHandler;
   onSetCached: SetFrameCachedHandler;
@@ -2392,6 +2493,10 @@ function Inspector({
   onHidePipelineColumnRequestHandled,
   rearrangeColumnsRequest,
   onRearrangeColumnsRequestHandled,
+  applyVectorRequest,
+  onApplyVectorRequestHandled,
+  pairVectorRequest,
+  onPairVectorRequestHandled,
   onOperation,
   onSourceChanged,
   onSetCached,
@@ -2478,6 +2583,10 @@ function Inspector({
           onRearrangeColumnsRequestHandled={
             onRearrangeColumnsRequestHandled
           }
+          applyVectorRequest={applyVectorRequest}
+          onApplyVectorRequestHandled={onApplyVectorRequestHandled}
+          pairVectorRequest={pairVectorRequest}
+          onPairVectorRequestHandled={onPairVectorRequestHandled}
           onOperation={onOperation}
           onSourceChanged={onSourceChanged}
           onSetCached={onSetCached}

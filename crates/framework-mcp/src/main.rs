@@ -2044,6 +2044,9 @@ fn rendered_pipeline_inputs(
     rendered
         .iter()
         .filter_map(|step| {
+            if let Some(input) = rendered_vector_pipeline_input(frame, step) {
+                return Some(Ok(input));
+            }
             Some(Ok(match step {
                 RenderedFrameStep::Filter {
                     predicates,
@@ -2109,6 +2112,9 @@ fn rendered_pipeline_inputs(
                     value_column_id: value_column_id.clone(),
                     value_column_name: value_column_name.clone(),
                 },
+                RenderedFrameStep::Broadcast { .. } | RenderedFrameStep::ZipVector { .. } => {
+                    unreachable!("vector steps returned above")
+                }
                 RenderedFrameStep::Comment { text } => {
                     FrameStepInput::Comment { text: text.clone() }
                 }
@@ -2118,6 +2124,49 @@ fn rendered_pipeline_inputs(
             }))
         })
         .collect()
+}
+
+fn rendered_vector_pipeline_input(
+    frame: &FrameObject,
+    step: &RenderedFrameStep,
+) -> Option<FrameStepInput> {
+    let formula_token = |name: &str| format!("`{}`", name.replace('`', "``"));
+    let name_of = |column_id: &str| {
+        frame
+            .columns
+            .iter()
+            .chain(frame.base_columns.iter())
+            .find(|column| column.id == column_id)
+            .map(|column| column.name.clone())
+            .unwrap_or_else(|| column_id.to_string())
+    };
+    match step {
+        RenderedFrameStep::Broadcast {
+            column_ids,
+            vector,
+            operator,
+            ..
+        } => Some(FrameStepInput::Broadcast {
+            columns: column_ids
+                .iter()
+                .map(|column_id| formula_token(&name_of(column_id)))
+                .collect::<Vec<_>>()
+                .join(", "),
+            vector: vector.clone(),
+            operator: *operator,
+        }),
+        RenderedFrameStep::ZipVector {
+            output_column_id,
+            output_column_name,
+            vector,
+            ..
+        } => Some(FrameStepInput::ZipVector {
+            output_column_id: output_column_id.clone(),
+            name: output_column_name.clone(),
+            vector: vector.clone(),
+        }),
+        _ => None,
+    }
 }
 
 fn frame_snapshot(

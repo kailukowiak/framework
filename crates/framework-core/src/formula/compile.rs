@@ -1,4 +1,4 @@
-use crate::formula::ast::{BinaryOperator, Expr};
+use crate::formula::ast::{BinaryOperator, Expr, Shape};
 use crate::model::document::{DataObject, Document};
 use crate::model::frame::FrameObject;
 use crate::model::value::{DataType, ScalarValue};
@@ -453,12 +453,17 @@ fn compile_at(
     if !keyword_arguments.is_empty() || arguments.len() != 1 {
         return Err(".at takes one position, as in .at(1)".into());
     }
+    if input.shape(document) != Shape::List {
+        return Err(
+            ".at picks a value from a standalone list, not from a frame column or scalar".into(),
+        );
+    }
     let position = match &arguments[0] {
         Expr::Integer { value } if *value >= 1 => *value as usize,
         Expr::Number { value } if *value >= 1.0 && value.fract() == 0.0 => *value as usize,
         _ => return Err(".at needs a whole position of 1 or more, as in .at(1)".into()),
     };
-    let (_, series) = document.evaluate_to_series(input)?;
+    let (data_type, series) = document.evaluate_to_series(input)?;
     if position > series.len() {
         return Err(format!(
             "That list has {} value{}, so there is nothing at position {position}",
@@ -466,7 +471,7 @@ fn compile_at(
             if series.len() == 1 { "" } else { "s" }
         ));
     }
-    scalar_to_polars_literal(crate::polars_value_at(&series, position - 1)?)
+    crate::expression_value_at(&series, data_type, position - 1)?.to_polars(document)
 }
 
 fn scalar_to_polars_literal(value: ScalarValue) -> Result<pl::Expr, String> {

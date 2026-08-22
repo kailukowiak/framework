@@ -1,37 +1,8 @@
-use crate::Id;
 use crate::model::derivation::PivotAggregate;
 use crate::model::frame::FrameStyleOutput;
+use crate::{BroadcastOperator, Id};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-
-/// What a broadcast list does to each column it meets.
-///
-/// Arithmetic only, and deliberately not [`crate::formula::ast::BinaryOperator`]:
-/// the gesture is "scale these" or "shift these", and a broadcast that
-/// answered True or False would be a filter wearing the wrong clothes.
-/// Anything past these four is a formula, and a formula has a column
-/// editor already.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub enum BroadcastOperator {
-    Multiply,
-    Divide,
-    Add,
-    Subtract,
-}
-
-impl BroadcastOperator {
-    pub(crate) fn binary(self) -> crate::formula::ast::BinaryOperator {
-        use crate::formula::ast::BinaryOperator;
-        match self {
-            BroadcastOperator::Multiply => BinaryOperator::Multiply,
-            BroadcastOperator::Divide => BinaryOperator::Divide,
-            BroadcastOperator::Add => BinaryOperator::Add,
-            BroadcastOperator::Subtract => BinaryOperator::Subtract,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
@@ -144,17 +115,21 @@ pub enum FrameStepInput {
     // not a way to say "the quarter columns". The list is resolved against
     // the schema at this step's position when the chain saves.
     //
-    // It leaves no step kind of its own. Saving expands it into an
-    // ordinary `WithColumns` — one readable formula per column, each
-    // naming the list and the position it took — which is the same bargain
-    // pivot and union make: the shape is settled when the step is written,
-    // and what is settled is legible afterwards. The *values* stay live,
-    // because each formula still names the list rather than the number it
-    // held at save time.
+    // It remains one compact step. The selected ids and the list's saved
+    // period are enough to render the gesture without growing one formula
+    // control for every header; the values stay live because the step still
+    // names the list rather than copying the numbers it held at save time.
     Broadcast {
         columns: String,
         vector: String,
         operator: BroadcastOperator,
+    },
+    // One list placed beside another as a new column. Unlike Broadcast this
+    // works down rows and requires an exact length match.
+    ZipVector {
+        output_column_id: Id,
+        name: String,
+        vector: String,
     },
     // Markdown, taken exactly as typed. The one step input with nothing to
     // resolve: no formula to parse, no column to look up, nothing that can

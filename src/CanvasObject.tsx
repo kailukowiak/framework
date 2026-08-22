@@ -265,6 +265,9 @@ export function CanvasObject({
   onRenderedRows,
   onOperation,
   onRearrangeColumns,
+  onApplyVector,
+  onPairVector,
+  onJoinColumns,
   onFilterColumn,
   onTransformColumn,
   onEditCalculatedColumn,
@@ -303,6 +306,24 @@ export function CanvasObject({
   onRenderedRows: (frameId: string, grid: RenderedGrid | null) => void;
   onOperation: OperationHandler;
   onRearrangeColumns: (frameId: string, columnIds: string[]) => void;
+  onApplyVector: (
+    frame: FrameObject,
+    columnIds: string[],
+    vector: string,
+    expectedLength: number
+  ) => void;
+  onPairVector: (
+    frame: FrameObject,
+    name: string,
+    vector: string,
+    expectedLength: number
+  ) => void;
+  onJoinColumns: (
+    primaryFrameId: string,
+    primaryColumnId: string,
+    lookupFrameId: string,
+    lookupColumnId: string
+  ) => void;
   onFilterColumn: (frame: FrameObject, column: Column) => void;
   onTransformColumn: (frame: FrameObject, column: Column, formula: string) => void;
   onEditCalculatedColumn: (
@@ -576,7 +597,15 @@ export function CanvasObject({
         )
       )}
       {!isCollapsed && object.kind === "series" && (
-        <SeriesCard series={object} onOperation={onOperation} />
+        <SeriesCard
+          series={object}
+          formula={
+            scalarFormulaReferences(objects, formulaFunctions, computedFrames).find(
+              (reference) => reference.id === object.id
+            )?.token ?? `\`${object.name}\``
+          }
+          onOperation={onOperation}
+        />
       )}
       {!isCollapsed && object.kind === "container" && (
         <ContainerCard
@@ -603,6 +632,9 @@ export function CanvasObject({
           onRenderedRows={onRenderedRows}
           onOperation={onOperation}
           onRearrangeColumns={onRearrangeColumns}
+          onApplyVector={onApplyVector}
+          onPairVector={onPairVector}
+          onJoinColumns={onJoinColumns}
           onFilterColumn={onFilterColumn}
           onTransformColumn={onTransformColumn}
           onEditCalculatedColumn={onEditCalculatedColumn}
@@ -805,7 +837,18 @@ function ContainerCard({
               />
             )}
             {member.kind === "series" && (
-              <SeriesCard series={member} onOperation={onOperation} />
+              <SeriesCard
+                series={member}
+                formula={
+                  scalarFormulaReferences(
+                    objects,
+                    formulaFunctions,
+                    computedFrames
+                  ).find((reference) => reference.id === member.id)?.token ??
+                  `\`${member.name}\``
+                }
+                onOperation={onOperation}
+              />
             )}
             {member.kind === "container" && (
               <ContainerCard

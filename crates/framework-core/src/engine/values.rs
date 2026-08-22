@@ -61,6 +61,32 @@ pub(crate) fn polars_value_at(series: &pl::Series, index: usize) -> Result<Scala
     })
 }
 
+/// One evaluated value put back into the formula tree without losing the
+/// type the series gave it. `ScalarValue` deliberately treats every number
+/// alike, which is right for display and wrong for a broadcast plan: turning
+/// an integer factor into a floating literal changes an integer column's
+/// schema merely because the factor came from a list.
+pub(crate) fn expression_value_at(
+    series: &pl::Series,
+    data_type: DataType,
+    index: usize,
+) -> Result<Expr, String> {
+    Ok(match polars_value_at(series, index)? {
+        ScalarValue::Null => Expr::Null,
+        ScalarValue::Number(value) => match data_type {
+            DataType::Integer => Expr::Integer {
+                value: value as i64,
+            },
+            DataType::Currency => Expr::Money { value },
+            DataType::Percentage => Expr::Percentage { value },
+            _ => Expr::Number { value },
+        },
+        ScalarValue::String(value) => Expr::String { value },
+        ScalarValue::Boolean(value) => Expr::Boolean { value },
+        ScalarValue::Date(value) => Expr::Date { value },
+    })
+}
+
 pub(crate) fn framework_type_from_polars(data_type: &pl::DataType) -> Result<DataType, String> {
     Ok(match data_type {
         pl::DataType::String => DataType::String,

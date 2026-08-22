@@ -901,31 +901,26 @@ fn a_list_spreads_across_the_columns_it_is_pointed_at() {
     assert_eq!(page.rows[0], vec!["East", "10", "40", "300"]);
     assert_eq!(page.rows[1], vec!["West", "40", "100", "600"]);
 
-    // No step kind of its own: it left ordinary per-column formulas, and
-    // each one says which position of the list it took.
+    // One step holds the gesture instead of turning three headers into
+    // three independent formula controls.
     let view = store.view();
-    let rendered: Vec<String> = view.computed_frames[&scaled_id]
+    let broadcasts: Vec<_> = view.computed_frames[&scaled_id]
         .steps
         .iter()
         .filter_map(|step| match step {
-            RenderedFrameStep::WithColumns { columns } => Some(columns),
+            RenderedFrameStep::Broadcast {
+                column_ids,
+                vector,
+                expected_length,
+                ..
+            } => Some((column_ids, vector, expected_length)),
             _ => None,
         })
-        .flatten()
-        .map(|column| column.formula.clone())
         .collect();
-    assert!(
-        rendered.iter().any(|formula| formula.contains(".at(1)")),
-        "the first column should name position 1, got {rendered:?}"
-    );
-    assert!(
-        rendered.iter().any(|formula| formula.contains(".at(3)")),
-        "the third column should name position 3, got {rendered:?}"
-    );
-    assert!(
-        rendered.iter().any(|formula| formula.contains("factors")),
-        "the formulas should still name the list, not the numbers it held,          got {rendered:?}"
-    );
+    assert_eq!(broadcasts.len(), 1);
+    assert_eq!(broadcasts[0].0.len(), 3);
+    assert_eq!(*broadcasts[0].2, 3);
+    assert!(broadcasts[0].1.contains("factors"));
 }
 
 /// One value is not a list. Broadcasting a scalar is already what plain
@@ -1120,8 +1115,8 @@ fn a_list_edited_shorter_reports_on_the_column_that_ran_off_the_end() {
         Err(error) => {
             let message = error.to_string();
             assert!(
-                message.contains("position 2"),
-                "the refusal should name the position that ran off the end, said: {message}"
+                message.contains("had 2") && message.contains("now has 1"),
+                "the refusal should explain the changed list length, said: {message}"
             );
         }
         Ok(page) => panic!("expected the short list to be caught, got {:?}", page.rows),
@@ -1129,9 +1124,7 @@ fn a_list_edited_shorter_reports_on_the_column_that_ran_off_the_end() {
 }
 
 /// Four quarterly factors across twelve monthly columns: the list repeats,
-/// and the repeat is written into the formulas rather than hidden in the
-/// step. The fifth column says `.at(1)` in the text a person reads, which
-/// is what makes this safe where R's silent recycling is not.
+/// and the repeat is written once in the step a person reads.
 #[test]
 fn a_shorter_list_repeats_over_the_columns_and_says_so_in_the_formulas() {
     let mut store = blank_store();
@@ -1173,25 +1166,23 @@ fn a_shorter_list_repeats_over_the_columns_and_says_so_in_the_formulas() {
         "the two factors should alternate across the four columns"
     );
 
-    // The wrap is legible without any interface: the third column's own
-    // formula names position 1 again.
     let view = store.view();
-    let positions: Vec<String> = view.computed_frames[&scaled_id]
+    let broadcast = view.computed_frames[&scaled_id]
         .steps
         .iter()
-        .filter_map(|step| match step {
-            RenderedFrameStep::WithColumns { columns } => Some(columns),
+        .find_map(|step| match step {
+            RenderedFrameStep::Broadcast {
+                column_ids,
+                vector,
+                expected_length,
+                ..
+            } => Some((column_ids, vector, expected_length)),
             _ => None,
         })
-        .flatten()
-        .map(|column| column.formula.clone())
-        .filter(|formula| formula.contains(".at("))
-        .collect();
-    assert_eq!(
-        positions.iter().filter(|f| f.contains(".at(1)")).count(),
-        2,
-        "position 1 should be taken twice, once per pass over the list: {positions:?}"
-    );
+        .expect("one compact broadcast step");
+    assert_eq!(broadcast.0.len(), 4);
+    assert_eq!(*broadcast.2, 2);
+    assert_eq!(broadcast.1, "[2, 3]");
 }
 
 /// A list that leaves a remainder is refused: half a pattern landing on the
@@ -1240,4 +1231,87 @@ fn a_list_that_leaves_a_remainder_over_the_columns_is_refused() {
         ),
         other => panic!("expected an even-division refusal, got {other:?}"),
     }
+}
+
+/// Dropping one list on the canvas makes the first column; dropping another
+/// beside it records the explicit row-by-row pairing as one Wrangle step.
+#[test]
+fn two_lists_make_a_live_two_column_frame_when_their_lengths_match() {
+    let mut store = blank_store();
+    let holder = a_container(&mut store);
+    store
+        .apply(Operation::AddSeries {
+            name: "Months".into(),
+            values: "Jan, Feb, Mar".into(),
+            x: 0.0,
+            y: 0.0,
+            container_id: Some(holder.clone()),
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddSeries {
+            name: "Forecast".into(),
+            values: "10, 20, 30".into(),
+            x: 0.0,
+            y: 300.0,
+            container_id: Some(holder),
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddGeneratorFrame {
+            name: "Plan".into(),
+            formula: "`Holder`.`Months`".into(),
+            column_name: Some("Month".into()),
+            x: 500.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame_id = frame_named(store.document(), "Plan").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![FrameStepInput::ZipVector {
+                output_column_id: "forecast~paired".into(),
+                name: "Forecast".into(),
+                vector: "`Holder`.`Forecast`".into(),
+            }],
+        })
+        .unwrap();
+
+    assert_eq!(
+        store.get_frame_page(&frame_id, 0, 10).unwrap().rows,
+        vec![
+            vec![String::from("Jan"), String::from("10")],
+            vec![String::from("Feb"), String::from("20")],
+            vec![String::from("Mar"), String::from("30")],
+        ]
+    );
+    assert!(matches!(
+        &store.view().computed_frames[&frame_id].steps[0],
+        RenderedFrameStep::ZipVector {
+            output_column_name,
+            expected_length: 3,
+            ..
+        } if output_column_name == "Forecast"
+    ));
+
+    let forecast_id = store
+        .document()
+        .objects
+        .iter()
+        .find(|object| object.name() == "Forecast")
+        .unwrap()
+        .id()
+        .to_string();
+    store
+        .apply(Operation::SetSeries {
+            object_id: forecast_id,
+            values: "10, 20".into(),
+        })
+        .unwrap();
+    let error = store
+        .get_frame_page(&frame_id, 0, 10)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("had 3") && error.contains("now has 2"));
 }

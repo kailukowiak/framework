@@ -5,6 +5,33 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use ts_rs::TS;
 
+/// What a broadcast list does to each column it meets.
+///
+/// Arithmetic only, and deliberately not the complete formula operator set:
+/// the gesture is "scale these" or "shift these", while comparisons already
+/// belong to filters and ordinary calculated-column formulas.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum BroadcastOperator {
+    Multiply,
+    Divide,
+    Add,
+    Subtract,
+}
+
+impl BroadcastOperator {
+    pub(crate) fn binary(self) -> crate::formula::ast::BinaryOperator {
+        use crate::formula::ast::BinaryOperator;
+        match self {
+            BroadcastOperator::Multiply => BinaryOperator::Multiply,
+            BroadcastOperator::Divide => BinaryOperator::Divide,
+            BroadcastOperator::Add => BinaryOperator::Add,
+            BroadcastOperator::Subtract => BinaryOperator::Subtract,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -83,6 +110,26 @@ pub enum FrameStep {
         columns: Vec<UnpivotColumn>,
         name_column_id: Id,
         value_column_id: Id,
+    },
+    /// One list applied across several existing columns. The author made the
+    /// positional relationship explicit by pointing the list at an ordered
+    /// set of headers; `expected_length` keeps that relationship stable when
+    /// the list is edited later rather than silently reinterpreting it.
+    Broadcast {
+        column_ids: Vec<Id>,
+        #[ts(type = "unknown")]
+        vector: Expr,
+        operator: BroadcastOperator,
+        expected_length: usize,
+    },
+    /// A standalone list paired down the rows as one new column. This is
+    /// positional on purpose and therefore exact-length only: the author
+    /// made the pairing explicit by dropping one list beside another.
+    ZipVector {
+        output_column_id: Id,
+        #[ts(type = "unknown")]
+        vector: Expr,
+        expected_length: usize,
     },
     /// A remark standing in the chain, saying nothing to the engine.
     ///
@@ -237,6 +284,18 @@ pub enum RenderedFrameStep {
         name_column_name: String,
         value_column_id: Id,
         value_column_name: String,
+    },
+    Broadcast {
+        column_ids: Vec<Id>,
+        vector: String,
+        operator: BroadcastOperator,
+        expected_length: usize,
+    },
+    ZipVector {
+        output_column_id: Id,
+        output_column_name: String,
+        vector: String,
+        expected_length: usize,
     },
     Comment {
         text: String,
@@ -468,6 +527,8 @@ impl FrameDerivation {
                     .chain(aggregates.iter())
                     .map(|item| item.expression.clone())
                     .collect(),
+                FrameStep::Broadcast { vector, .. } => vec![vector.clone()],
+                FrameStep::ZipVector { vector, .. } => vec![vector.clone()],
                 FrameStep::Select { .. }
                 | FrameStep::Join { .. }
                 | FrameStep::Sort { .. }

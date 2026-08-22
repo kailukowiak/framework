@@ -79,4 +79,84 @@ describe("pivot refresh", () => {
       )
     );
   });
+
+  it("turns a list drop on headers into one broadcast step", async () => {
+    const onOperation = vi.fn().mockResolvedValue(null);
+    render(
+      <ActiveFormulaEditorProvider>
+        <DerivedFrameCreator
+          input={{ label: "Timesheet Seed", columns }}
+          editingFrame={frame}
+          renderedSteps={[]}
+          passThroughSteps={0}
+          references={[]}
+          frames={[]}
+          applyVectorRequest={{
+            token: 1,
+            columnIds: ["date", "hours"],
+            vector: "`Factors`",
+            expectedLength: 2,
+          }}
+          onOperation={onOperation}
+        />
+      </ActiveFormulaEditorProvider>
+    );
+
+    await waitFor(() =>
+      expect(onOperation).toHaveBeenCalledWith(
+        {
+          type: "setFramePipeline",
+          frameId: "timesheet",
+          steps: [
+            {
+              kind: "broadcast",
+              columns: "`Date label`, `Hours`",
+              vector: "`Factors`",
+              operator: "multiply",
+            },
+          ],
+        },
+        { inlineError: true }
+      )
+    );
+  });
+
+  it("turns a list drop on the table edge into a paired column", async () => {
+    const onOperation = vi.fn().mockResolvedValue(null);
+    render(
+      <ActiveFormulaEditorProvider>
+        <DerivedFrameCreator
+          input={{ label: "Timesheet Seed", columns }}
+          editingFrame={frame}
+          renderedSteps={[]}
+          passThroughSteps={0}
+          references={[]}
+          frames={[]}
+          pairVectorRequest={{
+            token: 1,
+            name: "Rates",
+            vector: "`Rates`",
+            expectedLength: 3,
+          }}
+          onOperation={onOperation}
+        />
+      </ActiveFormulaEditorProvider>
+    );
+
+    await waitFor(() => {
+      const operation = onOperation.mock.calls[0]?.[0];
+      expect(operation).toMatchObject({
+        type: "setFramePipeline",
+        frameId: "timesheet",
+        steps: [
+          {
+            kind: "zipVector",
+            name: "Rates",
+            vector: "`Rates`",
+          },
+        ],
+      });
+      expect(operation.steps[0].outputColumnId).toMatch(/^rates~/);
+    });
+  });
 });

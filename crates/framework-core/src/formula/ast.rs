@@ -363,7 +363,11 @@ pub(crate) fn shown_as(name: &str) -> Option<DataType> {
 /// `None` means this says nothing, which is what everything involving a
 /// date, a duration, or text answers. Guessing there would put this
 /// document's writing on a value it does not own.
-fn arithmetic_type(operator: BinaryOperator, left: DataType, right: DataType) -> Option<DataType> {
+pub(crate) fn arithmetic_type(
+    operator: BinaryOperator,
+    left: DataType,
+    right: DataType,
+) -> Option<DataType> {
     use BinaryOperator::*;
     use DataType::*;
     // Only numbers carry a way of being written. Anything else here is a
@@ -836,6 +840,12 @@ impl Expr {
                 arguments,
                 keyword_arguments,
             } => {
+                if matches!(path.as_slice(), [name] if name == "at") && !input.can_take_at() {
+                    return Err(CoreError::Formula(
+                        ".at picks a value from a standalone list, not from a frame column or scalar"
+                            .into(),
+                    ));
+                }
                 // A method that folds a whole column of values down to one
                 // is a place a list belongs wherever it is written —
                 // `` `Prices`.`Amount`.sum() `` is the very reason to name a
@@ -876,6 +886,24 @@ impl Expr {
             _ => {}
         }
         Ok(())
+    }
+
+    /// Whether this spelling can produce a standalone list. A block-line
+    /// reference is allowed here even while that same block is being parsed;
+    /// its stored expression may not exist until the whole edit commits.
+    fn can_take_at(&self) -> bool {
+        matches!(
+            self,
+            Expr::List { .. } | Expr::Series { .. } | Expr::Value { .. }
+        ) || matches!(
+            self,
+            Expr::PolarsCall { name, .. }
+                if name == "sequence" && !self.uses_frame_length()
+        ) || matches!(
+            self,
+            Expr::Method { path, .. }
+                if matches!(path.as_slice(), [name] if name == "filter")
+        )
     }
 
     pub(crate) fn column_dependencies<'a>(&'a self, output: &mut Vec<&'a str>) {

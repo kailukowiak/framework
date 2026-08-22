@@ -685,6 +685,26 @@ impl Document {
                         written.insert(value_column_id.clone(), first);
                     }
                 }
+                FrameStep::Broadcast {
+                    column_ids,
+                    vector,
+                    operator,
+                    ..
+                } => {
+                    if let Some(right) = vector.declared_type_among(self, &visible) {
+                        for column_id in column_ids {
+                            if let Some(left) = visible
+                                .iter()
+                                .find(|column| &column.id == column_id)
+                                .map(|column| column.data_type)
+                                && let Some(data_type) =
+                                    arithmetic_type(operator.binary(), left, right)
+                            {
+                                written.insert(column_id.clone(), data_type);
+                            }
+                        }
+                    }
+                }
                 _ => {}
             }
             let carried: HashMap<&str, DataType> = visible
@@ -886,23 +906,37 @@ impl Document {
                 columns,
                 vector,
                 operator,
-            } => self.prepare_broadcast_step(&columns, &vector, operator, &scope)?,
+            } => {
+                self.prepare_broadcast_step(&columns, &vector, operator, &scope, edited_frame_id)?
+            }
+            FrameStepInput::ZipVector {
+                output_column_id,
+                name,
+                vector,
+            } => {
+                names.insert(output_column_id.clone(), name);
+                self.prepare_zip_vector_step(
+                    output_column_id,
+                    &vector,
+                    &scope,
+                    plan,
+                    edited_frame_id,
+                )?
+            }
             FrameStepInput::Comment { text } => FrameStep::Comment { text },
         })
     }
 
-    /// The drag-across, expanded: one formula per column, each naming the
-    /// list and the position it took from it.
+    /// The drag-across, kept as the one decision the author made.
     ///
     /// A list shorter than the columns repeats over them, but only a whole
     /// number of times — four quarterly factors across twelve monthly
     /// columns, never five across twelve. Recycling is what makes R's
     /// vectors one of the most reliable sources of wrong answers in that
-    /// language, and the difference here is that the repeat cannot hide:
-    /// the step expands into per-column formulas, so the fifth column's
-    /// formula says `.at(1)` in writing. A repeat somebody did not mean is
-    /// visible in the thing itself rather than in a warning they had to be
-    /// watching for.
+    /// language. Here the repeat is written once in the step and the
+    /// interface shows its period beside the selected headers, so a wide
+    /// operation does not turn into forty formula controls merely to prove
+    /// it happened.
     ///
     /// The even-division rule is what is left of the length check, and it
     /// is doing the real work. Nothing here matches a value to a column by
@@ -915,6 +949,7 @@ impl Document {
         vector: &str,
         operator: BroadcastOperator,
         scope: &FrameObject,
+        edited_frame_id: &str,
     ) -> Result<FrameStep, CoreError> {
         let column_ids = parse_column_list(columns, scope)?;
         if column_ids.is_empty() {
@@ -923,6 +958,13 @@ impl Document {
             ));
         }
         let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
+        let mut foreign_frames = Vec::new();
+        expression.foreign_frames(&mut foreign_frames);
+        if foreign_frames.contains(&edited_frame_id) {
+            return Err(CoreError::InvalidOperation(
+                "A frame cannot apply a list that reads from itself".into(),
+            ));
+        }
         if expression.shape(self) != Shape::List {
             return Err(CoreError::Formula(format!(
                 "‘{vector}’ is one value, not a list. Spreading needs a list with \
@@ -957,28 +999,64 @@ impl Document {
                     .join(", "),
             )));
         }
-        Ok(FrameStep::WithColumns {
-            columns: column_ids
-                .into_iter()
-                .enumerate()
-                .map(|(index, column_id)| DerivedExpression {
-                    expression: Expr::Binary {
-                        operator: operator.binary(),
-                        left: Box::new(Expr::Column {
-                            column_id: column_id.clone(),
-                        }),
-                        right: Box::new(Expr::Method {
-                            input: Box::new(expression.clone()),
-                            path: vec!["at".into()],
-                            arguments: vec![Expr::Integer {
-                                value: (index % length) as i64 + 1,
-                            }],
-                            keyword_arguments: Vec::new(),
-                        }),
-                    },
-                    output_column_id: column_id,
-                })
-                .collect(),
+        Ok(FrameStep::Broadcast {
+            column_ids,
+            vector: expression,
+            operator,
+            expected_length: length,
+        })
+    }
+
+    fn prepare_zip_vector_step(
+        &self,
+        output_column_id: Id,
+        vector: &str,
+        scope: &FrameObject,
+        plan: &pl::LazyFrame,
+        edited_frame_id: &str,
+    ) -> Result<FrameStep, CoreError> {
+        let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
+        let mut foreign_frames = Vec::new();
+        expression.foreign_frames(&mut foreign_frames);
+        if foreign_frames.contains(&edited_frame_id) {
+            return Err(CoreError::InvalidOperation(
+                "A frame cannot pair a list that reads from itself".into(),
+            ));
+        }
+        if expression.shape(self) != Shape::List {
+            return Err(CoreError::Formula(format!(
+                "‘{vector}’ is one value, not a list to pair down the rows"
+            )));
+        }
+        let length = self
+            .evaluate_to_series(&expression)
+            .map_err(CoreError::Formula)?
+            .1
+            .len();
+        let count_column = "__framework_zip_row_count";
+        let counts = plan
+            .clone()
+            .select([pl::len().alias(count_column)])
+            .collect()
+            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?;
+        let row_count = counts
+            .column(count_column)
+            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?
+            .u32()
+            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?
+            .get(0)
+            .unwrap_or(0) as usize;
+        if length == 0 || length != row_count {
+            return Err(CoreError::Formula(format!(
+                "‘{vector}’ has {length} value{}, but this frame has {row_count} row{}. Pairing lists needs one value for every row.",
+                if length == 1 { "" } else { "s" },
+                if row_count == 1 { "" } else { "s" }
+            )));
+        }
+        Ok(FrameStep::ZipVector {
+            output_column_id,
+            vector: expression,
+            expected_length: length,
         })
     }
 
@@ -1560,6 +1638,9 @@ fn rendered_step_input(
             })
             .collect()
     };
+    if let Some(input) = rendered_vector_step_input(step, frame) {
+        return Ok(input);
+    }
     Ok(match step {
         RenderedFrameStep::Filter {
             predicates,
@@ -1630,12 +1711,56 @@ fn rendered_step_input(
             value_column_name: value_column_name.clone(),
         },
         RenderedFrameStep::Comment { text } => FrameStepInput::Comment { text: text.clone() },
+        RenderedFrameStep::Broadcast { .. } | RenderedFrameStep::ZipVector { .. } => {
+            unreachable!("vector steps returned above")
+        }
         RenderedFrameStep::Join { .. } => {
             return Err(CoreError::InvalidOperation(
                 "A join derivation refreshes through its join editor".into(),
             ));
         }
     })
+}
+
+fn rendered_vector_step_input(
+    step: &RenderedFrameStep,
+    frame: &FrameObject,
+) -> Option<FrameStepInput> {
+    let name_of = |column_id: &str| {
+        frame
+            .columns
+            .iter()
+            .find(|column| column.id == column_id)
+            .map(|column| column.name.clone())
+            .unwrap_or_else(|| column_id.to_string())
+    };
+    match step {
+        RenderedFrameStep::Broadcast {
+            column_ids,
+            vector,
+            operator,
+            ..
+        } => Some(FrameStepInput::Broadcast {
+            columns: column_ids
+                .iter()
+                .map(|column_id| format!("`{}`", name_of(column_id).replace('`', "")))
+                .collect::<Vec<_>>()
+                .join(", "),
+            vector: vector.clone(),
+            operator: *operator,
+        }),
+        RenderedFrameStep::ZipVector {
+            output_column_id,
+            output_column_name,
+            vector,
+            ..
+        } => Some(FrameStepInput::ZipVector {
+            output_column_id: output_column_id.clone(),
+            name: output_column_name.clone(),
+            vector: vector.clone(),
+        }),
+        _ => None,
+    }
 }
 
 /// The columns a step makes, with the formulas that make them. `Filter`,
@@ -1647,6 +1772,11 @@ fn step_outputs(step: &FrameStep) -> Box<dyn Iterator<Item = (&Id, &Expr)> + '_>
     }
     match step {
         FrameStep::WithColumns { columns } => Box::new(columns.iter().map(pair)),
+        FrameStep::ZipVector {
+            output_column_id,
+            vector,
+            ..
+        } => Box::new(std::iter::once((output_column_id, vector))),
         FrameStep::Summarize {
             group_keys,
             aggregates,
@@ -1660,6 +1790,7 @@ fn step_outputs(step: &FrameStep) -> Box<dyn Iterator<Item = (&Id, &Expr)> + '_>
         | FrameStep::Expand { .. }
         | FrameStep::Pivot { .. }
         | FrameStep::Unpivot { .. }
+        | FrameStep::Broadcast { .. }
         | FrameStep::Comment { .. } => Box::new(std::iter::empty()),
     }
 }

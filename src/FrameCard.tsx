@@ -96,6 +96,9 @@ export function FrameCard({
   onRenderedRows,
   onOperation,
   onRearrangeColumns,
+  onApplyVector,
+  onPairVector,
+  onJoinColumns,
   onFilterColumn,
   onTransformColumn,
   onEditCalculatedColumn,
@@ -128,11 +131,19 @@ export function FrameCard({
   } = useFrameScrollState();
   const { frameColumnDrop, beginFrameColumnDrag } = useFrameColumnDrag(
     frame,
-    onRearrangeColumns
+    onRearrangeColumns,
+    onJoinColumns
   );
   const editCalculatedColumn = (column: Column, rowIndex: number) =>
     onEditCalculatedColumn(frame, column, rowIndex);
   const filterColumn = (column: Column) => onFilterColumn(frame, column);
+  const applyVector = (
+    columnIds: string[],
+    vector: string,
+    expectedLength: number
+  ) => onApplyVector(frame, columnIds, vector, expectedLength);
+  const pairVector = (name: string, vector: string, expectedLength: number) =>
+    onPairVector(frame, name, vector, expectedLength);
 
   // --- Transposed (fields-as-rows) paging: unchanged single-page fetch + Previous/Next. ---
   const [pageOffset, setPageOffset] = useState(0);
@@ -774,6 +785,8 @@ export function FrameCard({
       onSelect={onSelect}
       selectWholeColumn={selectWholeColumn}
       beginFrameColumnDrag={beginFrameColumnDrag}
+      applyVector={applyVector}
+      pairVector={pairVector}
       selectWholeRow={selectWholeRow}
       beginCellSelection={beginCellSelection}
       extendCellSelection={extendCellSelection}

@@ -1929,5 +1929,27 @@ fn at_works_on_a_generated_sequence() {
         "months = sequence(1, 12)\nthird = `months`.at(3)",
     )
     .unwrap();
-    assert_eq!(answers(&store, &block)[1], "3.00");
+    assert_eq!(answers(&store, &block)[1], "3");
+}
+
+#[test]
+fn at_is_not_a_positional_index_for_scalars() {
+    let mut store = blank_store();
+    let holder = a_container(&mut store);
+    store
+        .apply(Operation::AddValue {
+            name: "Scalar".into(),
+            raw: "10".into(),
+            x: 0.0,
+            y: 0.0,
+            container_id: Some(holder),
+        })
+        .unwrap();
+    let block = add_block(&mut store, "Params");
+    type_into(&mut store, &block, "oops = `Scalar`.at(1)").unwrap();
+    let message = error_on(&store, &block, "oops");
+    assert!(
+        message.contains("standalone list"),
+        "a scalar receiver should explain the list-only rule, said: {message}"
+    );
 }

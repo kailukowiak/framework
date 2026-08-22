@@ -14,6 +14,7 @@ import type {
   SeriesObject,
   ValueObject,
 } from "./lib/types";
+import { writeVectorDrag } from "./lib/vectorDrag";
 
 const SERIES_TYPES: DataType[] = [
   "string",
@@ -34,9 +35,12 @@ const SERIES_TYPES: DataType[] = [
  */
 export function SeriesCard({
   series,
+  formula,
   onOperation,
 }: {
   series: SeriesObject;
+  /** Its fully-qualified address, including any container names. */
+  formula: string;
   onOperation: OperationHandler;
 }) {
   const text = series.values.join("\n");
@@ -88,7 +92,18 @@ export function SeriesCard({
             </option>
           ))}
         </select>
-        <small>
+        <small
+          draggable={series.values.length > 0}
+          title="Drag this list onto table headers"
+          onDragStart={(event) =>
+            writeVectorDrag(event.dataTransfer, {
+              objectId: series.id,
+              formula,
+              name: series.name,
+              length: series.values.length,
+            })
+          }
+        >
           {series.values.length} {series.values.length === 1 ? "value" : "values"}
         </small>
       </div>

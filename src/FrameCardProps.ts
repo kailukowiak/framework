@@ -36,6 +36,24 @@ export type FrameCardProps = {
   onRenderedRows: (frameId: string, grid: RenderedGrid | null) => void;
   onOperation: OperationHandler;
   onRearrangeColumns: (frameId: string, columnIds: string[]) => void;
+  onApplyVector: (
+    frame: FrameObject,
+    columnIds: string[],
+    vector: string,
+    expectedLength: number
+  ) => void;
+  onPairVector: (
+    frame: FrameObject,
+    name: string,
+    vector: string,
+    expectedLength: number
+  ) => void;
+  onJoinColumns: (
+    primaryFrameId: string,
+    primaryColumnId: string,
+    lookupFrameId: string,
+    lookupColumnId: string
+  ) => void;
   onFilterColumn: (frame: FrameObject, column: Column) => void;
   onTransformColumn: (frame: FrameObject, column: Column, formula: string) => void;
   onEditCalculatedColumn: (
@@ -94,6 +112,8 @@ export type RecordsAsRowsFrameCardProps = {
   onSelect: (selection: Selection) => void;
   selectWholeColumn: (event: ReactPointerEvent, column: Column) => void;
   beginFrameColumnDrag: (event: ReactPointerEvent, columnId: string) => void;
+  applyVector: (columnIds: string[], vector: string, expectedLength: number) => void;
+  pairVector: (name: string, vector: string, expectedLength: number) => void;
   selectWholeRow: (event: ReactPointerEvent, row: Row) => void;
   beginCellSelection: CellPointerHandler;
   extendCellSelection: CellPointerHandler;

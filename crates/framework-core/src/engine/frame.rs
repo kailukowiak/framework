@@ -76,15 +76,7 @@ impl FrameObject {
             summaries: Vec::new(),
         };
         for step in steps {
-            let outputs = match step {
-                FrameStep::WithColumns { columns } => columns.iter().collect::<Vec<_>>(),
-                FrameStep::Summarize {
-                    group_keys,
-                    aggregates,
-                    ..
-                } => group_keys.iter().chain(aggregates).collect(),
-                _ => Vec::new(),
-            };
+            let outputs = derived_outputs(step);
             for output in outputs {
                 if scope
                     .columns
@@ -273,6 +265,32 @@ impl FrameObject {
                         value_column_id: value_column_id.clone(),
                     }
                 }
+                FrameStep::Broadcast {
+                    column_ids,
+                    vector,
+                    operator,
+                    expected_length,
+                } => RenderedFrameStep::Broadcast {
+                    column_ids: column_ids.clone(),
+                    vector: vector.render(&scope, document, 0),
+                    operator: *operator,
+                    expected_length: *expected_length,
+                },
+                FrameStep::ZipVector {
+                    output_column_id,
+                    vector,
+                    expected_length,
+                } => RenderedFrameStep::ZipVector {
+                    output_column_id: output_column_id.clone(),
+                    output_column_name: self
+                        .columns
+                        .iter()
+                        .find(|column| &column.id == output_column_id)
+                        .map(|column| column.name.clone())
+                        .unwrap_or_else(|| output_column_id.clone()),
+                    vector: vector.render(&scope, document, 0),
+                    expected_length: *expected_length,
+                },
                 FrameStep::Comment { text } => RenderedFrameStep::Comment { text: text.clone() },
             })
             .collect()
@@ -997,6 +1015,26 @@ impl FrameObject {
     }
 }
 
+fn derived_outputs(step: &FrameStep) -> Vec<DerivedExpression> {
+    match step {
+        FrameStep::WithColumns { columns } => columns.clone(),
+        FrameStep::ZipVector {
+            output_column_id,
+            vector,
+            ..
+        } => vec![DerivedExpression {
+            output_column_id: output_column_id.clone(),
+            expression: vector.clone(),
+        }],
+        FrameStep::Summarize {
+            group_keys,
+            aggregates,
+            ..
+        } => group_keys.iter().chain(aggregates).cloned().collect(),
+        _ => Vec::new(),
+    }
+}
+
 /// The expressions one step holds. `Select`, `Join`, and `Sort` name
 /// columns by id rather than by formula, so they hold none.
 pub(crate) fn step_expressions(step: &FrameStep) -> Box<dyn Iterator<Item = &Expr> + '_> {
@@ -1015,6 +1053,8 @@ pub(crate) fn step_expressions(step: &FrameStep) -> Box<dyn Iterator<Item = &Exp
                 .chain(aggregates)
                 .map(|derived| &derived.expression),
         ),
+        FrameStep::Broadcast { vector, .. } => Box::new(std::iter::once(vector)),
+        FrameStep::ZipVector { vector, .. } => Box::new(std::iter::once(vector)),
         FrameStep::Select { .. }
         | FrameStep::Join { .. }
         | FrameStep::Sort { .. }

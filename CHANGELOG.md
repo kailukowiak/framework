@@ -12,6 +12,15 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Lists can now be dragged onto table headers to apply them across columns,
+  with repeating patterns shown as one compact Wrangle step instead of one
+  formula per column.
+- Drag a list onto empty canvas to make a live one-column table, then drop a
+  second list on the table’s right edge to pair it as another column. Lengths
+  must match, so row-by-row pairing never happens silently.
+- Drag a header onto a header in another table to open Join with both key
+  columns already selected.
+
 ## 0.1.4
 
 - Opening FrameWork on Windows no longer leaves a terminal window sitting

@@ -67,6 +67,7 @@ export type { Formula } from "./bindings/Formula";
 export type { FrozenState } from "./bindings/FrozenState";
 export type { Operation } from "./bindings/Operation";
 export type { PivotAggregate } from "./bindings/PivotAggregate";
+export type { BroadcastOperator } from "./bindings/BroadcastOperator";
 export type { RenderedFrameStep } from "./bindings/RenderedFrameStep";
 export type { Row } from "./bindings/Row";
 export type { ScalarValue } from "./bindings/ScalarValue";

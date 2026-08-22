@@ -395,6 +395,78 @@ impl Document {
     /// makes the chain expressive: a `with_columns` can build on a column an
     /// earlier `with_columns` added, and a filter after a summarize sees the
     /// aggregates rather than the source rows.
+    fn apply_broadcast_step(
+        &self,
+        plan: pl::LazyFrame,
+        step: &FrameStep,
+    ) -> Result<pl::LazyFrame, String> {
+        let FrameStep::Broadcast {
+            column_ids,
+            vector,
+            operator,
+            expected_length,
+        } = step
+        else {
+            unreachable!("called only for a broadcast step")
+        };
+        let (data_type, values) = self.evaluate_to_series(vector)?;
+        if *expected_length == 0 {
+            return Err("An applied list cannot be empty".into());
+        }
+        if values.len() != *expected_length {
+            return Err(format!(
+                "This list had {expected_length} value{} when it was applied, but it now has {}. Reapply the list to update the mapping.",
+                if *expected_length == 1 { "" } else { "s" },
+                values.len()
+            ));
+        }
+        let columns = column_ids
+            .iter()
+            .enumerate()
+            .map(|(index, column_id)| {
+                Ok(DerivedExpression {
+                    output_column_id: column_id.clone(),
+                    expression: Expr::Binary {
+                        operator: operator.binary(),
+                        left: Box::new(Expr::Column {
+                            column_id: column_id.clone(),
+                        }),
+                        right: Box::new(crate::expression_value_at(
+                            &values,
+                            data_type,
+                            index % expected_length,
+                        )?),
+                    },
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        self.apply_with_columns_step(plan, &columns)
+    }
+
+    fn apply_zip_vector_step(
+        &self,
+        plan: pl::LazyFrame,
+        step: &FrameStep,
+    ) -> Result<pl::LazyFrame, String> {
+        let FrameStep::ZipVector {
+            output_column_id,
+            vector,
+            expected_length,
+        } = step
+        else {
+            unreachable!("called only for a paired-list step")
+        };
+        let (_, values) = self.evaluate_to_series(vector)?;
+        if values.len() != *expected_length {
+            return Err(format!(
+                "This list had {expected_length} value{} when it was paired, but it now has {}. Pair it again to update the rows.",
+                if *expected_length == 1 { "" } else { "s" },
+                values.len()
+            ));
+        }
+        Ok(plan.with_columns([pl::lit(values.clone()).alias(output_column_id.clone())]))
+    }
+
     pub(crate) fn apply_step(
         &self,
         plan: pl::LazyFrame,
@@ -438,6 +510,8 @@ impl Document {
                 Ok(plan.filter(predicate))
             }
             FrameStep::WithColumns { columns } => self.apply_with_columns_step(plan, columns),
+            FrameStep::Broadcast { .. } => self.apply_broadcast_step(plan, step),
+            FrameStep::ZipVector { .. } => self.apply_zip_vector_step(plan, step),
             FrameStep::Select { column_ids } => Ok(plan.select(
                 column_ids
                     .iter()

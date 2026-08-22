@@ -40,7 +40,13 @@ export function useFrameScrollState() {
 
 export function useFrameColumnDrag(
   frame: FrameObject,
-  onRearrangeColumns: (frameId: string, columnIds: string[]) => void
+  onRearrangeColumns: (frameId: string, columnIds: string[]) => void,
+  onJoinColumns: (
+    primaryFrameId: string,
+    primaryColumnId: string,
+    lookupFrameId: string,
+    lookupColumnId: string
+  ) => void
 ) {
   const draggingFrameColumnRef = useRef<string | null>(null);
   const [, setDraggingFrameColumn] = useState<string | null>(null);
@@ -50,11 +56,17 @@ export function useFrameColumnDrag(
   } | null>(null);
 
   const beginFrameColumnDrag = (event: React.PointerEvent, columnId: string) => {
-    if (event.button !== 0 || frame.columns.length < 2) return;
+    if (event.button !== 0) return;
     const start = { x: event.clientX, y: event.clientY };
-    const grid = event.currentTarget.closest("frame");
+    const card = event.currentTarget.closest<HTMLElement>(".canvas-object");
     let moved = false;
     let latestDrop: { columnId: string; after: boolean } | null = null;
+    let latestJoin: { frameId: string; columnId: string } | null = null;
+    let highlighted: HTMLElement | null = null;
+    const clearHighlight = () => {
+      highlighted?.classList.remove("join-column-drop");
+      highlighted = null;
+    };
     const move = (moveEvent: PointerEvent) => {
       if (
         !moved &&
@@ -68,11 +80,28 @@ export function useFrameColumnDrag(
       const target = document
         .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
         ?.closest<HTMLElement>(".column-header[data-column-id]");
-      if (!target || target.closest("frame") !== grid) {
+      const targetCard = target?.closest<HTMLElement>(".canvas-object[data-object-id]");
+      if (!target || !targetCard) {
         latestDrop = null;
+        latestJoin = null;
+        clearHighlight();
         setFrameColumnDrop(null);
         return;
       }
+      if (targetCard !== card) {
+        latestDrop = null;
+        latestJoin = {
+          frameId: targetCard.dataset.objectId!,
+          columnId: target.dataset.columnId!,
+        };
+        clearHighlight();
+        highlighted = target;
+        highlighted.classList.add("join-column-drop");
+        setFrameColumnDrop(null);
+        return;
+      }
+      latestJoin = null;
+      clearHighlight();
       const bounds = target.getBoundingClientRect();
       latestDrop = {
         columnId: target.dataset.columnId!,
@@ -93,10 +122,13 @@ export function useFrameColumnDrag(
         );
         if (ordered.some((id, index) => id !== frame.columns[index]?.id))
           onRearrangeColumns(frame.id, ordered);
+      } else if (moved && latestJoin) {
+        onJoinColumns(latestJoin.frameId, latestJoin.columnId, frame.id, columnId);
       }
       draggingFrameColumnRef.current = null;
       setDraggingFrameColumn(null);
       setFrameColumnDrop(null);
+      clearHighlight();
     };
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", end);

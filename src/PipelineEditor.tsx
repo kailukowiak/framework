@@ -1,6 +1,6 @@
 import { CircleAlert, GitBranch, Plus, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Markdown } from "./Markdown";
+import { CommentStepRow } from "./PipelineCommentStepRow";
 import { FormulaErrorDetails } from "./FormulaEditor";
 import { PipelineCommand } from "./PipelineCommand";
 import { PipelineFrameStepCommand } from "./PipelineFrameStepCommand";
@@ -9,10 +9,23 @@ import {
   type PipelineRecurrenceDraft,
 } from "./PipelineRecurrenceStep";
 import { parseRecurrenceFormula, recurrenceFormula } from "./RecurrenceDialog";
+import {
+  BroadcastStepRow,
+  ZipVectorStepRow,
+  blankVectorStep,
+  useVectorStepRequests,
+  vectorDraftFromRendered,
+  vectorStepFormulas,
+  vectorStepInput,
+  vectorStepIsIncomplete,
+  type BroadcastStepDraft,
+  type ZipVectorStepDraft,
+} from "./PipelineVectorSteps";
 import { previewFramePipeline, type PipelineSchema } from "./lib/api";
 import { meltedColumnIds } from "./lib/columnList";
 import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
-import { aliasFromFormula } from "./lib/formulaAlias";
+import { draftName, nextBlankColumnName, uniqueColumnName, type NamedDraft } from "./PipelineColumnNames";
+export { nextBlankColumnName, uniqueColumnName } from "./PipelineColumnNames";
 import {
   formattedFormula,
   formatPipelineFormulas,
@@ -27,128 +40,6 @@ import type {
   FrameStepInput,
   PivotAggregate,
 } from "./lib/types";
-
-/**
- * A remark in the chain: rendered markdown until clicked, a plain textarea
- * while being written. No formula machinery — the text is never parsed —
- * and no Save button: blur commits, and committing nothing removes the
- * row, so "no comment" stays the absence of a step.
- */
-function CommentStepRow({
-  text,
-  startEditing,
-  onCommit,
-}: {
-  text: string;
-  startEditing: boolean;
-  onCommit: (text: string) => void;
-}) {
-  const [editing, setEditing] = useState(startEditing);
-  const [draft, setDraft] = useState(text);
-  const cancelled = useRef(false);
-  if (!editing)
-    return (
-      <button
-        type="button"
-        className="pipeline-comment"
-        title="Edit comment"
-        onClick={() => {
-          setDraft(text);
-          setEditing(true);
-        }}
-      >
-        <Markdown source={text} />
-      </button>
-    );
-  return (
-    <textarea
-      className="pipeline-comment-editor"
-      value={draft}
-      autoFocus
-      rows={Math.max(2, draft.split("\n").length)}
-      placeholder="Why the chain does what it does — markdown allowed"
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => {
-        setEditing(false);
-        onCommit(cancelled.current ? text : draft);
-        cancelled.current = false;
-      }}
-      onKeyDown={(event) => {
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter")
-          event.currentTarget.blur();
-        if (event.key === "Escape") {
-          cancelled.current = true;
-          event.currentTarget.blur();
-        }
-      }}
-    />
-  );
-}
-
-/**
- * A named expression inside a step: what to compute, and what to call the
- * column it produces.
- */
-type NamedDraft = {
-  id: string;
-  outputColumnId: string;
-  /**
-   * What the user typed, and only that. Empty means they have not named it,
-   * not that it has no name -- see `draftName`.
-   */
-  name: string;
-  formula: string;
-  /** What to call it when the formula suggests nothing either. */
-  fallbackName: string;
-  /** A request from outside the chain to put the cursor in this formula. */
-  focusToken?: number;
-  /** Put that cursor after the seeded expression instead of selecting it. */
-  focusAtEnd?: boolean;
-  /** Ephemeral row anchor for a formula begun from a grid cell. */
-  anchorRowIndex?: number;
-};
-
-/**
- * The name a draft would take if it were saved right now.
- *
- * A name the user typed wins. Otherwise `` `debit`.sum() `` calls itself
- * "Debit Sum", which is what anyone describing it out loud would call it,
- * and a formula that suggests nothing leaves the seeded fallback.
- */
-function draftName(draft: NamedDraft): string {
-  return draft.name.trim() || suggestedName(draft);
-}
-
-/** The half of `draftName` the field shows as placeholder text. */
-function suggestedName(draft: NamedDraft): string {
-  return aliasFromFormula(draft.formula) || draft.fallbackName;
-}
-
-/** Keep a requested label recognizable while making it referenceable. */
-export function uniqueColumnName(name: string, existing: string[]): string {
-  if (!existing.includes(name)) return name;
-  const blank = name.match(/^Column (\d+)$/);
-  if (blank) {
-    let number = Number(blank[1]) + 1;
-    while (existing.includes(`Column ${number}`)) number += 1;
-    return `Column ${number}`;
-  }
-  const numbered = name.match(/^(.*)_(\d+)$/);
-  const root = numbered?.[1] || name;
-  let suffix = numbered ? Number(numbered[2]) + 1 : 2;
-  while (existing.includes(`${root}_${suffix}`)) suffix += 1;
-  return `${root}_${suffix}`;
-}
-
-/** Spreadsheet-style names count upward instead of minting another Column 1. */
-export function nextBlankColumnName(existing: string[]): string {
-  let largest = 0;
-  for (const name of existing) {
-    const match = name.match(/^Column (\d+)$/);
-    if (match) largest = Math.max(largest, Number(match[1]));
-  }
-  return `Column ${largest + 1}`;
-}
 
 /**
  * One step of the chain, as the editor holds it.
@@ -210,6 +101,8 @@ export type StepDraft =
       valueColumnId: string;
       valueColumnName: string;
     }
+  | BroadcastStepDraft
+  | ZipVectorStepDraft
   /** A remark standing in the chain. Markdown; the engine skips it. */
   | { id: string; kind: "comment"; text: string };
 
@@ -226,6 +119,8 @@ const STEP_LABELS: Record<StepKind, string> = {
   expand: "Expand frame",
   pivot: "Pivot",
   unpivot: "Unpivot",
+  broadcast: "Apply list across columns",
+  zipVector: "Pair list as column",
   comment: "Comment",
 };
 
@@ -299,6 +194,11 @@ function columnsBeforeStep(
         ...visible.filter((column) => !melted.includes(column.id)),
         { id: step.nameColumnId, name: step.nameColumnName, dataType: "string" },
         { id: step.valueColumnId, name: step.valueColumnName, dataType: "string" },
+      ];
+    } else if (step.kind === "zipVector") {
+      visible = [
+        ...visible,
+        { id: step.outputColumnId, name: step.name },
       ];
     }
     // A union adds rows. Expand's columns are supplied by the core preview:
@@ -952,6 +852,8 @@ function blankStep(
   sourceColumns: Column[]
 ): StepDraft {
   const id = crypto.randomUUID();
+  const vectorStep = blankVectorStep(kind, id, mintColumnId);
+  if (vectorStep) return vectorStep;
   const numeric = sourceColumns.find((column) =>
     ["integer", "number", "currency", "percentage"].includes(column.dataType)
   );
@@ -1034,6 +936,7 @@ function blankStep(
     case "comment":
       return { id, kind, text: "" };
   }
+  throw new Error(`Unsupported transformation: ${kind}`);
 }
 
 /**
@@ -1070,12 +973,12 @@ export function stepsFromRendered(
   editingFrame: FrameObject,
   sourceColumns: Column[]
 ): StepDraft[] {
-  const nameOf = (outputColumnId: string, fallback: string) =>
-    editingFrame.columns.find((column) => column.id === outputColumnId)?.name ??
-    fallback;
+  const nameOf = (id: string, fallback: string) =>
+    renderedOutputName(editingFrame, id, fallback);
   const drafts: StepDraft[] = [];
   for (const step of rendered) {
     const id = crypto.randomUUID();
+    if (appendVectorDraft(step, id, sourceColumns, drafts)) continue;
     switch (step.kind) {
       case "filter":
         drafts.push({
@@ -1224,7 +1127,33 @@ export function stepsFromRendered(
   return drafts;
 }
 
+function appendVectorDraft(
+  step: RenderedFrameStep,
+  id: string,
+  sourceColumns: Column[],
+  drafts: StepDraft[]
+): boolean {
+  const draft = vectorDraftFromRendered(
+    step,
+    id,
+    columnsBeforeStep(sourceColumns, drafts, drafts.length)
+  );
+  if (!draft) return false;
+  drafts.push(draft);
+  return true;
+}
+
+function renderedOutputName(
+  frame: FrameObject,
+  outputColumnId: string,
+  fallback: string
+) {
+  return frame.columns.find((column) => column.id === outputColumnId)?.name ?? fallback;
+}
+
 function stepInput(step: StepDraft): FrameStepInput {
+  if (step.kind === "broadcast" || step.kind === "zipVector")
+    return vectorStepInput(step);
   switch (step.kind) {
     case "filter":
       return {
@@ -1300,6 +1229,10 @@ function stepInput(step: StepDraft): FrameStepInput {
 }
 
 function stepIsIncomplete(step: StepDraft): boolean {
+  if (step.kind === "broadcast" || step.kind === "zipVector")
+    return vectorStepIsIncomplete(step);
+  const reshapeIncomplete = reshapeStepIsIncomplete(step);
+  if (reshapeIncomplete !== null) return reshapeIncomplete;
   switch (step.kind) {
     case "filter":
       return (
@@ -1324,24 +1257,25 @@ function stepIsIncomplete(step: StepDraft): boolean {
       );
     case "sort":
       return step.keys.length === 0;
-    case "union":
-      return step.frameId === "";
-    case "expand":
-      return step.frameId === "";
-    case "pivot":
-      return !step.namesColumnId || !step.valuesColumnId;
-    case "unpivot":
-      return (
-        !step.columns.trim() ||
-        !step.nameColumnName.trim() ||
-        !step.valueColumnName.trim()
-      );
     case "comment":
       return !step.text.trim();
   }
+  throw new Error("Unsupported transformation");
+}
+
+function reshapeStepIsIncomplete(step: StepDraft): boolean | null {
+  if (step.kind === "union" || step.kind === "expand") return !step.frameId;
+  if (step.kind === "pivot") return !step.namesColumnId || !step.valuesColumnId;
+  return step.kind === "unpivot"
+    ? !step.columns.trim() ||
+        !step.nameColumnName.trim() ||
+        !step.valueColumnName.trim()
+    : null;
 }
 
 function stepFormulas(step: StepDraft): string[] {
+  if (step.kind === "broadcast" || step.kind === "zipVector")
+    return vectorStepFormulas(step);
   switch (step.kind) {
     case "filter":
       return step.predicates.map((predicate) => predicate.formula);
@@ -1388,6 +1322,10 @@ export function DerivedFrameCreator({
   onHidePipelineColumnRequestHandled,
   rearrangeColumnsRequest,
   onRearrangeColumnsRequestHandled,
+  applyVectorRequest,
+  onApplyVectorRequestHandled,
+  pairVectorRequest,
+  onPairVectorRequestHandled,
   onOperation,
 }: {
   /** Where the chain starts: the frame it derives from, or its own data. */
@@ -1430,6 +1368,20 @@ export function DerivedFrameCreator({
   onHidePipelineColumnRequestHandled?: () => void;
   rearrangeColumnsRequest?: { token: number; columnIds: string[] };
   onRearrangeColumnsRequestHandled?: () => void;
+  applyVectorRequest?: {
+    token: number;
+    columnIds: string[];
+    vector: string;
+    expectedLength: number;
+  };
+  onApplyVectorRequestHandled?: () => void;
+  pairVectorRequest?: {
+    token: number;
+    name: string;
+    vector: string;
+    expectedLength: number;
+  };
+  onPairVectorRequestHandled?: () => void;
   onOperation: OperationHandler;
 }) {
   const [steps, setSteps] = useState<StepDraft[]>(() =>
@@ -1479,6 +1431,18 @@ export function DerivedFrameCreator({
     },
     [input.columns, passThroughSteps, editingFrame.id, onOperation]
   );
+
+  useVectorStepRequests({
+    applyRequest: applyVectorRequest,
+    pairRequest: pairVectorRequest,
+    columns: editingFrame.columns,
+    steps,
+    persist: (next) => void persist(next as StepDraft[]),
+    onApplyHandled: onApplyVectorRequestHandled,
+    onPairHandled: onPairVectorRequestHandled,
+    mintColumnId,
+    uniqueColumnName,
+  });
 
   useEffect(() => {
     if (
@@ -2476,6 +2440,59 @@ export function DerivedFrameCreator({
                 );
               })()}
 
+            {step.kind === "broadcast" &&
+              (() => {
+                const update = (
+                  change: Partial<BroadcastStepDraft>,
+                  saveNow: boolean
+                ) => {
+                  const patchStep = (current: StepDraft): StepDraft =>
+                    current.kind === "broadcast" ? { ...current, ...change } : current;
+                  if (saveNow) return savePatch(step.id, patchStep);
+                  patch(step.id, patchStep);
+                };
+                return (
+                  <BroadcastStepRow
+                    step={step}
+                    visible={visible}
+                    columnReferences={columnListReferences}
+                    references={stepReferences}
+                    columnsEditorId={commandId(step, "columns")}
+                    vectorEditorId={commandId(step, "vector")}
+                    columnsFocusToken={commandFocus(commandId(step, "columns"))}
+                    vectorFocusToken={commandFocus(commandId(step, "vector"))}
+                    onUpdate={update}
+                  />
+                );
+              })()}
+
+            {step.kind === "zipVector" &&
+              (() => {
+                const update = (draft: string, saveNow: boolean) => {
+                  const parsed = parseNamedTransformation(draft);
+                  if (!parsed) {
+                    if (saveNow)
+                      rejectCommand("Write a backticked column name = a list");
+                    return;
+                  }
+                  const change = (current: StepDraft): StepDraft =>
+                    current.kind === "zipVector"
+                      ? { ...current, name: parsed.name, vector: parsed.formula }
+                      : current;
+                  if (saveNow) return savePatch(step.id, change);
+                  patch(step.id, change);
+                };
+                return (
+                  <ZipVectorStepRow
+                    step={step}
+                    references={stepReferences}
+                    editorId={commandId(step)}
+                    focusToken={commandFocus(commandId(step))}
+                    onDraft={update}
+                  />
+                );
+              })()}
+
             {stepFailure && !stepIsIncomplete(step) && (
               <p className="pipeline-step-shape broken">
                 <CircleAlert size={11} /> {stepFailure}
@@ -2520,6 +2537,8 @@ export function DerivedFrameCreator({
           <option value="expand">Expand frame</option>
           <option value="pivot">Pivot</option>
           <option value="unpivot">Unpivot</option>
+          <option value="broadcast">Apply list across columns</option>
+          <option value="zipVector">Pair list as column</option>
           <option value="comment">Comment</option>
         </select>
       </label>

@@ -33,6 +33,20 @@ export type RearrangeColumnsRequest = {
   columnIds: string[];
   token: number;
 } | null;
+export type ApplyVectorRequest = {
+  frameId: string;
+  columnIds: string[];
+  vector: string;
+  expectedLength: number;
+  token: number;
+} | null;
+export type PairVectorRequest = {
+  frameId: string;
+  name: string;
+  vector: string;
+  expectedLength: number;
+  token: number;
+} | null;
 
 // The editors that receive a request already know which frame they are
 // editing, so the request they are handed drops the frameId that scoped it.
@@ -56,6 +70,133 @@ export type RearrangeColumnsEditorRequest = Omit<
   NonNullable<RearrangeColumnsRequest>,
   "frameId"
 >;
+export type ApplyVectorEditorRequest = Omit<
+  NonNullable<ApplyVectorRequest>,
+  "frameId"
+>;
+export type PairVectorEditorRequest = Omit<
+  NonNullable<PairVectorRequest>,
+  "frameId"
+>;
+
+function useMultiColumnPipelineRequests({
+  setContextMenu,
+  setSelection,
+  setInspectorSection,
+}: {
+  setContextMenu: (value: null) => void;
+  setSelection: (value: Selection) => void;
+  setInspectorSection: (value: "wrangle") => void;
+}) {
+  const [rearrangeColumnsRequest, setRearrangeColumnsRequest] =
+    useState<RearrangeColumnsRequest>(null);
+  const rearrangeToken = useRef(0);
+  const [applyVectorRequest, setApplyVectorRequest] =
+    useState<ApplyVectorRequest>(null);
+  const applyToken = useRef(0);
+  const [pairVectorRequest, setPairVectorRequest] = useState<PairVectorRequest>(null);
+  const pairToken = useRef(0);
+
+  const requestRearrangeColumns = useCallback(
+    (frameId: string, columnIds: string[], viewId?: string) => {
+      setSelection({ objectId: frameId, viewId });
+      setInspectorSection("wrangle");
+      rearrangeToken.current += 1;
+      setRearrangeColumnsRequest({ frameId, columnIds, token: rearrangeToken.current });
+    },
+    [setSelection, setInspectorSection]
+  );
+  const requestApplyVector = useCallback(
+    (
+      frameId: string,
+      columnIds: string[],
+      vector: string,
+      expectedLength: number,
+      viewId?: string
+    ) => {
+      setContextMenu(null);
+      setSelection({ objectId: frameId, viewId, columnId: columnIds[0] });
+      setInspectorSection("wrangle");
+      applyToken.current += 1;
+      setApplyVectorRequest({
+        frameId,
+        columnIds,
+        vector,
+        expectedLength,
+        token: applyToken.current,
+      });
+    },
+    [setContextMenu, setSelection, setInspectorSection]
+  );
+  const requestPairVector = useCallback(
+    (
+      frameId: string,
+      name: string,
+      vector: string,
+      expectedLength: number,
+      viewId?: string
+    ) => {
+      setContextMenu(null);
+      setSelection({ objectId: frameId, viewId });
+      setInspectorSection("wrangle");
+      pairToken.current += 1;
+      setPairVectorRequest({
+        frameId,
+        name,
+        vector,
+        expectedLength,
+        token: pairToken.current,
+      });
+    },
+    [setContextMenu, setSelection, setInspectorSection]
+  );
+
+  return {
+    rearrangeColumnsRequest,
+    applyVectorRequest,
+    pairVectorRequest,
+    requestRearrangeColumns,
+    requestApplyVector,
+    requestPairVector,
+    clearRearrangeColumnsRequest: () => setRearrangeColumnsRequest(null),
+    clearApplyVectorRequest: () => setApplyVectorRequest(null),
+    clearPairVectorRequest: () => setPairVectorRequest(null),
+  };
+}
+
+function useAddCalculatedColumnRequest({
+  setContextMenu,
+  setSelection,
+  setInspectorSection,
+}: {
+  setContextMenu: (value: null) => void;
+  setSelection: (value: Selection) => void;
+  setInspectorSection: (value: "wrangle") => void;
+}) {
+  const [addCalculatedColumnRequest, setRequest] =
+    useState<AddCalculatedColumnRequest>(null);
+  const token = useRef(0);
+  const requestAddCalculatedColumn = useCallback(
+    (
+      frameId: string,
+      afterColumnId: string | undefined,
+      anchorRowIndex: number | undefined,
+      viewId?: string
+    ) => {
+      setContextMenu(null);
+      setSelection({ objectId: frameId, viewId, columnId: afterColumnId });
+      setInspectorSection("wrangle");
+      token.current += 1;
+      setRequest({ frameId, token: token.current, afterColumnId, anchorRowIndex });
+    },
+    [setContextMenu, setSelection, setInspectorSection]
+  );
+  return {
+    addCalculatedColumnRequest,
+    requestAddCalculatedColumn,
+    clearAddCalculatedColumnRequest: () => setRequest(null),
+  };
+}
 
 /**
  * The pipeline-column-editing gestures — add a calculated column,
@@ -76,9 +217,11 @@ export function usePipelineColumnRequests({
   setSelection: (value: Selection) => void;
   setInspectorSection: (value: "wrangle") => void;
 }) {
-  const [addCalculatedColumnRequest, setAddCalculatedColumnRequest] =
-    useState<AddCalculatedColumnRequest>(null);
-  const addCalculatedColumnToken = useRef(0);
+  const addRequest = useAddCalculatedColumnRequest({
+    setContextMenu,
+    setSelection,
+    setInspectorSection,
+  });
   const [transformColumnRequest, setTransformColumnRequest] =
     useState<TransformColumnRequest>(null);
   const transformColumnToken = useRef(0);
@@ -88,30 +231,11 @@ export function usePipelineColumnRequests({
   const [hidePipelineColumnRequest, setHidePipelineColumnRequest] =
     useState<HidePipelineColumnRequest>(null);
   const hidePipelineColumnToken = useRef(0);
-  const [rearrangeColumnsRequest, setRearrangeColumnsRequest] =
-    useState<RearrangeColumnsRequest>(null);
-  const rearrangeColumnsToken = useRef(0);
-
-  const requestAddCalculatedColumn = useCallback(
-    (
-      frameId: string,
-      afterColumnId: string | undefined,
-      anchorRowIndex: number | undefined,
-      viewId?: string
-    ) => {
-      setContextMenu(null);
-      setSelection({ objectId: frameId, viewId, columnId: afterColumnId });
-      setInspectorSection("wrangle");
-      addCalculatedColumnToken.current += 1;
-      setAddCalculatedColumnRequest({
-        frameId,
-        token: addCalculatedColumnToken.current,
-        afterColumnId,
-        anchorRowIndex,
-      });
-    },
-    [setContextMenu, setSelection, setInspectorSection]
-  );
+  const multiColumnRequests = useMultiColumnPipelineRequests({
+    setContextMenu,
+    setSelection,
+    setInspectorSection,
+  });
 
   const requestColumnTransformation = useCallback(
     (
@@ -199,24 +323,6 @@ export function usePipelineColumnRequests({
     [setContextMenu, setSelection, setInspectorSection]
   );
 
-  const requestRearrangeColumns = useCallback(
-    (frameId: string, columnIds: string[], viewId?: string) => {
-      setSelection({ objectId: frameId, viewId });
-      setInspectorSection("wrangle");
-      rearrangeColumnsToken.current += 1;
-      setRearrangeColumnsRequest({
-        frameId,
-        columnIds,
-        token: rearrangeColumnsToken.current,
-      });
-    },
-    [setSelection, setInspectorSection]
-  );
-
-  const clearAddCalculatedColumnRequest = useCallback(
-    () => setAddCalculatedColumnRequest(null),
-    []
-  );
   const clearTransformColumnRequest = useCallback(
     () => setTransformColumnRequest(null),
     []
@@ -226,29 +332,21 @@ export function usePipelineColumnRequests({
     () => setHidePipelineColumnRequest(null),
     []
   );
-  const clearRearrangeColumnsRequest = useCallback(
-    () => setRearrangeColumnsRequest(null),
-    []
-  );
 
   return {
-    addCalculatedColumnRequest,
+    ...addRequest,
     transformColumnRequest,
     filterColumnRequest,
     hidePipelineColumnRequest,
-    rearrangeColumnsRequest,
-    clearAddCalculatedColumnRequest,
+    ...multiColumnRequests,
     clearTransformColumnRequest,
     clearFilterColumnRequest,
     clearHidePipelineColumnRequest,
-    clearRearrangeColumnsRequest,
-    requestAddCalculatedColumn,
     requestColumnTransformation,
     requestColumnFill,
     requestColumnFilter,
     requestCalculatedColumnEdit,
     requestHidePipelineColumn,
-    requestRearrangeColumns,
     // Exposed raw, in addition to the triggers above, because the keyboard
     // formula gesture (handleGridFormulaKey in GridFormulaKeyboard.ts) mints
     // its own differently-shaped request and needs to manage the token

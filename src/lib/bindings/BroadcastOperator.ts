@@ -3,10 +3,8 @@
 /**
  * What a broadcast list does to each column it meets.
  *
- * Arithmetic only, and deliberately not [`crate::formula::ast::BinaryOperator`]:
- * the gesture is "scale these" or "shift these", and a broadcast that
- * answered True or False would be a filter wearing the wrong clothes.
- * Anything past these four is a formula, and a formula has a column
- * editor already.
+ * Arithmetic only, and deliberately not the complete formula operator set:
+ * the gesture is "scale these" or "shift these", while comparisons already
+ * belong to filters and ordinary calculated-column formulas.
  */
 export type BroadcastOperator = "multiply" | "divide" | "add" | "subtract";

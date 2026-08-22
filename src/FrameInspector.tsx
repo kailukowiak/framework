@@ -67,6 +67,8 @@ import type {
 } from "./lib/types";
 import type {
   AddCalculatedColumnEditorRequest,
+  ApplyVectorEditorRequest,
+  PairVectorEditorRequest,
   FilterColumnEditorRequest,
   HidePipelineColumnEditorRequest,
   RearrangeColumnsEditorRequest,
@@ -211,6 +213,10 @@ export function FrameInspector({
   onHidePipelineColumnRequestHandled,
   rearrangeColumnsRequest,
   onRearrangeColumnsRequestHandled,
+  applyVectorRequest,
+  onApplyVectorRequestHandled,
+  pairVectorRequest,
+  onPairVectorRequestHandled,
   onOperation,
   onSourceChanged,
   onSetCached,
@@ -237,6 +243,10 @@ export function FrameInspector({
   onHidePipelineColumnRequestHandled: () => void;
   rearrangeColumnsRequest?: RearrangeColumnsEditorRequest;
   onRearrangeColumnsRequestHandled: () => void;
+  applyVectorRequest?: ApplyVectorEditorRequest;
+  onApplyVectorRequestHandled: () => void;
+  pairVectorRequest?: PairVectorEditorRequest;
+  onPairVectorRequestHandled: () => void;
   onOperation: OperationHandler;
   onSourceChanged: SetFrameSourceHandler;
   onSetCached: SetFrameCachedHandler;
@@ -891,6 +901,10 @@ export function FrameInspector({
               onRearrangeColumnsRequestHandled={
                 onRearrangeColumnsRequestHandled
               }
+              applyVectorRequest={applyVectorRequest}
+              onApplyVectorRequestHandled={onApplyVectorRequestHandled}
+              pairVectorRequest={pairVectorRequest}
+              onPairVectorRequestHandled={onPairVectorRequestHandled}
               onOperation={onOperation}
             />
           ) : (
@@ -1076,4 +1090,3 @@ function FrameCachePanel({
     </div>
   );
 }
-

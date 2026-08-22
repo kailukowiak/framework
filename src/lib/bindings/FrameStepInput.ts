@@ -43,4 +43,10 @@ export type FrameStepInput =
     vector: string;
     operator: BroadcastOperator;
   }
+  | {
+    "kind": "zipVector";
+    outputColumnId: string;
+    name: string;
+    vector: string;
+  }
   | { "kind": "comment"; text: string };

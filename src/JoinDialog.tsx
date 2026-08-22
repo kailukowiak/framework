@@ -65,18 +65,26 @@ export function JoinDialog({
   const primary = frames.find((frame) => frame.id === state.primaryFrameId)!;
   const candidates = frames.filter((frame) => frame.id !== primary.id);
   const initialLookup =
-    candidates.find((frame) => frame.uniqueKeys.length > 0) ?? candidates[0];
+    candidates.find((frame) => frame.id === state.lookupFrameId) ??
+    candidates.find((frame) => frame.uniqueKeys.length > 0) ??
+    candidates[0];
   const initialLookupKey =
-    initialLookup?.uniqueKeys[0]?.columnIds[0] ?? initialLookup?.columns[0]?.id ?? "";
+    initialLookup?.columns.some((column) => column.id === state.lookupKeyId)
+      ? state.lookupKeyId!
+      : initialLookup?.uniqueKeys[0]?.columnIds[0] ??
+        initialLookup?.columns[0]?.id ??
+        "";
   const initialLookupColumn = initialLookup?.columns.find(
     (column) => column.id === initialLookupKey
   );
   const initialPrimaryKey =
-    primary.columns.find(
-      (column) =>
-        normalizedKeyName(column.name) ===
-        normalizedKeyName(initialLookupColumn?.name ?? "")
-    )?.id ??
+    (primary.columns.some((column) => column.id === state.primaryKeyId)
+      ? state.primaryKeyId
+      : primary.columns.find(
+          (column) =>
+            normalizedKeyName(column.name) ===
+            normalizedKeyName(initialLookupColumn?.name ?? "")
+        )?.id) ??
     primary.columns[0]?.id ??
     "";
   const [lookupFrameId, setLookupFrameId] = useState(initialLookup?.id ?? "");

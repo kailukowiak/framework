@@ -32,6 +32,51 @@ const column = (id: string, name: string): Column => ({
 });
 
 describe("stepsFromRendered", () => {
+  it("keeps list gestures as one compact Wrangle row", () => {
+    const month = column("month", "Month");
+    const jan = column("jan", "Jan");
+    const feb = column("feb", "Feb");
+    const forecast = column("forecast", "Forecast");
+    const frame = {
+      columns: [month, jan, feb, forecast],
+    } as FrameObject;
+    expect(
+      stepsFromRendered(
+        [
+          {
+            kind: "broadcast",
+            columnIds: [jan.id, feb.id],
+            vector: "`Factors`",
+            operator: "multiply",
+            expectedLength: 2,
+          },
+          {
+            kind: "zipVector",
+            outputColumnId: forecast.id,
+            outputColumnName: forecast.name,
+            vector: "`Forecast list`",
+            expectedLength: 12,
+          },
+        ],
+        frame,
+        [month, jan, feb]
+      )
+    ).toMatchObject([
+      {
+        kind: "broadcast",
+        columns: "`Jan`, `Feb`",
+        vector: "`Factors`",
+        expectedLength: 2,
+      },
+      {
+        kind: "zipVector",
+        name: "Forecast",
+        vector: "`Forecast list`",
+        expectedLength: 12,
+      },
+    ]);
+  });
+
   it("reopens canonical engine formulas in the automatic multiline layout", () => {
     const source = column("date", "Date");
     const calculated = column("month", "Month");
