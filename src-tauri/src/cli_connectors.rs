@@ -1,10 +1,17 @@
 use framework_core::ConnectorRecipe;
 use serde::{Deserialize, Serialize};
 use std::fs;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use ts_rs::TS;
 use uuid::Uuid;
+
+/// Runs a connector's program without the console window Windows would
+/// otherwise open in front of the document.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub const PROFILE_STORE_NAME: &str = "cli-connectors.json";
 
@@ -195,12 +202,15 @@ pub fn run_profile(
     fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
     let path = directory.join(format!("output.{}", profile.output.extension()));
     let stdout = fs::File::create(&path).map_err(|error| error.to_string())?;
-    let result = Command::new(&profile.program)
+    let mut command = Command::new(&profile.program);
+    command
         .args(arguments)
         .stdin(Stdio::null())
         .stdout(Stdio::from(stdout))
-        .stderr(Stdio::piped())
-        .output();
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let result = command.output();
     let output = match result {
         Ok(output) => output,
         Err(error) => {
