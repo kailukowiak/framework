@@ -834,3 +834,342 @@ fn a_pivot_without_an_aggregate_refuses_a_second_row_in_a_cell() {
         "unexpected refusal: {message}"
     );
 }
+
+/// A wide frame and a list, spread across the columns: the Excel drag-across,
+/// said once. The saved chain holds one ordinary formula per column, each
+/// naming the list and the position it took, so what happened is readable
+/// afterwards and any one column can be adjusted on its own.
+#[test]
+fn a_list_spreads_across_the_columns_it_is_pointed_at() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![
+                vec!["Region".into(), "Q1".into(), "Q2".into(), "Q3".into()],
+                vec!["East".into(), "10".into(), "20".into(), "30".into()],
+                vec!["West".into(), "40".into(), "50".into(), "60".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddBlock {
+            name: "Params".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let block_id = store
+        .document()
+        .objects
+        .iter()
+        .find(|object| object.name() == "Params")
+        .unwrap()
+        .id()
+        .to_string();
+    store
+        .apply(Operation::SetBlockSource {
+            block_id,
+            source: "factors = [1, 2, 10]".into(),
+            editing: None,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 800.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: scaled_id.clone(),
+            steps: vec![FrameStepInput::Broadcast {
+                columns: "starts_with(\"Q\")".into(),
+                vector: "`Params`.`factors`".into(),
+                operator: BroadcastOperator::Multiply,
+            }],
+        })
+        .unwrap();
+
+    let page = store.get_frame_page(&scaled_id, 0, 10).unwrap();
+    assert_eq!(page.rows[0], vec!["East", "10", "40", "300"]);
+    assert_eq!(page.rows[1], vec!["West", "40", "100", "600"]);
+
+    // No step kind of its own: it left ordinary per-column formulas, and
+    // each one says which position of the list it took.
+    let view = store.view();
+    let rendered: Vec<String> = view.computed_frames[&scaled_id]
+        .steps
+        .iter()
+        .filter_map(|step| match step {
+            RenderedFrameStep::WithColumns { columns } => Some(columns),
+            _ => None,
+        })
+        .flatten()
+        .map(|column| column.formula.clone())
+        .collect();
+    assert!(
+        rendered.iter().any(|formula| formula.contains(".at(1)")),
+        "the first column should name position 1, got {rendered:?}"
+    );
+    assert!(
+        rendered.iter().any(|formula| formula.contains(".at(3)")),
+        "the third column should name position 3, got {rendered:?}"
+    );
+    assert!(
+        rendered.iter().any(|formula| formula.contains("factors")),
+        "the formulas should still name the list, not the numbers it held,          got {rendered:?}"
+    );
+}
+
+/// The length check is the whole safety of a positional spread, so it says
+/// both counts and names the columns rather than padding, recycling, or
+/// truncating.
+#[test]
+fn a_list_that_does_not_match_the_columns_is_refused_with_both_counts() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![
+                vec!["Q1".into(), "Q2".into(), "Q3".into()],
+                vec!["10".into(), "20".into(), "30".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    let failure = store.apply(Operation::SetFramePipeline {
+        frame_id: scaled_id,
+        steps: vec![FrameStepInput::Broadcast {
+            columns: "`Q1`, `Q2`, `Q3`".into(),
+            vector: "[1, 2]".into(),
+            operator: BroadcastOperator::Multiply,
+        }],
+    });
+    match failure {
+        Err(CoreError::Formula(message)) => {
+            assert!(
+                message.contains('2') && message.contains('3') && message.contains("Q2"),
+                "the refusal should carry both counts and the columns, said: {message}"
+            );
+        }
+        other => panic!("expected a length refusal, got {other:?}"),
+    }
+}
+
+/// One value is not a list. Broadcasting a scalar is already what plain
+/// arithmetic does, so pointing this gesture at one is a mistake worth
+/// saying out loud rather than quietly doing nothing interesting.
+#[test]
+fn spreading_something_that_is_not_a_list_is_refused() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![vec!["Q1".into()], vec!["10".into()]],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    let failure = store.apply(Operation::SetFramePipeline {
+        frame_id: scaled_id,
+        steps: vec![FrameStepInput::Broadcast {
+            columns: "`Q1`".into(),
+            vector: "3".into(),
+            operator: BroadcastOperator::Multiply,
+        }],
+    });
+    match failure {
+        Err(CoreError::Formula(message)) => {
+            assert!(message.contains("not a list"), "said: {message}")
+        }
+        other => panic!("expected a shape refusal, got {other:?}"),
+    }
+}
+
+/// The count of columns is settled when the step is written; the *values*
+/// are not. Each formula still names the list, so editing the list moves
+/// every column it was spread across — which is the difference between
+/// this and pasting numbers into forty cells.
+#[test]
+fn editing_the_list_moves_every_column_it_was_spread_across() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![
+                vec!["Q1".into(), "Q2".into()],
+                vec!["10".into(), "20".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddBlock {
+            name: "Params".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let block_id = store
+        .document()
+        .objects
+        .iter()
+        .find(|object| object.name() == "Params")
+        .unwrap()
+        .id()
+        .to_string();
+    store
+        .apply(Operation::SetBlockSource {
+            block_id: block_id.clone(),
+            source: "factors = [1, 1]".into(),
+            editing: None,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 800.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: scaled_id.clone(),
+            steps: vec![FrameStepInput::Broadcast {
+                columns: "`Q1`, `Q2`".into(),
+                vector: "`Params`.`factors`".into(),
+                operator: BroadcastOperator::Multiply,
+            }],
+        })
+        .unwrap();
+    assert_eq!(
+        store.get_frame_page(&scaled_id, 0, 10).unwrap().rows[0],
+        vec!["10", "20"]
+    );
+
+    store
+        .apply(Operation::SetBlockSource {
+            block_id,
+            source: "factors = [3, 100]".into(),
+            editing: None,
+        })
+        .unwrap();
+    assert_eq!(
+        store.get_frame_page(&scaled_id, 0, 10).unwrap().rows[0],
+        vec!["30", "2000"],
+        "the frame should follow the list without the step being rewritten"
+    );
+}
+
+/// The column count is settled at save, so a list edited *shorter*
+/// afterwards is caught where it is felt: the columns that still have a
+/// value keep working, and the one that ran off the end says so in its own
+/// formula rather than silently holding yesterday's number.
+#[test]
+fn a_list_edited_shorter_reports_on_the_column_that_ran_off_the_end() {
+    let mut store = blank_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![
+                vec!["Q1".into(), "Q2".into()],
+                vec!["10".into(), "20".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddBlock {
+            name: "Params".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let block_id = store
+        .document()
+        .objects
+        .iter()
+        .find(|object| object.name() == "Params")
+        .unwrap()
+        .id()
+        .to_string();
+    store
+        .apply(Operation::SetBlockSource {
+            block_id: block_id.clone(),
+            source: "factors = [2, 3]".into(),
+            editing: None,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id,
+            name: "Scaled".into(),
+            x: 0.0,
+            y: 800.0,
+        })
+        .unwrap();
+    let scaled_id = frame_named(store.document(), "Scaled").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: scaled_id.clone(),
+            steps: vec![FrameStepInput::Broadcast {
+                columns: "`Q1`, `Q2`".into(),
+                vector: "`Params`.`factors`".into(),
+                operator: BroadcastOperator::Multiply,
+            }],
+        })
+        .unwrap();
+
+    store
+        .apply(Operation::SetBlockSource {
+            block_id,
+            source: "factors = [2]".into(),
+            editing: None,
+        })
+        .unwrap();
+    let failure = store.get_frame_page(&scaled_id, 0, 10);
+    match failure {
+        Err(error) => {
+            let message = error.to_string();
+            assert!(
+                message.contains("position 2"),
+                "the refusal should name the position that ran off the end, said: {message}"
+            );
+        }
+        Ok(page) => panic!("expected the short list to be caught, got {:?}", page.rows),
+    }
+}

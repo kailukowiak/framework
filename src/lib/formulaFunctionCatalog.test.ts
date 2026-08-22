@@ -3,7 +3,7 @@ import { previewFormulaFunctions } from "./formulaFunctionCatalog";
 import { generatedFormulaFunctions } from "./formulaFunctionCatalog.generated";
 import { filterFormulaReferences, type FormulaReference } from "./formulaReferences";
 
-const expectedLength = 83 + generatedFormulaFunctions.length;
+const expectedLength = 84 + generatedFormulaFunctions.length;
 
 describe("preview formula function catalog", () => {
   it("mirrors the canonical native Polars registry without duplicate identities", () => {
@@ -73,5 +73,6 @@ describe("preview formula function catalog", () => {
     );
     expect(filterFormulaReferences(references, "SUMIFS")[0]?.id).toBe("expr.filter");
     expect(filterFormulaReferences(references, "DATEVALUE")[0]?.id).toBe("str.to_date");
+    expect(filterFormulaReferences(references, "nth")[0]?.id).toBe("expr.at");
   });
 });

@@ -164,32 +164,49 @@ impl Expr {
                 path,
                 arguments,
                 keyword_arguments,
-            } => {
-                if path.as_slice() == ["otherwise"] {
-                    return compile_when_chain(input, arguments, keyword_arguments, document);
-                }
-                // Read before the input is compiled, because turning a value
-                // into text is a question about what it *is* — and the answer
-                // lives in the expression, not in the Polars tree it becomes.
-                if path.as_slice() == ["cast"] {
-                    return compile_cast(input, arguments, keyword_arguments, document);
-                }
-                if path.as_slice() == ["str", "to_date"] {
-                    return compile_string_to_date(input, arguments, keyword_arguments, document);
-                }
-                if path.as_slice() == ["show"] {
-                    return compile_show(input, arguments, keyword_arguments, document);
-                }
-                compile_polars_method(
+            } => match compile_from_expression(input, path, arguments, keyword_arguments, document)
+            {
+                Some(compiled) => compiled,
+                None => compile_polars_method(
                     input.to_polars(document)?,
                     path,
                     arguments,
                     keyword_arguments,
                     document,
-                )
-            }
+                ),
+            },
         }
     }
+}
+
+/// The methods that have to read the *expression* rather than the Polars
+/// tree it would become, and `None` for every method that does not.
+///
+/// What they have in common is that the answer lives in what the receiver
+/// **is**, not in the column it compiles to. `cast` asks how a value was
+/// written; `at` asks which value a list is holding; a `when` chain is not
+/// a method call at all but the tail of one expression. Compiling the input
+/// first would throw the question away before it could be asked.
+fn compile_from_expression(
+    input: &Expr,
+    path: &[String],
+    arguments: &[Expr],
+    keyword_arguments: &[(String, Expr)],
+    document: &Document,
+) -> Option<Result<pl::Expr, String>> {
+    let compiled = match path {
+        [one] if one == "otherwise" => {
+            compile_when_chain(input, arguments, keyword_arguments, document)
+        }
+        [one] if one == "cast" => compile_cast(input, arguments, keyword_arguments, document),
+        [one] if one == "show" => compile_show(input, arguments, keyword_arguments, document),
+        [one] if one == "at" => compile_at(input, arguments, keyword_arguments, document),
+        [namespace, one] if namespace == "str" && one == "to_date" => {
+            compile_string_to_date(input, arguments, keyword_arguments, document)
+        }
+        _ => return None,
+    };
+    Some(compiled)
 }
 
 /// Compiles `date + duration` and `date - duration`, or says this is not
@@ -411,6 +428,45 @@ fn foreign_column_literal(
         return scalar_to_polars_literal(crate::polars_value_at(series, 0)?);
     }
     Ok(pl::lit(series.clone()))
+}
+
+/// One value out of a list, addressed the way a spreadsheet addresses
+/// things: `.at(1)` is the first.
+///
+/// One-based because every position a person types in this product is —
+/// `INDEX` is one-based, a row number is one-based, and a formula that
+/// renders as `` `factors`.at(1) `` beside the first column has to say the
+/// thing it looks like it says. The position is a literal rather than an
+/// expression on purpose: a position that could vary with the data would
+/// make this a lookup, and a lookup that matches on nothing but a number
+/// is the positional alignment the rest of this model refuses.
+///
+/// The list is read here and the answer carried in as a literal, which is
+/// what makes this safe to splice into a frame's plan: what comes out is
+/// one value, and one value broadcasts.
+fn compile_at(
+    input: &Expr,
+    arguments: &[Expr],
+    keyword_arguments: &[(String, Expr)],
+    document: &Document,
+) -> Result<pl::Expr, String> {
+    if !keyword_arguments.is_empty() || arguments.len() != 1 {
+        return Err(".at takes one position, as in .at(1)".into());
+    }
+    let position = match &arguments[0] {
+        Expr::Integer { value } if *value >= 1 => *value as usize,
+        Expr::Number { value } if *value >= 1.0 && value.fract() == 0.0 => *value as usize,
+        _ => return Err(".at needs a whole position of 1 or more, as in .at(1)".into()),
+    };
+    let (_, series) = document.evaluate_to_series(input)?;
+    if position > series.len() {
+        return Err(format!(
+            "That list has {} value{}, so there is nothing at position {position}",
+            series.len(),
+            if series.len() == 1 { "" } else { "s" }
+        ));
+    }
+    scalar_to_polars_literal(crate::polars_value_at(&series, position - 1)?)
 }
 
 fn scalar_to_polars_literal(value: ScalarValue) -> Result<pl::Expr, String> {

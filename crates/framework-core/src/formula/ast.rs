@@ -258,6 +258,7 @@ const REDUCING_METHODS: &[&str] = &[
     "product",
     "first",
     "last",
+    "at",
 ];
 
 /// The type two values have to have in common to sit in one list, or

@@ -218,6 +218,16 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
         0
     ),
     formula_function!(
+        "expr.at",
+        ".at",
+        ["index", "nth", "element", "position", "offset"],
+        "List",
+        ".at(position)",
+        "One value out of a list, counting from 1.",
+        1,
+        1
+    ),
+    formula_function!(
         "expr.is_between",
         ".is_between",
         ["range", "within"],

@@ -757,25 +757,7 @@ impl Document {
         existing_steps: &[FrameStep],
         ordering_is_declared: bool,
     ) -> Result<FrameStep, CoreError> {
-        let scope = FrameObject {
-            comment: None,
-            id: scope_frame_id.to_string(),
-            name: scope_name.to_string(),
-            columns: visible.to_vec(),
-            rows: Vec::new(),
-            steps: Vec::new(),
-            display: FrameDisplay::default(),
-            base_columns: Vec::new(),
-            source_file: None,
-            artifact: None,
-            connector: None,
-            derivation: None,
-            generator: None,
-            entry_columns: Vec::new(),
-            materialization: None,
-            unique_keys: Vec::new(),
-            summaries: Vec::new(),
-        };
+        let scope = step_scope(scope_frame_id, scope_name, visible);
         let parse_all = |items: &[ExistingFormulaInput]| {
             items
                 .iter()
@@ -900,7 +882,94 @@ impl Document {
                 &scope,
                 names,
             )?,
+            FrameStepInput::Broadcast {
+                columns,
+                vector,
+                operator,
+            } => self.prepare_broadcast_step(&columns, &vector, operator, &scope)?,
             FrameStepInput::Comment { text } => FrameStep::Comment { text },
+        })
+    }
+
+    /// The drag-across, expanded: one formula per column, each naming the
+    /// list and the position it took from it.
+    ///
+    /// The length check is the whole safety of the thing. Nothing here
+    /// matches a value to a column by anything but position, which is the
+    /// alignment this model refuses everywhere else — so it is allowed only
+    /// where the person doing it can see both sides, and only when the two
+    /// counts agree exactly. A list one short of the columns is not padded,
+    /// recycled, or truncated: R recycles and it is one of the most
+    /// reliable sources of wrong answers in that language.
+    fn prepare_broadcast_step(
+        &self,
+        columns: &str,
+        vector: &str,
+        operator: BroadcastOperator,
+        scope: &FrameObject,
+    ) -> Result<FrameStep, CoreError> {
+        let column_ids = parse_column_list(columns, scope)?;
+        if column_ids.is_empty() {
+            return Err(CoreError::InvalidOperation(
+                "Name at least one column for the list to spread across".into(),
+            ));
+        }
+        let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
+        if expression.shape(self) != Shape::List {
+            return Err(CoreError::Formula(format!(
+                "‘{vector}’ is one value, not a list. Spreading needs a list with \
+                 one value for each column — write one out, or use sequence(…)."
+            )));
+        }
+        let length = self
+            .evaluate_to_series(&expression)
+            .map_err(CoreError::Formula)?
+            .1
+            .len();
+        if length != column_ids.len() {
+            let name_of = |column_id: &Id| {
+                scope
+                    .columns
+                    .iter()
+                    .find(|column| &column.id == column_id)
+                    .map(|column| column.name.clone())
+                    .unwrap_or_else(|| column_id.clone())
+            };
+            return Err(CoreError::Formula(format!(
+                "‘{vector}’ has {length} value{}, but this spreads across {} column{} \
+                 ({}). They have to match one for one.",
+                if length == 1 { "" } else { "s" },
+                column_ids.len(),
+                if column_ids.len() == 1 { "" } else { "s" },
+                column_ids
+                    .iter()
+                    .map(name_of)
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )));
+        }
+        Ok(FrameStep::WithColumns {
+            columns: column_ids
+                .into_iter()
+                .enumerate()
+                .map(|(index, column_id)| DerivedExpression {
+                    expression: Expr::Binary {
+                        operator: operator.binary(),
+                        left: Box::new(Expr::Column {
+                            column_id: column_id.clone(),
+                        }),
+                        right: Box::new(Expr::Method {
+                            input: Box::new(expression.clone()),
+                            path: vec!["at".into()],
+                            arguments: vec![Expr::Integer {
+                                value: index as i64 + 1,
+                            }],
+                            keyword_arguments: Vec::new(),
+                        }),
+                    },
+                    output_column_id: column_id,
+                })
+                .collect(),
         })
     }
 
@@ -1384,6 +1453,36 @@ pub(crate) struct PipelineWalk {
 // see — so an entry naming something no earlier step produces is refused by
 // the resolution itself, with the name in the sentence.
 #[allow(clippy::too_many_arguments)]
+/// The schema a step's formulas are parsed against: the columns visible at
+/// that point in the chain, wearing a frame so the parser can resolve bare
+/// names against them.
+///
+/// Everything else is deliberately empty. This stands in for a position in
+/// a chain, not for a frame anybody owns — it has no rows to read, no
+/// source to refresh, and no steps of its own, because the steps are what
+/// is being built.
+fn step_scope(frame_id: &str, name: &str, visible: &[Column]) -> FrameObject {
+    FrameObject {
+        comment: None,
+        id: frame_id.to_string(),
+        name: name.to_string(),
+        columns: visible.to_vec(),
+        rows: Vec::new(),
+        steps: Vec::new(),
+        display: FrameDisplay::default(),
+        base_columns: Vec::new(),
+        source_file: None,
+        artifact: None,
+        connector: None,
+        derivation: None,
+        generator: None,
+        entry_columns: Vec::new(),
+        materialization: None,
+        unique_keys: Vec::new(),
+        summaries: Vec::new(),
+    }
+}
+
 fn prepare_unpivot_step(
     columns: &str,
     name_column_id: Id,

@@ -1864,3 +1864,70 @@ fn a_named_scalar_is_one_addressable_thing() {
         other => panic!("expected an ambiguity refusal, got {other:?}"),
     }
 }
+
+/// `.at(n)` picks one value out of a list, counting the way a spreadsheet
+/// counts. The whole point is that it answers with a *value*: a list is
+/// refused where one value is wanted, and this is the fix for that.
+#[test]
+fn at_picks_one_value_out_of_a_list_counting_from_one() {
+    let mut store = blank_store();
+    let block = add_block(&mut store, "Params");
+    type_into(
+        &mut store,
+        &block,
+        "factors = [1.0, 1.1, 1.2, 1.3]\nsecond = `factors`.at(2)\nfirst = `factors`.at(1)",
+    )
+    .unwrap();
+    let answers = answers(&store, &block);
+    assert_eq!(answers[1], "1.10", "at(2) should be the second value");
+    assert_eq!(answers[2], "1.00", "at(1) should be the first value");
+}
+
+#[test]
+fn at_past_the_end_says_how_long_the_list_is() {
+    let mut store = blank_store();
+    let block = add_block(&mut store, "Params");
+    type_into(
+        &mut store,
+        &block,
+        "factors = [1.0, 1.1, 1.2]\noops = `factors`.at(9)",
+    )
+    .unwrap();
+    let message = error_on(&store, &block, "oops");
+    assert!(
+        message.contains('3') && message.contains('9'),
+        "the error should name the length and the position, said: {message}"
+    );
+}
+
+#[test]
+fn at_refuses_a_position_that_is_not_a_whole_number_from_one() {
+    let mut store = blank_store();
+    let block = add_block(&mut store, "Params");
+    type_into(
+        &mut store,
+        &block,
+        "factors = [1.0, 1.1]\nzero = `factors`.at(0)\nhalf = `factors`.at(1.5)",
+    )
+    .unwrap();
+    for line in ["zero", "half"] {
+        let message = error_on(&store, &block, line);
+        assert!(
+            message.contains("1 or more"),
+            "{line} should be refused with the counting rule, said: {message}"
+        );
+    }
+}
+
+#[test]
+fn at_works_on_a_generated_sequence() {
+    let mut store = blank_store();
+    let block = add_block(&mut store, "Params");
+    type_into(
+        &mut store,
+        &block,
+        "months = sequence(1, 12)\nthird = `months`.at(3)",
+    )
+    .unwrap();
+    assert_eq!(answers(&store, &block)[1], "3.00");
+}
