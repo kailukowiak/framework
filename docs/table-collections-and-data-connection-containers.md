@@ -311,6 +311,31 @@ The feature is not complete until tests prove all of the following:
 - A native e2e workflow splits tutorial data, changes one shared Wrangle step,
   visits two members, edits the source, and observes the correct live result.
 
+### 9.1 Help and tutorial ship with the implementation
+
+Do not surface table collections in the in-app Help browser while this remains
+a proposal. Help is an inventory of available work, and a searchable entry for
+an object the document model cannot create would make the catalog dishonest.
+
+When the collection model and **Split by** operation land, add both layers in
+the same change:
+
+- an exact **Table collection** reference covering typed member keys, the
+  shared Wrangle chain, dynamic membership, Combine, and Extract;
+- a task guide found by **split table by column**, **partition by**, **window
+  partition**, **group into tables**, **multiple tables**, **table dictionary**,
+  **data cube**, and **ndarray**;
+- a generated tutorial workbook that splits a sales table by Region, adds one
+  shared Profit calculation, visits at least two member tabs, and proves that
+  a newly appearing region creates a live member; and
+- search and mounted interaction tests proving the task guide leads to the
+  exact reference and never to vector broadcasting.
+
+The tutorial belongs after the core acceptance tests because its checkpoints
+must exercise the real collection object. Do not approximate it with copied
+filtered frames or repurpose **Apply vector across columns**: those are
+different operations with different ownership and alignment semantics.
+
 ---
 
 ## Part II: data connection containers

@@ -80,11 +80,4 @@ describe("help search", () => {
       "reference.zip-vector"
     );
   });
-
-  it("translates NumPy ndarray vocabulary into the explicit broadcast workflow", () => {
-    const results = searchHelpEntries(helpEntries("guide", functions), "ndarray");
-
-    expect(results[0]?.id).toBe("formula.broadcast-vector-columns");
-    expect(results.some((entry) => entry.id === "reference.broadcast")).toBe(true);
-  });
 });

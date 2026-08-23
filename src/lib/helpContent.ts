@@ -132,46 +132,6 @@ export const HELP_GUIDES: HelpGuide[] = [
     related: ["Row order is part of the calculation", "Generate a series in a variable"],
   },
   {
-    id: "formula.broadcast-vector-columns",
-    scopes: ["formulas", "guide"],
-    kind: "Guide",
-    title: "Broadcast a vector across columns",
-    summary: "Apply one live vector as an explicit, repeating pattern across selected columns.",
-    searchTerms: [
-      "broadcast", "numpy", "np", "ndarray", "array broadcasting", "matrix",
-      "tensor", "multidimensional", "2d array", "horizontal vector",
-      "across columns", "apply list to columns", "period factors",
-    ],
-    questions: [
-      "What is the FrameWork equivalent of NumPy broadcasting?",
-      "How do I multiply several period columns by a vector?",
-      "How do I repeat factors across columns?",
-    ],
-    body: [
-      "FrameWork calls this Apply vector across columns. It is an explicit horizontal broadcast: the first vector value meets the first selected column, the second meets the second, and so on.",
-      "A shorter vector may repeat only when it fits the selected columns evenly. Two values can cover four columns as 1, 2, 1, 2; they cannot cover three. That refusal prevents a partial pattern from silently landing on the wrong period.",
-      "This changes columns inside one frame. Pair vector as column works down rows, Expand frame makes a cross product, and Join matches two frames by keys.",
-    ],
-    facts: [
-      { term: "Operators", description: "Multiply, divide, add, or subtract." },
-      { term: "Direction", description: "Across selected columns in their declared order." },
-      { term: "Length", description: "The vector length must equal or evenly divide the selected-column count." },
-      { term: "Liveness", description: "The step keeps the named vector reference, so later vector edits recompute the frame." },
-    ],
-    steps: [
-      "Create or name the vector that holds the factors or adjustments.",
-      "Select the destination columns in order, then drag the vector footer onto their headers; or add Apply vector across columns in Wrangle.",
-      "Choose multiply, divide, add, or subtract and review the compact value-count indicator.",
-      "Edit the vector to confirm that every selected column remains live.",
-    ],
-    examples: [
-      { label: "Three scenario factors", code: "[1, 1.15, 0.85]" },
-      { label: "Alternating two-column pattern", code: "[1, -1]" },
-    ],
-    surfaces: ["Wrangle", "Vector drag onto selected frame headers"],
-    related: ["Apply vector across columns", "Pair vector as column", "Expand frame"],
-  },
-  {
     id: "formula.conditional-aggregate",
     scopes: ["formulas", "guide"],
     kind: "Guide",
