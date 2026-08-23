@@ -1,0 +1,210 @@
+import { X } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import { FrameInspector } from "./FrameInspector";
+import type {
+  AddCalculatedColumnEditorRequest,
+  ApplyVectorEditorRequest,
+  FilterColumnEditorRequest,
+  HidePipelineColumnEditorRequest,
+  PairVectorEditorRequest,
+  RearrangeColumnsEditorRequest,
+  TransformColumnEditorRequest,
+} from "./hooks/usePipelineColumnRequests";
+import type {
+  FreezeCopyHandler,
+  SetFrameCachedHandler,
+  SetFrameSourceHandler,
+  TakeOwnershipHandler,
+} from "./FrameGrid";
+import type { OperationHandler } from "./lib/handlers";
+import type {
+  Column,
+  ComputedFrame,
+  DataObject,
+  FormulaFunction,
+  FrameObject,
+  Selection,
+} from "./lib/types";
+import { PlotInspector, ValueInspector } from "./PlotInspector";
+
+export type InspectorSection = "selection" | "format" | "wrangle";
+
+const sectionLabels: Record<InspectorSection, string> = {
+  selection: "Selection",
+  format: "Format",
+  wrangle: "Wrangle",
+};
+
+type InspectorProps = {
+  documentId: string;
+  object: DataObject;
+  objects: DataObject[];
+  formulaFunctions: FormulaFunction[];
+  selection: Selection;
+  computed?: ComputedFrame;
+  suggestedPosition: { x: number; y: number };
+  onClose: () => void;
+  section: InspectorSection;
+  onSectionChange: Dispatch<SetStateAction<InspectorSection>>;
+  addCalculatedColumnRequest?: AddCalculatedColumnEditorRequest;
+  onAddCalculatedColumnRequestHandled: () => void;
+  transformColumnRequest?: TransformColumnEditorRequest;
+  onTransformColumnRequestHandled: () => void;
+  filterColumnRequest?: FilterColumnEditorRequest;
+  onFilterColumnRequestHandled: () => void;
+  hidePipelineColumnRequest?: HidePipelineColumnEditorRequest;
+  onHidePipelineColumnRequestHandled: () => void;
+  rearrangeColumnsRequest?: RearrangeColumnsEditorRequest;
+  onRearrangeColumnsRequestHandled: () => void;
+  applyVectorRequest?: ApplyVectorEditorRequest;
+  onApplyVectorRequestHandled: () => void;
+  pairVectorRequest?: PairVectorEditorRequest;
+  onPairVectorRequestHandled: () => void;
+  onOperation: OperationHandler;
+  onSourceChanged: SetFrameSourceHandler;
+  onSetCached: SetFrameCachedHandler;
+  onTakeOwnership: TakeOwnershipHandler;
+  onFreezeCopy: FreezeCopyHandler;
+  onJoin: () => void;
+  onTransformColumn: (column: Column, formula: string, focus?: boolean) => void;
+};
+
+export function Inspector({
+  documentId,
+  object,
+  objects,
+  formulaFunctions,
+  selection,
+  computed,
+  suggestedPosition,
+  onClose,
+  section,
+  onSectionChange,
+  addCalculatedColumnRequest,
+  onAddCalculatedColumnRequestHandled,
+  transformColumnRequest,
+  onTransformColumnRequestHandled,
+  filterColumnRequest,
+  onFilterColumnRequestHandled,
+  hidePipelineColumnRequest,
+  onHidePipelineColumnRequestHandled,
+  rearrangeColumnsRequest,
+  onRearrangeColumnsRequestHandled,
+  applyVectorRequest,
+  onApplyVectorRequestHandled,
+  pairVectorRequest,
+  onPairVectorRequestHandled,
+  onOperation,
+  onSourceChanged,
+  onSetCached,
+  onTakeOwnership,
+  onFreezeCopy,
+  onJoin,
+  onTransformColumn,
+}: InspectorProps) {
+  return (
+    <aside className="inspector">
+      <div className="inspector-header">
+        <div>
+          <span className="eyebrow">INSPECTOR</span>
+          <h2>{object.name || "Unnamed object"}</h2>
+        </div>
+        <button className="icon-button" aria-label="Close inspector" onClick={onClose}>
+          <X size={17} />
+        </button>
+      </div>
+      {object.kind === "frame" && (
+        <nav className="inspector-nav" aria-label="Inspector sections">
+          {(["selection", "format", "wrangle"] as InspectorSection[]).map(
+            (candidate) => (
+              <button
+                key={candidate}
+                className={section === candidate ? "active" : ""}
+                aria-label={sectionLabels[candidate]}
+                aria-pressed={section === candidate}
+                onClick={() => onSectionChange(candidate)}
+                title={`${sectionLabels[candidate]} (⌘${
+                  candidate === "selection" ? "1" : candidate === "format" ? "2" : "3"
+                })`}
+              >
+                {sectionLabels[candidate]}
+              </button>
+            )
+          )}
+        </nav>
+      )}
+      {object.kind === "value" && (
+        <ValueInspector value={object} onOperation={onOperation} />
+      )}
+      {/* A vector is edited on its card, where the whole of it is visible. The
+          inspector says the two things the card cannot: what it is called in
+          a formula, and how to use it. */}
+      {object.kind === "series" && (
+        <section className="inspector-section">
+          <h3>Vector</h3>
+          <p className="inspector-note">
+            {object.values.length} {object.values.length === 1 ? "value" : "values"} ·{" "}
+            {object.dataType}
+          </p>
+          <p className="inspector-note">
+            Write <code>`{object.name}`</code> in a formula to pass it to something that
+            takes a vector, like <code>.is_in()</code>.
+          </p>
+        </section>
+      )}
+      {object.kind === "frame" && (
+        <FrameInspector
+          documentId={documentId}
+          frame={object}
+          objects={objects}
+          formulaFunctions={formulaFunctions}
+          selection={selection}
+          computed={computed!}
+          suggestedPosition={suggestedPosition}
+          section={section}
+          addCalculatedColumnRequest={addCalculatedColumnRequest}
+          onAddCalculatedColumnRequestHandled={onAddCalculatedColumnRequestHandled}
+          transformColumnRequest={transformColumnRequest}
+          onTransformColumnRequestHandled={onTransformColumnRequestHandled}
+          filterColumnRequest={filterColumnRequest}
+          onFilterColumnRequestHandled={onFilterColumnRequestHandled}
+          hidePipelineColumnRequest={hidePipelineColumnRequest}
+          onHidePipelineColumnRequestHandled={onHidePipelineColumnRequestHandled}
+          rearrangeColumnsRequest={rearrangeColumnsRequest}
+          onRearrangeColumnsRequestHandled={onRearrangeColumnsRequestHandled}
+          applyVectorRequest={applyVectorRequest}
+          onApplyVectorRequestHandled={onApplyVectorRequestHandled}
+          pairVectorRequest={pairVectorRequest}
+          onPairVectorRequestHandled={onPairVectorRequestHandled}
+          onOperation={onOperation}
+          onSourceChanged={onSourceChanged}
+          onSetCached={onSetCached}
+          onTakeOwnership={onTakeOwnership}
+          onFreezeCopy={onFreezeCopy}
+          onJoin={onJoin}
+          onTransformColumn={onTransformColumn}
+        />
+      )}
+      {object.kind === "plot" && (
+        <PlotInspectorForSource object={object} objects={objects} onOperation={onOperation} />
+      )}
+    </aside>
+  );
+}
+
+function PlotInspectorForSource({
+  object,
+  objects,
+  onOperation,
+}: {
+  object: Extract<DataObject, { kind: "plot" }>;
+  objects: DataObject[];
+  onOperation: OperationHandler;
+}) {
+  const frame = objects.find(
+    (candidate): candidate is FrameObject =>
+      candidate.kind === "frame" && candidate.id === object.sourceFrameId
+  );
+  return frame ? <PlotInspector plot={object} frame={frame} onOperation={onOperation} /> : null;
+}
+

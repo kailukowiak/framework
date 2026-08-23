@@ -33,7 +33,7 @@ import {
 } from "../lib/gridNavigation";
 import type { OperationHandler } from "../lib/handlers";
 import type { DocumentView, Selection } from "../lib/types";
-import type { InspectorSection } from "../App";
+import type { InspectorSection } from "../Inspector";
 
 /**
  * Keyboard handling for a focused grid cell: arrow/tab/enter movement,

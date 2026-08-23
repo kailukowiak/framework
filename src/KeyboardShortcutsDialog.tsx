@@ -48,6 +48,14 @@ const GROUPS = [
     ],
   },
   {
+    name: "Help",
+    shortcuts: [
+      ["Search formulas", "⇧⌘P"],
+      ["Search how FrameWork works", "⇧⌘H"],
+      ["Keyboard shortcuts", "⌘/"],
+    ],
+  },
+  {
     name: "Grid",
     shortcuts: [
       ["Edit selected cell", "F2"],

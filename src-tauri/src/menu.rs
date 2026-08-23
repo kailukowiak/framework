@@ -47,6 +47,8 @@ struct CanvasMenuItems<R: Runtime> {
     tidy_layout: MenuItem<R>,
     fit_view: MenuItem<R>,
     collapse_view: MenuItem<R>,
+    formula_help: MenuItem<R>,
+    framework_help: MenuItem<R>,
     keyboard_shortcuts: MenuItem<R>,
     zoom_in: MenuItem<R>,
     zoom_out: MenuItem<R>,
@@ -88,7 +90,11 @@ impl<R: Runtime> CanvasMenuItems<R> {
     }
 
     fn help_menu(&self, app: &AppHandle<R>) -> tauri::Result<Submenu<R>> {
-        let help = SubmenuBuilder::new(app, "Help").item(&self.keyboard_shortcuts);
+        let help = SubmenuBuilder::new(app, "Help")
+            .item(&self.formula_help)
+            .item(&self.framework_help)
+            .separator()
+            .item(&self.keyboard_shortcuts);
         // macOS keeps Check for Updates in the application menu next to About,
         // which is the first place a Mac user looks; everywhere else Help is
         // where it has always lived. Same command id from either position.
@@ -129,6 +135,16 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
             "collapse-view",
             "Collapse or Expand Selected Card",
             "CmdOrCtrl+Shift+M",
+        )?,
+        formula_help: item(
+            "formula-help",
+            "Search Formulas…",
+            "CmdOrCtrl+Shift+P",
+        )?,
+        framework_help: item(
+            "framework-help",
+            "Search FrameWork Help…",
+            "CmdOrCtrl+Shift+H",
         )?,
         keyboard_shortcuts: item(
             "keyboard-shortcuts",

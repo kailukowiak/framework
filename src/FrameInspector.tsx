@@ -74,7 +74,7 @@ import type {
   RearrangeColumnsEditorRequest,
   TransformColumnEditorRequest,
 } from "./hooks/usePipelineColumnRequests";
-import type { InspectorSection } from "./App";
+import type { InspectorSection } from "./Inspector";
 
 function canFormatColumn(column: Column): boolean {
   return (

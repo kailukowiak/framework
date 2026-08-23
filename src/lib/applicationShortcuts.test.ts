@@ -31,4 +31,9 @@ describe("applicationShortcut", () => {
     expect(shortcut("n")).toBe("new");
     expect(shortcut("n", { shiftKey: true })).toBe("new-window");
   });
+
+  it("opens formula search and the product guide independently", () => {
+    expect(shortcut("p", { shiftKey: true })).toBe("formula-help");
+    expect(shortcut("h", { shiftKey: true })).toBe("framework-help");
+  });
 });

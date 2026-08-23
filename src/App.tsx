@@ -30,8 +30,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type Dispatch,
-  type SetStateAction,
 } from "react";
 import { GridEditingMenu } from "./GridEditingMenu";
 import { ContextMenuGroup, ContextMenuSurface } from "./ContextMenuSurface";
@@ -47,6 +45,7 @@ import {
 import { ReferenceHighlights } from "./ReferenceHighlights";
 import { PreferencesDialog } from "./PreferencesDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
+import { HelpBrowser } from "./HelpBrowser";
 import { UpdateDialog } from "./UpdateDialog";
 import { useApplicationMenu } from "./useApplicationMenu";
 import { useFitViewToWindow } from "./useFitViewToWindow";
@@ -57,13 +56,6 @@ import { useMcpSettings } from "./hooks/useMcpSettings";
 import {
   usePipelineColumnRequests,
   scopedPipelineRequest,
-  type AddCalculatedColumnEditorRequest,
-  type TransformColumnEditorRequest,
-  type FilterColumnEditorRequest,
-  type HidePipelineColumnEditorRequest,
-  type RearrangeColumnsEditorRequest,
-  type ApplyVectorEditorRequest,
-  type PairVectorEditorRequest,
 } from "./hooks/usePipelineColumnRequests";
 import { useContextMenu } from "./hooks/useContextMenu";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
@@ -76,13 +68,12 @@ import { useConnectorRefreshApproval } from "./hooks/useConnectorRefreshApproval
 import { ConnectorRefreshConfirmDialog } from "./ConnectorRefreshConfirmDialog";
 import { useGridKeyboardNavigation } from "./hooks/useGridKeyboardNavigation";
 import { useDocumentBootstrap } from "./hooks/useDocumentBootstrap";
-import { FrameInspector } from "./FrameInspector";
+import { Inspector, type InspectorSection } from "./Inspector";
 import { JoinDialog } from "./JoinDialog";
 import { DataSidebar } from "./DataSidebar";
 import { LeftRail } from "./LeftRail";
 import { defaultPlotSpec, viewHolding } from "./lib/canvasCards";
 import { CanvasObject, LineageCords } from "./CanvasObject";
-import { PlotInspector, ValueInspector } from "./PlotInspector";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { DatasetDialog } from "./DatasetDialog";
 import { ExcelImportDialog, type ExcelRangeSelection } from "./ExcelImportDialog";
@@ -105,12 +96,8 @@ import {
   tabObjects,
   visualGridPosition,
   type ContextMenuState,
-  type FreezeCopyHandler,
   type GridFocus,
   type RenderedGrid,
-  type SetFrameCachedHandler,
-  type SetFrameSourceHandler,
-  type TakeOwnershipHandler,
 } from "./FrameGrid";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
 import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
@@ -149,15 +136,11 @@ import {
   canvasPoint,
   nudgeCanvasZoom,
 } from "./lib/canvasZoom";
-import type { OperationHandler } from "./lib/handlers";
 import type { JoinState } from "./lib/joinState";
 import type {
-  Column,
-  ComputedFrame,
   DataObject,
   DataType,
   DocumentView,
-  FormulaFunction,
   Operation,
   Selection,
   FrameObject,
@@ -172,15 +155,6 @@ import type {
  * the canvas only ever has to know whether something is there.
  */
 export type LeftPanel = "data" | "project" | null;
-export type InspectorSection = "selection" | "format" | "wrangle";
-/** Tab labels. `.inspector-nav button` capitalizes them either way; written
- *  capitalized because these are also the tabs' accessible names and their
- *  tooltips, and neither of those is styled by the stylesheet. */
-const inspectorSectionLabels: Record<InspectorSection, string> = {
-  selection: "Selection",
-  format: "Format",
-  wrangle: "Wrangle",
-};
 function importPosition(viewport: HTMLDivElement | null): { x: number; y: number } {
   return {
     x: (viewport?.scrollLeft ?? 0) + 110,
@@ -196,6 +170,7 @@ export default function App() {
     disengage: disengageActiveFormulaEditor,
     getActive: getActiveFormulaEditor,
     insertReference: insertActiveFormulaReference,
+    replaceSelection: replaceActiveFormulaSelection,
     clear: clearActiveFormulaEditor,
   } = useActiveFormulaEditorCommands();
   const [document, setDocument] = useState<DocumentView | null>(null);
@@ -235,6 +210,7 @@ export default function App() {
   const [newDocumentOpen, setNewDocumentOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [preferencesPage, setPreferencesPage] = useState<"settings" | "shortcuts">("settings");
+  const [helpScope, setHelpScope] = useState<"formulas" | "guide" | null>(null);
   const [sequenceFill, setSequenceFill] = useState<SequenceFillState | null>(null);
   const [runningCalculation, setRunningCalculation] =
     useState<RunningCalculationState | null>(null);
@@ -716,6 +692,10 @@ export default function App() {
         } else if (shortcut === "shortcuts") {
           setPreferencesPage("shortcuts");
           setPreferencesOpen(true);
+        } else if (shortcut === "formula-help") {
+          setHelpScope("formulas");
+        } else if (shortcut === "framework-help") {
+          setHelpScope("guide");
         } else if (shortcut === "settings") {
           setPreferencesPage("settings");
           setPreferencesOpen(true);
@@ -802,6 +782,8 @@ export default function App() {
     "compact-data": () => void compactData(),
     preferences: () => { setPreferencesPage("settings"); setPreferencesOpen(true); },
     "keyboard-shortcuts": () => { setPreferencesPage("shortcuts"); setPreferencesOpen(true); },
+    "formula-help": () => setHelpScope("formulas"),
+    "framework-help": () => setHelpScope("guide"),
     "check-for-updates": () => updates.check(),
     undo: () => void navigateHistory("undo"),
     redo: () => void navigateHistory("redo"),
@@ -1611,6 +1593,20 @@ export default function App() {
       )}
       {preferencesOpen && preferencesPage === "shortcuts" && (
         <KeyboardShortcutsDialog onClose={() => setPreferencesOpen(false)} />
+      )}
+
+      {helpScope && (
+        <HelpBrowser
+          scope={helpScope}
+          formulaFunctions={document.formulaFunctions}
+          canInsert={Boolean(getActiveFormulaEditor())}
+          onScopeChange={setHelpScope}
+          onInsert={(formula) => {
+            replaceActiveFormulaSelection(formula);
+            setHelpScope(null);
+          }}
+          onClose={() => setHelpScope(null)}
+        />
       )}
 
       {updates.status.kind !== "idle" && (
@@ -2433,179 +2429,6 @@ export default function App() {
 
     </div>
     </NumberDisplayContext.Provider>
-  );
-}
-
-
-type InspectorProps = {
-  documentId: string;
-  object: DataObject;
-  objects: DataObject[];
-  formulaFunctions: FormulaFunction[];
-  selection: Selection;
-  computed?: ComputedFrame;
-  suggestedPosition: { x: number; y: number };
-  onClose: () => void;
-  section: InspectorSection;
-  onSectionChange: Dispatch<SetStateAction<InspectorSection>>;
-  addCalculatedColumnRequest?: AddCalculatedColumnEditorRequest;
-  onAddCalculatedColumnRequestHandled: () => void;
-  transformColumnRequest?: TransformColumnEditorRequest;
-  onTransformColumnRequestHandled: () => void;
-  filterColumnRequest?: FilterColumnEditorRequest;
-  onFilterColumnRequestHandled: () => void;
-  hidePipelineColumnRequest?: HidePipelineColumnEditorRequest;
-  onHidePipelineColumnRequestHandled: () => void;
-  rearrangeColumnsRequest?: RearrangeColumnsEditorRequest;
-  onRearrangeColumnsRequestHandled: () => void;
-  applyVectorRequest?: ApplyVectorEditorRequest;
-  onApplyVectorRequestHandled: () => void;
-  pairVectorRequest?: PairVectorEditorRequest;
-  onPairVectorRequestHandled: () => void;
-  onOperation: OperationHandler;
-  onSourceChanged: SetFrameSourceHandler;
-  onSetCached: SetFrameCachedHandler;
-  onTakeOwnership: TakeOwnershipHandler;
-  onFreezeCopy: FreezeCopyHandler;
-  onJoin: () => void;
-  onTransformColumn: (column: Column, formula: string, focus?: boolean) => void;
-};
-
-function Inspector({
-  documentId,
-  object,
-  objects,
-  formulaFunctions,
-  selection,
-  computed,
-  suggestedPosition,
-  onClose,
-  section,
-  onSectionChange,
-  addCalculatedColumnRequest,
-  onAddCalculatedColumnRequestHandled,
-  transformColumnRequest,
-  onTransformColumnRequestHandled,
-  filterColumnRequest,
-  onFilterColumnRequestHandled,
-  hidePipelineColumnRequest,
-  onHidePipelineColumnRequestHandled,
-  rearrangeColumnsRequest,
-  onRearrangeColumnsRequestHandled,
-  applyVectorRequest,
-  onApplyVectorRequestHandled,
-  pairVectorRequest,
-  onPairVectorRequestHandled,
-  onOperation,
-  onSourceChanged,
-  onSetCached,
-  onTakeOwnership,
-  onFreezeCopy,
-  onJoin,
-  onTransformColumn,
-}: InspectorProps) {
-  return (
-    <aside className="inspector">
-      <div className="inspector-header">
-        <div>
-          <span className="eyebrow">INSPECTOR</span>
-          <h2>{object.name || "Unnamed object"}</h2>
-        </div>
-        <button className="icon-button" onClick={onClose}>
-          <X size={17} />
-        </button>
-      </div>
-      {object.kind === "frame" && (
-        <nav className="inspector-nav" aria-label="Inspector sections">
-          {(
-            [
-              "selection",
-              "format",
-              "wrangle",
-            ] as InspectorSection[]
-          ).map((candidate) => (
-            <button
-              key={candidate}
-              className={section === candidate ? "active" : ""}
-              aria-label={inspectorSectionLabels[candidate]}
-              aria-pressed={section === candidate}
-              onClick={() => onSectionChange(candidate)}
-              title={`${inspectorSectionLabels[candidate]} (⌘${candidate === "selection" ? "1" : candidate === "format" ? "2" : "3"})`}
-            >
-              {inspectorSectionLabels[candidate]}
-            </button>
-          ))}
-        </nav>
-      )}
-      {object.kind === "value" && (
-        <ValueInspector value={object} onOperation={onOperation} />
-      )}
-      {/* A list is edited on its card, where the whole of it is visible. The
-          inspector says the two things the card cannot: what it is called in
-          a formula, and how to use it. */}
-      {object.kind === "series" && (
-        <section className="inspector-section">
-          <h3>Vector</h3>
-          <p className="inspector-note">
-            {object.values.length}{" "}
-            {object.values.length === 1 ? "value" : "values"} · {object.dataType}
-          </p>
-          <p className="inspector-note">
-            Write <code>`{object.name}`</code> in a formula to pass it to
-            something that takes a vector, like <code>.is_in()</code>.
-          </p>
-        </section>
-      )}
-      {object.kind === "frame" && (
-        <FrameInspector
-          documentId={documentId}
-          frame={object}
-          objects={objects}
-          formulaFunctions={formulaFunctions}
-          selection={selection}
-          computed={computed!}
-          suggestedPosition={suggestedPosition}
-          section={section}
-          addCalculatedColumnRequest={addCalculatedColumnRequest}
-          onAddCalculatedColumnRequestHandled={
-            onAddCalculatedColumnRequestHandled
-          }
-          transformColumnRequest={transformColumnRequest}
-          onTransformColumnRequestHandled={onTransformColumnRequestHandled}
-          filterColumnRequest={filterColumnRequest}
-          onFilterColumnRequestHandled={onFilterColumnRequestHandled}
-          hidePipelineColumnRequest={hidePipelineColumnRequest}
-          onHidePipelineColumnRequestHandled={
-            onHidePipelineColumnRequestHandled
-          }
-          rearrangeColumnsRequest={rearrangeColumnsRequest}
-          onRearrangeColumnsRequestHandled={
-            onRearrangeColumnsRequestHandled
-          }
-          applyVectorRequest={applyVectorRequest}
-          onApplyVectorRequestHandled={onApplyVectorRequestHandled}
-          pairVectorRequest={pairVectorRequest}
-          onPairVectorRequestHandled={onPairVectorRequestHandled}
-          onOperation={onOperation}
-          onSourceChanged={onSourceChanged}
-          onSetCached={onSetCached}
-          onTakeOwnership={onTakeOwnership}
-          onFreezeCopy={onFreezeCopy}
-          onJoin={onJoin}
-          onTransformColumn={onTransformColumn}
-        />
-      )}
-      {object.kind === "plot" &&
-        (() => {
-          const frame = objects.find(
-            (candidate): candidate is FrameObject =>
-              candidate.kind === "frame" && candidate.id === object.sourceFrameId
-          );
-          return frame ? (
-            <PlotInspector plot={object} frame={frame} onOperation={onOperation} />
-          ) : null;
-        })()}
-    </aside>
   );
 }
 

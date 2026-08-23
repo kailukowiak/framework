@@ -8,6 +8,8 @@ export type ApplicationShortcut =
   | "save-as"
   | "settings"
   | "shortcuts"
+  | "formula-help"
+  | "framework-help"
   | "scratchpad"
   | "library"
   | "arrange"
@@ -49,7 +51,7 @@ const PLAIN: Record<string, ApplicationShortcut> = {
 };
 const SHIFTED: Record<string, ApplicationShortcut> = {
   z: "redo", n: "new-window", s: "save-as", l: "library", a: "arrange", f: "fit",
-  m: "collapse",
+  m: "collapse", p: "formula-help", h: "framework-help",
 };
 const INSERT: Record<string, ApplicationShortcut> = {
   b: "add-block", t: "add-text", f: "add-frame", g: "add-container",
