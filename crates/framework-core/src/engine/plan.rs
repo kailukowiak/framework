@@ -74,7 +74,7 @@ fn check_predicate_type(
 /// label, and that question has an answer no matter which lists they came
 /// from. Matching lists are left alone, so a key that means the same thing on
 /// both sides stays itself all the way through.
-fn match_key_types(
+pub(crate) fn match_key_types(
     plan: pl::LazyFrame,
     lookup: pl::LazyFrame,
     primary_key_column_ids: &[Id],
@@ -197,6 +197,66 @@ impl Document {
             plan = self.apply_step(plan, step, &mut HashSet::new())?;
         }
         Ok(plan)
+    }
+
+    /// Builds a literal frame's row-preserving chain while carrying the
+    /// stored row ordinal through it.
+    ///
+    /// The ordinary data plan closes over the declared visible schema, as it
+    /// should for every downstream reader. A grid edit needs one extra fact:
+    /// which stored row produced this sorted or filtered output row. Keeping
+    /// that index only on the page path avoids leaking an implementation
+    /// column into the frame's public schema.
+    fn materialize_own_rows_with_identity(
+        &self,
+        frame: &FrameObject,
+        layer: Layer,
+    ) -> Result<pl::LazyFrame, String> {
+        debug_assert!(frame.preserves_own_row_identity());
+        let mut plan = frame
+            .materialize_polars_lazy(self)?
+            .with_row_index(ROW_INDEX, None);
+        let mut visiting = HashSet::new();
+        visiting.insert(frame.id.clone());
+        for step in &frame.steps {
+            plan = self.apply_step(plan, step, &mut visiting)?;
+        }
+        let mut visible = frame
+            .columns
+            .iter()
+            .map(|column| pl::col(column.id.clone()))
+            .collect::<Vec<_>>();
+        visible.push(pl::col(ROW_INDEX));
+        let plan = plan.select(visible);
+        match layer {
+            Layer::Data => Ok(plan),
+            Layer::Display => self.apply_display_layer(plan, frame),
+        }
+    }
+
+    fn frame_page_plan(
+        &self,
+        frame: &FrameObject,
+        layer: Layer,
+    ) -> Result<pl::LazyFrame, CoreError> {
+        if frame.preserves_own_row_identity() {
+            self.materialize_own_rows_with_identity(frame, layer)
+                .map_err(CoreError::Import)
+        } else {
+            self.materialize_frame_lazy(&frame.id, layer, &mut HashSet::new())
+                .map_err(CoreError::Import)
+        }
+    }
+
+    fn indexed_frame_page_plan(&self, frame: &FrameObject) -> Result<pl::LazyFrame, CoreError> {
+        let plan = self.frame_page_plan(frame, Layer::Data)?;
+        let plan = if frame.preserves_own_row_identity() {
+            plan
+        } else {
+            plan.with_row_index(ROW_INDEX, None)
+        };
+        self.apply_display_layer(plan, frame)
+            .map_err(CoreError::Import)
     }
 
     fn materialize_data_layer(
@@ -1010,18 +1070,8 @@ impl Document {
         // returned ids are read off. Not done on the plain paged path,
         // where it would block the slice from pushing into the scan -- and
         // where rows have no editable identity to recover anyway.
-        let indexed = |plan: pl::LazyFrame| {
-            self.apply_display_layer(plan.with_row_index(ROW_INDEX, None), frame)
-                .map_err(CoreError::Import)
-        };
-        let plan = || {
-            self.materialize_frame_lazy(frame_id, Layer::Display, &mut HashSet::new())
-                .map_err(CoreError::Import)
-        };
-        let data_plan = || {
-            self.materialize_data_layer(frame_id, &mut HashSet::new())
-                .map_err(CoreError::Import)
-        };
+        let indexed = || self.indexed_frame_page_plan(frame);
+        let plan = || self.frame_page_plan(frame, Layer::Display);
         // A rule may ask something of the whole column -- the ends of a ramp,
         // an average to compare against -- so its hidden column belongs above
         // the slice, never over the page. Each route below says how it holds
@@ -1036,7 +1086,7 @@ impl Document {
                     fingerprint: self.frame_fingerprint(frame_id),
                 },
                 || {
-                    let frame = indexed(data_plan()?)?
+                    let frame = indexed()?
                         .collect()
                         .map_err(|error| CoreError::Import(error.to_string()))?;
                     let total_rows = frame.height();
@@ -1088,7 +1138,7 @@ impl Document {
             };
             (data_frame, total_rows)
         } else {
-            let data_frame = indexed(data_plan()?)?
+            let data_frame = indexed()?
                 .collect()
                 .map_err(|error| CoreError::Import(error.to_string()))?;
             let total_rows = data_frame.height();
@@ -1163,13 +1213,7 @@ impl Document {
             .map(|index| match frame.rows.get(index) {
                 // A frame that still holds its own rows keeps their ids, so
                 // an edit to a filtered, sorted page lands on the right one.
-                Some(row)
-                    if frame.steps.iter().all(|step| {
-                        matches!(step, FrameStep::Filter { .. } | FrameStep::Sort { .. })
-                    }) =>
-                {
-                    row.id.clone()
-                }
+                Some(row) if frame.preserves_own_row_identity() => row.id.clone(),
                 _ if frame.derivation.is_some() || frame.generator.is_some() => {
                     format!("derived:{}:{index}", frame.id)
                 }

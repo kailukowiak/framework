@@ -2,6 +2,181 @@ use crate::common::*;
 use framework_core::*;
 
 #[test]
+fn join_diagnostics_scan_generated_rows_beyond_any_rendered_page() {
+    let mut store = Store::new(Document {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: "Join diagnostics".into(),
+        revision: 0,
+        objects: Vec::new(),
+        views: Vec::new(),
+        frozen_values: Default::default(),
+    });
+    for (name, stop) in [("Orders", 2001), ("Customers", 1501)] {
+        store
+            .apply(Operation::AddGeneratorFrame {
+                name: name.into(),
+                formula: format!("sequence(1, {stop})"),
+                column_name: Some("Customer ID".into()),
+                x: 0.0,
+                y: 0.0,
+            })
+            .unwrap();
+    }
+    let orders = frame_named(store.document(), "Orders");
+    let customers = frame_named(store.document(), "Customers");
+    let diagnostics = store
+        .get_join_diagnostics(
+            &orders.id,
+            &customers.id,
+            &[orders.columns[0].id.clone()],
+            &[customers.columns[0].id.clone()],
+        )
+        .unwrap();
+
+    assert_eq!(diagnostics.primary_rows, 2000);
+    assert_eq!(diagnostics.matched_rows, 1500);
+    assert_eq!(diagnostics.unmatched_rows, 500);
+    assert_eq!(diagnostics.lookup_rows, 1500);
+    assert_eq!(diagnostics.lookup_null_key_rows, 0);
+    assert_eq!(diagnostics.lookup_duplicate_key_values, 0);
+}
+
+#[test]
+fn join_diagnostics_separate_blank_and_duplicate_lookup_keys() {
+    let mut store = Store::new(Document {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: "Join diagnostics".into(),
+        revision: 0,
+        objects: Vec::new(),
+        views: Vec::new(),
+        frozen_values: Default::default(),
+    });
+    store
+        .apply(Operation::AddFrame {
+            name: "Orders".into(),
+            grid: vec![
+                vec!["Customer ID".into()],
+                vec!["A".into()],
+                vec!["B".into()],
+                vec!["C".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddFrame {
+            name: "Customers".into(),
+            grid: vec![
+                vec!["Customer ID".into()],
+                vec!["A".into()],
+                vec!["A".into()],
+                vec![String::new()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let orders = frame_named(store.document(), "Orders");
+    let customers = frame_named(store.document(), "Customers");
+    let diagnostics = store
+        .get_join_diagnostics(
+            &orders.id,
+            &customers.id,
+            &[orders.columns[0].id.clone()],
+            &[customers.columns[0].id.clone()],
+        )
+        .unwrap();
+
+    assert_eq!(diagnostics.matched_rows, 1);
+    assert_eq!(diagnostics.unmatched_rows, 2);
+    assert_eq!(diagnostics.lookup_null_key_rows, 1);
+    assert_eq!(diagnostics.lookup_duplicate_key_values, 1);
+}
+
+#[test]
+fn a_join_relationship_can_change_keys_without_replacing_its_outputs() {
+    let mut store = Store::new(Document {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: "Editable join".into(),
+        revision: 0,
+        objects: Vec::new(),
+        views: Vec::new(),
+        frozen_values: Default::default(),
+    });
+    store
+        .apply(Operation::AddFrame {
+            name: "Orders".into(),
+            grid: vec![
+                vec!["Old key".into(), "New key".into()],
+                vec!["A".into(), "1".into()],
+                vec!["B".into(), "2".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddFrame {
+            name: "Lookup".into(),
+            grid: vec![
+                vec!["Old key".into(), "New key".into(), "Label".into()],
+                vec!["A".into(), "1".into(), "Alpha".into()],
+                vec!["X".into(), "2".into(), "Beta".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let primary = frame_named(store.document(), "Orders").clone();
+    let lookup = frame_named(store.document(), "Lookup").clone();
+    for key in [&lookup.columns[0], &lookup.columns[1]] {
+        store
+            .apply(Operation::SetUniqueKey {
+                frame_id: lookup.id.clone(),
+                column_ids: vec![key.id.clone()],
+                enabled: true,
+            })
+            .unwrap();
+    }
+    store
+        .apply(Operation::AddJoinFrame {
+            primary_frame_id: primary.id.clone(),
+            lookup_frame_id: lookup.id.clone(),
+            primary_key_column_ids: vec![primary.columns[0].id.clone()],
+            lookup_key_column_ids: vec![lookup.columns[0].id.clone()],
+            join_type: FrameJoinType::Left,
+            columns: vec![JoinColumnInput {
+                source_frame_id: lookup.id.clone(),
+                source_column_id: lookup.columns[2].id.clone(),
+                name: "Label".into(),
+            }],
+            name: "Orders looked up".into(),
+            x: 700.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let joined = frame_named(store.document(), "Orders looked up").clone();
+    let output_id = joined.columns[0].id.clone();
+
+    store
+        .apply(Operation::SetFrameJoinKeys {
+            frame_id: joined.id.clone(),
+            primary_key_column_ids: vec![primary.columns[1].id.clone()],
+            lookup_key_column_ids: vec![lookup.columns[1].id.clone()],
+        })
+        .unwrap();
+
+    let view = store.view();
+    let joined_after = view.document.frame(&joined.id).unwrap();
+    assert_eq!(joined_after.columns[0].id, output_id);
+    assert_eq!(
+        view.computed_frames[&joined.id].rows[&joined_after.rows[1].id][&output_id].typed_value,
+        ScalarValue::String("Beta".into())
+    );
+}
+
+#[test]
 fn joined_frames_require_unique_lookup_keys_and_refresh_both_inputs() {
     let mut store = Store::new(Document {
         id: uuid::Uuid::new_v4().to_string(),

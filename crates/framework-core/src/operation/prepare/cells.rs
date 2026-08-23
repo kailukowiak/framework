@@ -37,6 +37,20 @@ impl Document {
         ))
     }
 
+    fn ensure_column_is_editable(&self, frame_id: &str, column_id: &str) -> Result<(), CoreError> {
+        if self.frame_column_is_editable(frame_id, column_id) {
+            return Ok(());
+        }
+        let frame = self.frame(frame_id)?;
+        if frame.columns.iter().any(|column| column.id == column_id) {
+            return Err(CoreError::InvalidOperation(
+                "This column is calculated by Wrangle. Edit its formula instead of typing over one result."
+                    .into(),
+            ));
+        }
+        Err(CoreError::ColumnNotFound)
+    }
+
     /// The ordinal a page row id names, for a frame read from a parquet.
     ///
     /// `page_row_ids` writes these, and they are the only identity such a
@@ -82,7 +96,7 @@ impl Document {
             });
         }
         Ok({
-            self.ensure_rows_are_editable(&frame_id)?;
+            self.ensure_column_is_editable(&frame_id, &column_id)?;
             let frame = self.frame(&frame_id)?;
             let column = frame
                 .columns
@@ -116,6 +130,7 @@ impl Document {
                     .iter()
                     .find(|column| column.id == update.column_id)
                     .ok_or(CoreError::ColumnNotFound)?;
+                self.ensure_column_is_editable(&frame_id, &update.column_id)?;
                 validate_category_raw(column, &update.raw)?;
             }
             ReplicatedOperation::SetCells { frame_id, cells }
@@ -200,7 +215,7 @@ impl Document {
                 let Some(column) = frame.columns.get(first_column + column_offset) else {
                     break;
                 };
-                if column.formula.is_some() {
+                if !self.frame_column_is_editable(&frame_id, &column.id) {
                     continue;
                 }
                 validate_category_raw(column, raw)?;
@@ -215,7 +230,7 @@ impl Document {
                             appended_rows.push(Row {
                                 id: id(),
                                 cells: frame
-                                    .columns
+                                    .input_columns()
                                     .iter()
                                     .map(|column| (column.id.clone(), Cell::default()))
                                     .collect(),
@@ -252,19 +267,16 @@ impl Document {
             // rejected by the read path, they are ignored by it: the rows
             // come from the artifact or the transformation, and the added
             // one sits in the document producing nothing. Refusing says so.
-            if !frame.owns_its_rows() {
+            if !frame.preserves_own_row_identity() {
                 return Err(CoreError::InvalidOperation(
-                    "This frame's rows come from its source, so a row cannot be added to it here"
+                    "This frame's rows come from its source or reshape step, so a row cannot be added to it here"
                         .into(),
                 ));
             }
-            if values
-                .keys()
-                .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
-            {
-                return Err(CoreError::ColumnNotFound);
+            for column_id in values.keys() {
+                self.ensure_column_is_editable(&frame_id, column_id)?;
             }
-            for column in &frame.columns {
+            for column in frame.input_columns() {
                 validate_category_raw(
                     column,
                     values
@@ -279,7 +291,7 @@ impl Document {
                 row: Row {
                     id: id(),
                     cells: frame
-                        .columns
+                        .input_columns()
                         .iter()
                         .map(|column| {
                             (
@@ -301,7 +313,7 @@ impl Document {
         frame_id: Id,
         row_id: Id,
     ) -> Result<ReplicatedOperation, CoreError> {
-        if !self.frame(&frame_id)?.owns_its_rows() {
+        if !self.frame(&frame_id)?.preserves_own_row_identity() {
             return Err(CoreError::InvalidOperation(
                 "This frame's rows come from its source. Filter them out in the chain instead"
                     .into(),

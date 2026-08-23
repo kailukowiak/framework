@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   FormulaCompletionMenu,
   useFormulaCompletion,
@@ -65,7 +65,9 @@ export function TextCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [cursor, setCursor] = useState(0);
+  const body = useRef<HTMLButtonElement>(null);
   const editor = useRef<HTMLTextAreaElement>(null);
+  const scrollTop = useRef(0);
   const source = computed?.source ?? text.text;
   const hasError = computed?.segments.some(
     (segment) => segment.kind === "broken" || (segment.kind === "value" && segment.error)
@@ -90,14 +92,33 @@ export function TextCard({
       });
     },
   });
+  // Display and edit mode are two different scroll containers. Carry the
+  // viewport between them so changing how prose is read does not also change
+  // which part of a long note is visible.
+  useLayoutEffect(() => {
+    const target = editing ? editor.current : body.current;
+    if (target) target.scrollTop = scrollTop.current;
+  }, [editing]);
   if (!editing)
     return (
       <>
         <button
+          ref={body}
           type="button"
           className="text-card-body"
           title="Edit text"
-          onClick={() => {
+          onClick={(event) => {
+            const selection = window.getSelection();
+            if (
+              selection &&
+              !selection.isCollapsed &&
+              selection.anchorNode &&
+              selection.focusNode &&
+              event.currentTarget.contains(selection.anchorNode) &&
+              event.currentTarget.contains(selection.focusNode)
+            )
+              return;
+            scrollTop.current = event.currentTarget.scrollTop;
             setDraft(source);
             setCursor(source.length);
             setEditing(true);
@@ -137,6 +158,7 @@ export function TextCard({
           // Choosing a completion holds the textarea focus through mouse down.
           // A real departure commits the whole markdown document as before.
           if (event.currentTarget.parentElement?.contains(event.relatedTarget)) return;
+          scrollTop.current = event.currentTarget.scrollTop;
           setEditing(false);
           if (draft !== source)
             void onOperation({

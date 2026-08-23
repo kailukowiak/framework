@@ -53,7 +53,11 @@ import { calculateVirtualRowRange } from "./lib/frameVirtualization";
  * whose styles were fetched separately would draw the old colors on the new
  * rows for as long as the second request was in flight.
  */
-type PagedRows = { values: string[][]; styleMatches: FrameStyleMatch[][] };
+type PagedRows = {
+  values: string[][];
+  rowIds: string[];
+  styleMatches: FrameStyleMatch[][];
+};
 import type {
   Column,
   ComputedFrame,
@@ -129,11 +133,6 @@ export function FrameCard({
     pendingScrollTop,
     scrollFrame,
   } = useFrameScrollState();
-  const { frameColumnDrop, beginFrameColumnDrag } = useFrameColumnDrag(
-    frame,
-    onRearrangeColumns,
-    onJoinColumns
-  );
   const editCalculatedColumn = (column: Column, rowIndex: number) =>
     onEditCalculatedColumn(frame, column, rowIndex);
   const filterColumn = (column: Column) => onFilterColumn(frame, column);
@@ -334,6 +333,7 @@ export function FrameCard({
               return;
             pagedCacheRef.current.set(frame.id, pageIndex, generation.signature, {
               values: response.rows,
+              rowIds: response.rowIds,
               styleMatches: response.styleMatches ?? [],
             });
             setPagedTotalRows(response.totalRows);
@@ -393,7 +393,10 @@ export function FrameCard({
       const offsetInPage = rowIndex - pageRowOffset(pageIndex);
       const raw = cachedPage?.values[offsetInPage];
       if (!raw) placeholderOffsets.add(rowIndex - virtualRange.start);
-      const id = `source:${frame.id}:${rowIndex}`;
+      // Literal frames keep stable stored row ids through a row-preserving
+      // Wrangle chain. Imported and derived pages have no such id and keep
+      // the positional spelling they have always used.
+      const id = cachedPage?.rowIds[offsetInPage] ?? `source:${frame.id}:${rowIndex}`;
       // The rules were run over the page these values came from, so the
       // answers arrive with them rather than being recomputed here -- a
       // formula is the core's to evaluate, on this path as on every other.
@@ -655,6 +658,9 @@ export function FrameCard({
           { rowCount: selectableRowCount, columnCount: frame.columns.length }
         )
       : null;
+  const { frameColumnDrop, beginFrameColumnDrag } = useFrameColumnDrag(
+    frame, selectionRange, onRearrangeColumns, onJoinColumns
+  );
 
   // For the records-as-rows paged path, displayedRows *is* the visible
   // window (already sized to virtualRange) rather than the full row set,

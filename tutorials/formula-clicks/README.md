@@ -2,7 +2,12 @@
 
 This intermediate tutorial starts with six deliberately unsorted monthly sales rows and ends
 with a small model built through the same public operations exposed by FrameWork
-MCP. It demonstrates:
+MCP.
+
+The complete guide is also rendered as the **Tutorial walkthrough** markdown
+card in both the Start workbook and the Answer key.
+
+It demonstrates:
 
 - a header sort becoming real Wrangle lineage;
 - creating ``.shift(n)`` by pointing at cells;

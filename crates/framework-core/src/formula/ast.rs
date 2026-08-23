@@ -1205,12 +1205,19 @@ impl Expr {
                     Shape::List
                 }
             }
-            // A block line may itself be a list now, so the shape of a
-            // reference is the shape of what it refers to. Results and
-            // written values are single by construction.
+            // A block line or compact variable may itself be a list, so the
+            // shape of a reference is the shape of what it refers to.
+            // Dashboard results and written values remain scalar by
+            // construction.
             Expr::Value { object_id } => document
                 .block_line(object_id)
                 .and_then(|(block, index)| block.lines[index].expression().cloned())
+                .or_else(|| match document.object(object_id) {
+                    Ok(DataObject::Result(result)) if result.variable => {
+                        Some(result.formula.expression.clone())
+                    }
+                    _ => None,
+                })
                 .map(|expression| expression.shape(document))
                 .unwrap_or(Shape::Scalar),
             Expr::Negate { expression } | Expr::Not { expression } => expression.shape(document),

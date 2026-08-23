@@ -217,7 +217,7 @@ function VectorFrameEdgeHeader({
   return (
     <th
       className="frame-edge-header"
-      title="Drop a list here to add it as a column"
+      title="Drop a vector here to add it as a column"
       onDragOver={(event) => {
         if (!hasVectorDrag(event.dataTransfer)) return;
         event.preventDefault();

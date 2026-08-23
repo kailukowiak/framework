@@ -29,6 +29,7 @@ import type { StepSchema } from "./bindings/StepSchema";
 import type { FramePage } from "./bindings/FramePage";
 import type { FrameQueryPlan } from "./bindings/FrameQueryPlan";
 import type { FrameSummary } from "./bindings/FrameSummary";
+import type { JoinDiagnostics } from "./bindings/JoinDiagnostics";
 import type { TutorialDocument } from "./bindings/TutorialDocument";
 import type { TutorialLibrary } from "./bindings/TutorialLibrary";
 import type { CliConnectorProfile } from "./bindings/CliConnectorProfile";
@@ -50,6 +51,7 @@ export type {
   FramePage,
   FrameQueryPlan,
   FrameSummary,
+  JoinDiagnostics,
   TutorialDocument,
   TutorialLibrary,
   CliConnectorProfile,
@@ -452,6 +454,21 @@ export async function getFramePage(
  */
 export async function getFrameSummary(frameId: string): Promise<FrameSummary> {
   return invoke("get_frame_summary", { frameId });
+}
+
+/** Full-plan match and uniqueness facts for the compact lookup prompt. */
+export async function getJoinDiagnostics(
+  primaryFrameId: string,
+  lookupFrameId: string,
+  primaryKeyColumnIds: string[],
+  lookupKeyColumnIds: string[]
+): Promise<JoinDiagnostics> {
+  return invoke("get_join_diagnostics", {
+    primaryFrameId,
+    lookupFrameId,
+    primaryKeyColumnIds,
+    lookupKeyColumnIds,
+  });
 }
 
 /**

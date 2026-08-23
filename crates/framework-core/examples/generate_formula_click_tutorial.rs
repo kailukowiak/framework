@@ -4,6 +4,54 @@ use framework_core::{
 };
 use std::path::PathBuf;
 
+fn add_tutorial_walkthrough(store: &mut Store) -> Result<(), framework_core::CoreError> {
+    let existing = store
+        .document()
+        .views
+        .iter()
+        .map(|view| (view.id.clone(), view.x, view.y))
+        .collect::<Vec<_>>();
+    for (view_id, x, y) in existing {
+        store.apply(Operation::MoveView {
+            view_id,
+            x: x + 650.0,
+            y,
+        })?;
+    }
+    store.apply(Operation::AddText { x: 70.0, y: 70.0 })?;
+    let guide = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Text(text) if text.name == "Text" => Some(text.id.clone()),
+            _ => None,
+        })
+        .expect("tutorial walkthrough exists");
+    store.apply(Operation::RenameObject {
+        object_id: guide.clone(),
+        name: "Tutorial walkthrough".into(),
+    })?;
+    store.apply(Operation::SetTextSource {
+        object_id: guide.clone(),
+        source: include_str!("../../../tutorials/formula-clicks/README.md").into(),
+    })?;
+    let view_id = store
+        .document()
+        .views
+        .iter()
+        .find(|view| view.object_id == guide)
+        .expect("tutorial walkthrough has a view")
+        .id
+        .clone();
+    store.apply(Operation::ResizeView {
+        view_id,
+        width: 580.0,
+        height: 820.0,
+    })?;
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
@@ -36,6 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         x: 80.0,
         y: 430.0,
     })?;
+    add_tutorial_walkthrough(&mut store)?;
 
     let start = output.join("formula-clicks-start.fw");
     store.save(&start)?;

@@ -1,6 +1,7 @@
 pub mod build;
 pub mod cache;
 pub mod compute;
+mod join;
 pub mod plan;
 mod recurrence;
 mod scratchwork;
@@ -18,6 +19,7 @@ pub(crate) mod frame;
 // MCP consumers name directly.
 pub(crate) use cache::*;
 pub use compute::*;
+pub use join::*;
 pub use plan::Layer;
 pub(crate) use plan::in_plain_words;
 pub(crate) use style::StyleRuleMatches;

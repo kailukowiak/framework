@@ -52,7 +52,7 @@ export type FrameCardProps = {
     primaryFrameId: string,
     primaryColumnId: string,
     lookupFrameId: string,
-    lookupColumnId: string
+    lookupOutputColumnIds: string[]
   ) => void;
   onFilterColumn: (frame: FrameObject, column: Column) => void;
   onTransformColumn: (frame: FrameObject, column: Column, formula: string) => void;

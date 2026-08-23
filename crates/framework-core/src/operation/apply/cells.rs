@@ -12,7 +12,7 @@ impl Document {
         column_id: Id,
         raw: String,
     ) -> Result<(), CoreError> {
-        if self.frame(&frame_id)?.is_computed() {
+        if !self.frame_column_is_editable(&frame_id, &column_id) {
             return Err(CoreError::DerivedFrameReadOnly);
         }
         let column = self
@@ -41,9 +41,6 @@ impl Document {
         cells: Vec<CellUpdate>,
     ) -> Result<(), CoreError> {
         let frame = self.frame(&frame_id)?;
-        if frame.is_computed() {
-            return Err(CoreError::DerivedFrameReadOnly);
-        }
         for update in &cells {
             if !frame.rows.iter().any(|row| row.id == update.row_id) {
                 return Err(CoreError::RowNotFound);
@@ -53,6 +50,9 @@ impl Document {
                 .iter()
                 .find(|column| column.id == update.column_id)
                 .ok_or(CoreError::ColumnNotFound)?;
+            if !frame.column_is_editable_input(&update.column_id) {
+                return Err(CoreError::DerivedFrameReadOnly);
+            }
             validate_category_raw(column, &update.raw)?;
         }
         let frame = self.frame_mut(&frame_id)?;
@@ -185,7 +185,7 @@ impl Document {
         cells: Vec<CellUpdate>,
         appended_rows: Vec<Row>,
     ) -> Result<(), CoreError> {
-        if self.frame(&frame_id)?.is_computed() {
+        if !self.frame(&frame_id)?.preserves_own_row_identity() {
             return Err(CoreError::DerivedFrameReadOnly);
         }
         for row in appended_rows {
@@ -193,7 +193,7 @@ impl Document {
             if frame.rows.iter().any(|existing| existing.id == row.id) {
                 continue;
             }
-            for column in &frame.columns {
+            for column in frame.input_columns() {
                 let raw = row
                     .cells
                     .get(&column.id)
@@ -212,12 +212,12 @@ impl Document {
         row: Row,
         after_row_id: Option<Id>,
     ) -> Result<(), CoreError> {
-        if self.frame(&frame_id)?.is_computed() {
+        if !self.frame(&frame_id)?.preserves_own_row_identity() {
             return Err(CoreError::DerivedFrameReadOnly);
         }
         {
             let frame = self.frame(&frame_id)?;
-            for column in &frame.columns {
+            for column in frame.input_columns() {
                 let raw = row
                     .cells
                     .get(&column.id)
@@ -228,18 +228,20 @@ impl Document {
         }
         let frame = self.frame_mut(&frame_id)?;
         if frame.rows.iter().any(|existing| existing.id == row.id)
-            || row
-                .cells
-                .keys()
-                .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
+            || row.cells.keys().any(|column_id| {
+                !frame
+                    .input_columns()
+                    .iter()
+                    .any(|column| column.id == *column_id)
+            })
         {
             return Err(CoreError::InvalidOperation(
                 "row IDs and cells must be unique and belong to the target frame".into(),
             ));
         }
-        if row.cells.len() != frame.columns.len()
+        if row.cells.len() != frame.input_columns().len()
             || frame
-                .columns
+                .input_columns()
                 .iter()
                 .any(|column| !row.cells.contains_key(&column.id))
         {
@@ -261,7 +263,7 @@ impl Document {
     }
 
     pub(crate) fn apply_delete_row(&mut self, frame_id: Id, row_id: Id) -> Result<(), CoreError> {
-        if self.frame(&frame_id)?.is_computed() {
+        if !self.frame(&frame_id)?.preserves_own_row_identity() {
             return Err(CoreError::DerivedFrameReadOnly);
         }
         {

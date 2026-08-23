@@ -41,6 +41,20 @@ fn text_id(store: &Store, name: &str) -> String {
         .unwrap_or_else(|| panic!("tutorial text {name:?} exists"))
 }
 
+fn container_id(store: &Store, name: &str) -> String {
+    store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Container(container) if container.name == name => {
+                Some(container.id.clone())
+            }
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("tutorial container {name:?} exists"))
+}
+
 fn column_id_named(frame: &framework_core::FrameObject, name: &str) -> String {
     frame
         .columns
@@ -84,6 +98,44 @@ fn percent_format() -> ColumnFormat {
         zero_dash: Some(true),
         currency_code: None,
     }
+}
+
+/// Put the lesson beside its workbook, not in a repository the learner may
+/// never see. Existing cards move as a group so the walkthrough owns the
+/// opening edge of the canvas without covering the spreadsheet it explains.
+fn add_tutorial_walkthrough(
+    store: &mut Store,
+    source: &str,
+) -> Result<(), framework_core::CoreError> {
+    let existing = store
+        .document()
+        .views
+        .iter()
+        .map(|view| (view.id.clone(), view.x, view.y))
+        .collect::<Vec<_>>();
+    for (view_id, x, y) in existing {
+        store.apply(Operation::MoveView {
+            view_id,
+            x: x + 650.0,
+            y,
+        })?;
+    }
+    store.apply(Operation::AddText { x: 70.0, y: 70.0 })?;
+    let guide_id = text_id(store, "Text");
+    store.apply(Operation::RenameObject {
+        object_id: guide_id.clone(),
+        name: "Tutorial walkthrough".into(),
+    })?;
+    store.apply(Operation::SetTextSource {
+        object_id: guide_id.clone(),
+        source: source.into(),
+    })?;
+    store.apply(Operation::ResizeView {
+        view_id: view_id(store, &guide_id),
+        width: 580.0,
+        height: 820.0,
+    })?;
+    Ok(())
 }
 
 fn branch_frame_mut(
@@ -142,7 +194,10 @@ fn pass_through_steps(branch: &framework_core::FrameObject) -> Vec<FrameStepInpu
 }
 
 fn add_sales_narrative(store: &mut Store) -> Result<(), framework_core::CoreError> {
-    store.apply(Operation::AddText { x: 620.0, y: 669.0 })?;
+    store.apply(Operation::AddText {
+        x: 1270.0,
+        y: 669.0,
+    })?;
     let narrative_id = text_id(store, "Text");
     store.apply(Operation::RenameObject {
         object_id: narrative_id.clone(),
@@ -178,6 +233,10 @@ fn generate_basic(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         x: 70.0,
         y: 420.0,
     })?;
+    add_tutorial_walkthrough(
+        &mut store,
+        include_str!("../../../tutorials/first-workbook/README.md"),
+    )?;
     let start = output.join("first-workbook-start.fw");
     store.save(&start)?;
 
@@ -260,7 +319,7 @@ fn generate_basic(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     })?;
     store.apply(Operation::MoveView {
         view_id: view_id(&store, &plot_id),
-        x: 976.0,
+        x: 1626.0,
         y: 57.0,
     })?;
     store.apply(Operation::ResizeView {
@@ -270,7 +329,7 @@ fn generate_basic(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     })?;
     store.apply(Operation::MoveView {
         view_id: view_id(&store, &block_id(&store, "Assumptions")),
-        x: 77.0,
+        x: 727.0,
         y: 669.0,
     })?;
     store.apply(Operation::ResizeView {
@@ -344,6 +403,10 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         x: 70.0,
         y: 850.0,
     })?;
+    add_tutorial_walkthrough(
+        &mut store,
+        include_str!("../../../tutorials/month-end-close/README.md"),
+    )?;
     let start = output.join("month-end-close-start.fw");
     store.save(&start)?;
 
@@ -516,7 +579,7 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let analysis_view = view_id(&store, &analysis.id);
     store.apply(Operation::MoveView {
         view_id: analysis_view.clone(),
-        x: 70.0,
+        x: 720.0,
         y: 70.0,
     })?;
     store.apply(Operation::ResizeView {
@@ -571,7 +634,7 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         view_id: analysis_view,
         object_id: analysis.id.clone(),
     })?;
-    for (object, x) in [(&actuals, 70.0), (&budget, 870.0)] {
+    for (object, x) in [(&actuals, 720.0), (&budget, 1520.0)] {
         store.apply(Operation::MoveView {
             view_id: view_id(&store, &object.id),
             x,
@@ -580,7 +643,7 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     }
     store.apply(Operation::MoveView {
         view_id: view_id(&store, &checks),
-        x: 42.0,
+        x: 692.0,
         y: 547.0,
     })?;
     store.apply(Operation::ResizeView {
@@ -607,11 +670,255 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::create_dir_all(output)?;
+    let mut store = Store::new_tutorial(Document::blank("Vectors, dates, and visual joins"));
+    store.apply(Operation::AddText { x: 70.0, y: 70.0 })?;
+    let guide_id = text_id(&store, "Text");
+    store.apply(Operation::RenameObject {
+        object_id: guide_id.clone(),
+        name: "Tutorial walkthrough".into(),
+    })?;
+    // One source for the repository guide and the card rendered inside both
+    // workbooks. A copied summary would inevitably drift from the smoke test
+    // it explains, which is exactly when a tutorial becomes least useful.
+    store.apply(Operation::SetTextSource {
+        object_id: guide_id.clone(),
+        source: include_str!("../../../tutorials/vectors-and-joins/README.md").into(),
+    })?;
+    store.apply(Operation::ResizeView {
+        view_id: view_id(&store, &guide_id),
+        width: 580.0,
+        height: 820.0,
+    })?;
+    store.apply(Operation::AddFrame {
+        name: "Launch inputs".into(),
+        grid: vec![
+            vec!["Line", "SKU", "Units", "Launch month"],
+            vec!["1", "A-100", "120", "2026-09-01"],
+            vec!["2", "B-200", "90", "2026-10-01"],
+            vec!["3", "C-300", "75", ""],
+            vec!["4", "A-100", "140", ""],
+            vec!["5", "D-400", "60", ""],
+            vec!["6", "B-200", "110", ""],
+        ]
+        .into_iter()
+        .map(|row| row.into_iter().map(str::to_string).collect())
+        .collect(),
+        x: 720.0,
+        y: 540.0,
+    })?;
+    let launch_inputs = frame(&store, "Launch inputs");
+    store.apply(Operation::AddLinkedFrame {
+        source_frame_id: launch_inputs.id.clone(),
+        name: "Launch plan".into(),
+        x: 720.0,
+        y: 70.0,
+    })?;
+    store.apply(Operation::AddFrame {
+        name: "Product catalog".into(),
+        grid: vec![
+            vec!["SKU", "Product", "Region", "Unit price"],
+            vec!["A-100", "Aurora", "West", "250"],
+            vec!["B-200", "Boreal", "East", "180"],
+            vec!["C-300", "Cedar", "North", "320"],
+            vec!["D-400", "Delta", "South", "210"],
+        ]
+        .into_iter()
+        .map(|row| row.into_iter().map(str::to_string).collect())
+        .collect(),
+        x: 1410.0,
+        y: 70.0,
+    })?;
+    store.apply(Operation::AddContainer {
+        name: "Scenario vectors".into(),
+        x: 1410.0,
+        y: 470.0,
+        container_id: None,
+    })?;
+    store.apply(Operation::AddBlock {
+        name: "Checks".into(),
+        x: 1410.0,
+        y: 740.0,
+    })?;
+    let start = output.join("vectors-and-joins-start.fw");
+    store.save(&start)?;
+
+    let launch = frame(&store, "Launch plan");
+    let line_id = column_id_named(&launch_inputs, "Line");
+    let launch_month_id = column_id_named(&launch_inputs, "Launch month");
+    store.apply(Operation::SetFramePipeline {
+        frame_id: launch.id.clone(),
+        steps: vec![
+            FrameStepInput::Sort {
+                keys: vec![framework_core::SortInput {
+                    column_id: line_id,
+                    descending: false,
+                }],
+            },
+            FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: launch_month_id,
+                    name: "Launch month".into(),
+                    formula: "sequence(2026-09-01, periods=frame.len(), step=1mo)".into(),
+                }],
+            },
+        ],
+    })?;
+
+    let launch = frame(&store, "Launch plan");
+    let catalog = frame(&store, "Product catalog");
+    let launch_sku = column_id_named(&launch, "SKU");
+    let catalog_sku = column_id_named(&catalog, "SKU");
+    store.apply(Operation::SetUniqueKey {
+        frame_id: catalog.id.clone(),
+        column_ids: vec![catalog_sku.clone()],
+        enabled: true,
+    })?;
+    store.apply(Operation::AddJoinFrame {
+        primary_frame_id: launch.id.clone(),
+        lookup_frame_id: catalog.id.clone(),
+        primary_key_column_ids: vec![launch_sku],
+        lookup_key_column_ids: vec![catalog_sku],
+        join_type: FrameJoinType::Left,
+        columns: ["Line", "SKU", "Units", "Launch month"]
+            .into_iter()
+            .map(|name| JoinColumnInput {
+                source_frame_id: launch.id.clone(),
+                source_column_id: column_id_named(&launch, name),
+                name: name.into(),
+            })
+            .chain(
+                ["Product", "Region", "Unit price"]
+                    .into_iter()
+                    .map(|name| JoinColumnInput {
+                        source_frame_id: catalog.id.clone(),
+                        source_column_id: column_id_named(&catalog, name),
+                        name: name.into(),
+                    }),
+            )
+            .collect(),
+        name: "Scheduled launches".into(),
+        x: 720.0,
+        y: 930.0,
+    })?;
+    let scheduled = frame(&store, "Scheduled launches");
+    store.apply(Operation::SetFramePipeline {
+        frame_id: scheduled.id.clone(),
+        steps: vec![FrameStepInput::WithColumns {
+            columns: vec![ExistingFormulaInput {
+                output_column_id: column_id("Revenue"),
+                name: "Revenue".into(),
+                formula: "`Units` * `Unit price`".into(),
+            }],
+        }],
+    })?;
+    let scheduled = frame(&store, "Scheduled launches");
+    for name in ["Unit price", "Revenue"] {
+        store.apply(Operation::SetColumnFormat {
+            frame_id: scheduled.id.clone(),
+            column_id: column_id_named(&scheduled, name),
+            format: Some(money_format()),
+        })?;
+    }
+
+    let vector_container = container_id(&store, "Scenario vectors");
+    store.apply(Operation::AddSeries {
+        name: "Scenario".into(),
+        values: "Base\nUpside\nDownside".into(),
+        x: 0.0,
+        y: 0.0,
+        container_id: Some(vector_container.clone()),
+    })?;
+    store.apply(Operation::AddSeries {
+        name: "Multiplier".into(),
+        values: "1\n1.15\n0.85".into(),
+        x: 0.0,
+        y: 0.0,
+        container_id: Some(vector_container),
+    })?;
+    store.apply(Operation::AddGeneratorFrame {
+        name: "Scenarios".into(),
+        formula: "`Scenario vectors`.`Scenario`".into(),
+        column_name: Some("Scenario".into()),
+        x: 720.0,
+        y: 650.0,
+    })?;
+    let scenarios = frame(&store, "Scenarios");
+    store.apply(Operation::SetFramePipeline {
+        frame_id: scenarios.id.clone(),
+        steps: vec![FrameStepInput::ZipVector {
+            output_column_id: column_id("Multiplier"),
+            name: "Multiplier".into(),
+            vector: "`Scenario vectors`.`Multiplier`".into(),
+        }],
+    })?;
+
+    store.apply(Operation::SetBlockSource {
+        block_id: block_id(&store, "Checks"),
+        source: "Rows scheduled = `Scheduled launches`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()".into(),
+        editing: None,
+    })?;
+    store.apply(Operation::ResizeView {
+        view_id: view_id(&store, &launch.id),
+        width: 620.0,
+        height: 390.0,
+    })?;
+    store.apply(Operation::ResizeView {
+        view_id: view_id(&store, &catalog.id),
+        width: 600.0,
+        height: 340.0,
+    })?;
+    store.apply(Operation::ResizeView {
+        view_id: view_id(&store, &scheduled.id),
+        width: 1160.0,
+        height: 430.0,
+    })?;
+
+    let finished = output.join("vectors-and-joins-finished.fw");
+    store.save(&finished)?;
+    let mut reloaded = Store::load(&finished)?;
+    let launch_page = reloaded.get_frame_page(&launch.id, 0, 20)?;
+    assert_eq!(launch_page.total_rows, 6);
+    assert_eq!(launch_page.rows[0][3], "2026-09-01");
+    assert_eq!(launch_page.rows[5][3], "2027-02-01");
+    let scenario_page = reloaded.get_frame_page(&scenarios.id, 0, 20)?;
+    assert_eq!(scenario_page.total_rows, 3);
+    assert_eq!(scenario_page.rows[1], vec!["Upside", "1.15"]);
+    let joined_page = reloaded.get_frame_page(&scheduled.id, 0, 20)?;
+    assert_eq!(joined_page.total_rows, 6);
+    assert_eq!(joined_page.rows[0][7], "30000");
+
+    // The tutorial's central promise is behavior, not merely a stored formula:
+    // appending a source row grows the calendar and the visual join together.
+    let mut values = std::collections::BTreeMap::new();
+    values.insert(column_id_named(&launch_inputs, "Line"), "7".into());
+    values.insert(column_id_named(&launch_inputs, "SKU"), "C-300".into());
+    values.insert(column_id_named(&launch_inputs, "Units"), "50".into());
+    reloaded.apply(Operation::AddRow {
+        frame_id: launch_inputs.id.clone(),
+        values,
+    })?;
+    let grown_launch = reloaded.get_frame_page(&launch.id, 0, 20)?;
+    assert_eq!(grown_launch.total_rows, 7);
+    assert_eq!(grown_launch.rows[6][3], "2027-03-01");
+    assert_eq!(reloaded.get_frame_page(&scheduled.id, 0, 20)?.total_rows, 7);
+
+    println!("wrote {}", start.display());
+    println!("wrote {}", finished.display());
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()?;
+    if std::env::args().nth(1).as_deref() == Some("vectors-and-joins") {
+        generate_vectors_and_joins(&workspace.join("tutorials/vectors-and-joins"))?;
+        return Ok(());
+    }
     generate_basic(&workspace.join("tutorials/first-workbook"))?;
     generate_advanced(&workspace.join("tutorials/month-end-close"))?;
+    generate_vectors_and_joins(&workspace.join("tutorials/vectors-and-joins"))?;
     Ok(())
 }

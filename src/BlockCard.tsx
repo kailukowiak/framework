@@ -29,9 +29,11 @@ import {
   getFormulaReferenceQuery,
   insertFormulaReference,
   isFormulaExecuteShortcut,
+  formulaToken,
   type FormulaReference,
 } from "./lib/formulaReferences";
 import type { OperationHandler } from "./lib/handlers";
+import { beginVectorPointerDrag } from "./lib/vectorDrag";
 import {
   continueScratchworkLine,
   mergeStoredScratchwork,
@@ -493,6 +495,11 @@ export function BlockCard({
             <GutterRow
               key={line.id}
               line={line}
+              formula={
+                line.name
+                  ? `${formulaToken(block.name)}.${formulaToken(line.name)}`
+                  : null
+              }
               span={stripeRows[index]?.span ?? 1}
               banded={stripeRows[index]?.on ?? false}
               open={openResultId === line.id}
@@ -577,12 +584,14 @@ function gutterRowTitle(
 /** One answer beside its line, spanning as many rows as the line does. */
 function GutterRow({
   line,
+  formula,
   span,
   banded,
   open,
   onToggle,
 }: {
   line: ComputedBlockLine;
+  formula: string | null;
   span: number;
   banded: boolean;
   open: boolean;
@@ -590,6 +599,7 @@ function GutterRow({
 }) {
   const useGrouping = useContext(NumberDisplayContext);
   const answered = !line.blank && !line.comment && !line.error;
+  const draggable = answered && formula !== null && line.valueCount > 0;
   const className = `block-gutter-row${line.error ? " failed" : ""}${
     line.frozen ? (line.frozen.stale ? " stale" : " frozen") : ""
   }${answered && scratchworkResultIsLong(line.display) ? " long" : ""}${
@@ -601,13 +611,36 @@ function GutterRow({
   return answered ? (
     <button
       type="button"
-      className={`${className}${open ? " open" : ""}`}
+      className={`${className}${open ? " open" : ""}${
+        draggable ? " draggable-formula" : ""
+      }`}
       style={spanStyle}
-      title={title}
+      title={
+        draggable
+          ? "Drag this answer onto a table or empty canvas; click to open"
+          : title
+      }
       aria-label={`Open ${line.name || "scratchwork"} result`}
       aria-expanded={open}
       onClick={onToggle}
     >
+      {draggable && (
+        <span
+          className="formula-drag-handle"
+          aria-hidden="true"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) =>
+            beginVectorPointerDrag(event.nativeEvent, {
+              objectId: line.id,
+              formula,
+              name: line.name,
+              length: line.valueCount,
+            })
+          }
+        >
+          ↗
+        </span>
+      )}
       <span>
         {formatComputedScalar(
           line.typedValue,

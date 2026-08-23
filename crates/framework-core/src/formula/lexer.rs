@@ -164,32 +164,7 @@ pub(crate) fn tokenize(source: &str) -> Result<Vec<Token>, CoreError> {
                 tokens.push(Token::Dot)
             }
             '\'' | '"' => {
-                let quote = character;
-                let mut value = String::new();
-                let mut closed = false;
-                while let Some(next) = chars.next() {
-                    if next == quote {
-                        closed = true;
-                        break;
-                    }
-                    if next == '\\' {
-                        let escaped = chars
-                            .next()
-                            .ok_or_else(|| CoreError::Formula("Unclosed string literal".into()))?;
-                        value.push(match escaped {
-                            'n' => '\n',
-                            'r' => '\r',
-                            't' => '\t',
-                            other => other,
-                        });
-                    } else {
-                        value.push(next);
-                    }
-                }
-                if !closed {
-                    return Err(CoreError::Formula("Unclosed string literal".into()));
-                }
-                tokens.push(Token::String(value));
+                tokens.push(read_quoted_literal(character, &mut chars)?);
             }
             // `$250000`, the other half of `4.25%`. Money and a rate are the
             // two numbers people write with a mark on them, and a formula
@@ -258,6 +233,59 @@ pub(crate) fn tokenize(source: &str) -> Result<Vec<Token>, CoreError> {
     }
     tokens.push(Token::End);
     Ok(tokens)
+}
+
+/// Reads the body after an opening quote and the optional explicit Date
+/// suffix. Keeping this out of `tokenize` matters beyond tidiness: a literal
+/// is one lexical decision there, however many characters decide its value.
+fn read_quoted_literal(
+    quote: char,
+    chars: &mut std::iter::Peekable<std::str::Chars<'_>>,
+) -> Result<Token, CoreError> {
+    let mut value = String::new();
+    let mut closed = false;
+    while let Some(next) = chars.next() {
+        if next == quote {
+            closed = true;
+            break;
+        }
+        if next == '\\' {
+            let escaped = chars
+                .next()
+                .ok_or_else(|| CoreError::Formula("Unclosed string literal".into()))?;
+            value.push(match escaped {
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                other => other,
+            });
+        } else {
+            value.push(next);
+        }
+    }
+    if !closed {
+        return Err(CoreError::Formula("Unclosed string literal".into()));
+    }
+
+    // A quoted ISO date may carry an explicit `d` suffix. The unquoted
+    // `2024-10-10` spelling remains the terse default; this form is useful
+    // where someone wants the type as visible as money and percentage marks.
+    let mut after = chars.clone();
+    let date_suffix = after.next() == Some('d')
+        && !after
+            .peek()
+            .is_some_and(|next| next.is_alphanumeric() || *next == '_');
+    if !date_suffix {
+        return Ok(Token::String(value));
+    }
+    chars.next();
+    NaiveDate::parse_from_str(&value, "%Y-%m-%d")
+        .map(Token::Date)
+        .map_err(|_| {
+            CoreError::Formula(format!(
+                "‘{value}’ is not a date. A quoted date uses YYYY-MM-DD before d."
+            ))
+        })
 }
 
 fn numeric_token(

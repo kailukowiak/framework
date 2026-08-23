@@ -470,6 +470,69 @@ impl Document {
         })
     }
 
+    pub(crate) fn prepare_set_frame_join_keys(
+        &self,
+        frame_id: Id,
+        primary_key_column_ids: Vec<Id>,
+        lookup_key_column_ids: Vec<Id>,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let frame = self.frame(&frame_id)?;
+        let mut derivation = frame.derivation.clone().ok_or_else(|| {
+            CoreError::InvalidOperation("Only a joined frame has join keys to change".into())
+        })?;
+        let old_join = derivation.join.clone().ok_or_else(|| {
+            CoreError::InvalidOperation("Only a joined frame has join keys to change".into())
+        })?;
+        if primary_key_column_ids.len() != 1 || lookup_key_column_ids.len() != 1 {
+            return Err(CoreError::InvalidOperation(
+                "This version supports one column on each side of a join".into(),
+            ));
+        }
+        let primary = self.frame(&derivation.source_frame_id)?;
+        let lookup = self.frame(&old_join.lookup_frame_id)?;
+        if old_join.join_type.keeps_lookup_columns()
+            && !lookup
+                .unique_keys
+                .iter()
+                .any(|key| key.column_ids == lookup_key_column_ids)
+        {
+            return Err(CoreError::InvalidOperation(
+                "The lookup column must be marked as a unique key".into(),
+            ));
+        }
+        let primary_key = primary
+            .columns
+            .iter()
+            .find(|column| column.id == primary_key_column_ids[0])
+            .ok_or(CoreError::ColumnNotFound)?;
+        let lookup_key = lookup
+            .columns
+            .iter()
+            .find(|column| column.id == lookup_key_column_ids[0])
+            .ok_or(CoreError::ColumnNotFound)?;
+        if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
+            return Err(CoreError::InvalidOperation(
+                "Join columns must have compatible types".into(),
+            ));
+        }
+
+        let next_join = FrameJoin {
+            primary_key_column_ids,
+            lookup_key_column_ids,
+            ..old_join.clone()
+        };
+        derivation.join = Some(next_join.clone());
+        if let Some(FrameStep::Join { join }) = derivation.steps.first_mut() {
+            *join = next_join;
+        }
+        Ok(ReplicatedOperation::SetFrameDerivation {
+            frame_id,
+            name: frame.name.clone(),
+            columns: frame.columns.clone(),
+            derivation,
+        })
+    }
+
     /// Walks a chain, parsing each step against what the steps before it
     /// leave behind, and records the schema at every position.
     ///

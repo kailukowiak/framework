@@ -13,6 +13,11 @@ export type ComputedResult = {
   formula: string;
   dataType: DataType;
   /**
+   * One for an ordinary scalar result; the live vector length for a
+   * compact variable whose formula stays vector-shaped.
+   */
+  valueCount: number;
+  /**
    * Present when this answer was written down rather than worked out.
    */
   frozen?: FrozenState;

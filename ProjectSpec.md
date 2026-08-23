@@ -859,6 +859,35 @@ The canvas no longer makes a value, a result, or a list. Those three were each a
 - **The demo document says so too.** Its one assumption, `Tax rate = 5%`, is a line of a block called `Assumptions` rather than a lone card, so the first thing anyone opens demonstrates where a constant goes.
 - **A line loses the card, not the notation.** See [`4.25%` is a literal](#425-is-a-literal--is-the-remainder): a constant on a line keeps being money or a rate, because that was always a type rather than decoration.
 
+#### One compact variable is the deliberate exception (2026-08-22)
+
+There is now one narrow exception to the no-standalone-value rule above: **Add
+Variable** puts a single named formula directly on the canvas. It is not the
+old value card returned in miniature. It is one Scratchwork-like variable — a
+name, one shared formula editor, and its live answer — with no title bar,
+window controls, type selector, help copy, or fixed empty body around it. Its
+formula is always shown in the multiline autoformatted form when that form is
+useful; the window can grow around it or scroll without turning one variable
+into a stack of per-line controls.
+
+The right-hand side is the formula language, so one object covers the cases a
+raw value control would otherwise split apart: `2`, `"North"`, `True`,
+`"2024-10-10"d`, `[1, 2, 3]`, or an expression reading anything else in the
+document. A scalar and a vector are presentation outcomes of the same formula,
+not two object kinds; changing between them preserves the variable's stable id
+and every formula that refers to it. Its local editor is registered with the
+top formula bar, as calculated columns and results are, so the two surfaces can
+never hold competing drafts.
+
+Names are stored without formula punctuation. A person may type either
+`my variable name` or `` `my variable name` `` in the name field; both name the
+same object, whose references are rendered with the one required pair of
+backticks.
+
+`AddValue`, `AddResult`, and `AddSeries` remain container-only. `AddVariable` is
+the explicit operation for this compact surface, which keeps old card-shaped
+objects from becoming a second accidental route back onto the canvas.
+
 #### Many blocks, one of them well known
 
 ⌘J goes to a block named **`Scratchwork`**, always, and conjures it on first press. It used to go to the selected block, or the newest — which made "where did I put that" a question the one always-reachable surface should never raise. Every other block is somewhere you go on purpose by clicking it; this is the one you drop into without looking. The toggle back is unchanged.

@@ -3,29 +3,29 @@
   "formatVersion": 1,
   "tutorialVersion": 1,
   "document": {
-    "id": "4b172d2a-7678-4322-89ca-7a3851c468e2",
+    "id": "d483a97a-8fd1-4a8f-a21f-35838501aa91",
     "name": "Importing an Excel workbook",
     "revision": 13,
     "objects": [
       {
         "kind": "text",
-        "id": "c6a78412-444d-45fc-a400-ed5e21477092",
-        "name": "Import steps",
+        "id": "5b26503b-8b58-4f5c-aa7e-bd69271fa44d",
+        "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# Importing Excel data\n\nTwo example workbooks are beside this FrameWork file. Excel is an interchange source here: FrameWork imports cached cell values from one explicit table or range. It does not copy Excel formulas, formatting, or workbook logic.\n\n## 1. Import one clean table\n\n1. Open **Data Library** and choose **Excel range…**.\n2. Choose `simple-customers.xlsx` beside this file.\n3. Select `CustomersTable` — or enter `Customers!A4:D11` with **First row contains headers** enabled.\n4. Preview the values, name the table `Customers`, and import it.\n\n## 2. Import several defined tables from one workbook\n\nChoose `multi-table-operations.xlsx`. Import each named Excel Table separately:\n\n- `InventoryTable` from `Operations!A4:F10`;\n- `SuppliersTable` from `Operations!H4:L8`;\n- `OrdersTable` from `Sales!B5:I25`.\n\n## 3. Import pasted ranges without Excel Tables\n\nThe same workbook also contains two ordinary rectangular blocks. They are not defined Excel Tables. Choose them under **Suggested region**:\n\n- `Operations!A15:D23`, named `Adjustments`;\n- `Sales!P15:S25`, named `Targets`.\n\nThe note in `Operations!N2` is intentionally ignored. Suggestions are conservative starting points: preview them before importing, and type a manual range when a workbook is too irregular.\n\n## Checkpoint\n\nYou should have six static FrameWork tables: `Customers`, `Inventory`, `Suppliers`, `Orders`, `Adjustments`, and `Targets`. `Orders.Revenue` contains cached numeric results; its Excel formulas were not imported.\n\n\n## Answer key\n\nThe six completed imports are laid out below. They are static, artifact-backed tables—the same result produced by the Excel range dialog."
+            "text": "# Importing an Excel workbook\n\nThis practical lesson ships with two ordinary Excel files and a start/answer\npair of FrameWork workbooks. It teaches the deliberate interchange boundary:\npick one Excel Table, suggested rectangular region, or explicit range; preview\nits cached values; and import it\nas a static FrameWork table without attempting to copy Excel formulas or\nformatting.\n\nThis guide is rendered as the **Tutorial walkthrough** markdown card in both\nthe Start workbook and the Answer key.\n\n## Files\n\n- `excel-import-start.fw` — markdown instructions and an empty canvas.\n- `excel-import-finished.fw` — the same instructions plus six completed,\n  artifact-backed imports.\n- `source/simple-customers.xlsx` — one clean named Excel Table.\n- `source/multi-table-operations.xlsx` — two worksheets, three named Excel\n  Tables, two loose pasted ranges, and an isolated note that should be ignored.\n\n## 1. Import one clean table\n\n1. Open **Data Library** and choose **Excel range…**.\n2. Choose `simple-customers.xlsx` beside this FrameWork file.\n3. Select `CustomersTable` — or enter `Customers!A4:D11` with **First row\n   contains headers** enabled.\n4. Preview the values, name the table `Customers`, and import it.\n\nCheckpoint: Customers has seven data rows and the headers Customer ID, Name,\nRegion, and Active.\n\n## 2. Import several defined tables from one workbook\n\nChoose `multi-table-operations.xlsx`. Import each named Excel Table separately:\n\n- `InventoryTable` from `Operations!A4:F10`, named `Inventory`;\n- `SuppliersTable` from `Operations!H4:L8`, named `Suppliers`;\n- `OrdersTable` from `Sales!B5:I25`, named `Orders`.\n\nCheckpoint: Inventory has 6 rows, Suppliers has 4, and Orders has 20. The\nRevenue values are the cached results saved by Excel; the Excel formulas\nthemselves are not copied into FrameWork.\n\n## 3. Import pasted ranges without Excel Tables\n\nThe same workbook also contains two ordinary rectangular blocks. They are not\ndefined Excel Tables. Choose them under **Suggested region**:\n\n- `Operations!A15:D23`, named `Adjustments`;\n- `Sales!P15:S25`, named `Targets`.\n\nThe note in `Operations!N2` is intentionally ignored. Suggestions are\nconservative starting points: preview them before importing, and type a manual\nrange when a workbook is too irregular.\n\nCheckpoint: Adjustments has 8 rows and Targets has 10.\n\n## Finish line\n\nYou should have six static FrameWork tables: `Customers`, `Inventory`,\n`Suppliers`, `Orders`, `Adjustments`, and `Targets`. They are artifact-backed\nimports: visible and queryable in FrameWork, but not presented as editable\nsource rows. Reopen the Answer key to compare names and row counts.\n\nRegenerate the workbooks after changing the lesson or import behavior with:\n\n```sh\ncargo run -p framework-core --example generate_excel_import_tutorial\n```\n\nThe desktop copies both Excel source files beside each editable tutorial\nworkbook, so the lesson works in an installed app without this repository.\n\n\n## Answer key\n\nThe six completed imports are laid out below. They are static, artifact-backed tables—the same result produced by the Excel range dialog."
           }
         ]
       },
       {
         "kind": "frame",
-        "id": "822b383b-efae-4708-a460-8794af4cceec",
+        "id": "95531221-1cc5-481c-bfc1-f66ec4ab57c9",
         "name": "Customers",
         "columns": [
           {
-            "id": "customer_id~2v061c",
+            "id": "customer_id~yb23b9",
             "name": "Customer ID",
             "sourceName": "Customer ID",
             "dataType": "string",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "customer~41xc9z",
+            "id": "customer~0exgyh",
             "name": "Customer",
             "sourceName": "Customer",
             "dataType": "string",
@@ -43,7 +43,7 @@
             "formula": null
           },
           {
-            "id": "segment~x1gdpz",
+            "id": "segment~18n5gw",
             "name": "Segment",
             "sourceName": "Segment",
             "dataType": "string",
@@ -52,7 +52,7 @@
             "formula": null
           },
           {
-            "id": "annual_spend~sm52gx",
+            "id": "annual_spend~v4bhbv",
             "name": "Annual Spend",
             "sourceName": "Annual Spend",
             "dataType": "integer",
@@ -78,11 +78,11 @@
       },
       {
         "kind": "frame",
-        "id": "f0bbbdc5-ff44-4edc-9e24-dd4e71b10bf7",
+        "id": "42437743-5c8e-4183-a07f-c0a6089f8eac",
         "name": "Inventory",
         "columns": [
           {
-            "id": "sku~6kz6f9",
+            "id": "sku~zzwcp5",
             "name": "SKU",
             "sourceName": "SKU",
             "dataType": "string",
@@ -91,7 +91,7 @@
             "formula": null
           },
           {
-            "id": "product~gmprp4",
+            "id": "product~sqpx48",
             "name": "Product",
             "sourceName": "Product",
             "dataType": "string",
@@ -100,7 +100,7 @@
             "formula": null
           },
           {
-            "id": "supplier_id~wm9f4x",
+            "id": "supplier_id~mq25g5",
             "name": "Supplier ID",
             "sourceName": "Supplier ID",
             "dataType": "string",
@@ -109,7 +109,7 @@
             "formula": null
           },
           {
-            "id": "on_hand~bvkydr",
+            "id": "on_hand~yvqh9f",
             "name": "On Hand",
             "sourceName": "On Hand",
             "dataType": "integer",
@@ -118,7 +118,7 @@
             "formula": null
           },
           {
-            "id": "reorder_point~gcygj0",
+            "id": "reorder_point~f0gxm1",
             "name": "Reorder Point",
             "sourceName": "Reorder Point",
             "dataType": "integer",
@@ -127,7 +127,7 @@
             "formula": null
           },
           {
-            "id": "unit_cost~s406xn",
+            "id": "unit_cost~nbqs2p",
             "name": "Unit Cost",
             "sourceName": "Unit Cost",
             "dataType": "number",
@@ -153,11 +153,11 @@
       },
       {
         "kind": "frame",
-        "id": "91584cf7-f9cb-47fb-bd77-956449fe7dd0",
+        "id": "241c1a21-6ca4-4692-a156-50a0e473bf09",
         "name": "Suppliers",
         "columns": [
           {
-            "id": "supplier_id~htnzy1",
+            "id": "supplier_id~r4pqh1",
             "name": "Supplier ID",
             "sourceName": "Supplier ID",
             "dataType": "string",
@@ -166,7 +166,7 @@
             "formula": null
           },
           {
-            "id": "supplier~tvvvnk",
+            "id": "supplier~52xwhn",
             "name": "Supplier",
             "sourceName": "Supplier",
             "dataType": "string",
@@ -175,7 +175,7 @@
             "formula": null
           },
           {
-            "id": "city~9tc4bx",
+            "id": "city~nfpvxe",
             "name": "City",
             "sourceName": "City",
             "dataType": "string",
@@ -184,7 +184,7 @@
             "formula": null
           },
           {
-            "id": "lead_days~fwezy5",
+            "id": "lead_days~mxgmp8",
             "name": "Lead Days",
             "sourceName": "Lead Days",
             "dataType": "integer",
@@ -193,7 +193,7 @@
             "formula": null
           },
           {
-            "id": "status~r2fd3z",
+            "id": "status~9rkvqj",
             "name": "Status",
             "sourceName": "Status",
             "dataType": "string",
@@ -219,11 +219,11 @@
       },
       {
         "kind": "frame",
-        "id": "204b84c1-f4a0-4bf7-840d-2da0466a9cef",
+        "id": "334c4ae5-3f2b-4db0-aba5-ee1640d45680",
         "name": "Orders",
         "columns": [
           {
-            "id": "order_id~ge8qgq",
+            "id": "order_id~sw61mt",
             "name": "Order ID",
             "sourceName": "Order ID",
             "dataType": "string",
@@ -232,7 +232,7 @@
             "formula": null
           },
           {
-            "id": "order_date~wex5rf",
+            "id": "order_date~28g994",
             "name": "Order Date",
             "sourceName": "Order Date",
             "dataType": "date",
@@ -241,7 +241,7 @@
             "formula": null
           },
           {
-            "id": "sku~284atx",
+            "id": "sku~pqktge",
             "name": "SKU",
             "sourceName": "SKU",
             "dataType": "string",
@@ -250,7 +250,7 @@
             "formula": null
           },
           {
-            "id": "customer~28h6bm",
+            "id": "customer~cq7dd4",
             "name": "Customer",
             "sourceName": "Customer",
             "dataType": "string",
@@ -259,7 +259,7 @@
             "formula": null
           },
           {
-            "id": "region~a2zxb7",
+            "id": "region~bcxtcb",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -268,7 +268,7 @@
             "formula": null
           },
           {
-            "id": "units~2h2mhe",
+            "id": "units~ww54vx",
             "name": "Units",
             "sourceName": "Units",
             "dataType": "integer",
@@ -277,7 +277,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~0av7ff",
+            "id": "unit_price~q7h9pv",
             "name": "Unit Price",
             "sourceName": "Unit Price",
             "dataType": "number",
@@ -286,7 +286,7 @@
             "formula": null
           },
           {
-            "id": "revenue~8mzzf1",
+            "id": "revenue~ev9z24",
             "name": "Revenue",
             "sourceName": "Revenue",
             "dataType": "number",
@@ -312,11 +312,11 @@
       },
       {
         "kind": "frame",
-        "id": "e63f2e87-f0a7-4b22-9731-6369302a605a",
+        "id": "f4e2fe6b-c980-4516-b57b-b2225ffc7487",
         "name": "Adjustments",
         "columns": [
           {
-            "id": "adjustment_id~p1bxn3",
+            "id": "adjustment_id~brz7bd",
             "name": "Adjustment ID",
             "sourceName": "Adjustment ID",
             "dataType": "string",
@@ -325,7 +325,7 @@
             "formula": null
           },
           {
-            "id": "region~je660s",
+            "id": "region~0k3e33",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -334,7 +334,7 @@
             "formula": null
           },
           {
-            "id": "amount~8mdy7k",
+            "id": "amount~v77rqd",
             "name": "Amount",
             "sourceName": "Amount",
             "dataType": "integer",
@@ -343,7 +343,7 @@
             "formula": null
           },
           {
-            "id": "reason~vx3ty7",
+            "id": "reason~8fx9dm",
             "name": "Reason",
             "sourceName": "Reason",
             "dataType": "string",
@@ -369,11 +369,11 @@
       },
       {
         "kind": "frame",
-        "id": "58f30dca-a173-4436-9762-dd35099238ae",
+        "id": "092c55a3-4183-4514-beed-8c7a8ca24267",
         "name": "Targets",
         "columns": [
           {
-            "id": "scenario~13ecae",
+            "id": "scenario~b28stv",
             "name": "Scenario",
             "sourceName": "Scenario",
             "dataType": "string",
@@ -382,7 +382,7 @@
             "formula": null
           },
           {
-            "id": "region~pr107m",
+            "id": "region~gqf998",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -391,7 +391,7 @@
             "formula": null
           },
           {
-            "id": "target_units~j1q864",
+            "id": "target_units~cqr6a8",
             "name": "Target Units",
             "sourceName": "Target Units",
             "dataType": "integer",
@@ -400,7 +400,7 @@
             "formula": null
           },
           {
-            "id": "owner~bkykr4",
+            "id": "owner~rry8yr",
             "name": "Owner",
             "sourceName": "Owner",
             "dataType": "string",
@@ -427,8 +427,8 @@
     ],
     "views": [
       {
-        "id": "71130b41-dec7-4d27-ac67-d42307857c27",
-        "objectId": "c6a78412-444d-45fc-a400-ed5e21477092",
+        "id": "1d00ed3d-2b89-468a-9635-fd3cb1c812fd",
+        "objectId": "5b26503b-8b58-4f5c-aa7e-bd69271fa44d",
         "x": 60.0,
         "y": 50.0,
         "width": 920.0,
@@ -436,8 +436,8 @@
         "collapsed": false
       },
       {
-        "id": "ea0319c7-9370-4033-93a7-cbb61e3f43f5",
-        "objectId": "822b383b-efae-4708-a460-8794af4cceec",
+        "id": "652fbba0-edff-4f17-a9bd-4e6f995693e0",
+        "objectId": "95531221-1cc5-481c-bfc1-f66ec4ab57c9",
         "x": 60.0,
         "y": 880.0,
         "width": 648.0,
@@ -445,8 +445,8 @@
         "collapsed": false
       },
       {
-        "id": "9e4d2deb-88dd-4289-b2c2-c1e770914c5b",
-        "objectId": "f0bbbdc5-ff44-4edc-9e24-dd4e71b10bf7",
+        "id": "17b16ed6-2f10-4675-9768-4c472d02d913",
+        "objectId": "42437743-5c8e-4183-a07f-c0a6089f8eac",
         "x": 650.0,
         "y": 880.0,
         "width": 900.0,
@@ -454,8 +454,8 @@
         "collapsed": false
       },
       {
-        "id": "282c4e12-6f91-450b-811e-f96dfb35875b",
-        "objectId": "91584cf7-f9cb-47fb-bd77-956449fe7dd0",
+        "id": "d06b68a0-0e51-4821-9c13-a7e39f70a1ee",
+        "objectId": "241c1a21-6ca4-4692-a156-50a0e473bf09",
         "x": 1240.0,
         "y": 880.0,
         "width": 798.0,
@@ -463,8 +463,8 @@
         "collapsed": false
       },
       {
-        "id": "b51017a4-fbbc-4fe9-ab92-a5689fea4238",
-        "objectId": "204b84c1-f4a0-4bf7-840d-2da0466a9cef",
+        "id": "6b91a26f-62ce-43ff-a47b-09599841d671",
+        "objectId": "334c4ae5-3f2b-4db0-aba5-ee1640d45680",
         "x": 60.0,
         "y": 1270.0,
         "width": 900.0,
@@ -472,8 +472,8 @@
         "collapsed": false
       },
       {
-        "id": "2db1b8ce-e2da-4a0b-a7e5-1d6d9612b3c6",
-        "objectId": "e63f2e87-f0a7-4b22-9731-6369302a605a",
+        "id": "1d5b33c8-8e1d-4d18-aa8b-43a31c37b7df",
+        "objectId": "f4e2fe6b-c980-4516-b57b-b2225ffc7487",
         "x": 650.0,
         "y": 1270.0,
         "width": 648.0,
@@ -481,8 +481,8 @@
         "collapsed": false
       },
       {
-        "id": "982ed91f-7fe9-429f-b589-8d7625ceb9ec",
-        "objectId": "58f30dca-a173-4436-9762-dd35099238ae",
+        "id": "93e2c2c8-6baf-49d3-8072-2323211e4289",
+        "objectId": "092c55a3-4183-4514-beed-8c7a8ca24267",
         "x": 1240.0,
         "y": 1270.0,
         "width": 648.0,

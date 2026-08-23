@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 1,
   "document": {
-    "id": "cc1929f7-4598-4a8f-b44d-15a75290f951",
+    "id": "959fbac7-bf45-450b-8bdf-b6a84b1255c7",
     "name": "Formula clicks tutorial",
-    "revision": 142,
+    "revision": 8,
     "objects": [
       {
         "kind": "frame",
-        "id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
+        "id": "9ee6fb56-cb1f-4ad1-a901-c6d4ea075d38",
         "name": "Monthly sales",
         "columns": [
           {
-            "id": "month~xgy8pb",
+            "id": "month~jbb6nj",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "region~0zz53r",
+            "id": "region~szryne",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -31,19 +31,19 @@
             "formula": null
           },
           {
-            "id": "revenue~5ykjnv",
+            "id": "revenue~v97wfp",
             "name": "Revenue",
             "sourceName": null,
-            "dataType": "currency",
+            "dataType": "integer",
             "categories": [],
             "format": null,
             "formula": null
           },
           {
-            "id": "cost~ttsf6g",
+            "id": "cost~d56rz3",
             "name": "Cost",
             "sourceName": null,
-            "dataType": "currency",
+            "dataType": "integer",
             "categories": [],
             "format": null,
             "formula": null
@@ -51,126 +51,126 @@
         ],
         "rows": [
           {
-            "id": "db4ae3b4-d55c-47e5-94e6-e532dc8bc94c",
+            "id": "140c3112-6530-4cf1-acac-194d3e82eaa6",
             "cells": {
-              "cost~ttsf6g": {
+              "cost~d56rz3": {
                 "raw": "91000",
                 "overrideFormula": null
               },
-              "month~xgy8pb": {
+              "month~jbb6nj": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~0zz53r": {
+              "region~szryne": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~5ykjnv": {
+              "revenue~v97wfp": {
                 "raw": "142000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "1dc14ad7-30df-4f5e-800d-c065728f113c",
+            "id": "e27e7080-f808-480d-b450-399cbb5c1b29",
             "cells": {
-              "cost~ttsf6g": {
+              "cost~d56rz3": {
                 "raw": "76000",
                 "overrideFormula": null
               },
-              "month~xgy8pb": {
+              "month~jbb6nj": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~0zz53r": {
+              "region~szryne": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~5ykjnv": {
+              "revenue~v97wfp": {
                 "raw": "118000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "d70fbaf7-d511-4d44-b56a-f51a3ecf5595",
+            "id": "af1c7384-9ce8-4a27-ae84-238edbe2d6b4",
             "cells": {
-              "cost~ttsf6g": {
+              "cost~d56rz3": {
                 "raw": "104000",
                 "overrideFormula": null
               },
-              "month~xgy8pb": {
+              "month~jbb6nj": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~0zz53r": {
+              "region~szryne": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~5ykjnv": {
+              "revenue~v97wfp": {
                 "raw": "168000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "d611fcf6-7db8-45d6-bba1-c8ebc1a8d21e",
+            "id": "fd8ad0fa-4ff3-4a70-b7c0-b5058fedc6ad",
             "cells": {
-              "cost~ttsf6g": {
+              "cost~d56rz3": {
                 "raw": "85000",
                 "overrideFormula": null
               },
-              "month~xgy8pb": {
+              "month~jbb6nj": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~0zz53r": {
+              "region~szryne": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~5ykjnv": {
+              "revenue~v97wfp": {
                 "raw": "136000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "131f53ff-532f-4fad-a039-e59fe669cc69",
+            "id": "da745dd2-7830-4a9e-82a7-df7c8a4d9538",
             "cells": {
-              "cost~ttsf6g": {
+              "cost~d56rz3": {
                 "raw": "79000",
                 "overrideFormula": null
               },
-              "month~xgy8pb": {
+              "month~jbb6nj": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~0zz53r": {
+              "region~szryne": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~5ykjnv": {
+              "revenue~v97wfp": {
                 "raw": "124000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "5b92ec8f-461a-482d-aa9d-0e7b7489355d",
+            "id": "eb45a836-f0a3-4fbb-91a1-f580fe666462",
             "cells": {
-              "cost~ttsf6g": {
+              "cost~d56rz3": {
                 "raw": "96000",
                 "overrideFormula": null
               },
-              "month~xgy8pb": {
+              "month~jbb6nj": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~0zz53r": {
+              "region~szryne": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~5ykjnv": {
+              "revenue~v97wfp": {
                 "raw": "151000",
                 "overrideFormula": null
               }
@@ -187,316 +187,53 @@
       },
       {
         "kind": "block",
-        "id": "a4b08737-dd6f-4e4e-9ee7-783ecd8c41a3",
+        "id": "593c490c-7c0c-4458-b5ad-79caea34e51a",
         "name": "Checks",
-        "lines": [
-          {
-            "id": "2b31c803-02af-4970-af5e-f2c358c409fe",
-            "name": "x",
-            "named": true,
-            "nameQuoted": false,
-            "source": "4",
-            "formula": {
-              "expression": {
-                "kind": "integer",
-                "value": 4
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "f09d132a-6163-499d-b7a5-8f6ce9f8d860",
-            "name": "y",
-            "named": true,
-            "nameQuoted": false,
-            "source": "10.2",
-            "formula": {
-              "expression": {
-                "kind": "number",
-                "value": 10.2
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "30271eb4-dc95-436b-a348-02fec027de5f",
-            "name": "yy",
-            "named": true,
-            "nameQuoted": false,
-            "source": "12",
-            "formula": {
-              "expression": {
-                "kind": "integer",
-                "value": 12
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "f19b3142-3e33-4479-90cf-11ae15f20f30",
-            "name": "",
-            "named": false,
-            "nameQuoted": false,
-            "source": "",
-            "formula": null,
-            "error": null
-          },
-          {
-            "id": "ba9cb147-d27a-4e6a-bf75-c6696c47d10f",
-            "name": "line_1",
-            "named": false,
-            "nameQuoted": false,
-            "source": "`Monthly sales`.`Revenue`.sum()",
-            "formula": {
-              "expression": {
-                "kind": "method",
-                "input": {
-                  "kind": "foreignColumn",
-                  "frame_id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-                  "column_id": "revenue~5ykjnv"
-                },
-                "path": [
-                  "sum"
-                ],
-                "arguments": [],
-                "keyword_arguments": []
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "727c93ea-ace3-472d-b394-568dde53adb6",
-            "name": "",
-            "named": false,
-            "nameQuoted": false,
-            "source": "",
-            "formula": null,
-            "error": null
-          },
-          {
-            "id": "8000d364-d00f-43b6-968c-a5abc21cfde3",
-            "name": "line_2",
-            "named": false,
-            "nameQuoted": false,
-            "source": "`Monthly sales`.`Cost`.head(3).last()",
-            "formula": {
-              "expression": {
-                "kind": "method",
-                "input": {
-                  "kind": "method",
-                  "input": {
-                    "kind": "foreignColumn",
-                    "frame_id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-                    "column_id": "cost~ttsf6g"
-                  },
-                  "path": [
-                    "head"
-                  ],
-                  "arguments": [
-                    {
-                      "kind": "integer",
-                      "value": 3
-                    }
-                  ],
-                  "keyword_arguments": []
-                },
-                "path": [
-                  "last"
-                ],
-                "arguments": [],
-                "keyword_arguments": []
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "068e49ea-f91b-4f78-8087-a6802520cde3",
-            "name": "",
-            "named": false,
-            "nameQuoted": false,
-            "source": "",
-            "formula": null,
-            "error": null
-          }
-        ]
+        "lines": []
       },
       {
         "kind": "text",
-        "id": "0b1ae07e-4382-4d0a-bd57-399355c029f5",
-        "name": "Text",
+        "id": "997dc007-b4f0-4128-bbb5-67d40a7945a1",
+        "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# TITLE\n\n"
-          },
-          {
-            "kind": "formula",
-            "formula": {
-              "expression": {
-                "kind": "method",
-                "input": {
-                  "kind": "foreignColumn",
-                  "frame_id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-                  "column_id": "cost~ttsf6g"
-                },
-                "path": [
-                  "sum"
-                ],
-                "arguments": [],
-                "keyword_arguments": []
-              }
-            }
-          },
-          {
-            "kind": "literal",
-            "text": "\n\nhi\nMonthly Revenue: "
-          },
-          {
-            "kind": "formula",
-            "formula": {
-              "expression": {
-                "kind": "method",
-                "input": {
-                  "kind": "foreignColumn",
-                  "frame_id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-                  "column_id": "revenue~5ykjnv"
-                },
-                "path": [
-                  "sum"
-                ],
-                "arguments": [],
-                "keyword_arguments": []
-              }
-            }
-          },
-          {
-            "kind": "literal",
-            "text": "\n\n"
-          }
-        ]
-      },
-      {
-        "kind": "block",
-        "id": "3e202348-23d8-4534-97d8-a5053c21fe20",
-        "name": "Scratchwork",
-        "lines": [
-          {
-            "id": "4e0bbfa1-7afc-4bab-a0ab-342de1695c58",
-            "name": "line_1",
-            "named": false,
-            "nameQuoted": false,
-            "source": "`Monthly sales`.`Revenue`.sum() - `Monthly sales`.`Cost`.sum()",
-            "formula": {
-              "expression": {
-                "kind": "binary",
-                "operator": "subtract",
-                "left": {
-                  "kind": "method",
-                  "input": {
-                    "kind": "foreignColumn",
-                    "frame_id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-                    "column_id": "revenue~5ykjnv"
-                  },
-                  "path": [
-                    "sum"
-                  ],
-                  "arguments": [],
-                  "keyword_arguments": []
-                },
-                "right": {
-                  "kind": "method",
-                  "input": {
-                    "kind": "foreignColumn",
-                    "frame_id": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-                    "column_id": "cost~ttsf6g"
-                  },
-                  "path": [
-                    "sum"
-                  ],
-                  "arguments": [],
-                  "keyword_arguments": []
-                }
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "847b7c09-9f18-4e8a-aa2e-4ec8f74820b5",
-            "name": "",
-            "named": false,
-            "nameQuoted": false,
-            "source": "",
-            "formula": null,
-            "error": null
-          },
-          {
-            "id": "c4a55d79-1dfc-439f-8c61-456db921bb82",
-            "name": "my_month",
-            "named": true,
-            "nameQuoted": false,
-            "source": "1",
-            "formula": {
-              "expression": {
-                "kind": "number",
-                "value": 1.0
-              }
-            },
-            "error": null
-          },
-          {
-            "id": "6e3912f3-65f6-4788-b482-62c3c999d08d",
-            "name": "line_2",
-            "named": false,
-            "nameQuoted": false,
-            "source": "my",
-            "formula": null,
-            "error": "Formula error: Unknown Polars name ‘my’; wrap column and canvas-value names in backticks"
+            "text": "# Month-over-month formulas by pointing\n\nThis intermediate tutorial starts with six deliberately unsorted monthly sales rows and ends\nwith a small model built through the same public operations exposed by FrameWork\nMCP.\n\nThe complete guide is also rendered as the **Tutorial walkthrough** markdown\ncard in both the Start workbook and the Answer key.\n\nIt demonstrates:\n\n- a header sort becoming real Wrangle lineage;\n- creating ``.shift(n)`` by pointing at cells;\n- selecting a table first in autocomplete, then typing its column;\n- clicking columns into an active formula;\n- using a new tab for an exploratory filter, with no separate View filter layer;\n- table-qualified formulas in a calculation block.\n\n## Files\n\n- [`formula-clicks-start.fw`](formula-clicks-start.fw) — raw table plus an empty\n  `Checks` block.\n- [`formula-clicks-finished.fw`](formula-clicks-finished.fw) — the answer key.\n\nIf this is your first time in FrameWork, complete\n[Your first FrameWork workbook](../first-workbook/README.md) first.\n\nThese captures were taken from the current Tauri build after reopening both\ngenerated files:\n\n![Starting workbook: unsorted source table and empty Checks block](screenshots/start.jpg)\n\n![Finished workbook: East-only rows, shift results, changes, and live checks](screenshots/finished.jpg)\n\n## Before you begin\n\nAllow about 15 minutes. Complete\n[Your first FrameWork workbook](../first-workbook/README.md) first if calculated\ncolumns and Wrangle are new to you. In **Data Library**, create the tutorials if\nneeded, inspect the finished answer key, and then make every change in the\nstarting workbook. Repository contributors can instead open the linked `.fw`\nfiles with **File → Open**.\n\nThe order of this lesson matters: `.shift(1)` is only meaningful after Month is\nsorted. Stop at each checkpoint so that an ordering or naming mistake does not\nsurface later as an unrelated formula error.\n\n## 1. Declare the row order\n\nOpen `formula-clicks-start.fw`. The `Monthly sales` rows are intentionally out\nof order.\n\nClick the sort control in the **Month** header once. The rows should read\nJanuary through June.\n\nCheckpoint: January is the first row, June is the last, and **Sort** is the\nfinal step shown in Wrangle.\n\nThis is not a cosmetic view sort. The header writes a trailing **Sort** step in\nWrangle, so formulas and every downstream table receive the declared order.\nThat declaration is what makes a row-relative formula safe to save.\n\n## 2. Build `shift(1)` by clicking cells\n\n1. Right-click a **Revenue** cell below the first displayed row.\n2. Choose **Formula here**.\n3. While the formula is active, click the Revenue cell one row above it.\n\nThe formula bar should contain:\n\n```text\n`Revenue`.shift(1)\n```\n\nThe row where the gesture began is only an authoring anchor. FrameWork saves a\ncolumn declaration, not a coordinate. A cell two rows above would produce\n`.shift(2)`; a row below would produce a negative shift.\n\nRename the calculated column to **Previous revenue** in the named command and\ncommit with Enter. The expected values are:\n\n| Month | Revenue | Previous revenue |\n|---|---:|---:|\n| 2026-01 | 118000 | blank |\n| 2026-02 | 124000 | 118000 |\n| 2026-03 | 136000 | 124000 |\n| 2026-04 | 142000 | 136000 |\n| 2026-05 | 151000 | 142000 |\n| 2026-06 | 168000 | 151000 |\n\nCheckpoint: the first Previous revenue cell is blank and every later row shows\nthe Revenue from the preceding month.\n\nIf the sort is removed before the shift calculation, FrameWork should refuse\nthe formula with a declared-ordering error instead of silently using whatever\nrow order happened to arrive from the source.\n\n## 3. Complete through a table namespace\n\nAdd another calculated column in Wrangle and call it **Change**.\n\nIn its formula:\n\n1. Start typing `Monthly` and choose the **Monthly sales** table suggestion.\n   Completion inserts `` `Monthly sales`. `` and leaves the cursor after the\n   dot.\n2. Type `rev` and choose **Revenue**. Only columns belonging to that table are\n   offered.\n3. Type ` - `, then click the **Previous revenue** column in the grid.\n\nThe completed formula is:\n\n```text\n`Monthly sales`.`Revenue` - `Previous revenue`\n```\n\nThe expected nonblank changes are `6000`, `12000`, `6000`, `9000`, and\n`17000`.\n\nCheckpoint: Change is blank for January and contains those five values from\nFebruary through June.\n\nThis two-stage completion matters on wide tables: choosing the table does not\nforce anyone to scroll through every `table.column` combination in the\ndocument.\n\n## 4. Make a filtered exploration tab\n\n1. Use the **+** beside the table tabs and choose **Table view**.\n2. Rename the new table **East only**.\n3. Open **Wrangle**, add **Filter rows**, and use:\n\n   ```text\n   `Region` == \"East\"\n   ```\n\nThe `East only` tab should show January, March, May, and June. Switch back to\n`Monthly sales` to see all six rows.\n\nCheckpoint: `East only` has four rows while `Monthly sales` still has six, and\nthe filter appears only in the East-only Wrangle chain.\n\nThe tabs differ because they are separate tables with separate Wrangle chains,\nnot because a hidden display filter can disagree with lineage. Anything derived\nfrom `East only` will inherit the East filter.\n\n## 5. Add table checks\n\nIn the `Checks` block, enter:\n\n```text\nTotal revenue = `Monthly sales`.`Revenue`.sum()\nLatest revenue = `Monthly sales`.`Revenue`.last()\n```\n\nBoth answers appear immediately and remain live. Change a Revenue value: the\ntotal updates, and `Latest revenue` updates when the row declared latest by the\nMonth sort changes. `.last()` here is an ordered query over the current table,\nnot a captured screen cell.\n\nExpected answers:\n\n- **Total revenue:** `839000`\n- **Latest revenue:** `168000`\n\nThe finished workbook already contains these lines and is the answer key for\nthe complete tutorial. It contains no frozen Scratchwork answers.\n\n## Finish line\n\nYour starting workbook should now agree with the finished answer key:\n\n- Month is sorted from January through June;\n- Previous revenue is blank once, then follows the declared order;\n- Change has five nonblank month-over-month values;\n- East only contains four rows without hiding rows in Monthly sales;\n- Total revenue is `839000` and Latest revenue is `168000`;\n- changing source Revenue updates the dependent columns and Checks block.\n\nBefore closing, undo and redo the East-only filter. The row count and visible\nWrangle chain should travel together. Record the step if either one does not.\n\n## Rebuilding the files\n\nThe generator deliberately uses `Store::apply(Operation::...)`, the same\nvalidation, history, persistence, and collaboration boundary used by MCP's\n`apply_operation` tool:\n\n```bash\ncargo run -p framework-core --example generate_formula_click_tutorial\n```\n\nIt writes both `.fw` files into this directory, reloads them, and plans the\nfinished table to catch invalid formulas or persistence drift.\n"
           }
         ]
       }
     ],
     "views": [
       {
-        "id": "ffe83d11-b4cf-4103-a435-a8ea5bf3c5e4",
-        "objectId": "746ffcd5-5eb7-4f10-b2d4-932e0a2088ee",
-        "x": 80.0,
+        "id": "fd414fea-ae3a-4bd2-8832-005997c43ed5",
+        "objectId": "9ee6fb56-cb1f-4ad1-a901-c6d4ea075d38",
+        "x": 730.0,
         "y": 80.0,
-        "width": 857.0,
-        "height": 320.0,
+        "width": 648.0,
+        "height": 300.0,
         "collapsed": false
       },
       {
-        "id": "38c9462a-0e27-4369-820f-af3df3d2b1e9",
-        "objectId": "a4b08737-dd6f-4e4e-9ee7-783ecd8c41a3",
-        "x": 80.0,
+        "id": "36af0054-36a1-493c-b3b1-a90006c79ba7",
+        "objectId": "593c490c-7c0c-4458-b5ad-79caea34e51a",
+        "x": 730.0,
         "y": 430.0,
-        "width": 612.0,
-        "height": 513.0,
+        "width": 340.0,
+        "height": 220.0,
         "collapsed": false
       },
       {
-        "id": "d15ba111-0b86-40f6-9664-2e7a7466dd01",
-        "objectId": "0b1ae07e-4382-4d0a-bd57-399355c029f5",
-        "x": 751.0,
-        "y": 503.0,
-        "width": 477.0,
-        "height": 210.0,
-        "collapsed": false
-      },
-      {
-        "id": "d88904ad-8e36-4f0a-acba-c5633485ac5a",
-        "objectId": "3e202348-23d8-4534-97d8-a5053c21fe20",
-        "x": 93.0,
-        "y": 977.0,
-        "width": 975.0,
-        "height": 431.0,
+        "id": "f9c76588-a070-4d2c-b051-11e0c7d7b599",
+        "objectId": "997dc007-b4f0-4128-bbb5-67d40a7945a1",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 580.0,
+        "height": 820.0,
         "collapsed": false
       }
     ],
     "frozenValues": {}
   },
-  "versionVector": {
-    "4bf37e21-6006-4057-ad03-123cb3a7af3f": 140
-  }
+  "versionVector": {}
 }

@@ -19,6 +19,13 @@ import type { SummaryOperation } from "./SummaryOperation";
 
 export type Operation =
   | {
+    "type": "addVariable";
+    name: string;
+    formula: string;
+    x: number;
+    y: number;
+  }
+  | {
     "type": "addValue";
     name: string;
     raw: string;
@@ -334,6 +341,12 @@ export type Operation =
     name: string;
     x: number;
     y: number;
+  }
+  | {
+    "type": "setFrameJoinKeys";
+    frameId: string;
+    primaryKeyColumnIds: Array<string>;
+    lookupKeyColumnIds: Array<string>;
   }
   | {
     "type": "setFramePipeline";

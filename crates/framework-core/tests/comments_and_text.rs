@@ -284,6 +284,48 @@ fn an_unclosed_hole_reads_as_prose() {
 }
 
 #[test]
+fn formula_hole_examples_inside_markdown_code_stay_literal() {
+    let mut store = blank_store();
+    add_value(&mut store, "Rate", "0.08");
+    store.apply(Operation::AddText { x: 0.0, y: 0.0 }).unwrap();
+    let card = text_card(&store);
+    let source = "Inline `{{` and `{{`Rate`}}` stay written.\n\n```markdown\nRate: {{`Rate`}}\n```\n\nLive: {{`Rate`}}";
+
+    store
+        .apply(Operation::SetTextSource {
+            object_id: card.id,
+            source: source.into(),
+        })
+        .unwrap();
+
+    let computed = computed_text(&store);
+    assert!(
+        computed
+            .source
+            .contains("Inline `{{` and `{{`Rate`}}` stay written.")
+    );
+    assert!(
+        computed
+            .source
+            .contains("```markdown\nRate: {{`Rate`}}\n```")
+    );
+    assert_eq!(
+        computed
+            .segments
+            .iter()
+            .filter(|segment| matches!(segment, ComputedTextSegment::Value { .. }))
+            .count(),
+        1
+    );
+    assert!(
+        !computed
+            .segments
+            .iter()
+            .any(|segment| matches!(segment, ComputedTextSegment::Broken { .. }))
+    );
+}
+
+#[test]
 fn renaming_a_value_rewrites_the_holes_that_read_it() {
     let mut store = blank_store();
     add_value(&mut store, "Rate", "0.08");

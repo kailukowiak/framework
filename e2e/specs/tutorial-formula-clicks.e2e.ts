@@ -89,8 +89,24 @@ describe("formula-clicks tutorial", () => {
     );
     await browser.keys(Key.Enter);
 
-    await $("div.cell-display*=2026-06-30").waitForExist({
+    await $('input[aria-label="New row Region"]').waitForExist({
+      timeoutMsg: "the series fill removed the table's empty add-row line",
+    });
+
+    await $("button.computed-cell*=2026-06-30").waitForExist({
       timeoutMsg: "the typed calendar-month sequence never filled the Revenue column",
     });
+
+    const unaffected = $("div.cell-display*=91,000");
+    await expect(unaffected).not.toHaveElementClass("read-only");
+    await unaffected.click();
+    await browser.keys(Key.F2);
+    const unaffectedEditor = $(".cell-editor");
+    await unaffectedEditor.waitForExist({
+      timeoutMsg: "a series fill made an unaffected column read-only",
+    });
+    await unaffectedEditor.setValue("92000");
+    await browser.keys(Key.Enter);
+    await $("div.cell-display*=92,000").waitForExist();
   });
 });

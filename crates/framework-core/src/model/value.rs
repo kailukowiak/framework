@@ -36,6 +36,11 @@ pub struct ResultObject {
     pub id: Id,
     pub name: String,
     pub formula: Formula,
+    /// A result presented as one compact, named formula directly on the
+    /// canvas. Unlike a dashboard result, its formula may stay vector-shaped:
+    /// it is the one-variable form of Scratchwork, not a scalar answer card.
+    #[serde(default)]
+    pub variable: bool,
 }
 
 /// An answer computed from live data once and written down.

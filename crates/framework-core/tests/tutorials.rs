@@ -1,7 +1,8 @@
 use framework_core::{
     ComputedTextSegment, DataObject, DataType, ExistingFormulaInput, FRAMEWORK_TUTORIAL_VERSION,
-    FrameObject, FrameStepInput, Operation, Store, inspect_excel_workbook,
+    FrameObject, FrameStep, FrameStepInput, Operation, Store, inspect_excel_workbook,
 };
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -37,6 +38,8 @@ fn every_bundled_tutorial_declares_the_current_tutorial_version() {
         ["formula-clicks", "formula-clicks-finished.fw"],
         ["month-end-close", "month-end-close-start.fw"],
         ["month-end-close", "month-end-close-finished.fw"],
+        ["vectors-and-joins", "vectors-and-joins-start.fw"],
+        ["vectors-and-joins", "vectors-and-joins-finished.fw"],
     ] {
         let path = tutorial_path(&parts);
         let serialized: serde_json::Value =
@@ -45,6 +48,32 @@ fn every_bundled_tutorial_declares_the_current_tutorial_version() {
             serialized["tutorialVersion"],
             FRAMEWORK_TUTORIAL_VERSION,
             "{} has a stale tutorial version",
+            path.display()
+        );
+        let store = Store::load(&path).unwrap();
+        let walkthrough = store
+            .document()
+            .objects
+            .iter()
+            .find_map(|object| match object {
+                DataObject::Text(text) if text.name == "Tutorial walkthrough" => {
+                    Some(text.id.clone())
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{} has no rendered walkthrough", path.display()));
+        let rendered = &store.view().computed_texts[&walkthrough];
+        assert!(
+            rendered.source.contains("## 1."),
+            "{} has no first step",
+            path.display()
+        );
+        assert!(
+            rendered
+                .segments
+                .iter()
+                .all(|segment| !matches!(segment, ComputedTextSegment::Broken { .. })),
+            "{} has a broken formula example in its walkthrough",
             path.display()
         );
     }
@@ -368,4 +397,95 @@ fn month_end_close_tutorial_reconciles_every_output() {
             .collect::<Vec<_>>(),
         ["1651000", "1615000"]
     );
+}
+
+#[test]
+fn vectors_and_joins_tutorial_grows_dates_and_lookup_results_from_its_source() {
+    let start = Store::load(&tutorial_path(&[
+        "vectors-and-joins",
+        "vectors-and-joins-start.fw",
+    ]))
+    .unwrap();
+    let walkthrough = start
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Text(text) if text.name == "Tutorial walkthrough" => Some(text.id.clone()),
+            _ => None,
+        })
+        .expect("the tutorial renders its walkthrough inside the workbook");
+    let rendered_walkthrough = &start.view().computed_texts[&walkthrough];
+    assert!(
+        rendered_walkthrough
+            .source
+            .contains("## 1. Continue the date pattern")
+    );
+    assert!(
+        rendered_walkthrough
+            .source
+            .contains("## 4. Bring catalog columns over")
+    );
+    assert_eq!(frame_named(&start, "Launch inputs").rows.len(), 6);
+    assert!(
+        frame_named(&start, "Launch plan")
+            .derivation
+            .as_ref()
+            .is_some_and(|derivation| derivation.join.is_none())
+    );
+
+    let mut finished = Store::load(&tutorial_path(&[
+        "vectors-and-joins",
+        "vectors-and-joins-finished.fw",
+    ]))
+    .unwrap();
+    let source = frame_named(&finished, "Launch inputs").clone();
+    let launch = frame_named(&finished, "Launch plan").clone();
+    let scheduled = frame_named(&finished, "Scheduled launches").clone();
+    let scenarios = frame_named(&finished, "Scenarios");
+    let catalog = frame_named(&finished, "Product catalog");
+    assert!(
+        scenarios
+            .steps
+            .iter()
+            .any(|step| matches!(step, FrameStep::ZipVector { .. }))
+    );
+    assert_eq!(catalog.unique_keys.len(), 1);
+
+    let launch_page = finished.get_frame_page(&launch.id, 0, 20).unwrap();
+    assert_eq!(launch_page.total_rows, 6);
+    assert_eq!(launch_page.rows[0][3], "2026-09-01");
+    assert_eq!(launch_page.rows[5][3], "2027-02-01");
+    assert_eq!(
+        finished.get_frame_page(&scheduled.id, 0, 20).unwrap().rows[0][7],
+        "30000"
+    );
+
+    let mut values = BTreeMap::new();
+    let column_id = |name: &str| {
+        source
+            .columns
+            .iter()
+            .find(|column| column.name == name)
+            .unwrap()
+            .id
+            .clone()
+    };
+    values.insert(column_id("Line"), "7".into());
+    values.insert(column_id("SKU"), "C-300".into());
+    values.insert(column_id("Units"), "50".into());
+    finished
+        .apply(Operation::AddRow {
+            frame_id: source.id,
+            values,
+        })
+        .unwrap();
+
+    let grown_launch = finished.get_frame_page(&launch.id, 0, 20).unwrap();
+    assert_eq!(grown_launch.total_rows, 7);
+    assert_eq!(grown_launch.rows[6][3], "2027-03-01");
+    let grown_join = finished.get_frame_page(&scheduled.id, 0, 20).unwrap();
+    assert_eq!(grown_join.total_rows, 7);
+    assert_eq!(grown_join.rows[6][4], "Cedar");
+    assert_eq!(grown_join.rows[6][7], "16000");
 }

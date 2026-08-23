@@ -146,7 +146,7 @@ export function BroadcastStepRow({
       <label className="pipeline-broadcast-operator">
         <span>Apply</span>
         <select
-          aria-label="List operation"
+          aria-label="Vector operation"
           value={step.operator}
           onChange={(event) =>
             onUpdate({ operator: event.target.value as BroadcastOperator }, true)
@@ -160,7 +160,7 @@ export function BroadcastStepRow({
       </label>
       <PipelineCommand
         editorId={vectorEditorId}
-        label="List"
+        label="Vector"
         initialDraft={step.vector}
         references={references}
         focusToken={vectorFocusToken}

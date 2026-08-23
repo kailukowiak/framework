@@ -264,6 +264,10 @@ export function FrameInspector({
           candidate.kind === "frame" && candidate.id === frame.derivation!.sourceFrameId
       )
     : frame;
+  const allFrames = objects.filter(
+    (candidate): candidate is FrameObject => candidate.kind === "frame"
+  );
+  const otherFrames = allFrames.filter((candidate) => candidate.id !== frame.id);
   const formulaFrame = frame.derivation?.join ? frame : sourceFrame ?? frame;
   // Where this frame's chain starts. A derived frame reads the frame it
   // derives from; a source frame reads its own data, whose schema is
@@ -877,12 +881,8 @@ export function FrameInspector({
               renderedSteps={computed.steps ?? []}
               passThroughSteps={computed.passThroughSteps ?? 0}
               references={references}
-              frames={objects
-                .filter(
-                  (candidate): candidate is FrameObject =>
-                    candidate.kind === "frame" && candidate.id !== frame.id
-                )
-                .map((candidate) => ({ id: candidate.id, name: candidate.name }))}
+              frames={otherFrames.map(({ id, name }) => ({ id, name }))}
+              joinFrames={allFrames}
               addCalculatedColumnRequest={addCalculatedColumnRequest}
               onAddCalculatedColumnRequestHandled={
                 onAddCalculatedColumnRequestHandled

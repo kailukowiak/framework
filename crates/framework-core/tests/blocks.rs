@@ -156,6 +156,7 @@ fn a_long_answer_can_be_read_and_copied_past_the_gutter_preview() {
     let line = line_id(&store, "Long answer", "values");
 
     assert!(answers(&store, &block)[0].contains("…"));
+    assert_eq!(store.view().computed_blocks[&block].lines[0].value_count, 8);
     let first = store.get_block_line_page(&block, &line, 0, 3).unwrap();
     assert_eq!(first.total_values, 8);
     assert_eq!(first.values, ["1", "2", "3"]);
@@ -921,8 +922,10 @@ fn a_line_may_hold_a_list_and_broadcast_over_it() {
     let computed = store.view().computed_blocks[&block].clone();
     assert_eq!(computed.lines[0].cell.error, None);
     assert_eq!(computed.lines[0].cell.display, "[4, 8, 12]");
+    assert_eq!(computed.lines[0].value_count, 3);
     // Folding one down still gives a single answer.
     assert_eq!(computed.lines[1].cell.display, "3");
+    assert_eq!(computed.lines[1].value_count, 1);
 
     // A list beside another list of the same length pairs up.
     type_into(&mut store, &block, "`Rates` + `Rates`").unwrap();

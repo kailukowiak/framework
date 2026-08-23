@@ -8,9 +8,57 @@
 use crate::*;
 use std::path::Path;
 
+/// A name field accepts the spelling people see in formulas, but quoting is
+/// syntax rather than part of the name. This is kept at the operation boundary
+/// so UI, MCP, and future authoring surfaces cannot accidentally turn
+/// `` `my variable` `` into a name whose rendered token ends in three ticks.
+fn variable_name_from_input(name: &str) -> String {
+    let trimmed = name.trim();
+    if trimmed.len() >= 2 && trimmed.starts_with('`') && trimmed.ends_with('`') {
+        trimmed[1..trimmed.len() - 1].replace("``", "`")
+    } else {
+        trimmed.to_string()
+    }
+}
+
 impl Document {
-    /// Where a value, a result, or a list is allowed to live: not on the
-    /// bare canvas.
+    /// A compact formula surface: small enough for a single assumption, but
+    /// still a real live expression rather than a raw field with a second set
+    /// of parsing rules. Lists are allowed because this is the compact cousin
+    /// of Scratchwork, whose line may answer with either one value or many.
+    pub(crate) fn prepare_add_variable(
+        &self,
+        name: String,
+        formula: String,
+        x: f64,
+        y: f64,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let expression = self.parse_formula_rule(&formula)?;
+        expression.validate_list_placement(self, true)?;
+        let object_id = id();
+        Ok(ReplicatedOperation::AddObject {
+            object: DataObject::Result(ResultObject {
+                id: object_id.clone(),
+                name: variable_name_from_input(&name),
+                formula: Formula { expression },
+                variable: true,
+            }),
+            view: CanvasView {
+                id: id(),
+                object_id,
+                x,
+                y,
+                width: 320.0,
+                height: 46.0,
+                collapsed: false,
+                tab_object_ids: Vec::new(),
+            },
+            container_id: None,
+        })
+    }
+
+    /// Where the old card-shaped value, result, or list is allowed to live:
+    /// not on the bare canvas. `AddVariable` above is the compact exception.
     ///
     /// A single number sitting on the canvas is a card that says `4.25%` and
     /// nothing else, and forty of them is the density problem the formula
@@ -27,8 +75,8 @@ impl Document {
             Some(_) => Ok(()),
             None => Err(CoreError::InvalidOperation(format!(
                 "{what} belongs on a line of a formula block, where it can be named and \
-                 read from anywhere, or inside a container. The canvas itself holds frames, \
-                 blocks, and containers."
+                 read from anywhere, or inside a container. The canvas itself holds compact \
+                 variables, frames, blocks, and containers."
             ))),
         }
     }
@@ -116,11 +164,14 @@ impl Document {
                 "Only a value, a result, a list, or another container can go in a container".into(),
             ));
         }
-        // Taking something out of a container puts it on the canvas, which
-        // for these three is the place they are not allowed to be. A
-        // container may still be taken out, because a container is a card
-        // the canvas is meant to hold.
-        if !matches!(object, DataObject::Container(_)) {
+        // Taking an old value, dashboard result, or stored list out of a
+        // container puts it on the canvas, where those full cards do not
+        // belong. A compact variable is deliberately the exception: the
+        // canvas is its home, whether it has briefly been grouped or not.
+        if !matches!(
+            object,
+            DataObject::Container(_) | DataObject::Result(ResultObject { variable: true, .. })
+        ) {
             Self::refuse_on_the_canvas(&container_id, "A value, a result, or a list")?;
         }
         if let Some(container_id) = &container_id {
@@ -186,6 +237,7 @@ impl Document {
                 id: object_id.clone(),
                 name,
                 formula: Formula { expression },
+                variable: false,
             }),
             view: CanvasView {
                 id: id(),
@@ -253,7 +305,7 @@ impl Document {
         let mut segments = Vec::new();
         let mut literal = String::new();
         let mut rest = source;
-        while let Some(start) = rest.find("{{") {
+        while let Some(start) = next_markdown_formula_hole(rest) {
             // An unclosed hole is still prose — half-typed braces should
             // read as what they are until the closing pair arrives.
             let Some(length) = rest[start + 2..].find("}}") else {
@@ -296,8 +348,12 @@ impl Document {
         let DataObject::Result(result) = self.object(&object_id)? else {
             return Err(CoreError::ObjectNotFound);
         };
-        let expression = self.parse_formula_scalar(&formula)?;
-        expression.validate_list_placement(self, false)?;
+        let expression = if result.variable {
+            self.parse_formula_rule(&formula)?
+        } else {
+            self.parse_formula_scalar(&formula)?
+        };
+        expression.validate_list_placement(self, result.variable)?;
         // The one shape a formula that only reads by id can still tie: a
         // result reaching itself through other results. Refused here, which
         // is what lets compilation recurse without watching its own feet.
@@ -814,6 +870,7 @@ impl Document {
     ) -> Result<ReplicatedOperation, CoreError> {
         let name = match self.object(&object_id)? {
             DataObject::Frame(_) => self.unique_frame_name(&name, Some(&object_id)),
+            DataObject::Result(result) if result.variable => variable_name_from_input(&name),
             _ => name,
         };
         let blocks = self.blocks_renamed_by(&object_id, &name)?;
@@ -920,4 +977,39 @@ impl Document {
             ReplicatedOperation::RenameDocument { name }
         })
     }
+}
+
+/// The prose card's formula holes are Markdown extensions, so Markdown code
+/// wins when the two syntaxes meet. A tutorial must be able to show someone
+/// the literal spelling `` `{{formula}}` `` or put it in a fenced example
+/// without executing the example against the workbook it is explaining.
+///
+/// This is deliberately only the opening-hole search. Once a real hole begins,
+/// its closing braces belong to the formula extension; formula text has its own
+/// string and backtick parser and does not need a second Markdown interpretation.
+fn next_markdown_formula_hole(source: &str) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut index = 0;
+    let mut fenced = false;
+    let mut inline = false;
+    while index < bytes.len() {
+        if bytes[index] == b'`' {
+            let start = index;
+            while index < bytes.len() && bytes[index] == b'`' {
+                index += 1;
+            }
+            let run = index - start;
+            if run >= 3 && !inline {
+                fenced = !fenced;
+            } else if run == 1 && !fenced {
+                inline = !inline;
+            }
+            continue;
+        }
+        if !fenced && !inline && bytes[index] == b'{' && bytes.get(index + 1) == Some(&b'{') {
+            return Some(index);
+        }
+        index += 1;
+    }
+    None
 }

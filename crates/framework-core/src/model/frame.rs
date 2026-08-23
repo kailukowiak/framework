@@ -108,6 +108,48 @@ impl FrameObject {
             && self.generator.is_none()
     }
 
+    /// Whether this frame's Wrangle chain leaves each stored row addressable
+    /// as the same row after it runs.
+    ///
+    /// A calculated column changes what a row shows, not which row it is.
+    /// Treating that calculation as ownership of the whole table made a
+    /// filled series lock every unrelated input column and removed the row
+    /// entry line. The distinction belongs here because the page reader and
+    /// the write path must agree: the former carries the literal row id
+    /// through these steps, and the latter writes only columns that remain
+    /// literal inputs.
+    pub(crate) fn preserves_own_row_identity(&self) -> bool {
+        self.owns_its_rows()
+            && self.steps.iter().all(|step| {
+                matches!(
+                    step,
+                    FrameStep::Filter { .. }
+                        | FrameStep::WithColumns { .. }
+                        | FrameStep::Sort { .. }
+                        | FrameStep::Comment { .. }
+                )
+            })
+    }
+
+    /// Whether a visible column is still a stored input rather than the
+    /// output of a calculation in this frame's own row-preserving chain.
+    pub(crate) fn column_is_editable_input(&self, column_id: &str) -> bool {
+        self.preserves_own_row_identity()
+            && self
+                .input_columns()
+                .iter()
+                .any(|column| column.id == column_id && column.formula.is_none())
+            && !self.steps.iter().any(|step| {
+                matches!(
+                    step,
+                    FrameStep::WithColumns { columns }
+                        if columns
+                            .iter()
+                            .any(|column| column.output_column_id == column_id)
+                )
+            })
+    }
+
     /// What this frame reads from, named the way a person would name it.
     ///
     /// The connected file wins over the imported one: when a frame has both,

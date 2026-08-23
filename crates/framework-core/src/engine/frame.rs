@@ -296,6 +296,41 @@ impl FrameObject {
             .collect()
     }
 
+    /// The final visible declaration for every calculated column, whether
+    /// it predates Wrangle or lives in the frame's current chain.
+    fn rendered_column_formulas(
+        &self,
+        document: &Document,
+        steps: &[RenderedFrameStep],
+    ) -> HashMap<Id, String> {
+        let mut formulas = self
+            .columns
+            .iter()
+            .filter_map(|column| {
+                column.formula.as_ref().map(|formula| {
+                    (
+                        column.id.clone(),
+                        formula.expression.render(self, document, 0),
+                    )
+                })
+            })
+            .collect::<HashMap<_, _>>();
+        for step in steps {
+            if let RenderedFrameStep::WithColumns { columns } = step {
+                for column in columns {
+                    if self
+                        .columns
+                        .iter()
+                        .any(|visible| visible.id == column.output_column_id)
+                    {
+                        formulas.insert(column.output_column_id.clone(), column.formula.clone());
+                    }
+                }
+            }
+        }
+        formulas
+    }
+
     /// Every expression this frame holds, wherever it is kept.
     ///
     /// There are five places, and the reason to gather them in one is that
@@ -424,19 +459,6 @@ impl FrameObject {
     }
 
     pub(crate) fn compute(&self, document: &Document) -> ComputedFrame {
-        let formulas = self
-            .columns
-            .iter()
-            .filter_map(|column| {
-                column.formula.as_ref().map(|formula| {
-                    (
-                        column.id.clone(),
-                        formula.expression.render(self, document, 0),
-                    )
-                })
-            })
-            .collect();
-
         // A chained frame's stored rows are its *input*; what it shows is
         // the chain's output, which is read through pages like any other
         // artifact-backed frame. Computing per-row cells here would evaluate
@@ -571,6 +593,7 @@ impl FrameObject {
                 0,
             ),
         };
+        let formulas = self.rendered_column_formulas(document, &steps);
         // The display layer runs after the chain, so its formulas resolve
         // against the declared columns rather than the chain's input.
         let display_steps = self.render_steps(document, &self.columns, &self.display.steps);
@@ -615,6 +638,7 @@ impl FrameObject {
         let editing = FrameEditing::for_frame(
             self,
             document.frame_cells_are_editable(&self.id),
+            self.preserves_own_row_identity(),
             live,
             paged,
         );

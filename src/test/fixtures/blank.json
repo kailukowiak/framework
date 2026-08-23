@@ -1,5 +1,5 @@
 {
-  "id": "901e3721-47dd-4cce-a705-7d71d3b2fcb3",
+  "id": "c7e21a59-739d-47d4-beef-7b6f0edcbb33",
   "name": "Fixture",
   "revision": 0,
   "objects": [],
@@ -421,6 +421,32 @@
       "returnType": "date",
       "nullBehavior": "never null",
       "arguments": []
+    },
+    {
+      "id": "expr.at",
+      "name": ".at",
+      "aliases": [
+        "index",
+        "nth",
+        "element",
+        "position",
+        "offset"
+      ],
+      "category": "List",
+      "signature": ".at(position)",
+      "description": "One value out of a list, counting from 1.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "position",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
     },
     {
       "id": "expr.is_between",

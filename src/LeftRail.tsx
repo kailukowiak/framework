@@ -8,13 +8,14 @@ import {
   SquareFunction,
   Table2 as FrameIcon,
   Type,
+  Variable,
 } from "lucide-react";
 import type { OperationHandler } from "./lib/handlers";
 import type { LeftPanel } from "./App";
 
 /**
  * The far-left navigation rail: which panel is open beside the canvas, and
- * the four kinds of object the canvas can hold. Pinned to the foot, below
+ * the compact set of object kinds the canvas can hold. Pinned to the foot, below
  * everything it acts on, is Arrange — it rearranges the canvas rather than
  * opening or adding to it.
  */
@@ -24,6 +25,7 @@ export function LeftRail({
   toggleLeftPanel,
   onOpenLibrary,
   addBlock,
+  addVariable,
   addText,
   addEmptyFrame,
   addContainer,
@@ -35,6 +37,7 @@ export function LeftRail({
   toggleLeftPanel: (panel: Exclude<LeftPanel, null>) => void;
   onOpenLibrary: () => void;
   addBlock: (position?: { x: number; y: number }) => unknown;
+  addVariable: (position?: { x: number; y: number }) => unknown;
   addText: (position?: { x: number; y: number }) => unknown;
   addEmptyFrame: (position?: { x: number; y: number }) => unknown;
   addContainer: (position?: { x: number; y: number }) => unknown;
@@ -86,6 +89,14 @@ export function LeftRail({
         <span className="rail-group-label">Add</span>
         <button
           className="rail-button"
+          onClick={() => void addVariable()}
+          title="One named formula on the canvas; it may answer with one value or a vector"
+        >
+          <Variable size={19} />
+          <span>Variable</span>
+        </button>
+        <button
+          className="rail-button"
           onClick={() => void addBlock()}
           title="A page of formula lines: constants, calculations, and their answers (⌥⌘B)"
         >
@@ -111,7 +122,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addContainer()}
-          title="A resizable group for values, results, and lists (⌥⌘G)"
+          title="A resizable group for values, results, and vectors (⌥⌘G)"
         >
           <FolderPlus size={19} />
           <span>Container</span>

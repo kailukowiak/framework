@@ -19,6 +19,12 @@ impl Document {
         operation: Operation,
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok(match operation {
+            Operation::AddVariable {
+                name,
+                formula,
+                x,
+                y,
+            } => self.prepare_add_variable(name, formula, x, y)?,
             Operation::AddValue {
                 name,
                 raw,
@@ -350,6 +356,15 @@ impl Document {
                 name,
                 x,
                 y,
+            )?,
+            Operation::SetFrameJoinKeys {
+                frame_id,
+                primary_key_column_ids,
+                lookup_key_column_ids,
+            } => self.prepare_set_frame_join_keys(
+                frame_id,
+                primary_key_column_ids,
+                lookup_key_column_ids,
             )?,
             Operation::SetFramePipeline { frame_id, steps } => {
                 self.prepare_set_frame_pipeline(frame_id, steps)?

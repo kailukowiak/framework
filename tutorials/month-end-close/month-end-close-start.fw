@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 1,
   "document": {
-    "id": "07102504-2ddd-4079-8ac7-486b7355078c",
+    "id": "53de0ab9-b17f-4122-9e09-5af1fa69cfbd",
     "name": "Month-end close tutorial",
-    "revision": 3,
+    "revision": 10,
     "objects": [
       {
         "kind": "frame",
-        "id": "a6802d9e-226f-4670-a2a2-e79edb3f6799",
+        "id": "33d1dfe9-ca93-4a98-9f1f-a11ac6312614",
         "name": "Actuals",
         "columns": [
           {
-            "id": "key~f9hdk1",
+            "id": "key~ww8rw6",
             "name": "Key",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "month~sykc54",
+            "id": "month~91111e",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -31,7 +31,7 @@
             "formula": null
           },
           {
-            "id": "region~347wbs",
+            "id": "region~qwve2b",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -40,7 +40,7 @@
             "formula": null
           },
           {
-            "id": "revenue~83jvc9",
+            "id": "revenue~96236s",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -49,7 +49,7 @@
             "formula": null
           },
           {
-            "id": "cost~7b5qt6",
+            "id": "cost~aqe74q",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -60,300 +60,300 @@
         ],
         "rows": [
           {
-            "id": "7d5a4fb5-7750-4310-bdf4-86f7b6125aa7",
+            "id": "cd14561c-172c-4fee-8110-bf4aa606ef7b",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "76000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-01-East",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "118000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "3c79ae2b-b3b1-4525-befa-b10debe852ad",
+            "id": "a72dc944-0e28-49a4-bb31-723c4503e4ee",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "72000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-01-West",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "110000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "727ec8a1-a56a-40ff-9fec-90a8dbeeb890",
+            "id": "4eb8654d-b886-43a2-a6bd-60a5cfd4587d",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "80000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-02-East",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "125000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "5032267c-b904-45b7-82e9-1ec4f3174c33",
+            "id": "96df5da2-e091-4048-b518-441a4b2cc22b",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "79000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-02-West",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "124000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "41c73007-c764-4235-b928-1a9dd17237cc",
+            "id": "abb9e260-64b5-48b3-8f6b-97eb4c66e577",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "85000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-03-East",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "136000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "b4fbf690-304d-4f3a-9f09-66d28c890d1b",
+            "id": "6a0d8d8a-440a-459f-aff3-d5702ba277bb",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "83000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-03-West",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "129000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "ab91c298-9eca-4ddf-b9b0-74cd0fc16c42",
+            "id": "1e28104d-f87b-4f40-972e-946d0d1cb273",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "92000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-04-East",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "145000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "79ac212f-c4e5-40b9-9fad-d04d6d48d7d6",
+            "id": "73c1c0a1-308a-4c15-b1a4-11f8a9d9182c",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "91000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-04-West",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "142000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "0e949e7f-c729-4107-b4be-bb1820065d92",
+            "id": "bea843cb-bae0-412a-a807-3a19d575eafb",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "96000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-05-East",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "151000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "b6f3d923-0de9-4ddf-8f6d-ac6ba0f7f877",
+            "id": "f71d58b5-94d8-48fa-a5a5-e31c8d825fef",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "94000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-05-West",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "148000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "8f41edfb-ed0c-40a4-80a6-bdae14749479",
+            "id": "e106e308-810b-4800-8951-e0c1937aca8d",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "104000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-06-East",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "168000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "8990c677-8c83-4316-a93c-0aa0c9da1049",
+            "id": "d8e4cebb-79c9-4778-ae30-82f27a7f8158",
             "cells": {
-              "cost~7b5qt6": {
+              "cost~aqe74q": {
                 "raw": "99000",
                 "overrideFormula": null
               },
-              "key~f9hdk1": {
+              "key~ww8rw6": {
                 "raw": "2026-06-West",
                 "overrideFormula": null
               },
-              "month~sykc54": {
+              "month~91111e": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~347wbs": {
+              "region~qwve2b": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~83jvc9": {
+              "revenue~96236s": {
                 "raw": "155000",
                 "overrideFormula": null
               }
@@ -370,11 +370,11 @@
       },
       {
         "kind": "frame",
-        "id": "4482cd36-67bf-4724-979c-897175484839",
+        "id": "c3741a42-883b-44b6-8367-5eb43644bc6b",
         "name": "Budget",
         "columns": [
           {
-            "id": "key~876baq",
+            "id": "key~g40a96",
             "name": "Key",
             "sourceName": null,
             "dataType": "string",
@@ -383,7 +383,7 @@
             "formula": null
           },
           {
-            "id": "month~6qjvgw",
+            "id": "month~j1zmen",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -392,7 +392,7 @@
             "formula": null
           },
           {
-            "id": "region~ff8s8x",
+            "id": "region~jt33kv",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -401,7 +401,7 @@
             "formula": null
           },
           {
-            "id": "budget~tjaj00",
+            "id": "budget~w91zj2",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -412,252 +412,252 @@
         ],
         "rows": [
           {
-            "id": "d569fe51-3d1f-4a90-9d68-55693cae6444",
+            "id": "a7df06df-92fa-4605-a758-0af03ec27419",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "120000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-01-East",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "af3e84be-9c40-4edc-aa61-80ccdb1782f7",
+            "id": "24874063-2610-4a1f-af66-1e41f547dcf2",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "112000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-01-West",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "300e19e5-1a9b-40b2-a2d6-838e802e732f",
+            "id": "c8d34888-039d-47b8-aeef-49d11baa28a9",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "122000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-02-East",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "c27b0159-c9b5-4376-91c0-264d44b03d95",
+            "id": "4a98b2da-8644-41ae-9347-f974d25e4807",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "120000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-02-West",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "67b24f58-7d47-400a-bbb0-3ae9c0131109",
+            "id": "4a834465-8f95-49b8-933c-288ffdb4ebaa",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "130000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-03-East",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "46cf0672-3f16-4e7b-a979-cee04117f537",
+            "id": "655cac4e-3496-4f79-8e90-39775d77e63c",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "128000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-03-West",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "956319e8-8b0e-4728-8e98-bf8dda61fb33",
+            "id": "81d9b9da-a471-48aa-9e58-166101ad84c5",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "140000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-04-East",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "e01c96be-87d3-400b-9e77-10e18d612061",
+            "id": "dfe5715d-d982-42ab-a835-e7738b4ddf9f",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "138000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-04-West",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "8ded9658-3afa-4e47-9573-7d02fd5c75ac",
+            "id": "26a425d0-ff02-4067-8d37-f4cb71418c83",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "150000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-05-East",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "0616ed50-b0b3-4dfa-b243-89ab012f574d",
+            "id": "3e246a1b-9daa-4e9d-acf6-b388abefbaba",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "145000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-05-West",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "3373ff50-d93f-40f4-963f-fd4122672834",
+            "id": "a0dba9f8-5e86-4dfd-83ae-475bb95300bd",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "160000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-06-East",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "ada5a857-c590-46e8-a3cd-93fb7afe54c2",
+            "id": "c250e069-9899-486f-8680-46d0d92a5b73",
             "cells": {
-              "budget~tjaj00": {
+              "budget~w91zj2": {
                 "raw": "150000",
                 "overrideFormula": null
               },
-              "key~876baq": {
+              "key~g40a96": {
                 "raw": "2026-06-West",
                 "overrideFormula": null
               },
-              "month~6qjvgw": {
+              "month~j1zmen": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~ff8s8x": {
+              "region~jt33kv": {
                 "raw": "West",
                 "overrideFormula": null
               }
@@ -674,37 +674,58 @@
       },
       {
         "kind": "block",
-        "id": "8bf91b1e-ff99-497c-9133-abe80115da0d",
+        "id": "1831e4b3-5831-41c9-9824-1a87c57d89f7",
         "name": "Close checks",
         "lines": []
+      },
+      {
+        "kind": "text",
+        "id": "55b69e2c-8a7a-4e00-8fef-addcce5521ac",
+        "name": "Tutorial walkthrough",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "# Month-end close\n\nThis advanced project turns separate Actuals and Budget tables into a small\nreview package. It exercises unique keys, joins, derived analysis tabs,\ncalculated columns, summaries, pivots, exception filtering, ordering, and live\ncontrol totals.\n\nThis guide is rendered as the **Tutorial walkthrough** markdown card in both\nthe Start workbook and the Answer key.\n\n## Files\n\n- [`month-end-close-start.fw`](month-end-close-start.fw) — Actuals, Budget,\n  and an empty `Close checks` block.\n- [`month-end-close-finished.fw`](month-end-close-finished.fw) — answer key.\n\nThese captures were taken after reopening both generated files in the current\nTauri build:\n\n![Starting close workbook with Actuals and Budget source tables](screenshots/start.jpg)\n\n![Finished close workbook with variance analysis and live controls](screenshots/finished.jpg)\n\n## Before you begin\n\nAllow 30–45 minutes. Complete the first-workbook lesson first; complete the\nformula-clicks lesson too if table-qualified formulas are unfamiliar. In\n**Data Library**, create the tutorials if needed, inspect the finished answer\nkey, and then work only in the starting workbook. Repository contributors can\ninstead open the linked `.fw` files with **File → Open**.\n\nThis project builds several results from one joined table, so names and row\ncounts are dependencies. Stop at every checkpoint. If a later total differs,\nreturn to the first checkpoint that does not agree rather than correcting a\ndownstream table by hand.\n\nThe sample carries a `Key` such as `2026-01-East`. FrameWork currently joins one\ncolumn on each side, so this explicit stable key represents Month + Region. If\nthat feels like avoidable preparation while completing the tutorial, record it:\nthat is exactly the kind of product feedback this smoke test should expose.\n\n## 0. Inspect the answer key\n\nOpen the finished workbook first. Find the analyzed `Actuals vs budget` join\nand its branch tabs:\n\n- Regional summary;\n- Revenue by month;\n- Below budget.\n\nThe same tab strip also includes a Revenue-by-region plot so the finished\npackage demonstrates that a plot can live beside the table it explains.\n\nThen open the starting workbook.\n\n## 1. Join Actuals to Budget\n\nRight-click `Actuals` and choose **Join another table**.\n\n- Starting key: Key\n- Lookup table: Budget\n- Lookup key: Key\n- Keep: every Actuals row\n- Result name: Actuals vs budget\n- Output columns: Month, Region, Revenue, Cost, and Budget\n\nThe join panel should report that Budget's Key appears unique. Click **Mark\nunique**, then create the joined table.\n\nCheckpoint: 12 matched, 0 unmatched, 0 duplicates, and 12 result rows. If the\njoin can be created without protecting the lookup key, that is a correctness\nfailure.\n\n## 2. Analyze the joined result in place\n\nSelect `Actuals vs budget`, open **Wrangle**, and add these calculated columns\ndirectly to the joined result:\n\n```text\nProfit = `Revenue` - `Cost`\nVariance = `Revenue` - `Budget`\nVariance % = (`Revenue` - `Budget`) / `Budget`\n```\n\nFormat the first two as USD Accounting and Variance % as Percentage with one\ndecimal place. Sort by Month ascending and Region ascending.\n\nCheckpoint: January East has Profit `42000`, Variance `-2000`, and Variance %\nabout `-1.7%`.\n\n## 3. Summarize by region\n\nBranch `Actuals vs budget` to a tab named `Regional summary`. Add **Summarize**\nin Wrangle:\n\n- Group by: Region\n- Total Revenue: `` `Revenue`.sum() ``\n- Total Budget: `` `Budget`.sum() ``\n- Total Variance: `` `Variance`.sum() ``\n- Total Profit: `` `Profit`.sum() ``\n\nCheckpoint:\n\n| Region | Revenue | Budget | Variance | Profit |\n|---|---:|---:|---:|---:|\n| East | 843000 | 822000 | 21000 | 310000 |\n| West | 808000 | 793000 | 15000 | 290000 |\n\n## 4. Pivot revenue across months\n\nBranch `Actuals vs budget` again and name it `Revenue by month`.\n\n1. Add **Rearrange columns** or a Select step that keeps Region, Month, Revenue.\n2. Add **Pivot**.\n3. Names column: Month.\n4. Values column: Revenue.\n5. Aggregate: Sum.\n\nCheckpoint: two region rows and six month columns. East runs from `118000` in\nJanuary to `168000` in June; West runs from `110000` to `155000`.\n\n## 5. Isolate exceptions\n\nBranch `Actuals vs budget` once more and name it `Below budget`. Keep Month,\nRegion, Revenue, Budget, and Variance, then add:\n\n```text\n`Variance` < 0\n```\n\nCheckpoint: exactly two rows remain—January East and January West, each with a\nvariance of `-2000`.\n\n## 6. Add live close controls\n\nIn `Close checks`, enter:\n\n```text\nTotal revenue = `Actuals vs budget`.`Revenue`.sum()\nTotal budget = `Actuals vs budget`.`Budget`.sum()\n```\n\nCheckpoint: Total revenue is `1651000`, Total budget is `1615000`, and both\nanswers appear immediately. Change one Revenue or Budget value upstream: its\ncontrol total and every calculation that reads that line update without\nmaterializing the analysis table.\n\n## Finish line\n\nThe finished package has:\n\n- 12 joined and analyzed rows;\n- total favorable variance of `36000`;\n- regional totals that reconcile to the full table;\n- a 2×6 revenue pivot;\n- exactly two below-budget exceptions;\n- two live control totals;\n- a revenue-by-region plot on the analysis tab strip.\n\nFinally, change one Budget value in the starting workbook and repeat the model\nfrom that point. Every dependent result and both control totals should update.\nRecord any step that requires guessing where a control lives—the tutorial is\nserving its purpose when it finds that friction.\n\nFor a final history check, undo and redo that Budget edit. The joined analysis,\nsummary, pivot, exception table, plot, and Close checks should return to the\nsame visible states as the source value.\n"
+          }
+        ]
       }
     ],
     "views": [
       {
-        "id": "040b51ed-45c6-45fb-8879-e11ecf3dd5c0",
-        "objectId": "a6802d9e-226f-4670-a2a2-e79edb3f6799",
-        "x": 70.0,
+        "id": "3ca231c0-7ae3-48e5-87c8-4e0923ba8f02",
+        "objectId": "33d1dfe9-ca93-4a98-9f1f-a11ac6312614",
+        "x": 720.0,
         "y": 70.0,
         "width": 798.0,
         "height": 300.0,
         "collapsed": false
       },
       {
-        "id": "ec34fd73-c315-428b-afa9-1cb02e97ad8c",
-        "objectId": "4482cd36-67bf-4724-979c-897175484839",
-        "x": 70.0,
+        "id": "d7e64e68-0e8b-4f7b-955c-74da263879fd",
+        "objectId": "c3741a42-883b-44b6-8367-5eb43644bc6b",
+        "x": 720.0,
         "y": 480.0,
         "width": 648.0,
         "height": 300.0,
         "collapsed": false
       },
       {
-        "id": "2dad4260-464b-444f-a361-f4931dc09a1b",
-        "objectId": "8bf91b1e-ff99-497c-9133-abe80115da0d",
-        "x": 70.0,
+        "id": "65639446-e0ce-4062-a8c7-c36b4c0d0b5b",
+        "objectId": "1831e4b3-5831-41c9-9824-1a87c57d89f7",
+        "x": 720.0,
         "y": 850.0,
         "width": 340.0,
         "height": 220.0,
+        "collapsed": false
+      },
+      {
+        "id": "374fb09b-1400-4e3b-b2e4-675d92ba68d4",
+        "objectId": "55b69e2c-8a7a-4e00-8fef-addcce5521ac",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 580.0,
+        "height": 820.0,
         "collapsed": false
       }
     ],

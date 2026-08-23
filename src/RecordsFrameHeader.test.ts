@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { filterUsesColumn, vectorTargetColumns } from "./RecordsFrameHeader";
+import { lookupDragColumnIds } from "./useFrameCardInteraction";
 
 describe("filterUsesColumn", () => {
   it("marks the header whose backticked reference appears in a condition", () => {
@@ -29,5 +30,21 @@ describe("vectorTargetColumns", () => {
         3
       )
     ).toEqual(columns);
+  });
+});
+
+describe("lookup column drag", () => {
+  const frame = { columns: ["a", "b", "c", "d"].map((id) => ({ id })) } as never;
+
+  it("carries the selected header run when the dragged column is inside it", () => {
+    expect(
+      lookupDragColumnIds(frame, "c", { top: 0, bottom: 9, left: 1, right: 3 })
+    ).toEqual(["b", "c", "d"]);
+  });
+
+  it("carries only the dragged column when selection is elsewhere", () => {
+    expect(
+      lookupDragColumnIds(frame, "a", { top: 0, bottom: 9, left: 1, right: 3 })
+    ).toEqual(["a"]);
   });
 });

@@ -17,4 +17,14 @@ import type { Formula } from "./Formula";
  * results, and columns of materialized frames — and never the columns of
  * "the current frame", because a result does not sit in one.
  */
-export type ResultObject = { id: string; name: string; formula: Formula };
+export type ResultObject = {
+  id: string;
+  name: string;
+  formula: Formula;
+  /**
+   * A result presented as one compact, named formula directly on the
+   * canvas. Unlike a dashboard result, its formula may stay vector-shaped:
+   * it is the one-line form of Scratchwork, not a scalar answer card.
+   */
+  variable: boolean;
+};

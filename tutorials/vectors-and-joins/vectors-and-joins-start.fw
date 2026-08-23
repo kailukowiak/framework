@@ -1,0 +1,506 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 1,
+  "document": {
+    "id": "ac3a5d7c-c771-47f2-8257-612d490d784e",
+    "name": "Vectors, dates, and visual joins",
+    "revision": 9,
+    "objects": [
+      {
+        "kind": "text",
+        "id": "ff60fe5f-c44d-44f6-a238-c77ecc5eb9b7",
+        "name": "Tutorial walkthrough",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "# Vectors, dates, and visual joins\n\nThis final tutorial builds one small launch model three ways people already\nunderstand from a spreadsheet: continue a visible date pattern down a table,\nput two vectors beside one another, and drag lookup columns onto a matching key.\nThe saved result remains a FrameWork model rather than a pasted answer.\n\nThis same guide is rendered as the **Tutorial walkthrough** markdown card on\nthe left side of both the Start workbook and the Answer key.\n\nIt demonstrates:\n\n- an Excel-like two-cell gesture that becomes a row-count-aware date formula;\n- why a free-standing vector has its own length while a table-bound vector uses\n  `frame.len()`;\n- creating a one-column table by dragging a vector to empty canvas;\n- pairing a second, equal-length vector on the table's right edge;\n- selecting lookup columns and dragging them onto a destination key;\n- full-dataset match and duplicate diagnostics before a join is created;\n- live propagation when the source table gains a row.\n\n## Files\n\n- [`vectors-and-joins-start.fw`](vectors-and-joins-start.fw) — launch inputs, a\n  linked plan, product catalog, empty vector container, and empty checks block.\n- [`vectors-and-joins-finished.fw`](vectors-and-joins-finished.fw) — the answer\n  key with the date series, two-vector table, validated join, and live checks.\n\n## Before you begin\n\nAllow about 20 minutes. In **Data Library**, choose **Create tutorials** if the\nlesson is not present, open the answer key for one minute, then make every\nchange in the Start workbook. Repository contributors can instead open the two\nlinked `.fw` files with **File → Open**.\n\nThe canvas begins with four useful objects:\n\n- `Launch inputs` owns the six rows you can edit;\n- `Launch plan` is a live table made from those inputs;\n- `Product catalog` has one row per SKU but is not marked unique yet;\n- `Scenario vectors` is an empty container where the two vectors will live.\n\nThat source/plan split is deliberate. A calculated table reads its rows from\nupstream. Adding a row to `Launch inputs` near the end will therefore prove that\nthe date formula and the join follow changing data rather than a fixed preview.\n\n## 1. Continue the date pattern down the live table\n\n`Launch plan` shows `2026-09-01` and `2026-10-01` in its first two **Launch\nmonth** cells. The remaining cells are blank.\n\n1. Select those first two date cells.\n2. Right-click the selection and choose **Fill series down frame…**.\n3. Keep the starting date `2026-09-01` and change of `1` month.\n4. Choose **Line — ascending** for the row order.\n5. Click **Fill column**.\n\nCheckpoint: the six dates run monthly from `2026-09-01` through `2027-02-01`.\nOpen **Wrangle** and find a Sort followed by this calculated-column formula:\n\n```text\nsequence(2026-09-01, periods=frame.len(), step=1mo)\n```\n\nThis is the important distinction:\n\n- a vector such as `Base, Upside, Downside` owns exactly three values;\n- a vector calculated in a table can ask for `frame.len()` values.\n\nThe fill dialog writes the second form by default. It also records the sort,\nbecause a row-wise series without an order would attach dates to accidental\npositions.\n\n## 2. Make two literal vectors\n\nIn `Scenario vectors`, click **Vector** and create this first vector:\n\n- Name: `Scenario`\n- Values:\n\n```text\nBase, Upside, Downside\n```\n\nClick **Vector** again and create the second vector:\n\n- Name: `Multiplier`\n- Values:\n\n```text\n1, 1.15, 0.85\n```\n\nCheckpoint: both vector cards say **3 values**. Scenario is text and Multiplier\nis numeric. The values wrap across each card; pasted spreadsheet columns,\n`[1, 1.15, 0.85]`, NumPy `array(...)`, and R `c(...)` input work too.\n\n## 3. Create a table from the two vectors\n\n1. Drag the **3 values** footer on `Scenario` to empty canvas.\n2. Rename the new one-column table `Scenarios`.\n3. Drag the **3 values** footer on `Multiplier` to the `+` edge immediately to\n   the right of the Scenario column.\n\nCheckpoint:\n\n| Scenario | Multiplier |\n|---|---:|\n| Base | 1 |\n| Upside | 1.15 |\n| Downside | 0.85 |\n\nOpen **Wrangle** on `Scenarios`. The second gesture is recorded as one compact\npaired-vector step. It is not three copied cell formulas.\n\nTry undo and redo once. Then temporarily add a fourth value to only one source\nvector. The table should report a length mismatch instead of shifting values\ninto the wrong rows. Undo that edit before continuing.\n\n## 4. Bring catalog columns over with a visual join\n\nIn `Product catalog`, select the adjacent headers **Product**, **Region**, and\n**Unit price**. Drag that selected header run onto the **SKU** header in\n`Launch plan`.\n\nThe compact lookup prompt should read as an equation:\n\n```text\nMatch Launch plan.SKU to Product catalog.SKU\n```\n\nWait for the full-dataset diagnostics. They should show:\n\n- 6 matched;\n- 0 missing;\n- 0 duplicate keys.\n\nClick **Mark SKU as unique**, then **Bring columns over**. Rename the result\n`Scheduled launches`.\n\nCheckpoint: all six Launch plan rows remain, and Product, Region, and Unit\nprice appear beside them. The lookup table shows a key marker on SKU. Open\nWrangle on the result: its first step should state the key relationship rather\nthan hiding it in a dialog that has disappeared.\n\nIf the prompt offers a wrong key, if the counts only reflect visible rows, or\nif the join can be created without a unique lookup key, record that as a smoke\ntest failure.\n\n## 5. Add one joined calculation and two live checks\n\nOn `Scheduled launches`, add a calculated column in Wrangle:\n\n```text\nRevenue = `Units` * `Unit price`\n```\n\nFormat **Unit price** and **Revenue** as USD Accounting. In `Checks`, enter:\n\n```text\nRows scheduled = `Scheduled launches`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()\n```\n\nCheckpoint:\n\n- Rows scheduled is `6`;\n- Revenue scheduled is `137600`;\n- the first Aurora row has Revenue `30000`.\n\n## 6. Prove that the model scales with its source\n\nAdd this seventh row to `Launch inputs`:\n\n| Line | SKU | Units | Launch month |\n|---:|---|---:|---|\n| 7 | C-300 | 50 | blank |\n\nDo not type a date into the new row.\n\nCheckpoint:\n\n- `Launch plan` grows to seven rows and calculates `2027-03-01`;\n- `Scheduled launches` grows to seven rows and brings over Cedar, North, and\n  the `320` unit price;\n- Rows scheduled becomes `7`;\n- Revenue scheduled becomes `153600`.\n\nUndo and redo the source-row addition. The date, joined values, row count, and\nrevenue total should travel together. Nothing should require reapplying the\nvector or recreating the join.\n\n## Finish line\n\nYou have now used three related but different ideas:\n\n1. **A literal vector** is a small named collection with an intentional length.\n2. **A table-bound vector formula** produces one value per current row by using\n   `frame.len()` and a declared order.\n3. **A join** matches by key, not by row position, and refuses an unsafe lookup\n   side until its uniqueness is explicit.\n\nThose distinctions are the guardrails. The gestures stay Excel-simple, while\nthe Wrangle steps say what will remain true when the data changes.\n\n## Smoke-test notes\n\nThis lesson is expected to work as a manual product smoke test. Capture the\nfirst broken checkpoint with the template in the parent tutorial README.\nThe matching agent smoke scenario is `tools/mcp-smoke/scenarios/vectors-joins`;\nit builds and verifies the same structural promises without pretending MCP can\nperform pointer gestures.\n\n## Rebuilding the files\n\nThe workbooks are generated through the same validated operation boundary used\nby the desktop and MCP:\n\n```bash\ncargo run -p framework-core --example generate_tutorial_workbooks -- vectors-and-joins\n```\n\nThe generator reloads the answer key and proves the date range, paired vector,\njoined revenue, and upstream-row growth.\n"
+          }
+        ]
+      },
+      {
+        "kind": "frame",
+        "id": "9678f164-5f06-4a49-a710-476a8414f8be",
+        "name": "Launch inputs",
+        "columns": [
+          {
+            "id": "line~c0rzwn",
+            "name": "Line",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "sku~x7838h",
+            "name": "SKU",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "units~nk0xqz",
+            "name": "Units",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "launch_month~qcan19",
+            "name": "Launch month",
+            "sourceName": null,
+            "dataType": "date",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "ab695237-24fc-4268-bc8f-ed9e680d7072",
+            "cells": {
+              "launch_month~qcan19": {
+                "raw": "2026-09-01",
+                "overrideFormula": null
+              },
+              "line~c0rzwn": {
+                "raw": "1",
+                "overrideFormula": null
+              },
+              "sku~x7838h": {
+                "raw": "A-100",
+                "overrideFormula": null
+              },
+              "units~nk0xqz": {
+                "raw": "120",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "7748044c-93f2-4cc6-9690-d9a31c5351c5",
+            "cells": {
+              "launch_month~qcan19": {
+                "raw": "2026-10-01",
+                "overrideFormula": null
+              },
+              "line~c0rzwn": {
+                "raw": "2",
+                "overrideFormula": null
+              },
+              "sku~x7838h": {
+                "raw": "B-200",
+                "overrideFormula": null
+              },
+              "units~nk0xqz": {
+                "raw": "90",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "92464d01-1f09-44aa-97dd-9a1946cf9dad",
+            "cells": {
+              "launch_month~qcan19": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "line~c0rzwn": {
+                "raw": "3",
+                "overrideFormula": null
+              },
+              "sku~x7838h": {
+                "raw": "C-300",
+                "overrideFormula": null
+              },
+              "units~nk0xqz": {
+                "raw": "75",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "650100ef-0952-4f39-9f28-3302722eb420",
+            "cells": {
+              "launch_month~qcan19": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "line~c0rzwn": {
+                "raw": "4",
+                "overrideFormula": null
+              },
+              "sku~x7838h": {
+                "raw": "A-100",
+                "overrideFormula": null
+              },
+              "units~nk0xqz": {
+                "raw": "140",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "a5abb549-5929-467e-83b7-6f4055aaaf67",
+            "cells": {
+              "launch_month~qcan19": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "line~c0rzwn": {
+                "raw": "5",
+                "overrideFormula": null
+              },
+              "sku~x7838h": {
+                "raw": "D-400",
+                "overrideFormula": null
+              },
+              "units~nk0xqz": {
+                "raw": "60",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "496fa64a-49fd-4c72-909b-9a01f5de5d0b",
+            "cells": {
+              "launch_month~qcan19": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "line~c0rzwn": {
+                "raw": "6",
+                "overrideFormula": null
+              },
+              "sku~x7838h": {
+                "raw": "B-200",
+                "overrideFormula": null
+              },
+              "units~nk0xqz": {
+                "raw": "110",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "frame",
+        "id": "154535f6-fff0-4a46-a4fd-2f28ad8b1549",
+        "name": "Launch plan",
+        "columns": [
+          {
+            "id": "line~4zh8yd",
+            "name": "Line",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "sku~t33ggg",
+            "name": "SKU",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "units~epp1ep",
+            "name": "Units",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "launch_month~236tbn",
+            "name": "Launch month",
+            "sourceName": null,
+            "dataType": "date",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": {
+          "sourceFrameId": "9678f164-5f06-4a49-a710-476a8414f8be",
+          "join": null,
+          "steps": [
+            {
+              "kind": "withColumns",
+              "columns": [
+                {
+                  "outputColumnId": "line~4zh8yd",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "line~c0rzwn"
+                  }
+                },
+                {
+                  "outputColumnId": "sku~t33ggg",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "sku~x7838h"
+                  }
+                },
+                {
+                  "outputColumnId": "units~epp1ep",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "units~nk0xqz"
+                  }
+                },
+                {
+                  "outputColumnId": "launch_month~236tbn",
+                  "expression": {
+                    "kind": "column",
+                    "column_id": "launch_month~qcan19"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "select",
+              "columnIds": [
+                "line~4zh8yd",
+                "sku~t33ggg",
+                "units~epp1ep",
+                "launch_month~236tbn"
+              ]
+            }
+          ]
+        },
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "frame",
+        "id": "890485d5-02ad-4db6-8961-1875f57850c6",
+        "name": "Product catalog",
+        "columns": [
+          {
+            "id": "sku~5jtf2p",
+            "name": "SKU",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "product~yjmv9k",
+            "name": "Product",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "region~ywgsya",
+            "name": "Region",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "unit_price~94akbk",
+            "name": "Unit price",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "1290cf97-e3df-4990-9777-0eb226c77841",
+            "cells": {
+              "product~yjmv9k": {
+                "raw": "Aurora",
+                "overrideFormula": null
+              },
+              "region~ywgsya": {
+                "raw": "West",
+                "overrideFormula": null
+              },
+              "sku~5jtf2p": {
+                "raw": "A-100",
+                "overrideFormula": null
+              },
+              "unit_price~94akbk": {
+                "raw": "250",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "88de43d6-b4c9-41c8-93f8-09d632693a98",
+            "cells": {
+              "product~yjmv9k": {
+                "raw": "Boreal",
+                "overrideFormula": null
+              },
+              "region~ywgsya": {
+                "raw": "East",
+                "overrideFormula": null
+              },
+              "sku~5jtf2p": {
+                "raw": "B-200",
+                "overrideFormula": null
+              },
+              "unit_price~94akbk": {
+                "raw": "180",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "f4b03afa-13fa-4ebe-a481-8e276f13617c",
+            "cells": {
+              "product~yjmv9k": {
+                "raw": "Cedar",
+                "overrideFormula": null
+              },
+              "region~ywgsya": {
+                "raw": "North",
+                "overrideFormula": null
+              },
+              "sku~5jtf2p": {
+                "raw": "C-300",
+                "overrideFormula": null
+              },
+              "unit_price~94akbk": {
+                "raw": "320",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "68bb2c3a-07f2-4aad-995f-46489eda35ee",
+            "cells": {
+              "product~yjmv9k": {
+                "raw": "Delta",
+                "overrideFormula": null
+              },
+              "region~ywgsya": {
+                "raw": "South",
+                "overrideFormula": null
+              },
+              "sku~5jtf2p": {
+                "raw": "D-400",
+                "overrideFormula": null
+              },
+              "unit_price~94akbk": {
+                "raw": "210",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "container",
+        "id": "3b68911e-28ad-4764-ba6b-41ad466c4eb6",
+        "name": "Scenario vectors",
+        "memberIds": []
+      },
+      {
+        "kind": "block",
+        "id": "4ec8e3b2-d128-480c-9af9-df1172ba9ce8",
+        "name": "Checks",
+        "lines": []
+      }
+    ],
+    "views": [
+      {
+        "id": "c92944b0-d03b-4531-93fe-928b89b510d7",
+        "objectId": "ff60fe5f-c44d-44f6-a238-c77ecc5eb9b7",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 580.0,
+        "height": 820.0,
+        "collapsed": false
+      },
+      {
+        "id": "8d9eb988-187c-4eb7-8d6b-8d71cc1e426b",
+        "objectId": "9678f164-5f06-4a49-a710-476a8414f8be",
+        "x": 720.0,
+        "y": 540.0,
+        "width": 648.0,
+        "height": 300.0,
+        "collapsed": false
+      },
+      {
+        "id": "ea61fc8c-86c2-42ee-8fa6-0b11d58ec275",
+        "objectId": "154535f6-fff0-4a46-a4fd-2f28ad8b1549",
+        "x": 720.0,
+        "y": 70.0,
+        "width": 520.0,
+        "height": 280.0,
+        "collapsed": false
+      },
+      {
+        "id": "ecb62912-361f-4596-abfc-07bc018a0e5a",
+        "objectId": "890485d5-02ad-4db6-8961-1875f57850c6",
+        "x": 1410.0,
+        "y": 70.0,
+        "width": 648.0,
+        "height": 300.0,
+        "collapsed": false
+      },
+      {
+        "id": "4c918a78-1c3c-48d5-a2c6-bc3557a88b78",
+        "objectId": "3b68911e-28ad-4764-ba6b-41ad466c4eb6",
+        "x": 1410.0,
+        "y": 470.0,
+        "width": 260.0,
+        "height": 240.0,
+        "collapsed": false
+      },
+      {
+        "id": "b0763053-8b42-4645-892e-ff6f17f184c1",
+        "objectId": "4ec8e3b2-d128-480c-9af9-df1172ba9ce8",
+        "x": 1410.0,
+        "y": 740.0,
+        "width": 340.0,
+        "height": 220.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {}
+  },
+  "versionVector": {}
+}

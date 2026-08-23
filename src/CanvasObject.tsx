@@ -16,6 +16,8 @@ import {
   ResultCard,
   SeriesCard,
   ValueCard,
+  VariableCard,
+  objectFormulaToken,
   scalarFormulaReferences,
 } from "./ScalarCards";
 import { TextCard } from "./TextCard";
@@ -237,6 +239,8 @@ const RESIZE_EDGE_NAMES: Record<ResizeEdge, string> = {
 // past the size its contents are laid out for.
 const MIN_CARD_WIDTH = 360;
 const MIN_CARD_HEIGHT = 210;
+const MIN_VARIABLE_WIDTH = 250;
+const MIN_VARIABLE_HEIGHT = 46;
 
 export function CanvasObject({
   view,
@@ -322,7 +326,7 @@ export function CanvasObject({
     primaryFrameId: string,
     primaryColumnId: string,
     lookupFrameId: string,
-    lookupColumnId: string
+    lookupOutputColumnIds: string[]
   ) => void;
   onFilterColumn: (frame: FrameObject, column: Column) => void;
   onTransformColumn: (frame: FrameObject, column: Column, formula: string) => void;
@@ -333,10 +337,11 @@ export function CanvasObject({
   ) => void;
   /** Writes a value's answer down, or refreshes the one written. */
   onFreeze: (objectId: string) => Promise<void>;
-  /** Opens the list dialog for a container, which is the only place one goes. */
+  /** Opens the stored-vector dialog for a container. */
   onAddList: (containerId: string) => void;
   dataRefreshRevision: number;
 }) {
+  const standaloneVariable = object.kind === "result" && object.variable;
   const [position, setPosition] = useState({ x: view.x, y: view.y });
   const [size, setSize] = useState({ width: view.width, height: view.height });
   useEffect(() => setPosition({ x: view.x, y: view.y }), [view.x, view.y]);
@@ -408,6 +413,8 @@ export function CanvasObject({
     };
     const right = start.x + start.width;
     const bottom = start.y + start.height;
+    const minWidth = standaloneVariable ? MIN_VARIABLE_WIDTH : MIN_CARD_WIDTH;
+    const minHeight = standaloneVariable ? MIN_VARIABLE_HEIGHT : MIN_CARD_HEIGHT;
     let next = { x: start.x, y: start.y, width: start.width, height: start.height };
     const move = (moveEvent: PointerEvent) => {
       // Screen pixels into canvas units, as with a drag.
@@ -415,20 +422,20 @@ export function CanvasObject({
       const dy = (moveEvent.clientY - start.pointerY) / zoom;
       next = { x: start.x, y: start.y, width: start.width, height: start.height };
       if (edge.includes("e")) {
-        next.width = Math.max(MIN_CARD_WIDTH, Math.round(start.width + dx));
+        next.width = Math.max(minWidth, Math.round(start.width + dx));
       }
       if (edge.includes("s")) {
-        next.height = Math.max(MIN_CARD_HEIGHT, Math.round(start.height + dy));
+        next.height = Math.max(minHeight, Math.round(start.height + dy));
       }
       // A west or north drag is bounded twice: by the card's own minimum, and
       // by the top-left corner of the canvas, which nothing may cross.
       if (edge.includes("w")) {
-        next.x = Math.min(right - MIN_CARD_WIDTH, Math.max(0, Math.round(start.x + dx)));
+        next.x = Math.min(right - minWidth, Math.max(0, Math.round(start.x + dx)));
         next.width = right - next.x;
       }
       if (edge.includes("n")) {
         next.y = Math.min(
-          bottom - MIN_CARD_HEIGHT,
+          bottom - minHeight,
           Math.max(0, Math.round(start.y + dy))
         );
         next.height = bottom - next.y;
@@ -465,7 +472,6 @@ export function CanvasObject({
     : selection?.objectId === object.id;
   const hasFrame = object.kind === "frame" || object.kind === "plot";
   const isCollapsed = view.collapsed;
-  const canResize = true;
   // New tabs read from a frame the card already shows; a card whose own
   // source frame sits elsewhere has none to offer.
   const canAddTabs = tabs.some((tab) => tab.id === sourceFrame?.id);
@@ -485,27 +491,20 @@ export function CanvasObject({
       // the canvas and at any zoom -- including the outlined view, where
       // there is no title row for a mark to sit in.
       className={`canvas-object ${isSelected ? "selected" : ""} ${object.kind}-object ${
+        standaloneVariable ? "variable-object" : ""
+      } ${
         isCollapsed ? "collapsed" : ""
       } ${showOutline ? "outlined" : ""} ${
         object.kind === "frame" ? `kind-${dataSourceKind(object, computed)}` : ""
       }`}
       data-object-id={object.id}
       data-view-id={view.id}
-      style={
-        canResize
-          ? {
-              left: position.x,
-              top: position.y,
-              width: size.width,
-              height: isCollapsed ? 29 : size.height,
-            }
-          : {
-              left: position.x,
-              top: position.y,
-              width: view.width,
-              minHeight: view.height,
-            }
-      }
+      style={{
+        left: position.x,
+        top: position.y,
+        width: size.width,
+        height: isCollapsed ? 29 : size.height,
+      }}
       // A press that landed on a grid cell has already chosen a more
       // specific selection, and that selection carries this view. Widening
       // it back to the whole card here would drop the cell — and with it
@@ -520,7 +519,7 @@ export function CanvasObject({
           of grey holding buttons too small to hit, and the outline wants the
           whole card — which is also what makes the space it is measured
           against the true one. The body drags in its place. */}
-      {!showOutline && (
+      {!showOutline && !standaloneVariable && (
         <div className="object-drag-handle" onPointerDown={beginDrag}>
           <span className="object-type">{isCollapsed ? object.name : object.kind}</span>
           <span className="object-handle-actions">
@@ -567,12 +566,29 @@ export function CanvasObject({
         />
       )}
       {!isCollapsed && object.kind === "value" && (
-        <ValueCard value={object} onOperation={onOperation} />
+        <ValueCard
+          value={object}
+          formula={objectFormulaToken(objects, object.id)}
+          onOperation={onOperation}
+        />
       )}
-      {!isCollapsed && object.kind === "result" && (
+      {!isCollapsed && standaloneVariable && (
+        <VariableCard
+          result={object}
+          formula={objectFormulaToken(objects, object.id)}
+          computed={computedResults[object.id]}
+          objects={objects}
+          computedFrames={computedFrames}
+          formulaFunctions={formulaFunctions}
+          onOperation={onOperation}
+          onMovePointerDown={beginDrag}
+        />
+      )}
+      {!isCollapsed && object.kind === "result" && !standaloneVariable && (
         <ResultCard
           onFreeze={onFreeze}
           result={object}
+          formula={objectFormulaToken(objects, object.id)}
           computed={computedResults[object.id]}
           objects={objects}
           computedFrames={computedFrames}
@@ -662,7 +678,7 @@ export function CanvasObject({
           owns, and the corners move both. The south-east corner is the only
           one drawn — the grow box says the card is resizable at all, and
           having found it you can grab any other side. */}
-      {!showOutline && !isCollapsed && canResize && (
+      {!showOutline && !isCollapsed && (
         <>
           {RESIZE_EDGES.map((edge) => (
             <button
@@ -674,9 +690,9 @@ export function CanvasObject({
             />
           ))}
           <button
-            className="frame-resize-handle"
+            className={standaloneVariable ? "variable-resize-handle" : "frame-resize-handle"}
             aria-label={`Resize ${object.name}`}
-            title={`Drag to resize ${object.kind}`}
+            title={standaloneVariable ? "Drag to resize variable" : `Drag to resize ${object.kind}`}
             onPointerDown={beginResize("se")}
           />
         </>
@@ -816,18 +832,23 @@ function ContainerCard({
       <div className="container-members">
         {members.length === 0 && (
           <p className="container-empty">
-            Nothing in here yet. Add a value or a list below, or drop one in
+            Nothing in here yet. Add a value or a vector below, or drop one in
             from its own menu.
           </p>
         )}
         {members.map((member) => (
           <div className="container-member" data-object-id={member.id} key={member.id}>
             {member.kind === "value" && (
-              <ValueCard value={member} onOperation={onOperation} />
+              <ValueCard
+                value={member}
+                formula={objectFormulaToken(objects, member.id)}
+                onOperation={onOperation}
+              />
             )}
             {member.kind === "result" && (
               <ResultCard
                 result={member}
+                formula={objectFormulaToken(objects, member.id)}
                 computed={computedResults[member.id]}
                 objects={objects}
                 computedFrames={computedFrames}
@@ -840,12 +861,7 @@ function ContainerCard({
               <SeriesCard
                 series={member}
                 formula={
-                  scalarFormulaReferences(
-                    objects,
-                    formulaFunctions,
-                    computedFrames
-                  ).find((reference) => reference.id === member.id)?.token ??
-                  `\`${member.name}\``
+                  objectFormulaToken(objects, member.id) || `\`${member.name}\``
                 }
                 onOperation={onOperation}
               />
@@ -900,7 +916,7 @@ function ContainerCard({
         </button>
         <button className="secondary-action" onClick={() => onAddList(container.id)}>
           <Plus size={13} />
-          List
+          Vector
         </button>
       </div>
     </div>

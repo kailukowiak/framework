@@ -6,10 +6,23 @@ import { ActiveFormulaEditorProvider } from "./ActiveFormulaEditor";
 import { BlockCard, BlockCardPreview } from "./BlockCard";
 import { NumberDisplayContext } from "./FrameGrid";
 import type { OperationHandler } from "./lib/handlers";
-import type { Operation } from "./lib/types";
+import type { ComputedBlock, Operation } from "./lib/types";
+import { readVectorDrag, type VectorDrag } from "./lib/vectorDrag";
 import { fixtures, objectNamed } from "./test/support";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  Reflect.deleteProperty(document, "elementFromPoint");
+});
+
+function pointerEvent(type: string, x: number, y: number) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperties(event, {
+    clientX: { value: x },
+    clientY: { value: y },
+  });
+  return event;
+}
 
 // The exemplar for the interaction tier: mount the real component over a
 // framework-core-generated fixture, act like a person, and assert the
@@ -32,6 +45,7 @@ describe("BlockCard", () => {
           comment: false,
           blank: false,
           dataType: "number" as const,
+          valueCount: 1,
           value: 1234.5,
           typedValue: { type: "number" as const, value: 1234.5 },
           display: "1234.5",
@@ -52,6 +66,69 @@ describe("BlockCard", () => {
       </NumberDisplayContext.Provider>
     );
     expect(screen.getByText("1234.50")).not.toBeNull();
+  });
+
+  it("drags a named vector answer by its Scratchwork formula address", () => {
+    const view = fixtures.salesBeforeFormula;
+    const checks = objectNamed(view, "block", "Checks");
+    const computed: ComputedBlock = {
+      source: "months = sequence(1, 4)",
+      lines: [
+        {
+          id: "months",
+          name: "months",
+          text: "months = sequence(1, 4)",
+          comment: false,
+          blank: false,
+          dataType: "integer",
+          valueCount: 3,
+          value: null,
+          typedValue: { type: "null" },
+          display: "[1, 2, 3]",
+          error: null,
+          isOverride: false,
+        },
+      ],
+    };
+    let dropped: VectorDrag | null = null;
+    render(
+      <ActiveFormulaEditorProvider>
+        <BlockCard
+          block={checks}
+          computed={computed}
+          objects={view.objects}
+          computedFrames={view.computedFrames}
+          formulaFunctions={view.formulaFunctions}
+          onOperation={vi.fn(async () => null)}
+          onFreeze={vi.fn(async () => undefined)}
+        />
+        <div
+          className="canvas-viewport"
+          aria-label="Canvas drop target"
+          onDrop={(event) => {
+            dropped = readVectorDrag(event.dataTransfer);
+          }}
+        />
+      </ActiveFormulaEditorProvider>
+    );
+    const target = screen.getByLabelText("Canvas drop target");
+    Object.defineProperty(document, "elementFromPoint", {
+      configurable: true,
+      value: vi.fn(() => target),
+    });
+
+    const handle = document.querySelector(".formula-drag-handle");
+    expect(handle).not.toBeNull();
+    fireEvent.pointerDown(handle!, { button: 0, clientX: 10, clientY: 10 });
+    window.dispatchEvent(pointerEvent("pointermove", 20, 20));
+    window.dispatchEvent(pointerEvent("pointerup", 20, 20));
+
+    expect(dropped).toEqual({
+      objectId: "months",
+      formula: "`Checks`.`months`",
+      name: "months",
+      length: 3,
+    });
   });
 
   it("emits setBlockSource for typed lines, live", async () => {

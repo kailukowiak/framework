@@ -1,7 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { FormulaField } from "./FormulaField";
 import { DebugTracePanel } from "./DebugTracePanel";
-import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
+import { useActiveFormulaEditorCommands } from "./ActiveFormulaEditor";
+import {
+  formulaToken,
+  isFormulaExecuteShortcut,
+  type FormulaReference,
+} from "./lib/formulaReferences";
 import type { OperationHandler } from "./lib/handlers";
 import type {
   ComputedResult,
@@ -14,7 +19,8 @@ import type {
   SeriesObject,
   ValueObject,
 } from "./lib/types";
-import { writeVectorDrag } from "./lib/vectorDrag";
+import { beginVectorPointerDrag } from "./lib/vectorDrag";
+import { formatFormulaChains } from "./lib/formulaFormatting";
 
 const SERIES_TYPES: DataType[] = [
   "string",
@@ -26,12 +32,165 @@ const SERIES_TYPES: DataType[] = [
 ];
 
 /**
- * A named list, edited as text.
+ * One named formula with none of a window's chrome around it.
  *
- * One value per line, because that is what a list looks like and what
- * pasting a spreadsheet column produces. Anything else that gets pasted in —
- * `[1, 2, 3]`, a NumPy or R repr, a comma-separated line — is read by the
- * core, so the box accepts what people have rather than what it would prefer.
+ * It is deliberately the same FormulaEditor used by results and Wrangle, so
+ * the local field and the top formula bar are two views of one draft. Its
+ * answer may be one value or a vector, exactly like one Scratchwork line.
+ */
+export function VariableCard({
+  result,
+  formula,
+  computed,
+  objects,
+  computedFrames,
+  formulaFunctions,
+  onOperation,
+  onMovePointerDown,
+}: {
+  result: ResultObject;
+  formula: string;
+  computed: ComputedResult | undefined;
+  objects: DataObject[];
+  computedFrames: Record<string, ComputedFrame>;
+  formulaFunctions: FormulaFunction[];
+  onOperation: OperationHandler;
+  onMovePointerDown: (event: ReactPointerEvent) => void;
+}) {
+  const displayName = variableNameFromInput(result.name);
+  const editorId = `variable:${result.id}`;
+  const activeEditor = useActiveFormulaEditorCommands();
+  const formatActiveDraft = () => {
+    const active = activeEditor.getActive();
+    if (active?.id !== editorId) return;
+    const formatted = formatFormulaChains(
+      active.draft,
+      active.selection.start,
+      active.selection.end
+    );
+    if (formatted.source !== active.draft)
+      activeEditor.setDraft(formatted.source, formatted.selection);
+  };
+  const references = useMemo(
+    () =>
+      scalarFormulaReferences(objects, formulaFunctions, computedFrames, result.id),
+    [objects, formulaFunctions, computedFrames, result.id]
+  );
+  const valueCount = computed?.valueCount ?? 0;
+  return (
+    <div
+      className="variable-card"
+      onKeyDownCapture={(event) => {
+        if (event.target instanceof HTMLTextAreaElement && isFormulaExecuteShortcut(event))
+          formatActiveDraft();
+      }}
+      onBlurCapture={(event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLTextAreaElement)) return;
+        // A variable is one self-saving formula surface. Blurring commits the
+        // current multiline draft without imposing that policy on every
+        // FormulaEditor elsewhere in the application.
+        formatActiveDraft();
+        target.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            bubbles: true,
+            cancelable: true,
+            key: "Enter",
+            metaKey: true,
+          })
+        );
+      }}
+    >
+      <span
+        className="variable-move-handle"
+        aria-hidden="true"
+        title={`Move ${result.name}`}
+        onPointerDown={onMovePointerDown}
+      >
+        •••
+      </span>
+      <input
+        className="variable-name-input"
+        aria-label="Variable name"
+        defaultValue={displayName}
+        key={result.name}
+        size={1}
+        style={{ width: `${Math.max(1, displayName.length + 1)}ch` }}
+        spellCheck={false}
+        onBlur={(event) => {
+          const name = variableNameFromInput(event.target.value);
+          event.target.value = name;
+          if (name !== result.name)
+            void onOperation({
+              type: "renameObject",
+              objectId: result.id,
+              name,
+            });
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+      />
+      <FormulaField
+        editorId={editorId}
+        label={result.name}
+        initial={formatFormulaChains(computed?.formula ?? "").source}
+        references={references}
+        compact
+        onCommit={(draft) =>
+          onOperation(
+            {
+              type: "setResultFormula",
+              objectId: result.id,
+              formula: formatFormulaChains(draft).source,
+            },
+            { inlineError: true }
+          )
+        }
+      />
+      <output
+        className={computed?.error ? "variable-answer error" : "variable-answer"}
+        title={computed?.error ?? computed?.display}
+      >
+        → {computed?.error ? "—" : computed?.display ?? "—"}
+      </output>
+      <small
+        className="variable-vector-handle"
+        data-vector-drag={valueCount > 0 ? "true" : undefined}
+        title={valueCount > 0 ? "Drag this value or vector" : computed?.error ?? undefined}
+        onPointerDown={
+          valueCount > 0
+            ? (event) =>
+                beginVectorPointerDrag(event.nativeEvent, {
+                  objectId: result.id,
+                  formula,
+                  name: result.name,
+                  length: valueCount,
+                })
+            : undefined
+        }
+      >
+        {valueCount > 1 ? valueCount : ""}
+      </small>
+    </div>
+  );
+}
+
+/** Names are stored plainly; backticks only quote those names in formulas. */
+function variableNameFromInput(name: string): string {
+  const trimmed = name.trim();
+  if (trimmed.length < 2 || !trimmed.startsWith("`") || !trimmed.endsWith("`"))
+    return trimmed;
+  return trimmed.slice(1, -1).replaceAll("``", "`");
+}
+
+/**
+ * A named vector, read compactly and edited as one text surface.
+ *
+ * The resting view wraps values across the available width instead of making
+ * a three-item vector look like a cramped three-row form. Clicking it opens
+ * one ordinary paste surface; values never turn into a row of separate
+ * controls.
  */
 export function SeriesCard({
   series,
@@ -44,6 +203,7 @@ export function SeriesCard({
   onOperation: OperationHandler;
 }) {
   const text = series.values.join("\n");
+  const [editingValues, setEditingValues] = useState(false);
   return (
     <div className="value-card series-card">
       <input
@@ -59,21 +219,46 @@ export function SeriesCard({
             });
         }}
       />
-      <textarea
-        className="series-values"
-        aria-label={`${series.name} values`}
-        defaultValue={text}
-        key={text}
-        spellCheck={false}
-        onBlur={(event) => {
-          if (event.target.value !== text)
-            onOperation({
-              type: "setSeries",
-              objectId: series.id,
-              values: event.target.value,
-            });
-        }}
-      />
+      {editingValues ? (
+        <textarea
+          autoFocus
+          className="series-values series-values-editing"
+          aria-label={`${series.name} values`}
+          defaultValue={text}
+          key={text}
+          spellCheck={false}
+          onBlur={(event) => {
+            setEditingValues(false);
+            if (event.target.value !== text)
+              void onOperation({
+                type: "setSeries",
+                objectId: series.id,
+                values: event.target.value,
+              });
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.currentTarget.value = text;
+              setEditingValues(false);
+            } else if (event.key === "Enter" && event.metaKey) {
+              event.currentTarget.blur();
+            }
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className="series-values-preview"
+          aria-label={`Edit ${series.name} values`}
+          onClick={() => setEditingValues(true)}
+        >
+          {series.values.map((value, index) => (
+            <span className="series-value" key={`${index}:${value}`}>
+              {value}
+            </span>
+          ))}
+        </button>
+      )}
       <div className="series-footer">
         <select
           aria-label={`${series.name} type`}
@@ -93,10 +278,10 @@ export function SeriesCard({
           ))}
         </select>
         <small
-          draggable={series.values.length > 0}
-          title="Drag this list onto table headers"
-          onDragStart={(event) =>
-            writeVectorDrag(event.dataTransfer, {
+          data-vector-drag={series.values.length > 0 ? "true" : undefined}
+          title="Drag this vector onto a table or empty canvas"
+          onPointerDown={(event) =>
+            beginVectorPointerDrag(event.nativeEvent, {
               objectId: series.id,
               formula,
               name: series.name,
@@ -113,9 +298,11 @@ export function SeriesCard({
 
 export function ValueCard({
   value,
+  formula,
   onOperation,
 }: {
   value: ValueObject;
+  formula: string;
   onOperation: OperationHandler;
 }) {
   return (
@@ -152,7 +339,20 @@ export function ValueCard({
           }}
         />
       </div>
-      <small>{value.dataType} · referenced by formulas</small>
+      <small
+        data-vector-drag="true"
+        title="Drag this value onto a table or empty canvas"
+        onPointerDown={(event) =>
+          beginVectorPointerDrag(event.nativeEvent, {
+            objectId: value.id,
+            formula,
+            name: value.name,
+            length: 1,
+          })
+        }
+      >
+        {value.dataType} · 1 value
+      </small>
     </div>
   );
 }
@@ -176,6 +376,11 @@ function qualifiedObjectPath(objects: DataObject[], objectId: string): string[] 
   )
     path.unshift(current.name);
   return path;
+}
+
+/** A stable formula address for a canvas object, including its containers. */
+export function objectFormulaToken(objects: DataObject[], objectId: string): string {
+  return qualifiedObjectPath(objects, objectId).map(formulaToken).join(".");
 }
 
 /**
@@ -203,7 +408,9 @@ export function scalarFormulaReferences(
         detail:
           object.kind === "value"
             ? `Canvas value · ${object.raw}`
-            : "Computed result",
+            : object.variable
+              ? "Canvas variable"
+              : "Computed result",
       });
     } else if (object.kind === "series") {
       // Lists were missing here entirely, which is why typing `` `List ``
@@ -215,7 +422,7 @@ export function scalarFormulaReferences(
         label: path.join("."),
         token: path.map(formulaToken).join("."),
         kind: "value",
-        detail: `List · ${object.values.length} ${
+        detail: `Vector · ${object.values.length} ${
           object.values.length === 1 ? "value" : "values"
         } · ${object.dataType}`,
       });
@@ -274,6 +481,7 @@ export function scalarFormulaReferences(
 
 export function ResultCard({
   result,
+  formula,
   computed,
   objects,
   computedFrames,
@@ -282,6 +490,7 @@ export function ResultCard({
   onFreeze,
 }: {
   result: ResultObject;
+  formula: string;
   computed: ComputedResult | undefined;
   objects: DataObject[];
   computedFrames: Record<string, ComputedFrame>;
@@ -294,6 +503,7 @@ export function ResultCard({
       scalarFormulaReferences(objects, formulaFunctions, computedFrames, result.id),
     [objects, formulaFunctions, computedFrames, result.id]
   );
+  const drag = resultVectorDrag(result, formula, computed);
   return (
     <div className="value-card result-card">
       <input
@@ -345,10 +555,40 @@ export function ResultCard({
           <DebugTracePanel objectId={result.id} />
         </>
       ) : (
-        <small>{computed?.dataType ?? "…"} · computed from its references</small>
+        <small
+          data-vector-drag={drag ? "true" : undefined}
+          title={drag ? "Drag this result onto a table or empty canvas" : undefined}
+          onPointerDown={
+            drag
+              ? (event) => beginVectorPointerDrag(event.nativeEvent, drag)
+              : undefined
+          }
+        >
+          {resultSummary(computed)}
+        </small>
       )}
     </div>
   );
+}
+
+function resultVectorDrag(
+  result: ResultObject,
+  formula: string,
+  computed: ComputedResult | undefined
+) {
+  if (!computed || computed.error || computed.valueCount < 1) return null;
+  return {
+    objectId: result.id,
+    formula,
+    name: result.name,
+    length: computed.valueCount,
+  };
+}
+
+function resultSummary(computed: ComputedResult | undefined): string {
+  if (!computed) return "… · computed from its references";
+  const noun = computed.valueCount === 1 ? "value" : "values";
+  return `${computed.dataType} · ${computed.valueCount} ${noun} · computed from its references`;
 }
 
 /**

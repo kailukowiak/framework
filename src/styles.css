@@ -252,6 +252,17 @@ button:disabled { cursor: default; opacity: .35; }
 .canvas-object.block-object { min-width: 240px; min-height: 120px; display: flex; flex-direction: column; }
 .canvas-object.text-object { min-width: 360px; min-height: 210px; display: flex; flex-direction: column; }
 .canvas-object.container-object { min-width: 240px; min-height: 120px; display: flex; flex-direction: column; }
+.canvas-object.variable-object {
+  min-width: 250px; min-height: 46px; overflow: visible;
+  border-color: light-dark(#d7d4ca, #3a3c30); border-radius: 7px;
+  background: light-dark(rgba(248,247,243,.82), rgba(33,34,25,.86));
+  box-shadow: 0 2px 8px light-dark(rgba(54,51,43,.07), rgba(54,51,43,.13));
+}
+.canvas-object.variable-object.selected {
+  border-color: light-dark(#9aada0, #4a6354);
+  background: light-dark(rgba(248,247,243,.82), rgba(33,34,25,.86));
+  box-shadow: 0 0 0 2px light-dark(rgba(49,92,73,.09), rgba(111,163,132,.18));
+}
 .canvas-object.collapsed { min-height: 29px; }
 .object-drag-handle { height: 32px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid light-dark(#ebe8e0, #3a3c30); background: light-dark(#f8f7f3, #212219); cursor: grab; user-select: none; }
 .object-drag-handle:active { cursor: grabbing; }
@@ -273,6 +284,42 @@ button:disabled { cursor: default; opacity: .35; }
 .canvas-object.selected, .canvas-object:focus-within { z-index: 2; }
 
 .value-card { padding: 15px 17px 16px; }
+.variable-card {
+  min-width: 0; min-height: 44px; height: 100%; display: flex; align-items: flex-start; gap: 6px;
+  padding: 7px 8px; color: var(--ink); font: 500 var(--text-base) "DM Mono", monospace;
+}
+.variable-move-handle {
+  flex: none; width: 13px; padding-top: 7px; overflow: hidden; color: light-dark(#aaa9a1, #66685f);
+  cursor: grab; font-size: var(--text-xs); letter-spacing: 1px; user-select: none;
+}
+.variable-move-handle:active { cursor: grabbing; }
+.variable-name-input {
+  min-width: 1ch; max-width: none; flex: none; margin-top: 5px; padding: 1px 0; overflow: hidden;
+  border: 0; border-bottom: 1px solid transparent; outline: 0; background: transparent;
+  color: inherit; font: inherit;
+}
+.variable-name-input:focus { border-bottom-color: var(--accent); }
+.variable-card > .formula-field { min-width: 70px; height: 100%; flex: 1 1 120px; margin: 0; overflow: hidden; }
+.variable-card .formula-editor { height: 100%; margin: 0; }
+.variable-card .formula-editor-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.variable-card .formula-input { min-width: 0; height: 100%; min-height: 30px; margin: 0; border-radius: 5px; }
+.variable-card .formula-input > span { padding: 5px 0 0 7px; }
+.variable-card .formula-input textarea,
+.variable-card .formula-input .formula-textarea-highlight {
+  min-height: 28px; height: 100%; padding: 4px 7px 4px 4px; resize: none;
+  font: 500 var(--text-base)/1.35 "DM Mono", monospace; white-space: pre-wrap;
+}
+.variable-card .formula-input .formula-textarea-layer { height: 100%; overflow: hidden; }
+.variable-card .formula-input textarea { overflow: auto; }
+.variable-card .formula-editor-help { display: none; }
+.variable-card .formula-editor-error { max-width: 100%; margin-top: 4px; }
+.variable-answer {
+  min-width: 4ch; max-width: none; flex: 1 1 100px; margin-top: 6px; padding-bottom: 2px;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+  color: light-dark(#686b64, #999c94); white-space: nowrap;
+}
+.variable-answer.error { color: light-dark(#9a452b, #e2775a); }
+.variable-vector-handle { flex: none; min-width: 12px; margin-top: 7px !important; color: var(--muted); }
 .object-name-input, .frame-name { border: 0; outline: 0; background: transparent; font-weight: 600; padding: 0; }
 /* Not muted, and not smaller: a thing's name carries at least as much as
    its value. See AGENTS.md. */
@@ -384,6 +431,12 @@ button.block-gutter-row.frozen::after, button.block-gutter-row.stale::after { co
 .series-card { min-height: 0; flex: 1; display: flex; flex-direction: column; }
 .series-values { min-height: 0; flex: 1; width: 100%; margin-top: 8px; padding: 7px 9px; border: 1px solid light-dark(#dddcd5, #3a3c30); border-radius: 6px; background: light-dark(#fbfaf7, #262720); outline: 0; resize: none; font: 500 var(--text-sm)/1.5 "DM Mono", monospace; }
 .series-values:focus { border-color: var(--accent); }
+.series-values-editing { min-height: 78px; resize: vertical; }
+.series-values-preview { width: 100%; max-height: 108px; display: flex; flex-wrap: wrap; align-content: flex-start; margin-top: 8px; padding: 7px 9px; overflow-y: auto; border: 1px solid light-dark(#dddcd5, #3a3c30); border-radius: 6px; background: light-dark(#fbfaf7, #262720); color: var(--ink); font: 500 var(--text-sm)/1.5 "DM Mono", monospace; text-align: left; overflow-wrap: anywhere; }
+.series-values-preview:hover { border-color: light-dark(#b8c3ba, #4a6354); }
+.series-values-preview::before { content: "["; }
+.series-values-preview::after { content: "]"; }
+.series-value:not(:last-child)::after { content: ",\00a0"; }
 .series-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .series-footer select { border: 0; background: transparent; color: light-dark(#71736b, #92948c); font: 500 var(--text-sm) "DM Mono", monospace; }
 .series-footer small { margin-top: 0; }
@@ -674,6 +727,15 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 }
 .frame-resize-handle:hover::after, .frame-resize-handle:focus-visible::after { background: light-dark(#8fa495, #5c7d68); }
 .frame-resize-handle:focus-visible { outline: 0; }
+.variable-resize-handle {
+  position: absolute; z-index: 14; right: 0; bottom: 0; width: 14px; height: 14px; padding: 0;
+  background: transparent; cursor: nw-resize; cursor: nwse-resize; touch-action: none;
+}
+.variable-resize-handle::after {
+  content: ""; position: absolute; right: 2px; bottom: 2px; width: 7px; height: 7px;
+  border-right: 2px solid light-dark(#aeb4aa, #566459);
+  border-bottom: 2px solid light-dark(#aeb4aa, #566459);
+}
 
 
 .inspector { position: fixed; z-index: 42; top: var(--canvas-top); right: 0; bottom: 0; width: var(--inspector-w); background: light-dark(#f9f8f4, #212219); border-left: 1px solid var(--line); overflow-y: auto; }
@@ -887,9 +949,15 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .pipeline-broadcast-operator select { width: 30px; height: 24px; padding: 0; border: 0; background: transparent; color: inherit; font: 600 var(--text-base) "DM Mono", monospace; text-align: center; }
 .pipeline-broadcast small { grid-column: 1 / -1; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
 .pipeline-zip-vector small { display: block; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
-.series-footer small[draggable="true"] { cursor: grab; }
-.series-footer small[draggable="true"]::before { content: "↗ "; color: var(--accent); }
-.column-header.vector-column-drop { box-shadow: inset 0 0 0 2px var(--accent); }
+small[data-vector-drag="true"] { cursor: grab; }
+small[data-vector-drag="true"]::before { content: "↗ "; color: var(--accent); }
+small.vector-dragging { cursor: grabbing; }
+.value-card > small[data-vector-drag="true"] { display: block; width: max-content; }
+.block-gutter-row.draggable-formula { grid-template-columns: 10px minmax(0, 1fr) 10px; }
+.formula-drag-handle { color: var(--accent); cursor: grab; text-align: left; }
+.formula-drag-handle.vector-dragging { cursor: grabbing; }
+.column-header.vector-column-drop,
+.frame-edge-header.vector-column-drop { box-shadow: inset 0 0 0 2px var(--accent); }
 .column-header.join-column-drop { box-shadow: inset 0 -2px 0 var(--accent); }
 .pipeline-refresh-generated { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 0; border: 0; background: transparent; color: var(--accent); font-size: var(--text-sm); font-weight: 600; }
 .query-plan-panel { margin-top: 6px; color: var(--ink); font-size: var(--text-sm); }
@@ -1000,6 +1068,11 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 
 .dialog-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; background: light-dark(rgba(37,37,33,.32), rgba(37,37,33,0.592)); backdrop-filter: blur(3px); }
 .insert-dialog { width: 520px; padding: 26px; border: 1px solid light-dark(rgba(255,255,255,.7), rgba(255,255,255,0.21)); border-radius: 16px; background: light-dark(#faf9f5, #212219); box-shadow: 0 24px 80px light-dark(rgba(32,31,27,.24), rgba(32,31,27,0.444)); }
+/* A list is usually copied from the canvas it will be used with. Keep that
+   canvas present and interactive: this is a floating authoring surface, not
+   a decision that suspends the document behind a modal veil. */
+.insert-list-popover { position: fixed; z-index: 100; top: calc(var(--formula-bar-h) + 16px); right: 16px; width: min(460px, calc(100vw - var(--rail-w) - 32px)); max-height: calc(100vh - var(--formula-bar-h) - 32px); padding: 18px; overflow-y: auto; }
+.insert-list-popover .series-values { min-height: 112px; max-height: 240px; white-space: pre-wrap; overflow-wrap: anywhere; resize: vertical; }
 .join-dialog { width: min(820px, calc(100vw - 40px)); max-height: calc(100vh - 40px); overflow: auto; }
 /* The library can be taller than the window once tutorials and examples are
    both present. Let the viewport-level backdrop own that scroll. Centering an
@@ -1129,6 +1202,20 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .join-preview strong, .join-preview span { display: block; }
 .join-preview strong { font: 600 var(--text-xl) "DM Mono", monospace; }
 .join-preview span { margin-top: 3px; color: light-dark(#83857e, #7f817a); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; }
+.lookup-join-prompt { width: min(620px, calc(100vw - 40px)); }
+.lookup-join-prompt h2 { font-size: var(--text-base); }
+.lookup-equation { display: grid; grid-template-columns: auto auto minmax(110px, 1fr) auto auto minmax(110px, 1fr); gap: 6px; align-items: center; }
+.lookup-equation select, .pipeline-join-keys select { min-width: 0; height: 28px; padding: 0 6px; border: 1px solid light-dark(#d8d5cc, #3a3c30); border-radius: 4px; background: light-dark(#fff, #2c2d24); color: var(--ink); font-size: var(--text-sm); }
+.lookup-diagnostics, .pipeline-join-status { display: flex; gap: 12px; color: light-dark(#777970, #92948b); font-size: var(--text-xs); }
+.lookup-diagnostics { margin-top: 9px; }
+.lookup-diagnostics .invalid { color: var(--danger); }
+.lookup-note { margin: 5px 0 0; color: light-dark(#777970, #92948b); font-size: var(--text-xs); }
+.lookup-mark-key { margin-top: 8px; }
+.pipeline-join-reading, .pipeline-join-keys, .pipeline-join-status { display: flex; align-items: center; gap: 6px; }
+.pipeline-join-reading { margin-bottom: 5px; }
+.pipeline-join-reading span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pipeline-join-keys select { flex: 1 1 0; }
+.pipeline-join-status { margin-top: 5px; }
 .join-keep-mode { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; color: light-dark(#6d6f68, #959790); font-size: var(--text-sm); font-weight: 600; }
 .join-keep-mode select { min-width: 210px; }
 .join-output-heading { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: var(--text-sm); }
@@ -1284,7 +1371,7 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .frame-comment-editor { width: 100%; margin: 3px 0 5px; padding: 4px 6px; border: 1px solid light-dark(#dcdbd3, #3a3c30); border-radius: 6px; background: light-dark(#fbfaf7, #23241e); color: var(--ink); font-size: var(--text-sm); line-height: 1.45; resize: vertical; }
 
 /* A text card is its content: no name row, no chrome, prose to the edges. */
-.text-card-body { display: block; width: 100%; min-height: 0; flex: 1; padding: 12px 14px; border: 0; background: transparent; text-align: left; cursor: text; overflow-y: auto; }
+.text-card-body { display: block; width: 100%; min-height: 0; flex: 1; padding: 12px 14px; border: 0; background: transparent; text-align: left; cursor: text; overflow-y: auto; user-select: text; -webkit-user-select: text; }
 .text-card-empty { color: light-dark(#96968f, #707069); font-size: var(--text-sm); }
 .text-card-editing { position: relative; min-height: 0; flex: 1; display: flex; flex-direction: column; }
 .text-card-editor { min-height: 0; flex: 1; width: 100%; padding: 12px 14px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: var(--text-base); line-height: 1.45; resize: none; }

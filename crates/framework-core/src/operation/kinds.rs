@@ -31,6 +31,14 @@ use ts_rs::TS;
 )]
 #[ts(export)]
 pub enum Operation {
+    /// One compact named formula directly on the canvas. It may evaluate to
+    /// one value or a vector, using the same formula language as Scratchwork.
+    AddVariable {
+        name: String,
+        formula: String,
+        x: f64,
+        y: f64,
+    },
     AddValue {
         name: String,
         raw: String,
@@ -558,6 +566,13 @@ pub enum Operation {
         name: String,
         x: f64,
         y: f64,
+    },
+    /// Changes the relationship behind an existing joined frame without
+    /// replacing its output columns or the Wrangle steps built on them.
+    SetFrameJoinKeys {
+        frame_id: Id,
+        primary_key_column_ids: Vec<Id>,
+        lookup_key_column_ids: Vec<Id>,
     },
     /// Replaces a derived frame's whole transformation chain.
     ///

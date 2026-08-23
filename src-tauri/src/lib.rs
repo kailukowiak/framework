@@ -293,6 +293,20 @@ const BUNDLED_TUTORIALS: &[BundledTutorial] = &[
         contents: include_bytes!("../../tutorials/month-end-close/month-end-close-finished.fw"),
         assets: &[],
     },
+    BundledTutorial {
+        lesson: "Vectors, dates, and visual joins",
+        kind: "Start",
+        relative_path: "Vectors, dates, and visual joins/Start/Workbook.fw",
+        contents: include_bytes!("../../tutorials/vectors-and-joins/vectors-and-joins-start.fw"),
+        assets: &[],
+    },
+    BundledTutorial {
+        lesson: "Vectors, dates, and visual joins",
+        kind: "Answer key",
+        relative_path: "Vectors, dates, and visual joins/Answer key/Workbook.fw",
+        contents: include_bytes!("../../tutorials/vectors-and-joins/vectors-and-joins-finished.fw"),
+        assets: &[],
+    },
 ];
 
 #[derive(Clone, Deserialize, Serialize, TS)]
@@ -392,6 +406,28 @@ fn get_frame_summary(
     session
         .store
         .get_frame_summary(&frame_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn get_join_diagnostics(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    primary_frame_id: String,
+    lookup_frame_id: String,
+    primary_key_column_ids: Vec<String>,
+    lookup_key_column_ids: Vec<String>,
+) -> Result<framework_core::JoinDiagnostics, String> {
+    let session = state.document_for(window.label())?;
+    let session = session.lock().map_err(|error| error.to_string())?;
+    session
+        .store
+        .get_join_diagnostics(
+            &primary_frame_id,
+            &lookup_frame_id,
+            &primary_key_column_ids,
+            &lookup_key_column_ids,
+        )
         .map_err(|error| error.to_string())
 }
 
@@ -2663,6 +2699,7 @@ pub fn run() {
             new_window,
             get_frame_page,
             get_frame_summary,
+            get_join_diagnostics,
             get_block_line_page,
             get_frame_query_plan,
             preview_frame_pipeline,

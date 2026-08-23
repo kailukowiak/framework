@@ -30,6 +30,9 @@ pub struct DocumentView {
 pub struct ComputedResult {
     pub formula: String,
     pub data_type: DataType,
+    /// One for an ordinary scalar result; the live vector length for a
+    /// compact variable whose formula stays vector-shaped.
+    pub value_count: usize,
     /// Present when this answer was written down rather than worked out.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -77,6 +80,10 @@ pub struct ComputedBlockLine {
     pub comment: bool,
     pub blank: bool,
     pub data_type: DataType,
+    /// How many values this answer currently holds. Scalars are one; a live
+    /// vector carries its full current length even when the gutter only shows
+    /// a truncated preview.
+    pub value_count: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub frozen: Option<FrozenState>,
@@ -409,24 +416,41 @@ pub struct FrameEditing {
 }
 
 impl FrameEditing {
+    /// `rows` is separate from `cells` because a row-preserving calculation
+    /// may leave no literal column visible while the frame can still grow.
     /// `live` is whether the frame's values can change without anyone
-    /// editing the document, and `paged` whether they are read from a file
-    /// rather than held in it. Both are lineage facts rather than facts
-    /// about this frame alone, which is why they arrive as arguments.
-    pub(crate) fn for_frame(frame: &FrameObject, cells: bool, live: bool, paged: bool) -> Self {
+    /// editing the document, and `paged` whether they are read from a file.
+    pub(crate) fn for_frame(
+        frame: &FrameObject,
+        cells: bool,
+        rows: bool,
+        live: bool,
+        paged: bool,
+    ) -> Self {
         if cells {
             return Self {
                 cells: true,
                 // Rows can only be added where they are held. A parquet the
                 // document owns can have its values rewritten in place, but
                 // growing it is a different operation than editing it.
-                rows: frame.owns_its_rows(),
+                rows,
                 overrides: !paged,
                 reason: (!frame.owns_its_rows()).then(|| {
                     "These rows are the document's own copy — type into them freely. \
                      Each edit rewrites the file they live in."
                         .to_string()
                 }),
+            };
+        }
+        if rows {
+            return Self {
+                cells: false,
+                rows: true,
+                overrides: !paged,
+                reason: Some(
+                    "This frame's visible columns are calculated. Add a row here, then edit its inputs in Wrangle."
+                        .to_string(),
+                ),
             };
         }
         let overrides = !paged;
@@ -618,10 +642,12 @@ impl Document {
                 .iter()
                 .map(|line| {
                     let mut list = None;
+                    let mut value_count = 0;
                     let (data_type, evaluated) = match line.expression() {
                         Some(expression) => {
                             let answer = self.evaluate_line(&line.id, expression);
                             list = answer.2;
+                            value_count = answer.3;
                             (answer.0, answer.1)
                         }
                         // A line with no formula has a reason instead: the
@@ -639,6 +665,7 @@ impl Document {
                         comment: line.is_comment(),
                         blank: line.is_blank(),
                         data_type,
+                        value_count,
                         frozen: line
                             .expression()
                             .and_then(|expression| self.frozen_state(&line.id, expression)),
@@ -661,12 +688,24 @@ impl Document {
     }
 
     fn compute_result(&self, result: &ResultObject) -> ComputedResult {
-        let (data_type, evaluated) = self.evaluate_value(&result.id, &result.formula.expression);
+        let (data_type, evaluated, list_display, value_count) = if result.variable {
+            self.evaluate_line(&result.id, &result.formula.expression)
+        } else {
+            let (data_type, evaluated) =
+                self.evaluate_value(&result.id, &result.formula.expression);
+            let value_count = usize::from(evaluated.is_ok());
+            (data_type, evaluated, None, value_count)
+        };
+        let mut cell = computed_cell(evaluated, data_type, false);
+        if let Some(display) = list_display {
+            cell.display = display;
+        }
         ComputedResult {
             formula: self.render_formula_scalar(&result.formula.expression),
             data_type,
+            value_count,
             frozen: self.frozen_state(&result.id, &result.formula.expression),
-            cell: computed_cell(evaluated, data_type, false),
+            cell,
         }
     }
 
@@ -736,21 +775,25 @@ impl Document {
         &self,
         object_id: &str,
         expression: &Expr,
-    ) -> (DataType, Result<ScalarValue, String>, Option<String>) {
+    ) -> (DataType, Result<ScalarValue, String>, Option<String>, usize) {
         // Legacy and explicitly captured answers still read back at whatever
         // length was recorded. Ordinary Scratchwork never enters this branch:
         // it evaluates live below and may return the whole current list.
         if let Some(frozen) = self.frozen_values.get(object_id) {
             return match read_frozen_series(&frozen.artifact.path) {
                 Ok((data_type, series)) if series.len() == 1 => {
-                    (data_type, crate::polars_value_at(&series, 0), None)
+                    (data_type, crate::polars_value_at(&series, 0), None, 1)
                 }
-                Ok((data_type, series)) => (
-                    data_type,
-                    Ok(ScalarValue::Null),
-                    Some(render_list(&series, data_type)),
-                ),
-                Err(error) => (DataType::String, Err(error), None),
+                Ok((data_type, series)) => {
+                    let value_count = series.len();
+                    (
+                        data_type,
+                        Ok(ScalarValue::Null),
+                        Some(render_list(&series, data_type)),
+                        value_count,
+                    )
+                }
+                Err(error) => (DataType::String, Err(error), None, 0),
             };
         }
         // Scratchwork is the place for live, ad-hoc calculation. Requiring a
@@ -813,18 +856,20 @@ impl Document {
     pub(crate) fn evaluate_line_expression(
         &self,
         expression: &Expr,
-    ) -> (DataType, Result<ScalarValue, String>, Option<String>) {
+    ) -> (DataType, Result<ScalarValue, String>, Option<String>, usize) {
         let (data_type, series) = match self.evaluate_scratchwork_series(expression) {
             Ok(found) => found,
-            Err(error) => return (DataType::String, Err(error), None),
+            Err(error) => return (DataType::String, Err(error), None, 0),
         };
         if series.len() == 1 {
-            return (data_type, crate::polars_value_at(&series, 0), None);
+            return (data_type, crate::polars_value_at(&series, 0), None, 1);
         }
+        let value_count = series.len();
         (
             data_type,
             Ok(ScalarValue::Null),
             Some(render_list(&series, data_type)),
+            value_count,
         )
     }
 
@@ -1347,23 +1392,40 @@ impl Document {
     ///
     /// A frame that holds its rows qualifies. So does one whose rows live in
     /// a parquet the document owns — an import with no connector to refresh
-    /// over it — because nothing else will ever write that file. What does
-    /// not qualify is a frame with something above it: a chain or a
-    /// derivation recomputes whatever is typed, and a live connector
-    /// replaces it on the next refresh. For those, taking ownership is the
-    /// way in, and it is a deliberate act rather than a silent one.
+    /// over it — because nothing else will ever write that file. A
+    /// row-preserving chain also qualifies for the literal input columns it
+    /// leaves visible: its calculations recompute their outputs without
+    /// taking ownership of the rest of the row. A reshape or derivation does
+    /// not qualify because its output rows no longer address stored inputs.
     pub(crate) fn frame_cells_are_editable(&self, frame_id: &str) -> bool {
         self.frame(frame_id).is_ok_and(|frame| {
-            let row_preserving = frame.steps.iter().all(|step| {
-                matches!(
-                    step,
-                    FrameStep::Filter { .. } | FrameStep::Sort { .. } | FrameStep::Comment { .. }
-                )
-            });
-            if frame.derivation.is_some() || !row_preserving {
-                return false;
+            if frame.preserves_own_row_identity() {
+                return frame
+                    .columns
+                    .iter()
+                    .any(|column| frame.column_is_editable_input(&column.id));
             }
-            frame.owns_its_rows() || (frame.artifact.is_some() && !self.frame_is_live(frame_id))
+            frame.steps.is_empty()
+                && frame.derivation.is_none()
+                && (frame.owns_its_rows()
+                    || (frame.artifact.is_some() && !self.frame_is_live(frame_id)))
+        })
+    }
+
+    /// The write-side form of [`FrameObject::column_is_editable_input`].
+    /// Artifact-backed frames use their existing whole-frame edit path;
+    /// literal frames with calculations are checked one column at a time.
+    pub(crate) fn frame_column_is_editable(&self, frame_id: &str, column_id: &str) -> bool {
+        self.frame(frame_id).is_ok_and(|frame| {
+            if frame.preserves_own_row_identity() {
+                frame.column_is_editable_input(column_id)
+            } else {
+                frame.steps.is_empty()
+                    && frame.derivation.is_none()
+                    && frame.columns.iter().any(|column| column.id == column_id)
+                    && (frame.owns_its_rows()
+                        || (frame.artifact.is_some() && !self.frame_is_live(frame_id)))
+            }
         })
     }
 

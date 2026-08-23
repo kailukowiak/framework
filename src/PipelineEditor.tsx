@@ -1,9 +1,13 @@
-import { CircleAlert, GitBranch, Plus, RefreshCw, X } from "lucide-react";
+import { CircleAlert, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CommentStepRow } from "./PipelineCommentStepRow";
 import { FormulaErrorDetails } from "./FormulaEditor";
 import { PipelineCommand } from "./PipelineCommand";
+import { appendColumnFilter } from "./PipelineColumnFilters";
+export { appendColumnFilter, columnFilterDraft } from "./PipelineColumnFilters";
 import { PipelineFrameStepCommand } from "./PipelineFrameStepCommand";
+import { PipelineHeading } from "./PipelineHeading";
+import { PipelineJoinStep } from "./PipelineJoinStep";
 import {
   PipelineRecurrenceStep,
   type PipelineRecurrenceDraft,
@@ -119,8 +123,8 @@ const STEP_LABELS: Record<StepKind, string> = {
   expand: "Expand frame",
   pivot: "Pivot",
   unpivot: "Unpivot",
-  broadcast: "Apply list across columns",
-  zipVector: "Pair list as column",
+  broadcast: "Apply vector across columns",
+  zipVector: "Pair vector as column",
   comment: "Comment",
 };
 
@@ -347,57 +351,6 @@ export function outputColumnIdForName(
   name: string
 ): string {
   return visible.find((candidate) => candidate.name === name)?.id ?? currentId;
-}
-
-/**
- * A header filter starts as a valid-looking comparison with only its value
- * selected. The column click has already supplied the hard part; typing can
- * immediately replace the example value, while the formula remains an
- * ordinary Wrangle condition rather than a second filter model.
- */
-export function columnFilterDraft(column: Pick<Column, "name" | "dataType">) {
-  const left = `${formulaToken(column.name)} == `;
-  const value =
-    column.dataType === "string" || column.dataType === "categorical"
-      ? '"value"'
-      : column.dataType === "boolean"
-        ? "True"
-        : column.dataType === "date"
-          ? "date(2026, 1, 1)"
-          : "0";
-  return {
-    formula: `${left}${value}`,
-    focusSelection: {
-      start: left.length + (value.startsWith('"') ? 1 : 0),
-      end: left.length + value.length - (value.endsWith('"') ? 1 : 0),
-    },
-  };
-}
-
-/** Append to a trailing filter when doing so preserves the chain's meaning. */
-export function appendColumnFilter(
-  steps: StepDraft[],
-  column: Pick<Column, "name" | "dataType">,
-  focusToken: number
-): StepDraft[] {
-  const draft = {
-    id: crypto.randomUUID(),
-    ...columnFilterDraft(column),
-    focusToken,
-  };
-  const last = steps.at(-1);
-  if (last?.kind === "filter") {
-    return [...steps.slice(0, -1), { ...last, predicates: [...last.predicates, draft] }];
-  }
-  return [
-    ...steps,
-    {
-      id: crypto.randomUUID(),
-      kind: "filter",
-      predicates: [draft],
-      matchAll: true,
-    },
-  ];
 }
 
 function sortCommand(
@@ -1151,6 +1104,16 @@ function renderedOutputName(
   return frame.columns.find((column) => column.id === outputColumnId)?.name ?? fallback;
 }
 
+function fixedJoinStep(
+  frame: FrameObject,
+  frames: FrameObject[],
+  onOperation: OperationHandler
+) {
+  return frame.derivation?.join
+    ? <PipelineJoinStep frame={frame} frames={frames} onOperation={onOperation} />
+    : null;
+}
+
 function stepInput(step: StepDraft): FrameStepInput {
   if (step.kind === "broadcast" || step.kind === "zipVector")
     return vectorStepInput(step);
@@ -1312,6 +1275,7 @@ export function DerivedFrameCreator({
   passThroughSteps,
   references,
   frames,
+  joinFrames = [],
   addCalculatedColumnRequest,
   onAddCalculatedColumnRequestHandled,
   transformColumnRequest,
@@ -1342,6 +1306,7 @@ export function DerivedFrameCreator({
   references: FormulaReference[];
   /** Every other frame in the document, for two-input wrangle steps. */
   frames: Array<{ id: string; name: string }>;
+  joinFrames?: FrameObject[];
   /** Appends and saves one blank Number column at the bottom of the chain. */
   addCalculatedColumnRequest?: {
     token: number;
@@ -1391,6 +1356,7 @@ export function DerivedFrameCreator({
     .map((step, index) => ({ step, index }))
     .slice(passThroughSteps)
     .filter(({ index }) => !isOrderingOnlySelect(input.columns, steps, index));
+  const authoredStepNumberOffset = editingFrame.derivation?.join ? 2 : 1;
   const [formulaError, setFormulaError] = useState<string | null>(null);
   const [refreshingGeneratedColumns, setRefreshingGeneratedColumns] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -1702,27 +1668,15 @@ export function DerivedFrameCreator({
 
   return (
     <div className="derived-creator pipeline-outline">
-      <div className="section-heading">
-        <GitBranch size={16} />
-        <strong>Transformations</strong>
-        {visibleAuthored.some(({ step }) => step.kind === "pivot") && (
-          <button
-            type="button"
-            className="pipeline-refresh-generated"
-            disabled={refreshingGeneratedColumns}
-            onClick={() => {
-              setRefreshingGeneratedColumns(true);
-              void persist(steps).finally(() => setRefreshingGeneratedColumns(false));
-            }}
-          >
-            <RefreshCw
-              className={refreshingGeneratedColumns ? "spinning" : ""}
-              size={12}
-            />
-            {refreshingGeneratedColumns ? "Refreshing…" : "Refresh generated columns"}
-          </button>
-        )}
-      </div>
+      <PipelineHeading
+        hasGeneratedColumns={visibleAuthored.some(({ step }) => step.kind === "pivot")}
+        refreshing={refreshingGeneratedColumns}
+        onRefresh={() => {
+          setRefreshingGeneratedColumns(true);
+          void persist(steps).finally(() => setRefreshingGeneratedColumns(false));
+        }}
+      />
+      {fixedJoinStep(editingFrame, joinFrames, onOperation)}
       {visibleAuthored.map(({ step, index }, displayIndex) => {
         const visible = visibleBeforeStep(index);
         const stepReferences = referencesForStep(references, visible);
@@ -1780,7 +1734,7 @@ export function DerivedFrameCreator({
                   setDragOver(null);
                 }}
               >
-                {displayIndex + 1}
+                {displayIndex + authoredStepNumberOffset}
               </span>
               <strong>
                 {step.kind === "select"
@@ -2537,8 +2491,8 @@ export function DerivedFrameCreator({
           <option value="expand">Expand frame</option>
           <option value="pivot">Pivot</option>
           <option value="unpivot">Unpivot</option>
-          <option value="broadcast">Apply list across columns</option>
-          <option value="zipVector">Pair list as column</option>
+          <option value="broadcast">Apply vector across columns</option>
+          <option value="zipVector">Pair vector as column</option>
           <option value="comment">Comment</option>
         </select>
       </label>

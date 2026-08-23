@@ -5,6 +5,9 @@ review package. It exercises unique keys, joins, derived analysis tabs,
 calculated columns, summaries, pivots, exception filtering, ordering, and live
 control totals.
 
+This guide is rendered as the **Tutorial walkthrough** markdown card in both
+the Start workbook and the Answer key.
+
 ## Files
 
 - [`month-end-close-start.fw`](month-end-close-start.fw) — Actuals, Budget,

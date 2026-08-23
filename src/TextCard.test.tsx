@@ -58,6 +58,63 @@ describe("formulaHoleAt", () => {
 });
 
 describe("TextCard", () => {
+  it("keeps rendered prose selectable without opening the editor", () => {
+    const source = "Select this rendered sentence.";
+    const computed: ComputedText = {
+      source,
+      segments: [{ kind: "literal", text: source }],
+    };
+    render(
+      <TextCard
+        text={text(source)}
+        computed={computed}
+        references={[]}
+        onOperation={vi.fn(async () => null)}
+      />
+    );
+
+    const prose = screen.getByText(source);
+    const range = document.createRange();
+    range.selectNodeContents(prose);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    fireEvent.click(screen.getByTitle("Edit text"));
+
+    expect(screen.queryByLabelText("Narrative markdown")).toBeNull();
+    expect(window.getSelection()?.toString()).toBe(source);
+  });
+
+  it("preserves the prose viewport while entering and leaving edit mode", () => {
+    const source = Array.from({ length: 30 }, (_, index) => `Line ${index + 1}`).join(
+      "\n\n"
+    );
+    const computed: ComputedText = {
+      source,
+      segments: [{ kind: "literal", text: source }],
+    };
+    render(
+      <TextCard
+        text={text(source)}
+        computed={computed}
+        references={[]}
+        onOperation={vi.fn(async () => null)}
+      />
+    );
+
+    window.getSelection()?.removeAllRanges();
+    const rendered = screen.getByTitle("Edit text");
+    rendered.scrollTop = 120;
+    fireEvent.click(rendered);
+
+    const editor = screen.getByLabelText("Narrative markdown");
+    expect(editor.scrollTop).toBe(120);
+    editor.scrollTop = 168;
+    fireEvent.blur(editor);
+
+    expect(screen.getByTitle("Edit text").scrollTop).toBe(168);
+  });
+
   it("completes formulas inside prose and commits the whole markdown source", async () => {
     const user = userEvent.setup();
     const onOperation = vi.fn<OperationHandler>(async () => null);

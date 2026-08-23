@@ -85,6 +85,7 @@ export function GridCellContent({
     return (
       <ComputedCellButton
         column={column}
+        raw={cell?.raw}
         computedCell={computedCell}
         displayFormat={displayFormat}
         readOnlyReason={readOnlyReason}

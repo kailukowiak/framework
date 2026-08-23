@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormulaEditor } from "./FormulaEditor";
 import type { FormulaReference } from "./lib/formulaReferences";
 
@@ -10,6 +10,7 @@ export function FormulaField({
   references,
   frameId,
   focusToken,
+  compact = false,
   onCommit,
 }: {
   editorId: string;
@@ -19,10 +20,12 @@ export function FormulaField({
   references: FormulaReference[];
   frameId?: string;
   focusToken?: number;
+  compact?: boolean;
   onCommit: (value: string) => Promise<string | null>;
 }) {
   const [value, setValue] = useState(initial);
   const [formulaError, setFormulaError] = useState<string | null>(null);
+  useEffect(() => setValue(initial), [initial]);
   const execute = async (draft = value) => {
     if (draft.trim() === initial.trim()) {
       setFormulaError(null);
@@ -40,16 +43,16 @@ export function FormulaField({
         frameId={frameId}
         focusToken={focusToken}
         error={formulaError}
+        compact={compact}
         onChange={(next) => {
           setValue(next);
           setFormulaError(null);
         }}
-        onExecute={execute}
-        executeLabel="Execute"
+        {...(compact
+          ? { onCommit: execute }
+          : { onExecute: execute, executeLabel: "Execute" })}
       />
       {help && <small>{help}</small>}
     </div>
   );
 }
-
-

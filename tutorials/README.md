@@ -2,8 +2,8 @@
 
 These tutorials use one sales story to teach FrameWork from a blank table to a
 multi-table model. Each practical lesson includes a starting workbook, a
-finished answer key, expected values, and screenshots captured from the current
-Tauri application.
+finished answer key and expected values; several also include screenshots
+captured from the current Tauri application.
 
 The lessons are also manual smoke tests. If a named control is missing, a step
 cannot be completed, or the observed result differs from the checkpoint, record
@@ -29,6 +29,9 @@ The lessons intentionally explain both the gesture and its consequence. The
 gesture helps you complete the task; the consequence—such as a Sort appearing
 in Wrangle—helps you understand what will stay live downstream.
 
+Every Start workbook and Answer key also renders its complete guide in a
+**Tutorial walkthrough** markdown card on the left side of the canvas.
+
 ## Learning path
 
 1. **[Your first FrameWork workbook](first-workbook/README.md)** — paste a
@@ -47,6 +50,9 @@ in Wrangle—helps you understand what will stay live downstream.
 5. **[Month-end close](month-end-close/README.md)** — join actuals to budget,
    build a variance table, summarize, pivot, isolate exceptions, and keep
    control totals live. About 30–45 minutes.
+6. **[Vectors, dates, and visual joins](vectors-and-joins/README.md)** — create
+   a table from two vectors, continue a date series that follows table length,
+   and drag lookup columns onto a key. About 20 minutes.
 
 ## How to use the answer keys
 
@@ -66,7 +72,7 @@ cargo run -p framework-core --example generate_formula_click_tutorial
 
 ## In the desktop app
 
-Open **Data Library** and choose **Create tutorials**. FrameWork creates eight
+Open **Data Library** and choose **Create tutorials**. FrameWork creates ten
 editable workbooks in `Documents/FrameWork Tutorials`: a starting workbook and
 an answer key for each practical lesson. Open a starting workbook, work through
 the guide, and use its answer key only to compare the result.
@@ -74,7 +80,7 @@ the guide, and use its answer key only to compare the result.
 If you are working directly from this repository instead, open the `.fw` files
 linked under **Files** in each lesson with **File → Open**.
 
-**Reset tutorials** is deliberately explicit: it replaces those eight known
+**Reset tutorials** is deliberately explicit: it replaces those ten known
 working copies, their histories, and the tiny Excel lesson sources with the
 bundled canonical files. It does not remove notes, exports, or any other files
 in the tutorial folder.

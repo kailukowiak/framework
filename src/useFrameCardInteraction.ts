@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { reorderColumnIds } from "./PipelineEditor";
 import type { FrameObject } from "./lib/types";
+import type { GridRange } from "./lib/gridNavigation";
 
 export function useFrameScrollState() {
   const [scrollState, setScrollState] = useState({ top: 0, height: 300 });
@@ -40,12 +41,13 @@ export function useFrameScrollState() {
 
 export function useFrameColumnDrag(
   frame: FrameObject,
+  selectionRange: GridRange | null,
   onRearrangeColumns: (frameId: string, columnIds: string[]) => void,
   onJoinColumns: (
     primaryFrameId: string,
     primaryColumnId: string,
     lookupFrameId: string,
-    lookupColumnId: string
+    lookupOutputColumnIds: string[]
   ) => void
 ) {
   const draggingFrameColumnRef = useRef<string | null>(null);
@@ -123,7 +125,12 @@ export function useFrameColumnDrag(
         if (ordered.some((id, index) => id !== frame.columns[index]?.id))
           onRearrangeColumns(frame.id, ordered);
       } else if (moved && latestJoin) {
-        onJoinColumns(latestJoin.frameId, latestJoin.columnId, frame.id, columnId);
+        onJoinColumns(
+          latestJoin.frameId,
+          latestJoin.columnId,
+          frame.id,
+          lookupDragColumnIds(frame, columnId, selectionRange)
+        );
       }
       draggingFrameColumnRef.current = null;
       setDraggingFrameColumn(null);
@@ -136,4 +143,23 @@ export function useFrameColumnDrag(
   };
 
   return { frameColumnDrop, beginFrameColumnDrag };
+}
+
+/** A selected header run means "bring these columns" when dragged away. */
+export function lookupDragColumnIds(
+  frame: Pick<FrameObject, "columns">,
+  draggedColumnId: string,
+  selectionRange: GridRange | null
+): string[] {
+  const draggedIndex = frame.columns.findIndex((column) => column.id === draggedColumnId);
+  if (
+    draggedIndex < 0 ||
+    !selectionRange ||
+    draggedIndex < selectionRange.left ||
+    draggedIndex > selectionRange.right
+  )
+    return [draggedColumnId];
+  return frame.columns
+    .slice(selectionRange.left, selectionRange.right + 1)
+    .map((column) => column.id);
 }

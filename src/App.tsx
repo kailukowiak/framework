@@ -150,6 +150,7 @@ import {
   nudgeCanvasZoom,
 } from "./lib/canvasZoom";
 import type { OperationHandler } from "./lib/handlers";
+import type { JoinState } from "./lib/joinState";
 import type {
   Column,
   ComputedFrame,
@@ -163,14 +164,6 @@ import type {
   ContainerObject,
 } from "./lib/types";
 
-export type JoinState = {
-  primaryFrameId: string;
-  x: number;
-  y: number;
-  lookupFrameId?: string;
-  primaryKeyId?: string;
-  lookupKeyId?: string;
-} | null;
 /**
  * Which panel is open beside the canvas, if any.
  *
@@ -847,17 +840,22 @@ export default function App() {
    * A new formula block, named `Block 1`, `Block 2`, … until somebody says
    * otherwise.
    *
-   * This is the canvas's one way of making somewhere to put a number now.
-   * There used to be three — a value, a result, and a list, each its own card
-   * — and a page of scratch arithmetic turned into a page of cards. A block
-   * holds all three as lines, so `rate = 0.08` and `` monthly = `Loan`/12 ``
-   * sit together in the order they were worked out, which is how the working
-   * was written down in the first place.
+   * A block is the dense home for worked calculations that belong together.
+   * A compact variable below is the one-object cousin for a single assumption
+   * that should sit by itself on the canvas; its formula may format to lines.
    */
   const addBlock = (position?: { x: number; y: number }) =>
     run({
       type: "addBlock",
       name: nextObjectName(document?.objects ?? [], "Block"),
+      ...(position ?? insertPosition()),
+    });
+
+  const addVariable = (position?: { x: number; y: number }) =>
+    run({
+      type: "addVariable",
+      name: nextObjectName(document?.objects ?? [], "x"),
+      formula: "0",
       ...(position ?? insertPosition()),
     });
 
@@ -1087,6 +1085,7 @@ export default function App() {
         toggleLeftPanel={toggleLeftPanel}
         onOpenLibrary={() => setDatasetLibrary(true)}
         addBlock={addBlock}
+        addVariable={addVariable}
         addText={addText}
         addEmptyFrame={addEmptyFrame}
         addContainer={addContainer}
@@ -1368,7 +1367,7 @@ export default function App() {
                   primaryFrameId,
                   primaryColumnId,
                   lookupFrameId,
-                  lookupColumnId
+                  lookupOutputColumnIds
                 ) => {
                   const primaryView = document.views.find(
                     (candidate) => candidate.objectId === primaryFrameId
@@ -1377,7 +1376,7 @@ export default function App() {
                     primaryFrameId,
                     lookupFrameId,
                     primaryKeyId: primaryColumnId,
-                    lookupKeyId: lookupColumnId,
+                    lookupOutputColumnIds,
                     x: primaryView
                       ? primaryView.x + primaryView.width + 100
                       : view.x + view.width + 100,
@@ -2546,14 +2545,14 @@ function Inspector({
           a formula, and how to use it. */}
       {object.kind === "series" && (
         <section className="inspector-section">
-          <h3>List</h3>
+          <h3>Vector</h3>
           <p className="inspector-note">
             {object.values.length}{" "}
             {object.values.length === 1 ? "value" : "values"} · {object.dataType}
           </p>
           <p className="inspector-note">
             Write <code>`{object.name}`</code> in a formula to pass it to
-            something that takes a list, like <code>.is_in()</code>.
+            something that takes a vector, like <code>.is_in()</code>.
           </p>
         </section>
       )}

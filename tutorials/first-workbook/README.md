@@ -5,6 +5,9 @@ small monthly-sales model. You will paste data, calculate profit once for the
 whole column, declare its order, make an independently filtered tab, write two
 block calculations, add a live markdown narrative, and make a plot.
 
+This guide is rendered as the **Tutorial walkthrough** markdown card in both
+the Start workbook and the Answer key.
+
 ## Files
 
 - [`first-workbook-start.fw`](first-workbook-start.fw) — empty table and block.

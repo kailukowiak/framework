@@ -22,6 +22,12 @@ export type ComputedBlockLine = {
   comment: boolean;
   blank: boolean;
   dataType: DataType;
+  /**
+   * How many values this answer currently holds. Scalars are one; a live
+   * vector carries its full current length even when the gutter only shows
+   * a truncated preview.
+   */
+  valueCount: number;
   frozen?: FrozenState;
   /**
    * Backward-compatible numeric projection. Non-numeric and null values use `None`.

@@ -38,8 +38,9 @@ tools/mcp-smoke/run.sh timesheet haiku    # lower bar: if haiku passes, the
 Scenarios deliberately cover different surface areas — `timesheet`
 (generators, expand, entry columns, crosstab), `budget` (summarize,
 validated joins, percentage columns, live recomputation), `reshape`
-(unpivot, editable sources, wide readings) — so `all` is a broad sweep,
-not five runs of the same muscle.
+(unpivot, editable sources, wide readings), `vectors-joins` (paired vectors,
+row-count-aware dates, and live lookup joins) — so `all` is a broad sweep,
+not several runs of the same muscle.
 
 This lane measures what deterministic tests cannot: discoverability. The
 history that motivated it — three hand-driven runs of the timesheet

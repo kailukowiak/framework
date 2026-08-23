@@ -84,6 +84,7 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                   </td>
                   {frame.columns.map((column, columnIndex) => {
                     const result = computed.rows[row.id]?.[column.id];
+                    const calculated = isCalculatedFrameColumn(computed, column);
                     const isFocusCell =
                       gridFocusHere?.rowId === row.id &&
                       gridFocusHere.columnId === column.id;
@@ -127,9 +128,24 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                           <GridCellContent
                             column={column}
                             row={row}
-                            computedCell={result}
-                            isDerived={isDerived && !isEntryFrameColumn(frame, column)}
-                            paged={isFileBacked && !isEntryFrameColumn(frame, column)}
+                            // A page already carries evaluated display text.
+                            // `computed.rows` is the non-paged answer cache
+                            // and may describe the pre-page probe instead.
+                            computedCell={isFileBacked ? undefined : result}
+                            isDerived={
+                              (isDerived || calculated) &&
+                              !isEntryFrameColumn(frame, column)
+                            }
+                            // `paged` describes how rows reached React, not
+                            // whether the person owns them. A literal frame
+                            // with a row-preserving Wrangle chain is paged too;
+                            // its input cells still take edits, while its
+                            // calculated columns use the computed-cell path.
+                            paged={
+                              isFileBacked &&
+                              isReadOnly &&
+                              !isEntryFrameColumn(frame, column)
+                            }
                             readOnly={isReadOnly && !isEntryFrameColumn(frame, column)}
                             readOnlyReason={computed.editing.reason}
                             editing={

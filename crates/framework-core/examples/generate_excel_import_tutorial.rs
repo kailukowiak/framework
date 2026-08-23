@@ -2,38 +2,7 @@ use framework_core::{DataObject, Document, Operation, Store, create_excel_range_
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const LESSON: &str = r#"# Importing Excel data
-
-Two example workbooks are beside this FrameWork file. Excel is an interchange source here: FrameWork imports cached cell values from one explicit table or range. It does not copy Excel formulas, formatting, or workbook logic.
-
-## 1. Import one clean table
-
-1. Open **Data Library** and choose **Excel range…**.
-2. Choose `simple-customers.xlsx` beside this file.
-3. Select `CustomersTable` — or enter `Customers!A4:D11` with **First row contains headers** enabled.
-4. Preview the values, name the table `Customers`, and import it.
-
-## 2. Import several defined tables from one workbook
-
-Choose `multi-table-operations.xlsx`. Import each named Excel Table separately:
-
-- `InventoryTable` from `Operations!A4:F10`;
-- `SuppliersTable` from `Operations!H4:L8`;
-- `OrdersTable` from `Sales!B5:I25`.
-
-## 3. Import pasted ranges without Excel Tables
-
-The same workbook also contains two ordinary rectangular blocks. They are not defined Excel Tables. Choose them under **Suggested region**:
-
-- `Operations!A15:D23`, named `Adjustments`;
-- `Sales!P15:S25`, named `Targets`.
-
-The note in `Operations!N2` is intentionally ignored. Suggestions are conservative starting points: preview them before importing, and type a manual range when a workbook is too irregular.
-
-## Checkpoint
-
-You should have six static FrameWork tables: `Customers`, `Inventory`, `Suppliers`, `Orders`, `Adjustments`, and `Targets`. `Orders.Revenue` contains cached numeric results; its Excel formulas were not imported.
-"#;
+const LESSON: &str = include_str!("../../../tutorials/excel-import/README.md");
 
 fn text_id(store: &Store) -> String {
     store
@@ -62,7 +31,7 @@ fn set_instructions(store: &mut Store, source: String) -> Result<(), framework_c
     let id = text_id(store);
     store.apply(Operation::RenameObject {
         object_id: id.clone(),
-        name: "Import steps".into(),
+        name: "Tutorial walkthrough".into(),
     })?;
     store.apply(Operation::SetTextSource {
         object_id: id.clone(),
