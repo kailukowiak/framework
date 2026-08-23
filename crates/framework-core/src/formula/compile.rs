@@ -198,6 +198,9 @@ fn compile_from_expression(
         [one] if one == "otherwise" => {
             compile_when_chain(input, arguments, keyword_arguments, document)
         }
+        [one] if one == "format" => {
+            compile_format_method(input, arguments, keyword_arguments, document)
+        }
         [one] if one == "cast" => compile_cast(input, arguments, keyword_arguments, document),
         [one] if one == "show" => compile_show(input, arguments, keyword_arguments, document),
         [one] if one == "at" => compile_at(input, arguments, keyword_arguments, document),
@@ -756,6 +759,36 @@ fn compile_format(
     let [Expr::String { value: pattern }, values @ ..] = arguments else {
         return Err("format expects a pattern in quotes first — format(\"Q{}\", ...)".into());
     };
+    compile_format_pattern(pattern, values, document)
+}
+
+/// `"Q{}".format(quarter)` — the same formatter, read from left to right.
+///
+/// The root spelling remains useful for a sentence with several holes. A
+/// single suffix is more naturally part of a chain, though, and rejecting the
+/// familiar method spelling only leaked the boundary between FrameWork's
+/// catalog and Polars' generated methods. Both spellings deliberately meet in
+/// `compile_format_pattern`, so their rendering can never drift apart.
+fn compile_format_method(
+    input: &Expr,
+    arguments: &[Expr],
+    keyword_arguments: &[(String, Expr)],
+    document: &Document,
+) -> Result<pl::Expr, String> {
+    if !keyword_arguments.is_empty() {
+        return Err(".format does not accept keyword arguments".into());
+    }
+    let Expr::String { value: pattern } = input else {
+        return Err(".format expects quoted text with ‘{}’ before it — \"Q{}\".format(...)".into());
+    };
+    compile_format_pattern(pattern, arguments, document)
+}
+
+fn compile_format_pattern(
+    pattern: &str,
+    values: &[Expr],
+    document: &Document,
+) -> Result<pl::Expr, String> {
     let chunks: Vec<&str> = pattern.split("{}").collect();
     let holes = chunks.len() - 1;
     if holes != values.len() {

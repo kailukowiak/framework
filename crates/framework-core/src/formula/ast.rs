@@ -430,6 +430,22 @@ pub(crate) fn type_name(data_type: DataType) -> &'static str {
     }
 }
 
+fn polars_call_declared_type(
+    name: &str,
+    arguments: &[Expr],
+    document: &Document,
+    scope: &[Column],
+) -> Option<DataType> {
+    match name {
+        "recur" => arguments
+            .first()
+            .and_then(|seed| seed.declared_type_among(document, scope)),
+        "format" => Some(DataType::String),
+        "today" => Some(DataType::Date),
+        _ => None,
+    }
+}
+
 impl Expr {
     pub(crate) fn is_explicit_null(&self) -> bool {
         matches!(self, Expr::Null)
@@ -535,6 +551,7 @@ impl Expr {
                 arguments,
                 ..
             } => match path.as_slice() {
+                [name] if name == "format" => Some(DataType::String),
                 // The override, and the only thing in the language whose
                 // whole job is to answer this question. Said out loud, it
                 // beats whatever the arithmetic worked out — and it is
@@ -608,13 +625,7 @@ impl Expr {
             },
             Expr::PolarsCall {
                 name, arguments, ..
-            } if name == "recur" => arguments
-                .first()
-                .and_then(|seed| seed.declared_type_among(document, scope)),
-            // The clock functions are dates by definition of this language,
-            // not by inspection of Polars.
-            Expr::PolarsCall { name, .. } if name == "today" => Some(DataType::Date),
-            _ => None,
+            } => polars_call_declared_type(name, arguments, document, scope),
         }
     }
 

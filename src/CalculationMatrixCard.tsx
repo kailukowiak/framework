@@ -281,7 +281,7 @@ function MatrixFormulaField({
   };
   return (
     <div
-      className="calculation-matrix-formula"
+      className={`calculation-matrix-formula${format ? " calculation-matrix-body-formula" : ""}`}
       onBlurCapture={(event) => {
         if (!(event.target instanceof HTMLTextAreaElement)) return;
         void execute(event.target.value);

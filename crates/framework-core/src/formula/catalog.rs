@@ -140,6 +140,16 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
         64
     ),
     formula_function!(
+        "expr.format",
+        ".format",
+        ["concat", "concatenate", "join text", "text", "&"],
+        "String namespace",
+        ".format(value)",
+        "Fill each ‘{}’ in the quoted text before this method with a value.",
+        0,
+        63
+    ),
+    formula_function!(
         "expr.cast",
         ".cast",
         [
@@ -1185,7 +1195,7 @@ fn formula_function_return_type(id: &str) -> &'static str {
         "root.frame_len" => "integer",
         "root.date" | "root.today" | "root.now" | "dt.date" | "dt.month_start" | "dt.month_end"
         | "dt.offset_by" | "str.to_date" => "date",
-        "str.to_uppercase" | "str.to_lowercase" | "root.format" => "string",
+        "str.to_uppercase" | "str.to_lowercase" | "root.format" | "expr.format" => "string",
         // Whatever it was asked to become — the one function whose answer is
         // named by its own argument.
         "expr.cast" => "dynamic",

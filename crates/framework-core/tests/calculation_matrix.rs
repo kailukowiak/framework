@@ -118,6 +118,27 @@ fn scalar_body_broadcasts_and_text_and_date_axes_keep_raw_values() {
 }
 
 #[test]
+fn body_formats_axis_values_with_the_method_spelling() {
+    let mut store = store();
+    let id = add_matrix(&mut store);
+    store
+        .apply(Operation::SetCalculationMatrix {
+            object_id: id.clone(),
+            rows: vec![
+                input("Base Revenue", "[100, 200]"),
+                input("Multiplier", "[1.1, 0.9]"),
+            ],
+            columns: vec![input("Quarter", "[\"Q1\", \"Q2\"]")],
+            body: "(`Base Revenue` * `Multiplier`).round(2).cast(\"string\") + \" {}\".format(`Quarter`)".into(),
+        })
+        .unwrap();
+
+    let computed = &store.view().computed_calculation_matrices[&id];
+    assert_eq!(computed.cells[0][0].display, "110.0 Q1");
+    assert_eq!(computed.cells[1][1].display, "180.0 Q2");
+}
+
+#[test]
 fn axis_ids_survive_edits_and_undo_restores_the_matrix() {
     let mut store = store();
     let id = add_matrix(&mut store);

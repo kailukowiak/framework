@@ -14,7 +14,11 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 - Build live calculation matrices from zipped row and column vectors, with
   evenly repeating shorter vectors, a shared formula body, and a long-form
-  result that updates whenever its inputs change.
+  result that updates whenever its inputs change. The body formula can expand
+  vertically for longer calculations.
+
+- Format text either as `format("Q{}", value)` or the chain-friendly
+  `"Q{}".format(value)` spelling.
 
 - Vector drags now follow the pointer with a compact preview, and the full
   right edge accepts a drop. Dropping onto a one-column vector table asks

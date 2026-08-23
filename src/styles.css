@@ -1414,6 +1414,8 @@ small.vector-dragging { cursor: grabbing; }
 .calculation-matrix-formula .formula-input .formula-textarea-highlight { min-height: 25px; padding: 3px 6px 3px 3px; resize: none; font: 500 var(--text-sm)/1.45 "DM Mono", monospace; }
 .calculation-matrix-formula .formula-input .formula-textarea-layer { min-height: 25px; max-height: 76px; }
 .calculation-matrix-formula .formula-input textarea { overflow: auto; }
+.calculation-matrix-body-formula .formula-input .formula-textarea-layer { max-height: none; }
+.calculation-matrix-body-formula .formula-input textarea { resize: vertical; }
 .calculation-matrix-formula .formula-editor-help { display: none; }
 .calculation-matrix-formula .formula-error-line { margin: 2px 2px 0 17px; }
 .calculation-matrix-card > .calculation-matrix-formula .formula-input textarea,

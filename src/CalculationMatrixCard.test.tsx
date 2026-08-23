@@ -110,6 +110,9 @@ describe("CalculationMatrixCard", () => {
     );
 
     const body = screen.getByRole("textbox", { name: "Formula =" });
+    expect(body.closest(".calculation-matrix-formula")?.classList.contains("calculation-matrix-body-formula")).toBe(true);
+    const axis = screen.getByRole("textbox", { name: "Rows · Scenario =" });
+    expect(axis.closest(".calculation-matrix-formula")?.classList.contains("calculation-matrix-body-formula")).toBe(false);
     await userEvent.click(body);
     expect(screen.getByRole("button", { name: "Top formula: Scenario * Period" })).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Top formula: Scenario * Period" }));
