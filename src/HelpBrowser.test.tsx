@@ -75,5 +75,32 @@ describe("HelpBrowser", () => {
 
     expect(onInsert).toHaveBeenCalledWith("sequence(1, 13)");
   });
-});
 
+  it("shows exact Wrangle and formatting references in general help", async () => {
+    render(
+      <HelpBrowser
+        scope="guide"
+        formulaFunctions={fixtures.blank.formulaFunctions}
+        canInsert={false}
+        onScopeChange={vi.fn()}
+        onInsert={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    const search = screen.getByRole("textbox", { name: "Search help" });
+    await userEvent.type(search, "join");
+
+    await userEvent.click(
+      screen.getByRole("option", { name: /Join Match two frames by keys/ })
+    );
+    expect(screen.getByText("Wrangle · Reference")).toBeTruthy();
+    expect(screen.getByText("Anti")).toBeTruthy();
+
+    await userEvent.clear(search);
+    await userEvent.type(search, "conditional formatting");
+    expect(
+      screen.getByRole("option", { name: /Conditional formatting rules/ })
+    ).toBeTruthy();
+  });
+});

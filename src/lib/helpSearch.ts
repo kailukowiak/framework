@@ -1,5 +1,6 @@
 import type { FormulaFunction } from "./types";
 import { HELP_GUIDES, type HelpGuide, type HelpScope } from "./helpContent";
+import { HELP_REFERENCES } from "./helpReferences";
 
 export type FormulaHelpEntry = {
   kind: "Function";
@@ -12,7 +13,7 @@ export type FormulaHelpEntry = {
 };
 
 export type GuideHelpEntry = {
-  kind: "Guide" | "Rule";
+  kind: "Guide" | "Rule" | "Reference";
   id: string;
   title: string;
   summary: string;
@@ -117,7 +118,7 @@ export function helpEntries(
   scope: HelpScope,
   formulaFunctions: FormulaFunction[]
 ): HelpEntry[] {
-  const guides: GuideHelpEntry[] = HELP_GUIDES.filter((guide) =>
+  const guides: GuideHelpEntry[] = [...HELP_GUIDES, ...HELP_REFERENCES].filter((guide) =>
     guide.scopes.includes(scope)
   ).map((guide) => ({
     kind: guide.kind,
@@ -154,10 +155,12 @@ function entryFields(entry: HelpEntry): Array<[string, number]> {
   const { guide } = entry;
   return [
     [guide.title, 120],
+    [guide.category ?? "", 100],
     [guide.questions?.join(" ") ?? "", 105],
     [guide.searchTerms.join(" "), 90],
     [guide.summary, 55],
     [guide.body.join(" "), 30],
+    [guide.facts?.map((fact) => `${fact.term} ${fact.description}`).join(" ") ?? "", 30],
     [guide.related?.join(" ") ?? "", 20],
   ];
 }
@@ -167,7 +170,14 @@ function scoreEntry(entry: HelpEntry, query: string): number | null {
   const original = words(query);
   const expanded = expandedWords(query);
   const fields = entryFields(entry);
-  if (!normalizedQuery) return entry.kind === "Guide" ? 25 : entry.kind === "Rule" ? 20 : 0;
+  if (!normalizedQuery)
+    return entry.kind === "Guide"
+      ? 25
+      : entry.kind === "Rule"
+        ? 20
+        : entry.kind === "Reference"
+          ? 15
+          : 0;
 
   let score = 0;
   let matchedOriginal = 0;
@@ -212,4 +222,3 @@ export function searchHelpEntries(entries: HelpEntry[], query: string): HelpEntr
     )
     .map(({ entry }) => entry);
 }
-

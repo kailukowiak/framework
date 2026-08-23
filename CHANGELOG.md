@@ -18,7 +18,9 @@ the version being tagged and opens a fresh `## Unreleased` above it.
   copy its syntax or insert it at the active formula cursor. ⇧⌘H opens the same
   modeless browser over practical guides and the rules that distinguish
   Variables, Scratchwork, Wrangle, live data, ownership, row order and value
-  shapes.
+  shapes. Exact references cover every Wrangle transformation, Join behavior,
+  direct and conditional formatting, number formats, crosstab display, and
+  frame summaries.
 - Add a compact standalone variable directly to the canvas: one name, one
   formula field shared with the top formula bar, and one live scalar or vector
   answer. Formulas accept numbers, text, booleans, vectors, and explicit quoted

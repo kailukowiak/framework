@@ -232,7 +232,10 @@ function HelpResult({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const label = entry.kind === "Function" ? entry.function.category : entry.kind;
+  const label =
+    entry.kind === "Function"
+      ? entry.function.category
+      : entry.guide.category ?? entry.kind;
   return (
     <button
       id={`help-result-${entry.id}`}
@@ -329,13 +332,25 @@ function GuideDetail({
   const { guide } = entry;
   return (
     <>
-      <span className="eyebrow">{guide.kind}</span>
+      <span className="eyebrow">
+        {guide.category ? `${guide.category} · ${guide.kind}` : guide.kind}
+      </span>
       <h2>{guide.title}</h2>
       <p className="help-summary">{guide.summary}</p>
       {guide.surfaces && (
         <p className="help-surfaces"><strong>Use in</strong> {guide.surfaces.join(" · ")}</p>
       )}
       {guide.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+      {guide.facts && (
+        <dl className="help-facts">
+          {guide.facts.map((fact) => (
+            <div key={fact.term}>
+              <dt>{fact.term}</dt>
+              <dd>{fact.description}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       {guide.steps && (
         <section className="help-steps">
           <h3>Do this</h3>

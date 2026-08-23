@@ -56,5 +56,28 @@ describe("help search", () => {
     expect(ids).toContain("root.sequence");
     expect(ids).toContain("expr.is_between");
   });
-});
 
+  it("returns exact application references alongside task-shaped guides", () => {
+    const join = searchHelpEntries(helpEntries("guide", functions), "join");
+    const formatting = searchHelpEntries(
+      helpEntries("guide", functions),
+      "conditional formatting"
+    );
+
+    expect(join[0]?.id).toBe("reference.join");
+    expect(join.some((entry) => entry.id === "formula.lookup")).toBe(true);
+    expect(formatting[0]?.id).toBe("reference.conditional-format");
+  });
+
+  it("surfaces every Wrangle transformation as searchable reference material", () => {
+    const entries = helpEntries("guide", functions);
+
+    expect(searchHelpEntries(entries, "pivot")[0]?.id).toBe("reference.pivot");
+    expect(searchHelpEntries(entries, "stack frame")[0]?.id).toBe(
+      "reference.union"
+    );
+    expect(searchHelpEntries(entries, "pair vector as column")[0]?.id).toBe(
+      "reference.zip-vector"
+    );
+  });
+});

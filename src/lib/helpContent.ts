@@ -5,15 +5,22 @@ export type HelpExample = {
   code: string;
 };
 
+export type HelpFact = {
+  term: string;
+  description: string;
+};
+
 export type HelpGuide = {
   id: string;
   scopes: HelpScope[];
-  kind: "Guide" | "Rule";
+  kind: "Guide" | "Rule" | "Reference";
+  category?: string;
   title: string;
   summary: string;
   searchTerms: string[];
   questions?: string[];
   body: string[];
+  facts?: HelpFact[];
   steps?: string[];
   examples?: HelpExample[];
   surfaces?: string[];
@@ -187,23 +194,23 @@ export const HELP_GUIDES: HelpGuide[] = [
     scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Look up related data",
-    summary: "Use a keyed Join or relationship instead of a positional lookup formula.",
+    summary: "Use a keyed Join instead of a positional lookup formula.",
     searchTerms: [
       "vlookup", "xlookup", "lookup", "match", "index match", "join", "relationship",
       "bring columns", "key",
     ],
     questions: ["What replaces VLOOKUP?", "How do I bring a column from another table?"],
     body: [
-      "A lookup is a relationship between keys, so it belongs in Wrangle as a Join rather than as a formula that searches row positions.",
-      "Drag the columns you want from the lookup frame onto the key header in the receiving frame, or add a Join step directly in Wrangle.",
+      "A lookup is a relationship between keys, so FrameWork represents it as a Join rather than as a formula that searches row positions.",
+      "Drag the columns you want from the lookup frame onto the key header in the receiving frame, or choose Join another frame. The joined result shows its keys as the first compact step in Wrangle.",
     ],
     steps: [
       "Identify the key column shared by both frames.",
-      "Drag the lookup columns onto that key, or add a Join step.",
+      "Drag the lookup columns onto that key, or choose Join another frame.",
       "Review missing and duplicate-key counts before accepting the relationship.",
     ],
     surfaces: ["Wrangle", "Canvas header drag"],
-    related: ["Shapes do not imply relationships", "Ownership and literal editing"],
+    related: ["Join", "Shapes do not imply relationships", "Ownership and literal editing"],
   },
   {
     id: "rule.work-belongs",
@@ -367,4 +374,3 @@ export const HELP_GUIDES: HelpGuide[] = [
     related: ["Formula references use names", "Ownership controls literal editing"],
   },
 ];
-
