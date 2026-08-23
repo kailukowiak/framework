@@ -103,4 +103,28 @@ describe("HelpBrowser", () => {
       screen.getByRole("option", { name: /Conditional formatting rules/ })
     ).toBeTruthy();
   });
+
+  it("opens the vector-broadcast tutorial from ndarray vocabulary", async () => {
+    render(
+      <HelpBrowser
+        scope="guide"
+        formulaFunctions={fixtures.blank.formulaFunctions}
+        canInsert={false}
+        onScopeChange={vi.fn()}
+        onInsert={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Search help" }),
+      "ndarray"
+    );
+    await userEvent.click(
+      screen.getByRole("option", { name: /Broadcast a vector across columns/ })
+    );
+
+    expect(screen.getByText("Operators")).toBeTruthy();
+    expect(screen.getByText("Three scenario factors")).toBeTruthy();
+  });
 });

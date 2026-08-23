@@ -20,7 +20,8 @@ the version being tagged and opens a fresh `## Unreleased` above it.
   Variables, Scratchwork, Wrangle, live data, ownership, row order and value
   shapes. Exact references cover every Wrangle transformation, Join behavior,
   direct and conditional formatting, number formats, crosstab display, and
-  frame summaries.
+  frame summaries. NumPy and ndarray searches now lead to a practical guide
+  for applying a live vector across selected columns.
 - Add a compact standalone variable directly to the canvas: one name, one
   formula field shared with the top formula bar, and one live scalar or vector
   answer. Formulas accept numbers, text, booleans, vectors, and explicit quoted

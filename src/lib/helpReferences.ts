@@ -264,7 +264,8 @@ export const HELP_REFERENCES: HelpGuide[] = [
     summary: "Apply successive values from one vector across a selected set of columns.",
     searchTerms: [
       "broadcast", "apply vector", "across columns", "drag across", "repeat pattern",
-      "multiply columns", "excel dollar reference",
+      "multiply columns", "excel dollar reference", "numpy", "ndarray",
+      "array broadcasting", "matrix", "tensor", "multidimensional array",
     ],
     questions: ["How do I apply one vector across many columns?", "How do I repeat a pattern across headers?"],
     body: [
@@ -272,7 +273,7 @@ export const HELP_REFERENCES: HelpGuide[] = [
       "The vector remains a live named input; its values are not copied into the step.",
     ],
     surfaces: ["Wrangle · Add transformation", "Vector drag onto frame headers"],
-    related: ["Lists, arrays, vectors, and series", "Pair vector as column", "Expand frame"],
+    related: ["Broadcast a vector across columns", "Pair vector as column", "Expand frame"],
   },
   {
     id: "reference.zip-vector",
