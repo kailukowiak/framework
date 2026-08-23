@@ -15,6 +15,17 @@ pub struct NamedFormulaInput {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+pub struct CalculationMatrixFormulaInput {
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub id: Option<Id>,
+    pub name: String,
+    pub formula: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
 pub struct ExistingFormulaInput {
     pub output_column_id: Id,
     pub name: String,

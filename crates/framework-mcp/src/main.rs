@@ -2005,6 +2005,20 @@ fn document_summary(view: &DocumentView, path: &Path) -> DocumentSummary {
                 row_count: None,
                 columns: Vec::new(),
             },
+            DataObject::CalculationMatrix(matrix) => {
+                let computed = view.computed_calculation_matrices.get(&matrix.id);
+                ObjectSummary {
+                    id: matrix.id.clone(),
+                    name: matrix.name.clone(),
+                    kind: "calculationMatrix".into(),
+                    value: computed.and_then(|result| result.error.clone()),
+                    data_type: None,
+                    row_count: computed
+                        .and_then(|result| result.output.as_ref())
+                        .map(|output| output.rows.len()),
+                    columns: Vec::new(),
+                }
+            }
         })
         .collect();
     DocumentSummary {

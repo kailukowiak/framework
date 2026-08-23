@@ -60,6 +60,21 @@ impl Document {
             ReplicatedOperation::SetBlockLines { block_id, lines } => {
                 self.apply_set_block_lines(block_id, lines)?
             }
+            ReplicatedOperation::SetCalculationMatrix {
+                object_id,
+                rows,
+                columns,
+                body,
+            } => {
+                let DataObject::CalculationMatrix(matrix) = self.object_mut(&object_id)? else {
+                    return Err(CoreError::InvalidOperation(
+                        "That is not a calculation matrix".into(),
+                    ));
+                };
+                matrix.rows = rows;
+                matrix.columns = columns;
+                matrix.body = body;
+            }
             ReplicatedOperation::SetSeries {
                 object_id,
                 values,

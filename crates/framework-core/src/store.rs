@@ -727,6 +727,7 @@ impl Store {
             computed_results: document.compute_results(),
             computed_blocks: document.compute_blocks(),
             computed_texts: document.compute_texts(),
+            computed_calculation_matrices: document.compute_calculation_matrices(),
             document,
             formula_functions: formula_function_catalog(),
             can_undo: !self.undo.is_empty(),

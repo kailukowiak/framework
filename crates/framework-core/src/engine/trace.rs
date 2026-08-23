@@ -212,6 +212,9 @@ impl Document {
                     children,
                 }
             }
+            DataObject::CalculationMatrix(matrix) => {
+                self.matrix_dependency_node(matrix, computed, visiting)?
+            }
             other => DependencyNode {
                 object_id: object_id.to_string(),
                 name: other.name().to_string(),
@@ -225,6 +228,66 @@ impl Document {
 
         visiting.remove(object_id);
         Ok(node)
+    }
+
+    fn matrix_dependency_node(
+        &self,
+        matrix: &CalculationMatrixObject,
+        computed: &HashMap<Id, ComputedResult>,
+        visiting: &mut HashSet<Id>,
+    ) -> Result<DependencyNode, CoreError> {
+        let mut value_ids = Vec::new();
+        let mut series_ids = Vec::new();
+        let mut frame_ids = Vec::new();
+        for formula in matrix
+            .rows
+            .iter()
+            .chain(&matrix.columns)
+            .filter_map(|item| item.formula.as_ref())
+            .chain(matrix.body.formula.as_ref())
+        {
+            collect_references(
+                &formula.expression,
+                &mut value_ids,
+                &mut series_ids,
+                &mut frame_ids,
+            );
+        }
+        let mut seen = HashSet::new();
+        let mut children = Vec::new();
+        for id in value_ids.into_iter().chain(series_ids) {
+            if seen.insert(id.clone()) {
+                children.push(self.dependency_node(&id, computed, visiting)?);
+            }
+        }
+        for frame_id in frame_ids {
+            if seen.insert(frame_id.clone())
+                && let Ok(frame) = self.object(&frame_id)
+            {
+                children.push(DependencyNode {
+                    object_id: frame_id,
+                    name: frame.name().to_string(),
+                    kind: DependencyKind::Frame,
+                    formula: None,
+                    display: None,
+                    error: None,
+                    children: Vec::new(),
+                });
+            }
+        }
+        let outcome = self.compute_calculation_matrix(matrix);
+        Ok(DependencyNode {
+            object_id: matrix.id.clone(),
+            name: matrix.name.clone(),
+            kind: DependencyKind::Other,
+            formula: (!matrix.body.source.trim().is_empty()).then(|| matrix.body.source.clone()),
+            display: outcome
+                .output
+                .as_ref()
+                .map(|output| format!("{} rows", output.rows.len())),
+            error: outcome.error,
+            children,
+        })
     }
 }
 

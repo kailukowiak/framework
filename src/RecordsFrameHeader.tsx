@@ -39,6 +39,7 @@ export function RecordsFrameHeader({
     pairVector,
   } = model;
   const [vectorTarget, setVectorTarget] = useState<string | null>(null);
+  const choosesVectorLayout = isFreshVectorFrame(frame, computed);
   return (
           <thead>
             <tr>
@@ -61,6 +62,7 @@ export function RecordsFrameHeader({
                 lastColumnId={frame.columns.at(-1)?.id}
                 addColumn={addColumn}
                 pairVector={pairVector}
+                choosesVectorLayout={choosesVectorLayout}
               />
             </tr>
             <tr className="type-row">
@@ -110,9 +112,18 @@ function RecordsColumnHeader({
 }) {
   const { frame, computed, selection, frameColumnDrop } = model;
   const calculated = isCalculatedFrameColumn(computed, column);
+  const selectedVectorColumns =
+    model.selectionRange &&
+    columnIndex >= model.selectionRange.left &&
+    columnIndex <= model.selectionRange.right
+      ? model.selectionRange.right - model.selectionRange.left + 1
+      : 0;
   return (
     <th
       data-column-id={column.id}
+      data-vector-columns-after={frame.columns.length - columnIndex}
+      data-vector-selected-columns={selectedVectorColumns}
+      data-vector-combine={isFreshVectorFrame(frame, computed) ? "true" : undefined}
       title={
         calculated
           ? `Select ${column.name} · type = or click its formula below to edit all rows`
@@ -153,6 +164,10 @@ function RecordsColumnHeader({
           model.selectionRange,
           vector.length
         );
+        if (vectorDropMode(targets.length, vector.length) === "pair") {
+          model.pairVector(vector.name, vector.formula, vector.length);
+          return;
+        }
         model.applyVector(
           targets.map((candidate) => candidate.id),
           vector.formula,
@@ -208,15 +223,18 @@ function VectorFrameEdgeHeader({
   lastColumnId,
   addColumn,
   pairVector,
+  choosesVectorLayout,
 }: {
   canAddColumns: boolean;
   lastColumnId?: string;
   addColumn: (afterColumnId: string | null) => void;
   pairVector: (name: string, vector: string, expectedLength: number) => void;
+  choosesVectorLayout: boolean;
 }) {
   return (
     <th
       className="frame-edge-header"
+      data-vector-combine={choosesVectorLayout ? "true" : undefined}
       title="Drop a vector here to add it as a column"
       onDragOver={(event) => {
         if (!hasVectorDrag(event.dataTransfer)) return;
@@ -264,6 +282,32 @@ export function vectorTargetColumns<T>(
   return selected.length > 0 && selected.length % vectorLength === 0
     ? selected
     : columns.slice(columnIndex, Math.min(columns.length, columnIndex + vectorLength));
+}
+
+/**
+ * A vector can describe either columns or rows. A selected run of columns is
+ * explicit and keeps the broadcast gesture. One pointed column is ambiguous;
+ * a multi-value vector cannot fit across it, so the spreadsheet-shaped reading
+ * wins and the table grows sideways. This also makes a small miss in the
+ * tutorial harmless: dropping on the existing column or its + edge means the
+ * same thing instead of opening an Apply transformation that cannot fit.
+ */
+export function vectorDropMode(
+  targetColumnCount: number,
+  vectorLength: number
+): "apply" | "pair" {
+  return targetColumnCount === 1 && vectorLength > 1 ? "pair" : "apply";
+}
+
+function isFreshVectorFrame(
+  frame: RecordsAsRowsFrameCardProps["frame"],
+  computed: RecordsAsRowsFrameCardProps["computed"]
+): boolean {
+  return (
+    frame.columns.length === 1 &&
+    Boolean(computed.generatorRule) &&
+    (computed.steps?.length ?? 0) === 0
+  );
 }
 
 export function filterUsesColumn(predicates: string[], columnName: string): boolean {

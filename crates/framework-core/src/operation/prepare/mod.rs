@@ -4,6 +4,7 @@
 //! module that owns it.
 
 pub mod blocks;
+pub mod calculation_matrix;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
@@ -43,6 +44,15 @@ impl Document {
                 self.prepare_set_result_formula(object_id, formula)?
             }
             Operation::AddBlock { name, x, y } => self.prepare_add_block(name, x, y)?,
+            Operation::AddCalculationMatrix { name, x, y } => {
+                self.prepare_add_calculation_matrix(name, x, y)?
+            }
+            Operation::SetCalculationMatrix {
+                object_id,
+                rows,
+                columns,
+                body,
+            } => self.prepare_set_calculation_matrix(object_id, rows, columns, body)?,
             Operation::AddText { x, y } => self.prepare_add_text(x, y)?,
             Operation::SetTextSource { object_id, source } => {
                 self.prepare_set_text_source(object_id, source)?

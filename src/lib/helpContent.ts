@@ -264,6 +264,41 @@ export const HELP_GUIDES: HelpGuide[] = [
     related: ["Lists, arrays, vectors, and series", "Look up related data"],
   },
   {
+    id: "guide.calculation-matrix",
+    scopes: ["guide", "formulas"],
+    kind: "Guide",
+    title: "Build a Calculation Matrix",
+    summary: "Use row and column vectors plus one formula for a visible nested calculation.",
+    searchTerms: [
+      "calculation matrix", "matrix", "sensitivity", "data table", "what if",
+      "for loop", "nested loop", "rows", "columns", "cartesian", "grid",
+    ],
+    questions: [
+      "How do I calculate every row value against every column value?",
+      "What is FrameWork's answer to a nested for loop?",
+      "How do I make a sensitivity table?",
+    ],
+    body: [
+      "Add a Calculation Matrix, then drag vectors into Rows and Columns or type their formulas there. Several fields in one axis travel together by position; a shorter field repeats only when it divides the longest field evenly.",
+      "Rows cross with Columns. The shared cell formula reads the current row and column field names, and fills the grid only after that formula is valid. Until then the result stays blank instead of exposing a partial frame.",
+      "The card renders the answer as a wide grid and keeps a stable long-form result containing the row fields, column fields, and calculated value.",
+    ],
+    examples: [
+      {
+        label: "Axes",
+        code: "Rows: `Scenario`, `Multiplier`\nColumns: `Metric`, `Base amount`",
+      },
+      { label: "Cell formula", code: "`Base amount` * `Multiplier`" },
+    ],
+    steps: [
+      "Add a Calculation Matrix from the canvas rail.",
+      "Drag or type one or more vector formulas into Rows and Columns.",
+      "Write the one shared cell formula that combines the current row and column values.",
+    ],
+    surfaces: ["Calculation Matrix", "Top formula bar", "Vector drag"],
+    related: ["Lists, arrays, vectors, and series", "Shapes do not imply relationships"],
+  },
+  {
     id: "rule.order",
     scopes: ["guide", "formulas"],
     kind: "Rule",

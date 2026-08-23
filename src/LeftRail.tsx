@@ -3,6 +3,7 @@ import {
   FileCog,
   FolderPlus,
   Frame,
+  Grid3X3,
   Library,
   Network,
   SquareFunction,
@@ -27,6 +28,7 @@ export function LeftRail({
   addBlock,
   addVariable,
   addText,
+  addCalculationMatrix,
   addEmptyFrame,
   addContainer,
   viewCount,
@@ -39,6 +41,7 @@ export function LeftRail({
   addBlock: (position?: { x: number; y: number }) => unknown;
   addVariable: (position?: { x: number; y: number }) => unknown;
   addText: (position?: { x: number; y: number }) => unknown;
+  addCalculationMatrix: (position?: { x: number; y: number }) => unknown;
   addEmptyFrame: (position?: { x: number; y: number }) => unknown;
   addContainer: (position?: { x: number; y: number }) => unknown;
   viewCount: number;
@@ -110,6 +113,14 @@ export function LeftRail({
         >
           <Type size={19} />
           <span>Text</span>
+        </button>
+        <button
+          className="rail-button"
+          onClick={() => void addCalculationMatrix()}
+          title="Two vector axes and one shared formula evaluated across every combination"
+        >
+          <Grid3X3 size={19} />
+          <span>Matrix</span>
         </button>
         <button
           className="rail-button"

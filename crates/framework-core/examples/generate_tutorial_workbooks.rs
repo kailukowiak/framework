@@ -1,7 +1,7 @@
 use framework_core::{
-    ColumnFormat, ColumnFormatScale, ColumnFormatStyle, DataObject, DerivedSort, Document,
-    ExistingFormulaInput, FrameJoinType, FrameStepInput, JoinColumnInput, Operation,
-    PivotAggregate, Store, column_id,
+    CalculationMatrixFormulaInput, ColumnFormat, ColumnFormatScale, ColumnFormatStyle, DataObject,
+    DerivedSort, Document, ExistingFormulaInput, FrameJoinType, FrameStepInput, JoinColumnInput,
+    Operation, PivotAggregate, Store, column_id,
 };
 use std::path::{Path, PathBuf};
 
@@ -41,18 +41,16 @@ fn text_id(store: &Store, name: &str) -> String {
         .unwrap_or_else(|| panic!("tutorial text {name:?} exists"))
 }
 
-fn container_id(store: &Store, name: &str) -> String {
+fn calculation_matrix_id(store: &Store, name: &str) -> String {
     store
         .document()
         .objects
         .iter()
         .find_map(|object| match object {
-            DataObject::Container(container) if container.name == name => {
-                Some(container.id.clone())
-            }
+            DataObject::CalculationMatrix(matrix) if matrix.name == name => Some(matrix.id.clone()),
             _ => None,
         })
-        .unwrap_or_else(|| panic!("tutorial container {name:?} exists"))
+        .unwrap_or_else(|| panic!("tutorial calculation matrix {name:?} exists"))
 }
 
 fn column_id_named(frame: &framework_core::FrameObject, name: &str) -> String {
@@ -672,7 +670,9 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
 fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(output)?;
-    let mut store = Store::new_tutorial(Document::blank("Vectors, dates, and visual joins"));
+    let mut store = Store::new_tutorial(Document::blank(
+        "Vectors, Calculation Matrix, dates, and visual joins",
+    ));
     store.apply(Operation::AddText { x: 70.0, y: 70.0 })?;
     let guide_id = text_id(&store, "Text");
     store.apply(Operation::RenameObject {
@@ -730,16 +730,10 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
         x: 1410.0,
         y: 70.0,
     })?;
-    store.apply(Operation::AddContainer {
-        name: "Scenario vectors".into(),
-        x: 1410.0,
-        y: 470.0,
-        container_id: None,
-    })?;
     store.apply(Operation::AddBlock {
         name: "Checks".into(),
         x: 1410.0,
-        y: 740.0,
+        y: 470.0,
     })?;
     let start = output.join("vectors-and-joins-start.fw");
     store.save(&start)?;
@@ -800,7 +794,7 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
             .collect(),
         name: "Scheduled launches".into(),
         x: 720.0,
-        y: 930.0,
+        y: 1320.0,
     })?;
     let scheduled = frame(&store, "Scheduled launches");
     store.apply(Operation::SetFramePipeline {
@@ -822,42 +816,74 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
         })?;
     }
 
-    let vector_container = container_id(&store, "Scenario vectors");
-    store.apply(Operation::AddSeries {
+    store.apply(Operation::AddVariable {
         name: "Scenario".into(),
-        values: "Base\nUpside\nDownside".into(),
-        x: 0.0,
-        y: 0.0,
-        container_id: Some(vector_container.clone()),
+        formula: "[\"Base\", \"Upside\", \"Downside\"]".into(),
+        x: 1410.0,
+        y: 560.0,
     })?;
-    store.apply(Operation::AddSeries {
+    store.apply(Operation::AddVariable {
         name: "Multiplier".into(),
-        values: "1\n1.15\n0.85".into(),
-        x: 0.0,
-        y: 0.0,
-        container_id: Some(vector_container),
+        formula: "[1, 1.15, 0.85]".into(),
+        x: 1410.0,
+        y: 630.0,
     })?;
-    store.apply(Operation::AddGeneratorFrame {
-        name: "Scenarios".into(),
-        formula: "`Scenario vectors`.`Scenario`".into(),
-        column_name: Some("Scenario".into()),
+    store.apply(Operation::AddVariable {
+        name: "Quarter".into(),
+        formula: "[\"Q1\", \"Q2\", \"Q3\", \"Q4\"]".into(),
+        x: 1410.0,
+        y: 700.0,
+    })?;
+    store.apply(Operation::AddVariable {
+        name: "Base revenue".into(),
+        formula: "[100, 110, 120, 130]".into(),
+        x: 1410.0,
+        y: 770.0,
+    })?;
+    store.apply(Operation::AddCalculationMatrix {
+        name: "Scenario × Quarter".into(),
         x: 720.0,
-        y: 650.0,
+        y: 930.0,
     })?;
-    let scenarios = frame(&store, "Scenarios");
-    store.apply(Operation::SetFramePipeline {
-        frame_id: scenarios.id.clone(),
-        steps: vec![FrameStepInput::ZipVector {
-            output_column_id: column_id("Multiplier"),
-            name: "Multiplier".into(),
-            vector: "`Scenario vectors`.`Multiplier`".into(),
-        }],
+    let calculation_matrix_id = calculation_matrix_id(&store, "Scenario × Quarter");
+    store.apply(Operation::SetCalculationMatrix {
+        object_id: calculation_matrix_id,
+        rows: vec![
+            CalculationMatrixFormulaInput {
+                id: None,
+                name: "Scenario".into(),
+                formula: "`Scenario`".into(),
+            },
+            CalculationMatrixFormulaInput {
+                id: None,
+                name: "Multiplier".into(),
+                formula: "`Multiplier`".into(),
+            },
+        ],
+        columns: vec![
+            CalculationMatrixFormulaInput {
+                id: None,
+                name: "Quarter".into(),
+                formula: "`Quarter`".into(),
+            },
+            CalculationMatrixFormulaInput {
+                id: None,
+                name: "Base revenue".into(),
+                formula: "`Base revenue`".into(),
+            },
+        ],
+        body: "`Base revenue` * `Multiplier`".into(),
     })?;
 
     store.apply(Operation::SetBlockSource {
         block_id: block_id(&store, "Checks"),
         source: "Rows scheduled = `Scheduled launches`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()".into(),
         editing: None,
+    })?;
+    store.apply(Operation::MoveView {
+        view_id: view_id(&store, &block_id(&store, "Checks")),
+        x: 1410.0,
+        y: 930.0,
     })?;
     store.apply(Operation::ResizeView {
         view_id: view_id(&store, &launch.id),
@@ -882,9 +908,52 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
     assert_eq!(launch_page.total_rows, 6);
     assert_eq!(launch_page.rows[0][3], "2026-09-01");
     assert_eq!(launch_page.rows[5][3], "2027-02-01");
-    let scenario_page = reloaded.get_frame_page(&scenarios.id, 0, 20)?;
-    assert_eq!(scenario_page.total_rows, 3);
-    assert_eq!(scenario_page.rows[1], vec!["Upside", "1.15"]);
+    let matrix = reloaded
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::CalculationMatrix(matrix) if matrix.name == "Scenario × Quarter" => {
+                Some(matrix)
+            }
+            _ => None,
+        })
+        .expect("the answer key contains its Calculation Matrix");
+    assert_eq!(matrix.rows.len(), 2);
+    assert_eq!(matrix.columns.len(), 2);
+    assert_eq!(matrix.body.source, "`Base revenue` * `Multiplier`");
+    let matrix_id = matrix.id.clone();
+    let view = reloaded.view();
+    let computed_matrix = &view.computed_calculation_matrices[&matrix_id];
+    assert_eq!(computed_matrix.row_tuples.len(), 3);
+    assert_eq!(computed_matrix.column_tuples.len(), 4);
+    assert_eq!(computed_matrix.row_tuples[0].values, ["Base", "1"]);
+    assert_eq!(computed_matrix.column_tuples[0].values, ["Q1", "100"]);
+    assert_eq!(computed_matrix.cells.len(), 3);
+    assert!(computed_matrix.cells.iter().all(|row| row.len() == 4));
+    assert_eq!(computed_matrix.cells[0][0].display, "100.00");
+    assert_eq!(computed_matrix.cells[1][3].display, "149.50");
+    assert_eq!(computed_matrix.cells[2][1].display, "93.50");
+    assert_eq!(computed_matrix.output.as_ref().unwrap().rows.len(), 12);
+    for (name, count) in [
+        ("Scenario", 3),
+        ("Multiplier", 3),
+        ("Quarter", 4),
+        ("Base revenue", 4),
+    ] {
+        let id = reloaded
+            .document()
+            .objects
+            .iter()
+            .find_map(|object| match object {
+                DataObject::Result(result) if result.variable && result.name == name => {
+                    Some(result.id.clone())
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("the answer key contains the {name} variable"));
+        assert_eq!(view.computed_results[&id].value_count, count);
+    }
     let joined_page = reloaded.get_frame_page(&scheduled.id, 0, 20)?;
     assert_eq!(joined_page.total_rows, 6);
     assert_eq!(joined_page.rows[0][7], "30000");

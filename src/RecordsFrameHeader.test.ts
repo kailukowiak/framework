@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { filterUsesColumn, vectorTargetColumns } from "./RecordsFrameHeader";
+import {
+  filterUsesColumn,
+  vectorDropMode,
+  vectorTargetColumns,
+} from "./RecordsFrameHeader";
 import { lookupDragColumnIds } from "./useFrameCardInteraction";
 
 describe("filterUsesColumn", () => {
@@ -30,6 +34,20 @@ describe("vectorTargetColumns", () => {
         3
       )
     ).toEqual(columns);
+  });
+});
+
+describe("vectorDropMode", () => {
+  it("pairs an equal-row-length vector dropped on one column", () => {
+    expect(vectorDropMode(1, 3)).toBe("pair");
+  });
+
+  it("keeps an explicit multi-column vector as a broadcast", () => {
+    expect(vectorDropMode(3, 3)).toBe("apply");
+  });
+
+  it("keeps a single-value vector in the apply lane", () => {
+    expect(vectorDropMode(1, 1)).toBe("apply");
   });
 });
 

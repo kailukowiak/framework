@@ -14,3 +14,5 @@ pub use frame::*;
 pub use layout::*;
 pub use plot::*;
 pub use value::*;
+pub mod calculation_matrix;
+pub use calculation_matrix::*;

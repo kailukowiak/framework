@@ -12,6 +12,7 @@ import {
   Frame,
   GitBranch,
   GitMerge,
+  Grid3X3,
   KeyRound,
   ListOrdered,
   Plus,
@@ -78,6 +79,10 @@ import { NewDocumentDialog } from "./NewDocumentDialog";
 import { DatasetDialog } from "./DatasetDialog";
 import { ExcelImportDialog, type ExcelRangeSelection } from "./ExcelImportDialog";
 import { InsertListDialog } from "./InsertListDialog";
+import {
+  VectorCombinePrompt,
+  type VectorCombineState,
+} from "./VectorCombinePrompt";
 import { ImportChoiceDialog } from "./ImportChoiceDialog";
 import { ProjectPanel } from "./ProjectPanel";
 import { BlockCard } from "./BlockCard";
@@ -101,6 +106,7 @@ import {
 } from "./FrameGrid";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
 import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
+import { combineVectorWithFrame } from "./lib/vectorCombine";
 import {
   useActiveFormulaEditorCommands,
   useActiveFormulaEditorPresence,
@@ -181,6 +187,9 @@ export default function App() {
     useState<CellFormulaRequest | null>(null);
   const cellFormulaToken = useRef(0);
   const [insertList, setInsertList] = useState<{ containerId: string } | null>(null);
+  const [vectorCombine, setVectorCombine] = useState<VectorCombineState | null>(
+    null
+  );
   /**
    * Which block line ⌘J last asked for the cursor, and a token that counts the
    * asks. The token is what makes a second ⌘J at the same line mean anything:
@@ -371,6 +380,38 @@ export default function App() {
     setSelection,
     setInspectorSection,
   });
+
+  const chooseVectorLayout = useCallback(
+    async (mode: "hstack" | "vstack") => {
+      if (!document || !vectorCombine) return;
+      const choice = vectorCombine;
+      setVectorCombine(null);
+      if (mode === "hstack") {
+        requestPairVector(
+          choice.frameId,
+          choice.vector.name,
+          choice.vector.formula,
+          choice.vector.length,
+          choice.viewId
+        );
+        return;
+      }
+      try {
+        const applyAndShow = async (operation: Operation) => {
+          const next = await applyOperation(operation);
+          setDocument(next);
+          return next;
+        };
+        await combineVectorWithFrame(document, choice, applyAndShow);
+        setSelection({ objectId: choice.frameId, viewId: choice.viewId });
+        setInspectorSection("wrangle");
+        setError(null);
+      } catch (reason) {
+        setError(String(reason).replace(/^Error:\s*/, ""));
+      }
+    },
+    [document, requestPairVector, vectorCombine]
+  );
 
   const deleteContextColumn = () => {
     if (!document || !contextFrame || !contextColumn) return;
@@ -841,6 +882,13 @@ export default function App() {
       ...(position ?? insertPosition()),
     });
 
+  const addCalculationMatrix = (position?: { x: number; y: number }) =>
+    run({
+      type: "addCalculationMatrix",
+      name: nextObjectName(document?.objects ?? [], "Calculation Matrix"),
+      ...(position ?? insertPosition()),
+    });
+
   /** A card of prose: markdown, with `{{…}}` holes that print live values. */
   const addText = (position?: { x: number; y: number }) =>
     run({
@@ -1069,6 +1117,7 @@ export default function App() {
         addBlock={addBlock}
         addVariable={addVariable}
         addText={addText}
+        addCalculationMatrix={addCalculationMatrix}
         addEmptyFrame={addEmptyFrame}
         addContainer={addContainer}
         viewCount={document.views.length}
@@ -1293,6 +1342,7 @@ export default function App() {
                 computedResults={document.computedResults}
                 computedBlocks={document.computedBlocks}
                 computedTexts={document.computedTexts}
+                computedCalculationMatrices={document.computedCalculationMatrices}
                 scratchFocusToken={
                   object.id === scratchTargetId ? scratchFocus?.token : undefined
                 }
@@ -1336,15 +1386,28 @@ export default function App() {
                     view.id
                   )
                 }
-                onPairVector={(frame, name, vector, expectedLength) =>
+                onPairVector={(frame, name, vector, expectedLength) => {
+                  const computed = document.computedFrames[frame.id];
+                  if (
+                    frame.columns.length === 1 &&
+                    computed?.generatorRule &&
+                    (computed.steps?.length ?? 0) === 0
+                  ) {
+                    setVectorCombine({
+                      frameId: frame.id,
+                      viewId: view.id,
+                      vector: { name, formula: vector, length: expectedLength },
+                    });
+                    return;
+                  }
                   requestPairVector(
                     frame.id,
                     name,
                     vector,
                     expectedLength,
                     view.id
-                  )
-                }
+                  );
+                }}
                 onJoinColumns={(
                   primaryFrameId,
                   primaryColumnId,
@@ -1514,6 +1577,14 @@ export default function App() {
             run(operation);
           }}
           onPickFile={pickDataFile}
+        />
+      )}
+
+      {vectorCombine && (
+        <VectorCombinePrompt
+          state={vectorCombine}
+          onChoose={(mode) => void chooseVectorLayout(mode)}
+          onClose={() => setVectorCombine(null)}
         />
       )}
 
@@ -1914,6 +1985,18 @@ export default function App() {
               >
                 <Type size={14} />
                 <span>Add text here</span>
+              </button>
+              <button
+                onClick={() => {
+                  setContextMenu(null);
+                  void addCalculationMatrix({
+                    x: contextMenu.canvasX,
+                    y: contextMenu.canvasY,
+                  });
+                }}
+              >
+                <Grid3X3 size={14} />
+                <span>Add calculation matrix here</span>
               </button>
               <button
                 onClick={() => {

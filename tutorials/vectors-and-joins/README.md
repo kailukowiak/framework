@@ -1,9 +1,10 @@
-# Vectors, dates, and visual joins
+# Vectors, Calculation Matrix, dates, and visual joins
 
-This final tutorial builds one small launch model three ways people already
-understand from a spreadsheet: continue a visible date pattern down a table,
-put two vectors beside one another, and drag lookup columns onto a matching key.
-The saved result remains a FrameWork model rather than a pasted answer.
+This final tutorial builds one small launch model with four spreadsheet-shaped
+gestures: continue a visible date pattern down a table, write four standalone
+vectors, run a calculation across every combination of them, and drag lookup
+columns onto a matching key. The saved result remains a FrameWork model rather
+than a pasted answer.
 
 This same guide is rendered as the **Tutorial walkthrough** markdown card on
 the left side of both the Start workbook and the Answer key.
@@ -11,10 +12,10 @@ the left side of both the Start workbook and the Answer key.
 It demonstrates:
 
 - an Excel-like two-cell gesture that becomes a row-count-aware date formula;
-- why a free-standing vector has its own length while a table-bound vector uses
+- why a standalone vector has its own length while a table-bound vector uses
   `frame.len()`;
-- creating a one-column table by dragging a vector to empty canvas;
-- pairing a second, equal-length vector on the table's right edge;
+- writing a one-dimensional vector as one compact variable;
+- using Calculation Matrix as a visual nested `for each` loop;
 - selecting lookup columns and dragging them onto a destination key;
 - full-dataset match and duplicate diagnostics before a join is created;
 - live propagation when the source table gains a row.
@@ -22,13 +23,14 @@ It demonstrates:
 ## Files
 
 - [`vectors-and-joins-start.fw`](vectors-and-joins-start.fw) — launch inputs, a
-  linked plan, product catalog, empty vector container, and empty checks block.
+  linked plan, product catalog, and an empty checks block.
 - [`vectors-and-joins-finished.fw`](vectors-and-joins-finished.fw) — the answer
-  key with the date series, two-vector table, validated join, and live checks.
+  key with the date series, four variables, Calculation Matrix, validated join,
+  and live checks.
 
 ## Before you begin
 
-Allow about 20 minutes. In **Data Library**, choose **Create tutorials** if the
+Allow about 25 minutes. In **Data Library**, choose **Create tutorials** if the
 lesson is not present, open the answer key for one minute, then make every
 change in the Start workbook. Repository contributors can instead open the two
 linked `.fw` files with **File → Open**.
@@ -38,7 +40,7 @@ The canvas begins with four useful objects:
 - `Launch inputs` owns the six rows you can edit;
 - `Launch plan` is a live table made from those inputs;
 - `Product catalog` has one row per SKU but is not marked unique yet;
-- `Scenario vectors` is an empty container where the two vectors will live.
+- `Checks` is an empty Scratchwork block for the final control totals.
 
 That source/plan split is deliberate. A calculated table reads its rows from
 upstream. Adding a row to `Launch inputs` near the end will therefore prove that
@@ -71,51 +73,66 @@ The fill dialog writes the second form by default. It also records the sort,
 because a row-wise series without an order would attach dates to accidental
 positions.
 
-## 2. Make two literal vectors
+## 2. Make four standalone vectors
 
-In `Scenario vectors`, click **Vector** and create this first vector:
-
-- Name: `Scenario`
-- Values:
+Click **Variable** in the left rail and replace the starter name and formula:
 
 ```text
-Base, Upside, Downside
+Scenario = ["Base", "Upside", "Downside"]
 ```
 
-Click **Vector** again and create the second vector:
-
-- Name: `Multiplier`
-- Values:
+Click **Variable** again and enter:
 
 ```text
-1, 1.15, 0.85
+Multiplier = [1, 1.15, 0.85]
 ```
 
-Checkpoint: both vector cards say **3 values**. Scenario is text and Multiplier
-is numeric. The values wrap across each card; pasted spreadsheet columns,
-`[1, 1.15, 0.85]`, NumPy `array(...)`, and R `c(...)` input work too.
+Add two more variables:
 
-## 3. Create a table from the two vectors
+```text
+Quarter = ["Q1", "Q2", "Q3", "Q4"]
+Base revenue = [100, 110, 120, 130]
+```
 
-1. Drag the **3 values** footer on `Scenario` to empty canvas.
-2. Rename the new one-column table `Scenarios`.
-3. Drag the **3 values** footer on `Multiplier` to the `+` edge immediately to
-   the right of the Scenario column.
+Checkpoint: `Scenario` and `Multiplier` each have **3 values**; `Quarter` and
+`Base revenue` each have **4 values**. Every one is a simple one-dimensional
+vector: one name, one formula, and an intentional number of values. None is a
+tiny table, and they do not need a container around them.
 
-Checkpoint:
+## 3. Build a Calculation Matrix
 
-| Scenario | Multiplier |
-|---|---:|
-| Base | 1 |
-| Upside | 1.15 |
-| Downside | 0.85 |
+1. Add a blank **Calculation Matrix** and name it `Scenario × Quarter`.
+2. Drag `Scenario` and `Multiplier` into **Rows**.
+3. Drag `Quarter` and `Base revenue` into **Columns**.
+4. Enter this body formula:
 
-Open **Wrangle** on `Scenarios`. The second gesture is recorded as one compact
-paired-vector step. It is not three copied cell formulas.
+```text
+`Base revenue` * `Multiplier`
+```
 
-Try undo and redo once. Then temporarily add a fourth value to only one source
-vector. The table should report a length mismatch instead of shifting values
-into the wrong rows. Undo that edit before continuing.
+Checkpoint: the matrix has three row tuples, four column tuples, and twelve
+answers:
+
+| Scenario | Multiplier | Q1 · 100 | Q2 · 110 | Q3 · 120 | Q4 · 130 |
+|---|---:|---:|---:|---:|---:|
+| Base | 1 | 100 | 110 | 120 | 130 |
+| Upside | 1.15 | 115 | 126.5 | 138 | 149.5 |
+| Downside | 0.85 | 85 | 93.5 | 102 | 110.5 |
+
+Calculation Matrix is the visual answer to a nested loop:
+
+```text
+for each (Scenario, Multiplier) row:
+    for each (Quarter, Base revenue) column:
+        Base revenue * Multiplier
+```
+
+Rows and columns are independent axes, so every row tuple meets every column
+tuple. Within one axis, fields are zipped: `Scenario` and `Multiplier` describe
+the same three loop items, while `Quarter` and `Base revenue` describe the same
+four. They do not create four Cartesian layers. Nothing is appended below or
+copied into twelve separate formulas. Shorten both column vectors to two values;
+the matrix should immediately become 3 × 2. Undo those edits before continuing.
 
 ## 4. Bring catalog columns over with a visual join
 
@@ -192,12 +209,14 @@ vector or recreating the join.
 
 ## Finish line
 
-You have now used three related but different ideas:
+You have now used four related but different ideas:
 
-1. **A literal vector** is a small named collection with an intentional length.
+1. **A standalone vector** is one named formula with an intentional length.
 2. **A table-bound vector formula** produces one value per current row by using
    `frame.len()` and a declared order.
-3. **A join** matches by key, not by row position, and refuses an unsafe lookup
+3. **A Calculation Matrix** evaluates every combination of its independent row
+   and column axes.
+4. **A join** matches by key, not by row position, and refuses an unsafe lookup
    side until its uniqueness is explicit.
 
 Those distinctions are the guardrails. The gestures stay Excel-simple, while
@@ -208,8 +227,8 @@ the Wrangle steps say what will remain true when the data changes.
 This lesson is expected to work as a manual product smoke test. Capture the
 first broken checkpoint with the template in the parent tutorial README.
 The matching agent smoke scenario is `tools/mcp-smoke/scenarios/vectors-joins`;
-it builds and verifies the same structural promises without pretending MCP can
-perform pointer gestures.
+it builds and verifies the tabular promises without pretending MCP can perform
+the tutorial's pointer gestures.
 
 ## Rebuilding the files
 
@@ -220,5 +239,5 @@ by the desktop and MCP:
 cargo run -p framework-core --example generate_tutorial_workbooks -- vectors-and-joins
 ```
 
-The generator reloads the answer key and proves the date range, paired vector,
-joined revenue, and upstream-row growth.
+The generator reloads the answer key and proves the date range, Calculation
+Matrix, joined revenue, and upstream-row growth.

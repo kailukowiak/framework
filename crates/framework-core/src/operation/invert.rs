@@ -114,6 +114,19 @@ impl Document {
             ReplicatedOperation::SetBlockLines { block_id, lines } => {
                 self.invert_set_block_lines(block_id, lines)?
             }
+            ReplicatedOperation::SetCalculationMatrix { object_id, .. } => {
+                let DataObject::CalculationMatrix(matrix) = self.object(object_id)? else {
+                    return Err(CoreError::InvalidOperation(
+                        "That is not a calculation matrix".into(),
+                    ));
+                };
+                vec![ReplicatedOperation::SetCalculationMatrix {
+                    object_id: object_id.clone(),
+                    rows: matrix.rows.clone(),
+                    columns: matrix.columns.clone(),
+                    body: matrix.body.clone(),
+                }]
+            }
 
             // Inverting to the *effective* segments rather than the stored
             // ones means undo restores what the card said even when what it

@@ -659,7 +659,7 @@ export function FrameCard({
         )
       : null;
   const { frameColumnDrop, beginFrameColumnDrag } = useFrameColumnDrag(
-    frame, selectionRange, onRearrangeColumns, onJoinColumns
+    frame, totalRows, selectionRange, onRearrangeColumns, onJoinColumns
   );
 
   // For the records-as-rows paged path, displayedRows *is* the visible

@@ -52,17 +52,36 @@ export function beginVectorPointerDrag(event: PointerEvent, payload: VectorDrag)
   const start = { x: event.clientX, y: event.clientY };
   let moved = false;
   let marked: HTMLElement | null = null;
+  let markedEdge: HTMLTableElement | null = null;
+  let preview: HTMLElement | null = null;
 
   const clearMark = () => {
     marked?.classList.remove("vector-column-drop");
+    markedEdge?.classList.remove("vector-edge-drop");
     marked = null;
+    markedEdge = null;
+  };
+  const removePreview = () => {
+    preview?.remove();
+    preview = null;
   };
   const targetAt = (x: number, y: number) => {
     const under = document.elementFromPoint(x, y);
+    const declaredTarget = under?.closest<HTMLElement>("[data-vector-drop-target]");
+    if (declaredTarget) return declaredTarget;
     const tableTarget = under?.closest<HTMLElement>(
       ".column-header, .frame-edge-header"
     );
     if (tableTarget) return tableTarget;
+    // The visible right edge runs down the full table, while its drop handler
+    // lives on the header. Treat every edge cell as that same target. Requiring
+    // a precise hit on the 26px header made the tutorial's "drop on the +
+    // edge" gesture look broken anywhere below the first row.
+    const edgeCell = under?.closest<HTMLElement>(".frame-edge-cell");
+    const edgeHeader = edgeCell
+      ?.closest("table")
+      ?.querySelector<HTMLElement>(".frame-edge-header");
+    if (edgeHeader) return edgeHeader;
     const viewport = under?.closest<HTMLElement>(".canvas-viewport");
     return viewport && !under?.closest(".canvas-object") ? viewport : null;
   };
@@ -77,10 +96,15 @@ export function beginVectorPointerDrag(event: PointerEvent, payload: VectorDrag)
     source?.classList.add("vector-dragging");
     clearMark();
     const target = targetAt(moveEvent.clientX, moveEvent.clientY);
-    if (target?.matches(".column-header, .frame-edge-header")) {
+    if (target?.matches(".column-header, .frame-edge-header, [data-vector-drop-target]")) {
       target.classList.add("vector-column-drop");
       marked = target;
+      if (target.matches(".frame-edge-header")) {
+        markedEdge = target.closest("table");
+        markedEdge?.classList.add("vector-edge-drop");
+      }
     }
+    preview = updateVectorDragPreview(preview, payload, moveEvent, target);
   };
   const cleanup = () => {
     window.removeEventListener("pointermove", move);
@@ -88,6 +112,7 @@ export function beginVectorPointerDrag(event: PointerEvent, payload: VectorDrag)
     window.removeEventListener("pointercancel", cancel);
     source?.classList.remove("vector-dragging");
     clearMark();
+    removePreview();
   };
   const end = (upEvent: globalThis.PointerEvent) => {
     const target = moved ? targetAt(upEvent.clientX, upEvent.clientY) : null;
@@ -98,6 +123,52 @@ export function beginVectorPointerDrag(event: PointerEvent, payload: VectorDrag)
   window.addEventListener("pointermove", move, { passive: false });
   window.addEventListener("pointerup", end);
   window.addEventListener("pointercancel", cancel);
+}
+
+export function updateVectorDragPreview(
+  preview: HTMLElement | null,
+  payload: VectorDrag,
+  pointer: Pick<PointerEvent, "clientX" | "clientY">,
+  target: HTMLElement | null
+): HTMLElement {
+  const next = preview ?? document.createElement("div");
+  if (!preview) {
+    next.className = "vector-drag-preview";
+    next.setAttribute("role", "presentation");
+    document.body.append(next);
+  }
+  const noun = payload.length === 1 ? "value" : "values";
+  next.replaceChildren(
+    Object.assign(document.createElement("strong"), { textContent: payload.name }),
+    Object.assign(document.createElement("span"), {
+      textContent: `${payload.length} ${noun} · ${vectorDragAction(target, payload.length)}`,
+    })
+  );
+  next.style.translate = `${pointer.clientX + 14}px ${pointer.clientY + 14}px`;
+  next.dataset.target = target ? "true" : "false";
+  return next;
+}
+
+function vectorDragAction(target: HTMLElement | null, vectorLength: number) {
+  return target?.dataset.vectorDropAction ?? standardVectorDragAction(target, vectorLength);
+}
+
+function standardVectorDragAction(target: HTMLElement | null, vectorLength: number) {
+  if (target?.dataset.vectorCombine === "true") return "Choose layout";
+  const selectedColumns = Number(target?.dataset.vectorSelectedColumns ?? 0);
+  const columnsAfter = Number(target?.dataset.vectorColumnsAfter ?? 0);
+  const targetColumns =
+    selectedColumns > 0 && selectedColumns % vectorLength === 0
+      ? selectedColumns
+      : Math.min(columnsAfter, vectorLength);
+  if (
+    target?.matches(".frame-edge-header") ||
+    (target?.matches(".column-header") && targetColumns === 1 && vectorLength > 1)
+  )
+    return "Add column";
+  if (target?.matches(".column-header")) return "Use in columns";
+  if (target?.matches(".canvas-viewport")) return "New table";
+  return "Drag to a table or canvas";
 }
 
 /** A small DataTransfer-shaped envelope for the existing React drop handlers. */
@@ -125,7 +196,7 @@ function vectorTransfer(payload: VectorDrag): DataTransfer {
   return transfer;
 }
 
-function dispatchVectorDrop(
+export function dispatchVectorDrop(
   target: HTMLElement,
   payload: VectorDrag,
   pointer: PointerEvent

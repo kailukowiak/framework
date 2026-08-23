@@ -43,6 +43,7 @@ function documentOf(
     computedResults: {},
     computedBlocks: {},
     computedTexts: {},
+    computedCalculationMatrices: {},
     formulaFunctions: [],
     canUndo: false,
     canRedo: false,

@@ -1,6 +1,6 @@
 use framework_core::{
     ComputedTextSegment, DataObject, DataType, ExistingFormulaInput, FRAMEWORK_TUTORIAL_VERSION,
-    FrameObject, FrameStep, FrameStepInput, Operation, Store, inspect_excel_workbook,
+    FrameObject, FrameStepInput, Operation, Store, inspect_excel_workbook,
 };
 use std::collections::BTreeMap;
 use std::fs;
@@ -424,6 +424,11 @@ fn vectors_and_joins_tutorial_grows_dates_and_lookup_results_from_its_source() {
     assert!(
         rendered_walkthrough
             .source
+            .contains("## 3. Build a Calculation Matrix")
+    );
+    assert!(
+        rendered_walkthrough
+            .source
             .contains("## 4. Bring catalog columns over")
     );
     assert_eq!(frame_named(&start, "Launch inputs").rows.len(), 6);
@@ -442,14 +447,62 @@ fn vectors_and_joins_tutorial_grows_dates_and_lookup_results_from_its_source() {
     let source = frame_named(&finished, "Launch inputs").clone();
     let launch = frame_named(&finished, "Launch plan").clone();
     let scheduled = frame_named(&finished, "Scheduled launches").clone();
-    let scenarios = frame_named(&finished, "Scenarios");
     let catalog = frame_named(&finished, "Product catalog");
-    assert!(
-        scenarios
-            .steps
+    let matrix = finished
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::CalculationMatrix(matrix) if matrix.name == "Scenario × Quarter" => {
+                Some(matrix)
+            }
+            _ => None,
+        })
+        .expect("the finished tutorial contains its Calculation Matrix");
+    assert_eq!(matrix.rows.len(), 2);
+    assert_eq!(matrix.rows[0].name, "Scenario");
+    assert_eq!(matrix.rows[0].source, "`Scenario`");
+    assert_eq!(matrix.rows[1].name, "Multiplier");
+    assert_eq!(matrix.rows[1].source, "`Multiplier`");
+    assert_eq!(matrix.columns.len(), 2);
+    assert_eq!(matrix.columns[0].name, "Quarter");
+    assert_eq!(matrix.columns[0].source, "`Quarter`");
+    assert_eq!(matrix.columns[1].name, "Base revenue");
+    assert_eq!(matrix.columns[1].source, "`Base revenue`");
+    assert_eq!(matrix.body.source, "`Base revenue` * `Multiplier`");
+    assert!(matrix.body.error.is_none());
+    let matrix_id = matrix.id.clone();
+    let view = finished.view();
+    let computed_matrix = &view.computed_calculation_matrices[&matrix_id];
+    assert_eq!(computed_matrix.row_tuples.len(), 3);
+    assert_eq!(computed_matrix.column_tuples.len(), 4);
+    assert_eq!(computed_matrix.row_tuples[0].values, ["Base", "1"]);
+    assert_eq!(computed_matrix.column_tuples[0].values, ["Q1", "100"]);
+    assert_eq!(computed_matrix.cells.len(), 3);
+    assert!(computed_matrix.cells.iter().all(|row| row.len() == 4));
+    assert_eq!(computed_matrix.cells[0][0].display, "100.00");
+    assert_eq!(computed_matrix.cells[1][3].display, "149.50");
+    assert_eq!(computed_matrix.cells[2][1].display, "93.50");
+    assert_eq!(computed_matrix.output.as_ref().unwrap().rows.len(), 12);
+    for (name, count) in [
+        ("Scenario", 3),
+        ("Multiplier", 3),
+        ("Quarter", 4),
+        ("Base revenue", 4),
+    ] {
+        let id = finished
+            .document()
+            .objects
             .iter()
-            .any(|step| matches!(step, FrameStep::ZipVector { .. }))
-    );
+            .find_map(|object| match object {
+                DataObject::Result(result) if result.variable && result.name == name => {
+                    Some(result.id.clone())
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("the finished tutorial contains the {name} variable"));
+        assert_eq!(view.computed_results[&id].value_count, count);
+    }
     assert_eq!(catalog.unique_keys.len(), 1);
 
     let launch_page = finished.get_frame_page(&launch.id, 0, 20).unwrap();

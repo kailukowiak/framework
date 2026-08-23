@@ -1,6 +1,7 @@
 mod common;
 
 mod blocks;
+mod calculation_matrix;
 mod categories;
 mod collaboration;
 mod column_fill_editing;

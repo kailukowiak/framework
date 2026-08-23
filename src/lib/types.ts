@@ -51,6 +51,7 @@ export type { ColumnFormatScale } from "./bindings/ColumnFormatScale";
 export type { ColumnFormatStyle } from "./bindings/ColumnFormatStyle";
 export type { CompletionResult } from "./bindings/CompletionResult";
 export type { ComputedBlock } from "./bindings/ComputedBlock";
+export type { ComputedCalculationMatrix } from "./bindings/ComputedCalculationMatrix";
 export type { ComputedBlockLine } from "./bindings/ComputedBlockLine";
 export type { ComputedCell } from "./bindings/ComputedCell";
 export type { ComputedMaterialization } from "./bindings/ComputedMaterialization";
@@ -93,6 +94,11 @@ export type { FrameStyleColorScale } from "./bindings/FrameStyleColorScale";
 export type { FrameStyleScaleProperty } from "./bindings/FrameStyleScaleProperty";
 export type { FrameStyleTarget } from "./bindings/FrameStyleTarget";
 export type { UniqueKeyConstraint } from "./bindings/UniqueKeyConstraint";
+export type { CalculationMatrixAxisFormula } from "./bindings/CalculationMatrixAxisFormula";
+export type { CalculationMatrixBody } from "./bindings/CalculationMatrixBody";
+export type { CalculationMatrixFormulaInput } from "./bindings/CalculationMatrixFormulaInput";
+export type { CalculationMatrixOutput } from "./bindings/CalculationMatrixOutput";
+export type { CalculationMatrixTuple } from "./bindings/CalculationMatrixTuple";
 
 // The rest of the model, exported so that nothing in the mirror is reachable
 // only by reaching into `bindings/` directly. These are the pieces the types
@@ -146,6 +152,7 @@ export type { DerivedSort as SortKey } from "./bindings/DerivedSort";
 // ---------------------------------------------------------------------------
 
 import type { BlockObject as BlockObjectFields } from "./bindings/BlockObject";
+import type { CalculationMatrixObject as CalculationMatrixObjectFields } from "./bindings/CalculationMatrixObject";
 import type { ContainerObject as ContainerObjectFields } from "./bindings/ContainerObject";
 import type { PlotObject as PlotObjectFields } from "./bindings/PlotObject";
 import type { ResultObject as ResultObjectFields } from "./bindings/ResultObject";
@@ -182,6 +189,11 @@ export type FrameObject = { kind: "frame" } & FrameObjectFields;
 export type TextObject = { kind: "text" } & TextObjectFields;
 
 export type PlotObject = { kind: "plot" } & PlotObjectFields;
+
+/** Two vector axes and one formula evaluated over their cross-product. */
+export type CalculationMatrixObject = {
+  kind: "calculationMatrix";
+} & CalculationMatrixObjectFields;
 
 /**
  * One line of a formula block. `formula` is the persisted expression tree,

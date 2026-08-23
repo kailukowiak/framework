@@ -21,6 +21,7 @@ import {
   scalarFormulaReferences,
 } from "./ScalarCards";
 import { TextCard } from "./TextCard";
+import { CalculationMatrixCanvasCard } from "./CalculationMatrixCard";
 import {
   CANVAS_OUTLINE_ZOOM,
   outlineDetail,
@@ -33,6 +34,7 @@ import type {
   CanvasView,
   Column,
   ComputedBlock,
+  ComputedCalculationMatrix,
   ComputedFrame,
   ComputedResult,
   ComputedText,
@@ -252,6 +254,7 @@ export function CanvasObject({
   computedResults,
   computedBlocks,
   computedTexts,
+  computedCalculationMatrices,
   scratchFocusToken,
   scratchworkInDrawer,
   formulaFunctions,
@@ -289,6 +292,7 @@ export function CanvasObject({
   computedResults: Record<string, ComputedResult>;
   computedBlocks: Record<string, ComputedBlock>;
   computedTexts: Record<string, ComputedText>;
+  computedCalculationMatrices: Record<string, ComputedCalculationMatrix>;
   /** Set on the block ⌘J is pointing at, and bumped on every press. */
   scratchFocusToken?: number;
   /** The canonical editor is mounted under the formula bar for this block. */
@@ -342,6 +346,7 @@ export function CanvasObject({
   dataRefreshRevision: number;
 }) {
   const standaloneVariable = object.kind === "result" && object.variable;
+  const kindLabel = object.kind === "calculationMatrix" ? "calculation matrix" : object.kind;
   const [position, setPosition] = useState({ x: view.x, y: view.y });
   const [size, setSize] = useState({ width: view.width, height: view.height });
   useEffect(() => setPosition({ x: view.x, y: view.y }), [view.x, view.y]);
@@ -521,7 +526,7 @@ export function CanvasObject({
           against the true one. The body drags in its place. */}
       {!showOutline && !standaloneVariable && (
         <div className="object-drag-handle" onPointerDown={beginDrag}>
-          <span className="object-type">{isCollapsed ? object.name : object.kind}</span>
+          <span className="object-type">{isCollapsed ? object.name : kindLabel}</span>
           <span className="object-handle-actions">
             <CanvasCardWindowControls
               name={object.name}
@@ -665,6 +670,16 @@ export function CanvasObject({
           onOperation={onOperation}
         />
       )}
+      {!isCollapsed && object.kind === "calculationMatrix" && (
+        <CalculationMatrixCanvasCard
+          matrix={object}
+          computed={computedCalculationMatrices[object.id]}
+          objects={objects}
+          computedFrames={computedFrames}
+          formulaFunctions={formulaFunctions}
+          onOperation={onOperation}
+        />
+      )}
       {!showOutline && !isCollapsed && object.kind === "plot" && sourceFrame && sourceComputed && (
         <PlotCard
           plot={object}
@@ -692,7 +707,7 @@ export function CanvasObject({
           <button
             className={standaloneVariable ? "variable-resize-handle" : "frame-resize-handle"}
             aria-label={`Resize ${object.name}`}
-            title={standaloneVariable ? "Drag to resize variable" : `Drag to resize ${object.kind}`}
+            title={standaloneVariable ? "Drag to resize variable" : `Drag to resize ${kindLabel}`}
             onPointerDown={beginResize("se")}
           />
         </>

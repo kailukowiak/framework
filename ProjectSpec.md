@@ -801,6 +801,48 @@ What collapses into it:
 
 Four backlog workflows, one primitive plus the already-planned pivot. It also makes the loop's *shape* an inspectable canvas object rather than an invisible consequence of how far someone dragged.
 
+#### Calculation Matrix is the visual nested loop *(decided 2026-08-22)*
+
+`Expand` remains the ordinary long-frame cross-product primitive, and HStack
+and VStack remain explicit ways to combine compatible frame columns or rows.
+A sensitivity grid is nevertheless too common, and too different while it is
+being authored, to disguise as a Frame with an unfinished chain. It begins as
+a **Calculation Matrix** object with three formula surfaces: Rows, Columns,
+and one shared multiline cell formula. Only after that cell formula is valid
+does it expose a resulting frame-shaped output.
+
+Rows and Columns each accept one or more named vector expressions, by typing
+or by the same drag gesture used by Scratchwork, canvas variables, containers,
+and frame columns. Fields within one axis zip by position. A shorter field may
+repeat only when its length divides that axis's longest field evenly; the
+interface never guesses a Cartesian product between fields placed in the same
+axis. The Cartesian product exists only between the completed row tuples and
+the completed column tuples:
+
+```text
+for each row tuple
+    for each column tuple
+        evaluate the cell formula
+```
+
+This distinction matters when Rows contains `Scenario` and `Multiplier`, or
+Columns contains `Metric` and `Base amount`: those pairs describe the fields
+of one loop item, not another loop nested inside it. The cell formula resolves
+their names as the current tuple's values. It is the only calculation surface
+for the grid, uses the normal formula editor and autoformatter, and stays
+multiline by default.
+
+The card may preview the named axes while it is incomplete, but it does not
+emit partial data. With a blank or invalid cell formula the result remains
+blank and the complaint sits inline beside the formula. With a valid formula,
+the card renders the familiar wide grid and keeps the same answer in stable
+long form — row-axis fields, column-axis fields, and one calculated value
+column — so changing a column-axis value does not silently mint or destroy
+formula identities. Exposing that long result as an ordinary downstream frame,
+and an explicit wide conversion when rendered headers must become physical
+columns, can build on this stable boundary without changing the matrix authoring
+model.
+
 #### Build order
 
 This is the historical dependency order that produced the landed surfaces,

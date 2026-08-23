@@ -251,6 +251,7 @@ button:disabled { cursor: default; opacity: .35; }
    a column for the lines to have somewhere to scroll inside. */
 .canvas-object.block-object { min-width: 240px; min-height: 120px; display: flex; flex-direction: column; }
 .canvas-object.text-object { min-width: 360px; min-height: 210px; display: flex; flex-direction: column; }
+.canvas-object.calculationMatrix-object { min-width: 420px; min-height: 260px; display: flex; flex-direction: column; }
 .canvas-object.container-object { min-width: 240px; min-height: 120px; display: flex; flex-direction: column; }
 .canvas-object.variable-object {
   min-width: 250px; min-height: 46px; overflow: visible;
@@ -949,7 +950,7 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .pipeline-broadcast-operator select { width: 30px; height: 24px; padding: 0; border: 0; background: transparent; color: inherit; font: 600 var(--text-base) "DM Mono", monospace; text-align: center; }
 .pipeline-broadcast small { grid-column: 1 / -1; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
 .pipeline-zip-vector small { display: block; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
-small[data-vector-drag="true"] { cursor: grab; }
+small[data-vector-drag="true"] { cursor: grab; touch-action: none; }
 small[data-vector-drag="true"]::before { content: "↗ "; color: var(--accent); }
 small.vector-dragging { cursor: grabbing; }
 .value-card > small[data-vector-drag="true"] { display: block; width: max-content; }
@@ -958,6 +959,20 @@ small.vector-dragging { cursor: grabbing; }
 .formula-drag-handle.vector-dragging { cursor: grabbing; }
 .column-header.vector-column-drop,
 .frame-edge-header.vector-column-drop { box-shadow: inset 0 0 0 2px var(--accent); }
+.vector-edge-drop .frame-edge-cell { background: var(--accent-soft) !important; box-shadow: inset -3px 0 var(--accent); }
+.vector-drag-preview { position: fixed; z-index: 200; top: 0; left: 0; min-width: 128px; max-width: 240px; display: grid; gap: 1px; padding: 6px 9px; border: 1px solid light-dark(#c9d4cc, #4a6354); border-radius: 7px; background: light-dark(rgba(255,255,253,.97), rgba(38,39,32,.97)); box-shadow: 0 6px 18px light-dark(rgba(37,35,30,.18), rgba(0,0,0,.32)); color: var(--ink); pointer-events: none; font: 500 var(--text-sm) "DM Mono", monospace; }
+.vector-drag-preview strong { overflow: hidden; color: var(--ink); font: inherit; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.vector-drag-preview span { color: var(--accent); font-size: var(--text-xs); }
+.vector-drag-preview[data-target="false"] span { color: var(--muted); }
+.vector-combine-prompt { position: fixed; z-index: 110; top: 76px; left: 50%; width: 276px; display: grid; gap: 2px; padding: 6px; border: 1px solid light-dark(#d1cec5, #3a3c30); border-radius: 9px; background: light-dark(rgba(252,251,248,.98), rgba(38,39,32,.98)); box-shadow: 0 12px 30px light-dark(rgba(37,35,30,.2), rgba(0,0,0,.35)); transform: translateX(-50%); }
+.vector-combine-prompt > .eyebrow { padding: 3px 7px 5px; }
+.vector-combine-prompt button { min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 5px 7px; border-radius: 6px; background: transparent; color: var(--ink); text-align: left; }
+.vector-combine-prompt button:hover { background: var(--accent-soft); }
+.vector-combine-prompt button > svg { flex: 0 0 auto; color: var(--accent); }
+.vector-combine-prompt button > span { min-width: 0; }
+.vector-combine-prompt strong, .vector-combine-prompt small { display: block; font-size: var(--text-sm); }
+.vector-combine-prompt small { margin-top: 1px; color: var(--muted); font-weight: 400; }
+.vector-combine-prompt .vector-combine-cancel { min-height: 25px; justify-content: center; color: var(--muted); font-size: var(--text-sm); }
 .column-header.join-column-drop { box-shadow: inset 0 -2px 0 var(--accent); }
 .pipeline-refresh-generated { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 0; border: 0; background: transparent; color: var(--accent); font-size: var(--text-sm); font-weight: 600; }
 .query-plan-panel { margin-top: 6px; color: var(--ink); font-size: var(--text-sm); }
@@ -1375,6 +1390,41 @@ small.vector-dragging { cursor: grabbing; }
 .text-card-empty { color: light-dark(#96968f, #707069); font-size: var(--text-sm); }
 .text-card-editing { position: relative; min-height: 0; flex: 1; display: flex; flex-direction: column; }
 .text-card-editor { min-height: 0; flex: 1; width: 100%; padding: 12px 14px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: var(--text-base); line-height: 1.45; resize: none; }
+
+/* A calculation matrix spends its space on the three declarations and their
+   rectangular answer. Axis sources are compact formula rows; their evaluated
+   values stay a one-line preview until they become the grid's headers. */
+.calculation-matrix-card { min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 7px; padding: 9px 12px 12px; }
+.calculation-matrix-name { width: 100%; padding: 0; border: 0; border-bottom: 1px solid transparent; outline: 0; background: transparent; color: var(--ink); font-size: var(--text-base); font-weight: 650; }
+.calculation-matrix-name:focus { border-bottom-color: var(--accent); }
+.calculation-matrix-axes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.calculation-matrix-axis { min-width: 0; padding: 5px 6px; border: 1px solid light-dark(#e0ddd4, #3a3c30); border-radius: 6px; }
+.calculation-matrix-axis.vector-column-drop { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-soft); }
+.calculation-matrix-axis > header { min-width: 0; display: flex; align-items: baseline; gap: 7px; margin-bottom: 3px; }
+.calculation-matrix-axis > header > strong { flex: none; font-size: var(--text-sm); }
+.calculation-matrix-axis-empty, .calculation-matrix-axis-preview { min-width: 0; overflow: hidden; color: var(--muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.calculation-matrix-axis-preview { display: flex; gap: 6px; }
+.calculation-matrix-axis-preview > span { overflow: hidden; text-overflow: ellipsis; }
+.calculation-matrix-formula .formula-editor { margin: 0; }
+.calculation-matrix-formula .formula-editor-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.calculation-matrix-card > .calculation-matrix-formula > .formula-editor > .formula-editor-label { position: static; width: auto; height: auto; display: block; margin: 0 0 2px; overflow: visible; clip-path: none; font-size: var(--text-xs); font-weight: 650; }
+.calculation-matrix-formula .formula-input { min-height: 27px; margin: 2px 0 0; border-radius: 4px; }
+.calculation-matrix-formula .formula-input > span { padding: 4px 0 0 6px; }
+.calculation-matrix-formula .formula-input textarea,
+.calculation-matrix-formula .formula-input .formula-textarea-highlight { min-height: 25px; padding: 3px 6px 3px 3px; resize: none; font: 500 var(--text-sm)/1.45 "DM Mono", monospace; }
+.calculation-matrix-formula .formula-input .formula-textarea-layer { min-height: 25px; max-height: 76px; }
+.calculation-matrix-formula .formula-input textarea { overflow: auto; }
+.calculation-matrix-formula .formula-editor-help { display: none; }
+.calculation-matrix-formula .formula-error-line { margin: 2px 2px 0 17px; }
+.calculation-matrix-card > .calculation-matrix-formula .formula-input textarea,
+.calculation-matrix-card > .calculation-matrix-formula .formula-input .formula-textarea-highlight { min-height: 43px; }
+.calculation-matrix-output { min-height: 0; flex: 1; overflow: auto; border: 1px solid light-dark(#e0ddd4, #3a3c30); border-radius: 5px; }
+.calculation-matrix-output.empty { border-style: dashed; }
+.calculation-matrix-output table { min-width: 100%; border-collapse: collapse; font: 500 var(--text-sm)/1.35 "DM Mono", monospace; white-space: nowrap; }
+.calculation-matrix-output th, .calculation-matrix-output td { height: 25px; padding: 3px 7px; border-right: 1px solid light-dark(#e4e1d8, #383a30); border-bottom: 1px solid light-dark(#e4e1d8, #383a30); text-align: left; }
+.calculation-matrix-output th { color: var(--ink); font-weight: 650; }
+.calculation-matrix-output td { color: light-dark(#565951, #bbbdb5); text-align: right; }
+.calculation-matrix-output td.error { color: var(--danger); }
 
 /* Bands under a block's text, one per logical line. A formula that spans
    physical rows sits on one band, so where the calculation ends and the

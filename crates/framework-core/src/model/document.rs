@@ -1,5 +1,6 @@
 use crate::Id;
 use crate::error::CoreError;
+use crate::model::calculation_matrix::CalculationMatrixObject;
 use crate::model::frame::FrameObject;
 use crate::model::plot::PlotObject;
 use crate::model::value::{
@@ -132,6 +133,7 @@ pub enum DataObject {
     Frame(FrameObject),
     Text(TextObject),
     Plot(PlotObject),
+    CalculationMatrix(CalculationMatrixObject),
 }
 
 impl DataObject {
@@ -145,6 +147,7 @@ impl DataObject {
             Self::Frame(frame) => &frame.id,
             Self::Text(text) => &text.id,
             Self::Plot(plot) => &plot.id,
+            Self::CalculationMatrix(matrix) => &matrix.id,
         }
     }
 
@@ -158,6 +161,7 @@ impl DataObject {
             Self::Frame(frame) => &frame.name,
             Self::Text(text) => &text.name,
             Self::Plot(plot) => &plot.name,
+            Self::CalculationMatrix(matrix) => &matrix.name,
         }
     }
 }
@@ -356,6 +360,17 @@ impl Document {
                     .contains(&frame_id)
                     .then(|| as_line_named(block, line))
             }),
+            DataObject::CalculationMatrix(matrix) => matrix
+                .rows
+                .iter()
+                .chain(&matrix.columns)
+                .filter_map(|item| item.formula.as_ref())
+                .chain(matrix.body.formula.as_ref())
+                .find_map(|formula| {
+                    let mut frames = Vec::new();
+                    formula.expression.foreign_frames(&mut frames);
+                    frames.contains(&frame_id).then(|| as_named(&matrix.name))
+                }),
             _ => None,
         })
     }
@@ -379,6 +394,14 @@ impl Document {
                     .references_column(column_id)
                     .then(|| as_line_named(block, line))
             }),
+            DataObject::CalculationMatrix(matrix) => matrix
+                .rows
+                .iter()
+                .chain(&matrix.columns)
+                .filter_map(|item| item.formula.as_ref())
+                .chain(matrix.body.formula.as_ref())
+                .find(|formula| formula.expression.references_column(column_id))
+                .map(|_| as_named(&matrix.name)),
             _ => None,
         })
     }

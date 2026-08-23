@@ -96,6 +96,7 @@ impl Document {
             DataObject::Frame(frame) => frame.name = name,
             DataObject::Text(text) => text.name = name,
             DataObject::Plot(plot) => plot.name = name,
+            DataObject::CalculationMatrix(matrix) => matrix.name = name,
         }
         Ok(())
     }

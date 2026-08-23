@@ -12,6 +12,15 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Build live calculation matrices from zipped row and column vectors, with
+  evenly repeating shorter vectors, a shared formula body, and a long-form
+  result that updates whenever its inputs change.
+
+- Vector drags now follow the pointer with a compact preview, and the full
+  right edge accepts a drop. Dropping onto a one-column vector table asks
+  whether to place the next vector beside it with HStack or below it with
+  VStack instead of opening an incompatible Apply Vector step.
+
 - Search every available formula from the Help menu or with ⇧⌘P, including
   Excel names and everyday terms such as range, iterator, vector, list and
   array. Each result explains its arguments, output and null behavior and can

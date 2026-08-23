@@ -136,11 +136,7 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
             "Collapse or Expand Selected Card",
             "CmdOrCtrl+Shift+M",
         )?,
-        formula_help: item(
-            "formula-help",
-            "Search Formulas…",
-            "CmdOrCtrl+Shift+P",
-        )?,
+        formula_help: item("formula-help", "Search Formulas…", "CmdOrCtrl+Shift+P")?,
         framework_help: item(
             "framework-help",
             "Search FrameWork Help…",

@@ -24,7 +24,7 @@ export type ResultObject = {
   /**
    * A result presented as one compact, named formula directly on the
    * canvas. Unlike a dashboard result, its formula may stay vector-shaped:
-   * it is the one-line form of Scratchwork, not a scalar answer card.
+   * it is the one-variable form of Scratchwork, not a scalar answer card.
    */
   variable: boolean;
 };

@@ -1,5 +1,6 @@
 use crate::Id;
 use crate::formula::ast::Formula;
+use crate::model::calculation_matrix::{CalculationMatrixAxisFormula, CalculationMatrixBody};
 use crate::model::data_artifact::{ConnectorRecipe, DataArtifact};
 use crate::model::derivation::{
     DerivedSort, FrameDerivation, FrameJoinType, FrameStep, Materialization, UniqueKeyConstraint,
@@ -17,7 +18,8 @@ use crate::model::value::DataType;
 use crate::model::value::FrozenValue;
 use crate::model::value::TextSegment;
 use crate::operation::input::{
-    FrameStepInput, FrameStyleRuleInput, JoinColumnInput, NamedFormulaInput,
+    CalculationMatrixFormulaInput, FrameStepInput, FrameStyleRuleInput, JoinColumnInput,
+    NamedFormulaInput,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -75,6 +77,17 @@ pub enum Operation {
         name: String,
         x: f64,
         y: f64,
+    },
+    AddCalculationMatrix {
+        name: String,
+        x: f64,
+        y: f64,
+    },
+    SetCalculationMatrix {
+        object_id: Id,
+        rows: Vec<CalculationMatrixFormulaInput>,
+        columns: Vec<CalculationMatrixFormulaInput>,
+        body: String,
     },
     /// The block retyped. `source` is the whole card's text — one line per
     /// line, `x = 10` naming a line as it defines it — and what comes back
@@ -671,6 +684,12 @@ pub enum ReplicatedOperation {
     SetBlockLines {
         block_id: Id,
         lines: Vec<BlockLine>,
+    },
+    SetCalculationMatrix {
+        object_id: Id,
+        rows: Vec<CalculationMatrixAxisFormula>,
+        columns: Vec<CalculationMatrixAxisFormula>,
+        body: CalculationMatrixBody,
     },
     /// Already split and parsed, so every replica holds the same holes
     /// bound to the same ids.
