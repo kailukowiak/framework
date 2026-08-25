@@ -314,7 +314,9 @@ describe("stepsFromRendered", () => {
     if (steps[1].kind !== "withColumns") return;
     expect(steps[1].columns[0]).toMatchObject({
       fallbackName: "Column 1",
-      formula: 'null.cast("number")',
+      // Canonical spelling: the engine echoes `Expr::Null` back as `None`,
+      // and the placeholder must reconcile textually with its own save.
+      formula: 'None.cast("number")',
       focusToken: 7,
     });
   });

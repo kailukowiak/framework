@@ -4,7 +4,7 @@ import { openContextMenuOn, resetAndOpenTutorial } from "../lib/helpers";
 
 // The one sanctioned authoring surface for a calculated column: the frame
 // context menu appends a withColumns step to the Wrangle chain and focuses
-// its formula. The creation gesture first saves `null.cast("number")` — a
+// its formula. The creation gesture first saves `None.cast("number")` — a
 // typed, blank column visible immediately — and replacing that formula must
 // flow through the pipeline into the grid. This crosses context menu →
 // pipeline operation → engine → rendered cells, which is exactly the chain
@@ -60,13 +60,18 @@ describe("calculated column through Wrangle", () => {
     );
   });
 
-  // Skipped, not stale: this fails identically on the branch base. By this
-  // point the inspector's editor has unmounted, its registry binding is
-  // gone, and registry.commit() silently no-ops — the bar can edit the
-  // orphaned draft but never save it. That is a real product bug with its
-  // own tracked task ("orphaned formula session commit no-op"); re-enable
-  // this test when it lands.
-  it.skip("replacing the placeholder formula computes down the grid", async () => {
+  // This test once failed as "orphaned formula session commit no-op": the
+  // creation gesture saved a chain that could not reconcile with its own
+  // echo — unformatted, and spelling the placeholder `null` where the
+  // engine renders `None` — so the round trip reseeded the wrangle step
+  // list with fresh row identities, and the session the gesture had just
+  // focused was left addressing an editor that no longer existed: the bar
+  // edited the draft, Return saved nothing. The inspector never unmounted;
+  // the editor under it changed identity. Creation now persists the
+  // formatted, canonically spelled chain (identity survives the round
+  // trip), and the registry keeps a departed surface's binding so Return
+  // still commits even after the wrangle surface is closed.
+  it("replacing the placeholder formula computes down the grid", async () => {
     // The Wrangle chain's formula editor is the one textarea that is not
     // the Scratchwork block.
     const formula = $('//textarea[not(contains(@class, "block-source"))]');
@@ -85,7 +90,9 @@ describe("calculated column through Wrangle", () => {
     await browser.keys(Key.Enter);
 
     // April's revenue is 142000; the calculated cell must render its double
-    // through the real pipeline.
-    await $("div.cell-display*=284,000").waitForExist();
+    // through the real pipeline. Computed cells are not the literal-cell
+    // div.cell-display: they render as button.computed-cell, the clickable
+    // formula-reference surface.
+    await $("button.computed-cell*=284,000").waitForExist();
   });
 });

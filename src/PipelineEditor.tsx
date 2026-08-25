@@ -1,5 +1,6 @@
 import { CircleAlert, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useActiveFormulaEditorCommands } from "./ActiveFormulaEditor";
 import { CommentStepRow } from "./PipelineCommentStepRow";
 import { FormulaErrorDetails } from "./FormulaEditor";
 import { PipelineCommand } from "./PipelineCommand";
@@ -486,6 +487,13 @@ function namedDraft(fallbackName: string, formula: string): NamedDraft {
  * expression. A typed null is blank in every row but still gives the query
  * plan a stable dtype, so the column can render immediately and the formula
  * can be replaced in place without a second creation path.
+ *
+ * `None`, not `null`: the parser takes either, but the engine renders the
+ * saved expression back canonically — `Expr::Null` prints as `None` — and
+ * the document sync compares that echo against this draft textually. A
+ * placeholder spelled `null` can never reconcile with its own save, so the
+ * round trip reseeded the step list and severed the formula session the
+ * gesture had just opened.
  */
 export function appendBlankCalculatedColumn(
   steps: StepDraft[],
@@ -498,7 +506,7 @@ export function appendBlankCalculatedColumn(
   const fallbackName = nextBlankColumnName(visibleColumns.map((column) => column.name));
   const outputColumnId = mintColumnId(fallbackName);
   const column = {
-    ...namedDraft(fallbackName, 'null.cast("number")'),
+    ...namedDraft(fallbackName, 'None.cast("number")'),
     outputColumnId,
     focusToken,
     anchorRowIndex,
@@ -1285,8 +1293,10 @@ function useDocumentChainSync(
   editingFrame: FrameObject,
   inputColumns: Column[],
   steps: StepDraft[],
-  setSteps: (next: StepDraft[]) => void
+  setSteps: (next: StepDraft[]) => void,
+  lastSavedSignature: { current: string | null }
 ) {
+  const formulaEditors = useActiveFormulaEditorCommands();
   const authoritative = useMemo(
     () => stepsFromRendered(renderedSteps, editingFrame, inputColumns),
     [renderedSteps, editingFrame, inputColumns]
@@ -1296,10 +1306,39 @@ function useDocumentChainSync(
     [authoritative]
   );
   const [reconciled, setReconciled] = useState(signature);
+  const reseeded = useRef(false);
   if (reconciled !== signature) {
     setReconciled(signature);
-    if (JSON.stringify(steps.map(stepInput)) !== signature) setSteps(authoritative);
+    // A chain this editor itself just saved is not the document moving
+    // *under* it, even when the local draft no longer matches: typing can
+    // legitimately run ahead of the save's echo. The everyday case is the
+    // creation gesture — its placeholder save is still round-tripping while
+    // the person is already replacing the formula, and reseeding here would
+    // discard their typing and end the session they are typing in. The echo
+    // is recognized by value, not by timing, because the engine's answer
+    // arrives whenever it arrives.
+    const ownEcho = signature === lastSavedSignature.current;
+    if (!ownEcho && JSON.stringify(steps.map(stepInput)) !== signature) {
+      setSteps(authoritative);
+      reseeded.current = true;
+    }
   }
+  // A reseed replaces the drafts a session was addressing, so the session
+  // ends with them: leaving it armed keeps a formula bar that says "Edit
+  // Column 1" wired to callbacks over the pre-reseed chain, and committing
+  // those would write the superseded chain back over the document — the
+  // same silent undo-reversal the reseed exists to prevent. This never
+  // fires on this editor's own saves: every save path here persists the
+  // formatted draft, which reconciles as unchanged. Cleared in an effect,
+  // not during render, because ending the session notifies subscribers.
+  // The effect deliberately runs after every render: the flag decides.
+  useEffect(() => {
+    if (!reseeded.current) return;
+    reseeded.current = false;
+    const active = formulaEditors.getActive();
+    if (active?.id.startsWith(`pipeline:${editingFrame.id}:`))
+      formulaEditors.clear(active.id);
+  });
 }
 
 /**
@@ -1392,7 +1431,16 @@ export function DerivedFrameCreator({
   const [steps, setSteps] = useState<StepDraft[]>(() =>
     stepsFromRendered(renderedSteps, editingFrame, input.columns)
   );
-  useDocumentChainSync(renderedSteps, editingFrame, input.columns, steps, setSteps);
+  /** What this editor last wrote — how the sync tells its own echo apart. */
+  const lastSavedSignature = useRef<string | null>(null);
+  useDocumentChainSync(
+    renderedSteps,
+    editingFrame,
+    input.columns,
+    steps,
+    setSteps,
+    lastSavedSignature
+  );
   const visibleAuthored = steps
     .map((step, index) => ({ step, index }))
     .slice(passThroughSteps)
@@ -1425,6 +1473,7 @@ export function DerivedFrameCreator({
         input.columns,
         passThroughSteps
       ).map(formatPipelineFormulas);
+      lastSavedSignature.current = JSON.stringify(normalized.map(stepInput));
       setSteps(normalized);
       const failure = await onOperation(
         {
@@ -1451,6 +1500,14 @@ export function DerivedFrameCreator({
     uniqueColumnName,
   });
 
+  // Saving through `persist`, not a bare setFramePipeline, is load-bearing:
+  // persist formats the draft into the same deterministic form the document
+  // sync re-derives from the saved chain, so this save's own round trip
+  // reconciles as "the draft already says this" and the step list keeps its
+  // identity. An unformatted save came back looking different, the sync
+  // reseeded the list with fresh row identities, and the formula session the
+  // request had just focused was left addressing an editor that no longer
+  // existed — the bar could edit its draft but Enter saved nothing.
   useEffect(() => {
     if (
       addCalculatedColumnRequest === undefined ||
@@ -1459,7 +1516,7 @@ export function DerivedFrameCreator({
       return;
     handledAddRequest.current = addCalculatedColumnRequest.token;
     onAddCalculatedColumnRequestHandled?.();
-    const next = normalizeCalculatedColumnNames(
+    void persist(
       appendBlankCalculatedColumn(
         steps,
         addCalculatedColumnRequest.token,
@@ -1467,27 +1524,14 @@ export function DerivedFrameCreator({
         editingFrame.columns,
         passThroughSteps,
         addCalculatedColumnRequest.anchorRowIndex
-      ),
-      input.columns,
-      passThroughSteps
+      )
     );
-    setSteps(next);
-    void onOperation(
-      {
-        type: "setFramePipeline",
-        frameId: editingFrame.id,
-        steps: next.map(stepInput),
-      },
-      { inlineError: true }
-    ).then(setFormulaError);
   }, [
     addCalculatedColumnRequest,
     editingFrame.columns,
-    editingFrame.id,
-    input.columns,
     onAddCalculatedColumnRequestHandled,
-    onOperation,
     passThroughSteps,
+    persist,
     steps,
   ]);
 
@@ -1514,29 +1558,23 @@ export function DerivedFrameCreator({
       else setFormulaError(`The calculation for ${column.name} is not in this chain.`);
       return;
     }
-    const next = appendOrderedColumnTransformation(
-      steps,
-      column,
-      transformColumnRequest.formula,
-      transformColumnRequest.orderByColumnId,
-      transformColumnRequest.focus ? transformColumnRequest.token : undefined,
-      transformColumnRequest.focusAtEnd
+    // Through `persist` for the same identity-preserving reason as the
+    // add-calculated-column request above.
+    void persist(
+      appendOrderedColumnTransformation(
+        steps,
+        column,
+        transformColumnRequest.formula,
+        transformColumnRequest.orderByColumnId,
+        transformColumnRequest.focus ? transformColumnRequest.token : undefined,
+        transformColumnRequest.focusAtEnd
+      )
     );
-    setSteps(next);
-    void onOperation(
-      {
-        type: "setFramePipeline",
-        frameId: editingFrame.id,
-        steps: next.map(stepInput),
-      },
-      { inlineError: true }
-    ).then(setFormulaError);
   }, [
     transformColumnRequest,
     editingFrame.columns,
-    editingFrame.id,
-    onOperation,
     onTransformColumnRequestHandled,
+    persist,
     steps,
   ]);
 
@@ -1575,16 +1613,21 @@ export function DerivedFrameCreator({
       editingFrame.columns.map((column) => column.id)
     );
     if (!next) return;
+    // Formatted for the identity-preserving reason the add request explains;
+    // not through `persist`, because a refused hide deliberately leaves the
+    // draft unchanged rather than showing a chain the engine rejected.
+    const formatted = next.map(formatPipelineFormulas);
+    lastSavedSignature.current = JSON.stringify(formatted.map(stepInput));
     void onOperation(
       {
         type: "setFramePipeline",
         frameId: editingFrame.id,
-        steps: next.map(stepInput),
+        steps: formatted.map(stepInput),
       },
       { inlineError: true }
     ).then((failure) => {
       setFormulaError(failure);
-      if (!failure) setSteps(next);
+      if (!failure) setSteps(formatted);
     });
   }, [
     hidePipelineColumnRequest,

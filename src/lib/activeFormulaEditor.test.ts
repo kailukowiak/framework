@@ -327,6 +327,52 @@ describe("ActiveFormulaEditorRegistry", () => {
     expect(registry.getSnapshot()).toBeNull();
   });
 
+  it("commits through the binding its departed surface left behind", async () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+    registry.unbind(editor.id);
+    registry.setDraft("credit.sum()", { start: 12, end: 12 });
+
+    await registry.commit();
+
+    expect(editor.onCommit).toHaveBeenCalledWith("credit.sum()");
+    expect(registry.getSnapshot()).toBeNull();
+  });
+
+  it("cancel still restores and ends the session after its surface departed", () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+    registry.setDraft("amount.mean()", { start: 13, end: 13 });
+    registry.unbind(editor.id);
+
+    registry.cancel();
+
+    expect(editor.onChange).toHaveBeenLastCalledWith("amount.sum()", {
+      start: 12,
+      end: 12,
+    });
+    expect(registry.getSnapshot()).toBeNull();
+  });
+
+  it("a returning surface supersedes the binding its predecessor left", async () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const departed = binding();
+    registry.bind(departed);
+    registry.activate(departed.id, { start: 0, end: 0 });
+    registry.unbind(departed.id);
+    const returned = binding();
+    registry.bind(returned);
+
+    await registry.commit();
+
+    expect(returned.onCommit).toHaveBeenCalled();
+    expect(departed.onCommit).not.toHaveBeenCalled();
+  });
+
   it("continues editing the retained draft while its surface is unmounted", () => {
     const registry = new ActiveFormulaEditorRegistry();
     const editor = binding({ draft: "before" });

@@ -158,7 +158,7 @@ chain in **Wrangle**. The frame context menu puts *Add calculated column* near
 the top, appends a `withColumns` step at the bottom of the existing chain, and
 opens that formula there. Do not add another calculated-column dialog to
 Selection or recreate a Frame tab. The creation gesture first saves
-`null.cast("number")`, which gives the engine a typed Number column whose cells
+`None.cast("number")`, which gives the engine a typed Number column whose cells
 render blank, then focuses the formula so it can be replaced. This makes the
 new column visible immediately without introducing a literal-data path on a
 live frame.

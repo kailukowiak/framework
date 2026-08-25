@@ -120,6 +120,19 @@ export class ActiveFormulaEditorRegistry {
   private bindingOwners = new Map<string, object>();
   private listeners = new Set<() => void>();
   /**
+   * The active session's binding, kept after its surface unmounted. If the
+   * draft outlives the surface — the survival the class comment promises —
+   * then Enter and Escape must too: a bar that says "Edit Column 1" while
+   * commit silently does nothing is a trap, not a session. The retained
+   * callbacks close over the owner's last render, which stays valid exactly
+   * as long as the document chain they would write hasn't moved; the owner
+   * ends its sessions when it sees that chain move (see useDocumentChainSync
+   * in PipelineEditor), which leaves one accepted residual: a chain that
+   * moves while the owner is unmounted (an undo with the inspector closed)
+   * can still be committed over from here.
+   */
+  private dormant: FormulaEditorBinding | null = null;
+  /**
    * The draft as it stood when this session began — what Escape restores.
    * Captured at activation rather than read from the binding at cancel time,
    * because bindings re-bind on every render with the *current* draft, so by
@@ -135,8 +148,14 @@ export class ActiveFormulaEditorRegistry {
     return () => this.listeners.delete(listener);
   };
 
+  /** The active session's binding: live if mounted, else the retained one. */
+  private bindingFor(id: string): FormulaEditorBinding | undefined {
+    return this.bindings.get(id) ?? (this.dormant?.id === id ? this.dormant : undefined);
+  }
+
   bind(binding: FormulaEditorBinding, owner?: object): void {
     this.bindings.set(binding.id, binding);
+    if (this.dormant?.id === binding.id) this.dormant = null;
     if (owner) this.bindingOwners.set(binding.id, owner);
     else this.bindingOwners.delete(binding.id);
     if (this.active?.id !== binding.id) return;
@@ -169,10 +188,12 @@ export class ActiveFormulaEditorRegistry {
     // cleanup belongs to the old binding and must not erase the new one just
     // because both correctly share an editor id.
     if (owner && this.bindingOwners.get(id) !== owner) return;
+    const departing = this.bindings.get(id);
     this.bindings.delete(id);
     this.bindingOwners.delete(id);
-    if (this.active?.id === id && this.active.focused)
-      this.publish({ ...this.active, focused: false });
+    if (this.active?.id !== id) return;
+    if (departing) this.dormant = departing;
+    if (this.active.focused) this.publish({ ...this.active, focused: false });
   }
 
   activate(id: string, selection: FormulaSelection): void {
@@ -233,7 +254,7 @@ export class ActiveFormulaEditorRegistry {
 
   setDraft(draft: string, selection: FormulaSelection): void {
     if (!this.active) return;
-    const binding = this.bindings.get(this.active.id);
+    const binding = this.bindingFor(this.active.id);
     const nextSelection = clampSelection(selection, draft.length);
     this.publish({
       ...this.active,
@@ -250,7 +271,7 @@ export class ActiveFormulaEditorRegistry {
       ...this.active,
       selection: nextSelection,
     });
-    this.bindings.get(this.active.id)?.onSelection?.(nextSelection);
+    this.bindingFor(this.active.id)?.onSelection?.(nextSelection);
   }
 
   replaceSelection(text: string): void {
@@ -286,7 +307,7 @@ export class ActiveFormulaEditorRegistry {
 
   focus(): void {
     if (!this.active) return;
-    const binding = this.bindings.get(this.active.id);
+    const binding = this.bindingFor(this.active.id);
     if (!binding) return;
     this.publish({ ...this.active, focused: true });
     binding.onFocus(this.active.selection);
@@ -303,7 +324,7 @@ export class ActiveFormulaEditorRegistry {
   async commit(options: { keepEditing?: boolean } = {}): Promise<void> {
     if (!this.active) return;
     const committed = this.active;
-    const binding = this.bindings.get(committed.id);
+    const binding = this.bindingFor(committed.id);
     if (!binding?.onCommit) return;
     await binding.onCommit(this.active.draft);
     // A commit that resolved ends a formula session (see the class comment).
@@ -324,7 +345,7 @@ export class ActiveFormulaEditorRegistry {
    */
   cancel(id?: string): void {
     if (!this.active || (id !== undefined && this.active.id !== id)) return;
-    const binding = this.bindings.get(this.active.id);
+    const binding = this.bindingFor(this.active.id);
     const opening = this.sessionOpeningDraft;
     if (
       this.active.kind === "formula" &&
@@ -342,6 +363,7 @@ export class ActiveFormulaEditorRegistry {
   clear(id?: string): void {
     if (!this.active || (id !== undefined && this.active.id !== id)) return;
     this.sessionOpeningDraft = null;
+    this.dormant = null;
     this.publish(null);
   }
 
