@@ -22,12 +22,13 @@ describe("formula by pointing", () => {
   });
 
   it("inserts a cell reference and evaluates it live", async () => {
-    // The Scratchwork block by name: the workbook also ships a "Checks"
-    // block, and a bare .block-source answers whichever renders first.
-    const source = $('textarea[aria-label="Scratchwork lines"]');
+    // The block by name: the regenerated Start workbook ships one block,
+    // "Checks" — the old Scratchwork block no longer exists in it, and a
+    // bare .block-source would answer whichever block renders first.
+    const source = $('textarea[aria-label="Checks lines"]');
     await source.waitForExist();
     await source.setValue("April = ");
-    await focusBlockSource("Scratchwork");
+    await focusBlockSource("Checks");
 
     await pointAtCell("142,000");
 
@@ -35,7 +36,7 @@ describe("formula by pointing", () => {
     // the outcome — the draft grew past what was typed and the real engine
     // evaluated the pointed-at cell.
     await waitForGutterAnswer("142000");
-    expect(await blockDraft("Scratchwork")).not.toBe("April = ");
+    expect(await blockDraft("Checks")).not.toBe("April = ");
   });
 
   it("refuses the same cell once a display sort makes rows positional", async () => {
@@ -43,9 +44,9 @@ describe("formula by pointing", () => {
     // The sort landed when January leads the Month column.
     await $("div.cell-display*=2026-01").waitForExist();
 
-    const source = $('textarea[aria-label="Scratchwork lines"]');
+    const source = $('textarea[aria-label="Checks lines"]');
     await source.setValue("Later = ");
-    await focusBlockSource("Scratchwork");
+    await focusBlockSource("Checks");
     await pointAtCell("142,000");
 
     const notice = $(".notice-toast");
@@ -53,6 +54,6 @@ describe("formula by pointing", () => {
     await expect(notice).toHaveText(
       expect.stringContaining("stable row address")
     );
-    expect(await blockDraft("Scratchwork")).toBe("Later = ");
+    expect(await blockDraft("Checks")).toBe("Later = ");
   });
 });

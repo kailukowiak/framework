@@ -92,7 +92,10 @@ describe("HelpBrowser", () => {
     await userEvent.type(search, "join");
 
     await userEvent.click(
-      screen.getByRole("option", { name: /Join Match two frames by keys/ })
+      // The accessible name concatenates the option's inline spans without
+      // separators ("WrangleJoinMatch two frames…"), so a phrase that spans
+      // the title/summary boundary can never match. Match within the summary.
+      screen.getByRole("option", { name: /Match two frames by keys/ })
     );
     expect(screen.getByText("Wrangle · Reference")).toBeTruthy();
     expect(screen.getByText("Anti")).toBeTruthy();

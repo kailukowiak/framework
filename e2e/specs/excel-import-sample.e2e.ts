@@ -48,7 +48,10 @@ describe("Excel import learning files", () => {
     }
     await answer.click();
 
-    await $(".markdown-body*=Importing Excel data").waitForExist();
+    // The walkthrough card's opening line, as the regenerated tutorial
+    // writes it — the old "Importing Excel data" phrasing predates the
+    // vector-workflows regeneration and no longer exists in the document.
+    await $(".markdown-body*=Importing an Excel workbook").waitForExist();
     await $("div.cell-display*=CUS-101").waitForExist();
     await $("div.cell-display*=SKU-101").waitForExist();
     await $("div.cell-display*=North Peak Goods").waitForExist();
