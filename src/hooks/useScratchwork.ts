@@ -249,7 +249,25 @@ export function useScratchwork({
     [document, insertPosition, setDocument]
   );
 
-  /** Move the one Scratchwork editor between its canvas card and the top. */
+  /**
+   * Move the one Scratchwork editor between its canvas card and the top.
+   *
+   * Opening the drawer with no Scratchwork block yet still creates one here,
+   * as a side effect of merely looking, rather than waiting for the person
+   * to type something. That is not ideal — the block persists into the
+   * saved document even if nothing is ever typed into it — but it is not
+   * easily avoidable without a larger change: the drawer renders through the
+   * same `BlockCard` as the on-canvas card (`App.tsx` mounts it in both
+   * places against this exact object), and `BlockCard` has no "draft, not
+   * yet a real object" mode — it edits an existing block by id. Building a
+   * parallel draftless editor just for this empty-drawer moment is out of
+   * scope for a placement fix. What *is* in scope, and fixed here: the block
+   * this creates no longer lands whichever fixed point `insertPosition`
+   * happened to be handed. `insertPosition` (in `App.tsx`) now runs its
+   * anchor through `placeNewCard` against the document's current views
+   * before returning it, so this — like every other spawn path — lands in
+   * free space instead of overlapping whatever else is on the canvas.
+   */
   const toggleScratchworkDrawer = useCallback(async () => {
     if (!document) return;
     if (getActiveFormulaEditor()?.kind === "scratchwork")
