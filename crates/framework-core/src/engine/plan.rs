@@ -219,12 +219,53 @@ impl Document {
         let mut visiting = HashSet::new();
         visiting.insert(frame.id.clone());
         for step in &frame.steps {
-            plan = self.apply_step(plan, step, &mut visiting)?;
+            plan = match step {
+                // The executed Select projects exactly its chosen columns,
+                // which would throw the row-index overboard — the one column
+                // this page path exists to carry. Run it with the index
+                // kept aboard instead of through the ordinary step.
+                FrameStep::Select { column_ids } => {
+                    let mut cols = column_ids
+                        .iter()
+                        .map(|id| pl::col(id.clone()))
+                        .collect::<Vec<_>>();
+                    cols.push(pl::col(ROW_INDEX));
+                    plan.select(cols)
+                }
+                _ => self.apply_step(plan, step, &mut visiting)?,
+            };
         }
-        let mut visible = frame
+        // The projection must be the columns that survive the chain, not the
+        // stored schema: a Select step keeps row identity but drops columns,
+        // and asking the plan for a column the chain removed is a schema
+        // error, not a page. Walk the steps the way the plan just ran them.
+        let mut kept: Vec<Id> = frame
             .columns
             .iter()
-            .map(|column| pl::col(column.id.clone()))
+            .map(|column| column.id.clone())
+            .collect();
+        for step in &frame.steps {
+            match step {
+                FrameStep::Select { column_ids } => {
+                    kept = column_ids
+                        .iter()
+                        .filter(|id| kept.contains(id))
+                        .cloned()
+                        .collect();
+                }
+                FrameStep::WithColumns { columns } => {
+                    for column in columns {
+                        if !kept.contains(&column.output_column_id) {
+                            kept.push(column.output_column_id.clone());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        let mut visible = kept
+            .iter()
+            .map(|id| pl::col(id.clone()))
             .collect::<Vec<_>>();
         visible.push(pl::col(ROW_INDEX));
         let plan = plan.select(visible);

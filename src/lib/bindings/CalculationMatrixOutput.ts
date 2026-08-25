@@ -3,6 +3,14 @@ import type { Column } from "./Column";
 import type { Row } from "./Row";
 
 export type CalculationMatrixOutput = {
+  /**
+   * Long-form, stable-schema rows for display and an eventual frame
+   * bridge.  This is intentionally not inserted into `computed_frames`:
+   * doing so without a persisted `FrameObject` would make formulas appear
+   * able to name a frame that `Document::frame` cannot resolve.  Until the
+   * bridge is made explicit, downstream code consumes this projection
+   * through its matrix id and cannot pretend it is an ordinary frame.
+   */
   columns: Array<Column>;
   rows: Array<Row>;
 };

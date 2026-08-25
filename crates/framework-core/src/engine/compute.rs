@@ -500,7 +500,12 @@ impl FrameEditing {
         };
         let origin = if frame.generator.is_some() {
             "These rows are grown by this frame's rule. Edit the rule to change them.".to_string()
-        } else if frame.derivation.is_some() {
+        } else if frame.derivation.is_some() || frame.owns_its_rows() {
+            // The second arm is a hand-entered frame whose own chain
+            // re-shapes its rows (a Summarize or Pivot in its chain): the
+            // visible rows are chain output. Falling through to the
+            // "imported copy" text below taught exactly the wrong remedy
+            // for rows the person typed in themselves.
             "These rows are computed by the chain above them.".to_string()
         } else if live {
             match frame.source_name() {

@@ -39,7 +39,12 @@ pub enum CoreError {
     Transform(String),
     #[error("Could not export frame: {0}")]
     Export(String),
-    #[error("Invalid replicated operation: {0}")]
+    /// A refused edit. Also carried without a prefix: the message is
+    /// already a user-facing sentence ("These rows are computed by the
+    /// chain above them."), and the old "Invalid replicated operation:"
+    /// prefix put collaboration-log vocabulary in front of every refusal
+    /// a person ever saw.
+    #[error("{0}")]
     InvalidOperation(String),
     #[error("Invalid operation event: {0}")]
     InvalidEvent(String),

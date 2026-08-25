@@ -114,10 +114,14 @@ impl FrameObject {
     /// A calculated column changes what a row shows, not which row it is.
     /// Treating that calculation as ownership of the whole table made a
     /// filled series lock every unrelated input column and removed the row
-    /// entry line. The distinction belongs here because the page reader and
-    /// the write path must agree: the former carries the literal row id
-    /// through these steps, and the latter writes only columns that remain
-    /// literal inputs.
+    /// entry line. Select belongs in the same set for the same reason: it
+    /// chooses and orders which columns show, and a row that lost a column
+    /// is still the same row — excluding it meant one drag to rearrange
+    /// columns froze every literal cell of a hand-entered table. The
+    /// distinction belongs here because the page reader and the write path
+    /// must agree: the former carries the literal row id through these
+    /// steps (projecting only the columns that survive each Select), and
+    /// the latter writes only columns that remain literal inputs.
     pub(crate) fn preserves_own_row_identity(&self) -> bool {
         self.owns_its_rows()
             && self.steps.iter().all(|step| {
@@ -125,6 +129,7 @@ impl FrameObject {
                     step,
                     FrameStep::Filter { .. }
                         | FrameStep::WithColumns { .. }
+                        | FrameStep::Select { .. }
                         | FrameStep::Sort { .. }
                         | FrameStep::Comment { .. }
                 )
