@@ -1,5 +1,6 @@
 import { BarChart3, CircleAlert } from "lucide-react";
 import embed, { type VisualizationSpec } from "vega-embed";
+import { expressionInterpreter } from "vega-interpreter";
 import { usePrefersDarkMode } from "./lib/palette";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getFramePage, type FramePage } from "./lib/api";
@@ -151,6 +152,16 @@ function VegaChart({
       },
       renderer: "svg",
       tooltip: true,
+      // Vega's default runtime compiles expressions (scale/field accessors,
+      // signal handlers, ...) through `new Function(...)`, which is eval and
+      // is blocked by our bundled CSP's `script-src` (no unsafe-eval, on
+      // purpose -- see src-tauri/tauri.conf.json). `tauri dev` doesn't
+      // enforce CSP at all, so a regression here renders fine at the desk
+      // and only breaks in a real build; that gap is exactly why this
+      // AST-walking interpreter is wired in unconditionally rather than
+      // left as an opt-in fallback.
+      ast: true,
+      expr: expressionInterpreter,
     })
       .then((result) => {
         if (disposed) result.finalize();
