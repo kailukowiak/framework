@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useFormulaEditorRegistration } from "./ActiveFormulaEditor";
 import { HighlightedFormulaTextarea } from "./FormulaReferenceText";
 import {
+  completionMenuTookKey,
   FormulaCompletionMenu,
   useFormulaCompletion,
 } from "./FormulaCompletion";
@@ -23,6 +24,7 @@ export function FormulaEditor({
   focusToken,
   error,
   compact = false,
+  commitOnBlur,
   executeLabel,
   placeholder,
   onChange,
@@ -52,6 +54,15 @@ export function FormulaEditor({
   error?: string | null;
   /** Suppress repeated keyboard prose in dense, repeated formula rows. */
   compact?: boolean;
+  /**
+   * Persist the draft whenever the textarea blurs, for self-saving surfaces
+   * such as a variable card. This goes straight through the commit callback
+   * rather than the shared registry: blur is routinely the formula bar
+   * taking the keyboard mid-edit, so a blur-save must neither end the
+   * session nor depend on it still existing — a click-away may already have
+   * ended it by the time blur fires, and the save still has to happen.
+   */
+  commitOnBlur?: boolean;
   executeLabel?: string;
   onChange: (value: string) => void;
   /** Commit without adding another control; used by shared editing surfaces. */
@@ -108,16 +119,12 @@ export function FormulaEditor({
     },
   });
   const {
-    activeIndex,
-    setActiveIndex,
-    query,
     suggestionCount,
     parameterHelp,
     activeParameter,
     activeParameterHelp,
     offersSuggestions,
     dismissSuggestions,
-    insertActive,
   } = completion;
 
   return (
@@ -150,14 +157,17 @@ export function FormulaEditor({
             setCursor(event.target.selectionStart);
             registration.change(event.target.value, event.currentTarget);
           }}
-          onBlur={() => {
+          onBlur={(event) => {
             setFocused(false);
             registration.blur();
+            if (commitOnBlur) void commit?.(event.currentTarget.value);
           }}
           onKeyDown={(event) => {
+            // During IME composition these keys belong to the composer.
+            if (event.nativeEvent.isComposing) return;
             if (isFormulaExecuteShortcut(event)) {
               event.preventDefault();
-              void registration.commit();
+              void registration.commit(event.currentTarget.value);
               return;
             }
             if (event.key === "Escape") {
@@ -167,26 +177,15 @@ export function FormulaEditor({
                 dismissSuggestions();
                 return;
               }
+              // Escape cancels the session, not just this textarea's focus:
+              // the draft reverts to what the session opened with and the
+              // shared editor is released back to the selected cell.
               setFocused(false);
+              registration.cancel();
               event.currentTarget.blur();
               return;
             }
-            if (!suggestionCount) return;
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              setActiveIndex((index) => (index + 1) % suggestionCount);
-            } else if (event.key === "ArrowUp") {
-              event.preventDefault();
-              setActiveIndex(
-                (index) => (index - 1 + suggestionCount) % suggestionCount
-              );
-            } else if (
-              event.key === "Tab" ||
-              (event.key === "Enter" && query.length > 0)
-            ) {
-              event.preventDefault();
-              insertActive(activeIndex);
-            }
+            completionMenuTookKey(event, completion);
           }}
         />
       </div>

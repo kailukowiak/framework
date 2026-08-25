@@ -52,6 +52,7 @@ export function useActiveFormulaEditor() {
     engage: registry.engage.bind(registry),
     disengage: registry.disengage.bind(registry),
     commit: registry.commit.bind(registry),
+    cancel: registry.cancel.bind(registry),
     clear: registry.clear.bind(registry),
   };
 }
@@ -79,6 +80,7 @@ export function useActiveFormulaEditorCommands() {
       engage: registry.engage.bind(registry),
       disengage: registry.disengage.bind(registry),
       commit: registry.commit.bind(registry),
+      cancel: registry.cancel.bind(registry),
       clear: registry.clear.bind(registry),
       activateAndFocus: registry.activateAndFocus.bind(registry),
       getActive: registry.getSnapshot,
@@ -130,8 +132,20 @@ export function useFormulaEditorRegistration(binding: FormulaEditorBinding) {
     select(target: HTMLTextAreaElement | HTMLInputElement) {
       registry.updateSelection(binding.id, selectionOf(target));
     },
-    commit() {
-      return registry.commit();
+    commit(draftNow?: string) {
+      // The active session commits through the registry, which also ends a
+      // "formula" session. But ⌘↵ can arrive without activation ever having
+      // happened — synthesized input writes the textarea without the real
+      // focus that activates — and committing "the active session" then is
+      // a silent no-op wearing a run command's label. When this editor is
+      // not the session, its own text commits directly instead.
+      if (registry.getSnapshot()?.id === binding.id) return registry.commit();
+      return Promise.resolve(
+        binding.onCommit?.(draftNow ?? binding.draft)
+      ).then(() => undefined);
+    },
+    cancel() {
+      registry.cancel(binding.id);
     },
   };
 }

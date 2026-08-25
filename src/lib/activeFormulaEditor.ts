@@ -94,12 +94,38 @@ function sameActiveEditor(
  * pointer into another card while still inserting into this editor. Bindings
  * therefore stay private and replaceable while the serializable snapshot is
  * the stable public fact future surfaces subscribe to.
+ *
+ * Session lifecycle, in one place because every surface must agree on it. A
+ * session begins at `activate` and stays alive through DOM blur and through
+ * its surface unmounting — that survival is the point of the registry, not a
+ * leak. What ends a session:
+ *
+ * - A successful `commit` of a `"formula"` editor. Enter means "apply and be
+ *   done"; leaving the session armed afterwards is how a stray cell click
+ *   used to rewrite a formula that was already applied. A `"scratchwork"`
+ *   editor is a multi-line document that commits continuously, so committing
+ *   it keeps the session — its owner decides when editing is over.
+ * - `cancel` (Escape). For a `"formula"` editor this also restores the draft
+ *   the session opened with, because Escape promises the formula is as it
+ *   was. A scratchwork block autosaves and has no "as it was" to return to,
+ *   so cancel only ends its session.
+ * - A click that is neither a reference pick nor inside an editing surface —
+ *   routed here by the canvas pointer handler calling `clear`.
+ *
+ * `blur` and `disengage` deliberately end nothing.
  */
 export class ActiveFormulaEditorRegistry {
   private active: ActiveFormulaEditor | null = null;
   private bindings = new Map<string, FormulaEditorBinding>();
   private bindingOwners = new Map<string, object>();
   private listeners = new Set<() => void>();
+  /**
+   * The draft as it stood when this session began — what Escape restores.
+   * Captured at activation rather than read from the binding at cancel time,
+   * because bindings re-bind on every render with the *current* draft, so by
+   * the time Escape arrives the binding no longer remembers the saved text.
+   */
+  private sessionOpeningDraft: string | null = null;
 
   getSnapshot = (): ActiveFormulaEditor | null => this.active;
   getPresenceSnapshot = (): boolean => Boolean(this.active?.focused);
@@ -152,6 +178,9 @@ export class ActiveFormulaEditorRegistry {
   activate(id: string, selection: FormulaSelection): void {
     const binding = this.bindings.get(id);
     if (!binding) return;
+    // A new session starts here; re-focusing the surface of the session
+    // already underway must not move the Escape point mid-edit.
+    if (this.active?.id !== id) this.sessionOpeningDraft = binding.draft;
     this.publish({
       id,
       label: binding.label,
@@ -271,15 +300,48 @@ export class ActiveFormulaEditorRegistry {
     if (this.active) this.publish({ ...this.active, focused: false });
   }
 
-  async commit(): Promise<void> {
+  async commit(options: { keepEditing?: boolean } = {}): Promise<void> {
     if (!this.active) return;
-    const binding = this.bindings.get(this.active.id);
+    const committed = this.active;
+    const binding = this.bindings.get(committed.id);
     if (!binding?.onCommit) return;
     await binding.onCommit(this.active.draft);
+    // A commit that resolved ends a formula session (see the class comment).
+    // A commit that threw leaves the session alive for the surface that has
+    // to show the failure. `keepEditing` is for gestures that persist as a
+    // side effect of something else — Format tidies and saves the draft, but
+    // nobody pressing Format meant "I am finished editing". Re-read `active`
+    // after the await: the commit handler may have moved or ended the
+    // session itself, and ending its successor would punish it for that.
+    if (options.keepEditing || committed.kind !== "formula") return;
+    if (this.active?.id === committed.id) this.clear(committed.id);
+  }
+
+  /**
+   * Escape: put the draft back the way the session found it, then end the
+   * session. The revert applies to formula editors only — see the class
+   * comment for why scratchwork keeps its text.
+   */
+  cancel(id?: string): void {
+    if (!this.active || (id !== undefined && this.active.id !== id)) return;
+    const binding = this.bindings.get(this.active.id);
+    const opening = this.sessionOpeningDraft;
+    if (
+      this.active.kind === "formula" &&
+      binding &&
+      opening !== null &&
+      opening !== this.active.draft
+    )
+      binding.onChange(
+        opening,
+        clampSelection(this.active.selection, opening.length)
+      );
+    this.clear(this.active.id);
   }
 
   clear(id?: string): void {
     if (!this.active || (id !== undefined && this.active.id !== id)) return;
+    this.sessionOpeningDraft = null;
     this.publish(null);
   }
 

@@ -58,6 +58,10 @@ export function ActiveFormulaAnswer({
       ) : (
         " · click a cell or column to reference"
       )}
+      {/* The one line that says how the mode ends, present as long as the
+          mode is — the cost of not saying it was clicks silently rewriting
+          committed formulas. */}
+      {" · esc to finish"}
     </span>
   );
 }

@@ -87,18 +87,14 @@ export function VariableCard({
       onBlurCapture={(event) => {
         const target = event.target;
         if (!(target instanceof HTMLTextAreaElement)) return;
-        // A variable is one self-saving formula surface. Blurring commits the
-        // current multiline draft without imposing that policy on every
-        // FormulaEditor elsewhere in the application.
+        // A variable is one self-saving formula surface: its editor persists
+        // on blur through FormulaField's `commitOnBlur` below. Formatting
+        // here happens first, while the shared draft is still this card's,
+        // so the surface keeps the multiline shape the save will produce. It
+        // used to persist by synthesizing a ⌘↵ keydown; that spelling became
+        // wrong once an explicit commit started ending the shared session —
+        // blur is routinely the formula bar taking over this same draft.
         formatActiveDraft();
-        target.dispatchEvent(
-          new KeyboardEvent("keydown", {
-            bubbles: true,
-            cancelable: true,
-            key: "Enter",
-            metaKey: true,
-          })
-        );
       }}
     >
       <span
@@ -137,6 +133,7 @@ export function VariableCard({
         initial={formatFormulaChains(computed?.formula ?? "").source}
         references={references}
         compact
+        commitOnBlur
         onCommit={(draft) =>
           onOperation(
             {

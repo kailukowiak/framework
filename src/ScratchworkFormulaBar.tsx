@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ActiveFormulaAnswer } from "./ActiveFormulaAnswer";
 import { useActiveFormulaEditor } from "./ActiveFormulaEditor";
+import type { ActiveFormulaEditor } from "./lib/activeFormulaEditor";
 import { FormulaBarActions } from "./FormulaBarActions";
 import { HighlightedFormulaTextarea } from "./FormulaReferenceText";
 import {
+  completionMenuTookKey,
   FormulaCompletionMenu,
   useFormulaCompletion,
 } from "./FormulaCompletion";
@@ -27,6 +29,15 @@ function documentSelection(lineStart: number, start: number, end: number) {
 
 function canFormatFormula(formulaMode: boolean, draft: string, busy: boolean) {
   return formulaMode && Boolean(draft.trim()) && !busy;
+}
+
+/**
+ * The `session` class makes the bar read as a mode while the one logical
+ * formula editor owns it, so the answer to "why did my click insert a
+ * reference" is visible in the bar itself.
+ */
+function barModeClass(active: ActiveFormulaEditor | null): string {
+  return `scratchwork-formula-bar${active ? " session" : ""}`;
 }
 
 async function formatDraft({
@@ -95,7 +106,7 @@ export function ScratchworkFormulaBar({
     setSelection: setActiveSelection,
     engage: engageActiveEditor,
     disengage: disengageActiveEditor,
-    clear: clearActiveEditor,
+    cancel: cancelActiveEditor,
     commit: commitActiveEditor,
   } = useActiveFormulaEditor();
   const [freshDraft, setFreshDraft] = useState("");
@@ -246,7 +257,7 @@ export function ScratchworkFormulaBar({
   return (
     <form
       ref={bar}
-      className="scratchwork-formula-bar"
+      className={barModeClass(active)}
       onSubmit={(event) => {
         event.preventDefault();
         void commit();
@@ -316,6 +327,10 @@ export function ScratchworkFormulaBar({
             setActiveSelection(documentSelection(activeLine?.start ?? 0, start, end));
         }}
         onKeyDown={(event) => {
+          // Mid-IME-composition, Enter and Escape belong to the composer;
+          // acting on them here would commit or cancel a formula the person
+          // was still assembling a character of.
+          if (event.nativeEvent.isComposing) return;
           // Alt+Return expands the formula inside an explicit boundary.
           if (formulaMode && event.key === "Enter" && event.altKey) {
             event.preventDefault();
@@ -330,30 +345,7 @@ export function ScratchworkFormulaBar({
             });
             return;
           }
-          if (event.key === "ArrowDown" && completion.suggestionCount) {
-            event.preventDefault();
-            completion.setActiveIndex(
-              (completion.activeIndex + 1) % completion.suggestionCount
-            );
-            return;
-          }
-          if (event.key === "ArrowUp" && completion.suggestionCount) {
-            event.preventDefault();
-            completion.setActiveIndex(
-              (completion.activeIndex - 1 + completion.suggestionCount) %
-                completion.suggestionCount
-            );
-            return;
-          }
-          if (
-            completion.suggestionCount &&
-            (event.key === "Tab" ||
-              (event.key === "Enter" && completion.query.length > 0))
-          ) {
-            event.preventDefault();
-            completion.insertActive();
-            return;
-          }
+          if (completionMenuTookKey(event, completion)) return;
           // A textarea would take Enter as a newline; here it stays the
           // commit it has always been. New rows are Alt+Return's job.
           if (event.key === "Enter") {
@@ -369,7 +361,7 @@ export function ScratchworkFormulaBar({
             return;
           }
           if (active) {
-            clearActiveEditor();
+            cancelActiveEditor();
             event.currentTarget.blur();
             return;
           }
@@ -451,7 +443,9 @@ export function ScratchworkFormulaBar({
       <FormulaBarActions
         canFormat={canFormatFormula(formulaMode, draft, busy)}
         expanded={expanded}
-        onFormat={() => void formatDraft({ source: draft, cursor, input: input.current, change, setFreshCursor, persist: active ? commitActiveEditor : null, setBusy })}
+        // Format persists through commit but is not a finishing gesture:
+        // the person is tidying a formula they are still inside of.
+        onFormat={() => void formatDraft({ source: draft, cursor, input: input.current, change, setFreshCursor, persist: active ? () => commitActiveEditor({ keepEditing: true }) : null, setBusy })}
         onToggle={onToggle}
       />
     </form>

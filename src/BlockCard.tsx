@@ -461,7 +461,20 @@ export function BlockCard({
             }
             if (isFormulaExecuteShortcut(event)) {
               event.preventDefault();
-              void registration.commit();
+              void registration.commit(event.currentTarget.value);
+              return;
+            }
+            // With no suggestion menu to dismiss, Escape ends the session.
+            // The block keeps its text — it autosaves, so there is no saved
+            // state for Escape to return to — and the blur that follows is
+            // the same save any blur performs.
+            if (
+              event.key === "Escape" &&
+              !offering &&
+              !event.nativeEvent.isComposing
+            ) {
+              registration.cancel();
+              event.currentTarget.blur();
               return;
             }
             if (!offering) return;

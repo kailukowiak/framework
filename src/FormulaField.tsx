@@ -11,6 +11,7 @@ export function FormulaField({
   frameId,
   focusToken,
   compact = false,
+  commitOnBlur,
   onCommit,
 }: {
   editorId: string;
@@ -21,6 +22,8 @@ export function FormulaField({
   frameId?: string;
   focusToken?: number;
   compact?: boolean;
+  /** Self-saving surfaces persist on blur; see FormulaEditor's prop. */
+  commitOnBlur?: boolean;
   onCommit: (value: string) => Promise<string | null>;
 }) {
   const [value, setValue] = useState(initial);
@@ -44,6 +47,7 @@ export function FormulaField({
         focusToken={focusToken}
         error={formulaError}
         compact={compact}
+        commitOnBlur={commitOnBlur}
         onChange={(next) => {
           setValue(next);
           setFormulaError(null);

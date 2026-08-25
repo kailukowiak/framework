@@ -144,6 +144,26 @@ function trySummaryPick(
   return true;
 }
 
+/**
+ * A refusal with no message means the session holds no reference for the
+ * clicked column at all. Inside the session's own frame that is still worth
+ * an explanation in place — the column may simply not exist yet at this step
+ * of the chain. On any other frame it is an ordinary selection gesture: the
+ * pick declines it un-prevented, and the caller's fallthrough ends the
+ * session and lets the click select the cell it landed on.
+ */
+function foreignUnaddressablePick(
+  pick: ReturnType<typeof formulaColumnPick>,
+  active: ActiveFormulaEditor,
+  frameId: string
+): boolean {
+  return (
+    pick.kind === "refuse" &&
+    pick.message === null &&
+    active.completion.frameId !== frameId
+  );
+}
+
 function tryColumnPick(
   event: ReactPointerEvent,
   target: HTMLElement,
@@ -157,8 +177,6 @@ function tryColumnPick(
   const semanticHeader = target.closest("button.column-select");
   if (event.button !== 0 || !columnId || !frameId || (hitControl && !semanticHeader))
     return false;
-  event.preventDefault();
-  event.stopPropagation();
   const pickedRow = rowIndex(target);
   const pick = formulaColumnPick(
     active,
@@ -169,6 +187,9 @@ function tryColumnPick(
       pickedRow === undefined ||
       hasStableCellAddresses(options.document, frameId)
   );
+  if (foreignUnaddressablePick(pick, active, frameId)) return false;
+  event.preventDefault();
+  event.stopPropagation();
   if (pick.kind === "insert") {
     options.insertReference(pick.token, !editingFromBar);
     options.onNotice(null);
@@ -300,8 +321,25 @@ export function canvasFormulaPointerHandler(options: PickingOptions) {
       if (tryColumnPick(event, target, active, fromBar, options)) return;
       if (tryObjectPick(event, target, active, fromBar, options)) return;
     }
-    if (target.closest(".formula-editor, .block-source, .scratchwork-formula-bar"))
+    // The surfaces that own or serve the session: the bar, inline formula
+    // editors, the block card being written in, the variable card whose
+    // formula the bar mirrors — grabbing its resize handle is working on
+    // the thing being edited, not leaving it — the inspector holding the
+    // wrangle chain, and menus — a context menu can insert into the
+    // session, so opening or using one must not end it.
+    if (
+      target.closest(
+        ".formula-editor, .block-card, .variable-object, .scratchwork-formula-bar, .inspector, .framework-context-menu, .floating-formula-menu"
+      )
+    )
       return;
-    options.disengage();
+    // Anything else a primary click lands on is neither a reference pick nor
+    // part of the editing surface, so it ends the session rather than being
+    // swallowed by it — this is what lets a click on another frame select a
+    // cell normally, and what returns the bar to its cell-aware mode. The
+    // click itself proceeds un-prevented. Non-primary buttons only disarm
+    // pick mode: a right-click opens a menu that may still want the session.
+    if (event.button === 0) options.clear();
+    else options.disengage();
   };
 }

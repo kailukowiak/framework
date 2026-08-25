@@ -216,6 +216,117 @@ describe("ActiveFormulaEditorRegistry", () => {
     });
   });
 
+  it("ends a formula session once its commit resolves", async () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+
+    await registry.commit();
+
+    expect(editor.onCommit).toHaveBeenCalledWith("amount.sum()");
+    expect(registry.getSnapshot()).toBeNull();
+  });
+
+  it("keeps a scratchwork session alive across its continuous commits", async () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding({ kind: "scratchwork" });
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+
+    await registry.commit();
+
+    expect(registry.getSnapshot()?.id).toBe(editor.id);
+  });
+
+  it("keeps the session when its commit throws", async () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding({
+      onCommit: vi.fn(() => Promise.reject(new Error("refused"))),
+    });
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+
+    await expect(registry.commit()).rejects.toThrow("refused");
+
+    expect(registry.getSnapshot()?.id).toBe(editor.id);
+  });
+
+  it("keeps the session for a commit that only persists mid-edit", async () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+
+    await registry.commit({ keepEditing: true });
+
+    expect(editor.onCommit).toHaveBeenCalled();
+    expect(registry.getSnapshot()?.id).toBe(editor.id);
+  });
+
+  it("cancel restores the draft the session opened with and ends it", () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+    registry.setDraft("amount.mean()", { start: 13, end: 13 });
+
+    registry.cancel();
+
+    expect(editor.onChange).toHaveBeenLastCalledWith("amount.sum()", {
+      start: 12,
+      end: 12,
+    });
+    expect(registry.getSnapshot()).toBeNull();
+  });
+
+  it("cancel ends a scratchwork session without rewriting its text", () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding({ kind: "scratchwork", draft: "x = 1" });
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 5, end: 5 });
+    registry.setDraft("x = 12", { start: 6, end: 6 });
+
+    registry.cancel();
+
+    expect(editor.onChange).toHaveBeenLastCalledWith("x = 12", {
+      start: 6,
+      end: 6,
+    });
+    expect(registry.getSnapshot()).toBeNull();
+  });
+
+  it("refocusing the same session does not move its cancel point", () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+    registry.setDraft("amount.mean()", { start: 13, end: 13 });
+    registry.bind({ ...editor, draft: "amount.mean()" });
+    registry.activate(editor.id, { start: 3, end: 3 });
+
+    registry.cancel();
+
+    expect(editor.onChange).toHaveBeenLastCalledWith("amount.sum()", {
+      start: 3,
+      end: 3,
+    });
+  });
+
+  it("ignores a reference insertion after the session ended", () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+    registry.clear();
+    editor.onChange = vi.fn();
+
+    registry.insertReference("`Debit`");
+
+    expect(editor.onChange).not.toHaveBeenCalled();
+    expect(registry.getSnapshot()).toBeNull();
+  });
+
   it("continues editing the retained draft while its surface is unmounted", () => {
     const registry = new ActiveFormulaEditorRegistry();
     const editor = binding({ draft: "before" });

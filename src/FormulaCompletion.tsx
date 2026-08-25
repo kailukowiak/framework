@@ -266,6 +266,42 @@ export function useFormulaCompletion({
 
 export type FormulaCompletionState = ReturnType<typeof useFormulaCompletion>;
 
+/**
+ * The keys the completion menu owns while it is offering suggestions, shared
+ * by every editor that mounts the menu so Tab and the arrows cannot drift
+ * apart between the bar and the inline editors.
+ */
+export function completionMenuTookKey(
+  event: { key: string; preventDefault: () => void },
+  completion: FormulaCompletionState
+): boolean {
+  if (event.key === "ArrowDown" && completion.suggestionCount) {
+    event.preventDefault();
+    completion.setActiveIndex(
+      (completion.activeIndex + 1) % completion.suggestionCount
+    );
+    return true;
+  }
+  if (event.key === "ArrowUp" && completion.suggestionCount) {
+    event.preventDefault();
+    completion.setActiveIndex(
+      (completion.activeIndex - 1 + completion.suggestionCount) %
+        completion.suggestionCount
+    );
+    return true;
+  }
+  if (
+    completion.suggestionCount &&
+    (event.key === "Tab" ||
+      (event.key === "Enter" && completion.query.length > 0))
+  ) {
+    event.preventDefault();
+    completion.insertActive();
+    return true;
+  }
+  return false;
+}
+
 export function FormulaCompletionMenu({
   completion,
   anchorRef,

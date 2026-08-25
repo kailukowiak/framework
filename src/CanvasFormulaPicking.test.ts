@@ -56,14 +56,23 @@ function options() {
   };
 }
 
-function pointerDown(target: HTMLElement) {
+function pointerDown(target: HTMLElement, button = 0) {
   return {
     target,
-    button: 0,
+    button,
     preventDefault: vi.fn(),
     stopPropagation: vi.fn(),
   } as never;
 }
+
+/** A wrangle-style session scoped to the sales frame, with no cell anchor. */
+const formulaSession: ActiveFormulaEditor = {
+  ...active,
+  id: "pipeline:sales:step",
+  label: "Amount",
+  kind: "formula",
+  completion: { ...active.completion, frameId: "sales" },
+};
 
 describe("canvas formula pointing", () => {
   it("inserts a whole column from its semantic header button", () => {
@@ -116,5 +125,66 @@ describe("canvas formula pointing", () => {
       "`Sales`.`Revenue`.head(2).last()",
       true
     );
+  });
+
+  it("lets a click on another frame's cell end the session and pass through", () => {
+    document.body.innerHTML = `
+      <div data-frame-id="ledger"><table><tbody>
+        <tr data-row-index="0"><td data-column-id="je">JE-1</td></tr>
+      </tbody></table></div>`;
+    const cell = document.querySelector<HTMLElement>("td")!;
+    const configured = { ...options(), getActive: () => formulaSession };
+    const event = pointerDown(cell);
+    canvasFormulaPointerHandler(configured)(event);
+
+    expect(configured.insertReference).not.toHaveBeenCalled();
+    expect(configured.clear).toHaveBeenCalled();
+    expect((event as { preventDefault: ReturnType<typeof vi.fn> }).preventDefault)
+      .not.toHaveBeenCalled();
+  });
+
+  it("still explains a same-frame column the session cannot read", () => {
+    document.body.innerHTML = `
+      <div data-frame-id="sales"><table><tbody>
+        <tr data-row-index="0"><td data-column-id="later-output">7</td></tr>
+      </tbody></table></div>`;
+    const cell = document.querySelector<HTMLElement>("td")!;
+    const configured = { ...options(), getActive: () => formulaSession };
+    canvasFormulaPointerHandler(configured)(pointerDown(cell));
+
+    expect(configured.clear).not.toHaveBeenCalled();
+    expect(configured.onNotice).toHaveBeenCalledWith(
+      expect.stringContaining("Amount")
+    );
+  });
+
+  it("ends the session when a primary click lands on nothing pickable", () => {
+    document.body.innerHTML = `<div class="canvas-viewport"></div>`;
+    const canvas = document.querySelector<HTMLElement>("div")!;
+    const configured = options();
+    canvasFormulaPointerHandler(configured)(pointerDown(canvas));
+
+    expect(configured.clear).toHaveBeenCalled();
+    expect(configured.disengage).not.toHaveBeenCalled();
+  });
+
+  it("keeps the session for clicks inside its editing surfaces", () => {
+    document.body.innerHTML = `<aside class="inspector"><button>step</button></aside>`;
+    const button = document.querySelector<HTMLElement>("button")!;
+    const configured = options();
+    canvasFormulaPointerHandler(configured)(pointerDown(button));
+
+    expect(configured.clear).not.toHaveBeenCalled();
+    expect(configured.disengage).not.toHaveBeenCalled();
+  });
+
+  it("only disarms pick mode for a non-primary press", () => {
+    document.body.innerHTML = `<div class="canvas-viewport"></div>`;
+    const canvas = document.querySelector<HTMLElement>("div")!;
+    const configured = options();
+    canvasFormulaPointerHandler(configured)(pointerDown(canvas, 2));
+
+    expect(configured.clear).not.toHaveBeenCalled();
+    expect(configured.disengage).toHaveBeenCalled();
   });
 });

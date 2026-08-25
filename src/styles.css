@@ -83,6 +83,10 @@ button:disabled { cursor: default; opacity: .35; }
 .scratchwork-formula-bar > .formula-textarea-layer { grid-column: 2; grid-row: 1; }
 .scratchwork-formula-bar textarea { min-width: 0; max-height: 135px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 500 var(--text-base)/27px "DM Mono", monospace; resize: none; overflow: auto; white-space: pre; scrollbar-width: thin; }
 .scratchwork-formula-bar textarea::placeholder { color: light-dark(#a1a29b, #6f716a); font-weight: 400; }
+/* While a formula session owns the bar it reads as a mode: one accent rule
+   under the bar, no extra chrome. The hint line already names the editor and
+   the way out; this line is what makes it findable at a glance. */
+.scratchwork-formula-bar.session { box-shadow: inset 0 -2px 0 var(--accent); }
 .scratchwork-formula-answer, .scratchwork-formula-key { grid-column: 2 / -1; grid-row: 2; min-width: 0; overflow: hidden; color: light-dark(#777a73, #969990); font-size: var(--text-sm); line-height: 27px; text-overflow: ellipsis; white-space: nowrap; }
 .scratchwork-formula-answer strong { color: light-dark(#4d504a, #b9bbb5); font: 500 var(--text-sm) "DM Mono", monospace; }
 .scratchwork-formula-answer.invalid { max-width: min(46vw, 620px); color: light-dark(#9a452b, #e2775a); }
