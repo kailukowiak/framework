@@ -1270,6 +1270,16 @@ The convergence target: diverse sources in, Polars wrangling, plots, predictions
 
 The long tail — anything not in the native list — arrives later through the Python plugin runtime under its existing consent rules, and hands its result back the same way: an ONNX artifact and a model object. The tiers differ in where training runs, never in what a model *is*.
 
+### TODOs from the 2026-08-25 field audit
+
+Three items the hands-on audit surfaced that are direction, not bugs — parked here so they survive the bug-fix churn:
+
+- **TODO: grow drag/drop outward from the matrix wells.** The Calculation Matrix wells already accept a dropped vector, so a drop protocol exists; column headers — the richest objects in the app — are not draggable. Every target already has an operation behind a context-menu item today, so this is frontend wiring, not new semantics: header → canvas is "Create frame from this," header → plot card sets an encoding, header → another frame's header opens the join flow, file → canvas imports at the drop point (the import path already takes a position). Same family: a fill handle on the selection ring driving the existing fill-series operation, and selection-footer aggregates (Sum · Avg · Count) on a multi-cell selection. This is the visible half of "feels like Excel"; the operations are done.
+
+- **TODO: make the `=` handoff visible.** Routing `=` on a single cell to Scratchwork is a considered decision (the calculation gets a name and a durable address instead of a hidden per-cell exception — see the comment in `gridCellFormula.ts`), but today it is a silent teleport, and in a blank append-row cell the same keystroke becomes literal text instead. One keystroke, three outcomes, none announced. When `=` fires, the bar should visibly catch it — focus, a brief highlight, the selected cell's reference pre-seeded — so the eye follows the keystroke to where the formula actually went. The design stands; the *handoff* is the missing piece.
+
+- **TODO: cover native-menu wiring in e2e.** The menu-less e2e shell means menu construction, enablement, and command routing have zero automated coverage — which is exactly where an enabled-but-inert Undo hid until a hands-on session caught it. Cheapest honest fix: a debug-only command that replays a menu id through `menu::forward`, so one spec can walk the Edit menu's ids against a live document and assert the document changed. Enablement state stays testable at the core tier (`can_undo`/`can_redo` on the view); it is the routing that needs the seam.
+
 ---
 
 ## 35. Decision log
