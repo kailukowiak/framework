@@ -232,6 +232,14 @@ export type GridFocus = {
   mode: GridFocusMode;
   /** Initial editor content for type-to-replace; null preserves the cell content. */
   editSeed: string | null;
+  /**
+   * An edit was attempted here and refused. Set instead of `mode: "edit"`
+   * when the cell cannot turn a keystroke into a real operation, so the
+   * card can say why, at the cell, instead of silently doing nothing —
+   * silence is how "the edit did nothing" gets reported as a broken grid.
+   * Cleared by any movement or fresh click.
+   */
+  editRefused?: boolean;
   /** Range-selection anchor left behind by Shift+Arrow, or null for a single cell. */
   anchor: { rowId: string; columnId: string } | null;
   /**

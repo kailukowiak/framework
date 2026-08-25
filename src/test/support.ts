@@ -1,8 +1,11 @@
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import type { DataObject, DocumentView } from "../lib/types";
 import blankJson from "./fixtures/blank.json";
+import importedSalesJson from "./fixtures/imported-sales.json";
 import salesBeforeJson from "./fixtures/sales-before-formula.json";
+import salesDeleteRegionJson from "./fixtures/sales-margin-delete-region.json";
 import salesWithJson from "./fixtures/sales-with-formula.json";
+import salesWithMarginJson from "./fixtures/sales-with-margin.json";
 
 // ---------------------------------------------------------------------------
 // Support for mounted interaction tests.
@@ -20,6 +23,15 @@ export const fixtures = {
   blank: blankJson as unknown as DocumentView,
   salesBeforeFormula: salesBeforeJson as unknown as DocumentView,
   salesWithFormula: salesWithJson as unknown as DocumentView,
+  /** Literal rows plus a chain-calculated Margin column; cells editable. */
+  salesWithMargin: salesWithMarginJson as unknown as DocumentView,
+  /**
+   * The same document (same ids) after a Select step dropped Region — a
+   * stand-in for a chain edit or an undo arriving from outside a component.
+   */
+  salesMarginDeleteRegion: salesDeleteRegionJson as unknown as DocumentView,
+  /** A linked import: artifact-paged, not cell-editable, reason reported. */
+  importedSales: importedSalesJson as unknown as DocumentView,
 };
 
 /** Fixture ids are minted on regeneration, so tests select by name. */

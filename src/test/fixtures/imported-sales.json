@@ -1,11 +1,101 @@
 {
-  "id": "fbb92e16-bfb8-4b82-9757-babd18210006",
+  "id": "ae4a37ea-acde-4521-bb2f-796598c8da65",
   "name": "Fixture",
-  "revision": 0,
-  "objects": [],
-  "views": [],
+  "revision": 1,
+  "objects": [
+    {
+      "kind": "frame",
+      "id": "0e17a901-8b8f-4fcd-b584-fa993eed6804",
+      "name": "Imported sales",
+      "columns": [
+        {
+          "id": "month~g65php",
+          "name": "Month",
+          "sourceName": "Month",
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "region~vf8tjb",
+          "name": "Region",
+          "sourceName": "Region",
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "revenue~wjbfpy",
+          "name": "Revenue",
+          "sourceName": "Revenue",
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "cost~37v1hg",
+          "name": "Cost",
+          "sourceName": "Cost",
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        }
+      ],
+      "rows": [],
+      "sourceFile": null,
+      "artifact": {
+        "id": "imported-sales-fixture",
+        "path": "src/test/fixtures/imported-sales.parquet",
+        "rowCount": 6,
+        "format": "parquet",
+        "sourceName": "monthly-sales.csv"
+      },
+      "connector": {
+        "kind": "file",
+        "sourcePath": "monthly-sales.csv"
+      },
+      "derivation": null,
+      "materialization": null,
+      "uniqueKeys": [],
+      "summaries": []
+    }
+  ],
+  "views": [
+    {
+      "id": "480f6203-cd90-4726-a6af-7ddaace51269",
+      "objectId": "0e17a901-8b8f-4fcd-b584-fa993eed6804",
+      "x": 80.0,
+      "y": 80.0,
+      "width": 648.0,
+      "height": 300.0,
+      "collapsed": false
+    }
+  ],
   "frozenValues": {},
-  "computedFrames": {},
+  "computedFrames": {
+    "0e17a901-8b8f-4fcd-b584-fa993eed6804": {
+      "fingerprint": "8459efa1b04048fc",
+      "formulas": {},
+      "overrideFormulas": {},
+      "rows": {},
+      "summaries": {},
+      "derivation": null,
+      "totalRows": 6,
+      "paged": true,
+      "editing": {
+        "cells": false,
+        "rows": false,
+        "overrides": false,
+        "reason": "These rows are read from monthly-sales.csv, and refreshing replaces them. Add a calculated column, or edit the source and refresh."
+      },
+      "live": true,
+      "sourceName": "monthly-sales.csv"
+    }
+  },
   "computedResults": {},
   "computedBlocks": {},
   "computedTexts": {},
@@ -5582,6 +5672,6 @@
       ]
     }
   ],
-  "canUndo": false,
+  "canUndo": true,
   "canRedo": false
 }

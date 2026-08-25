@@ -17,6 +17,7 @@ import {
   effectiveFrameCellStyle,
   frameCellStyleProperties,
   isCalculatedFrameColumn,
+  isEditableGridColumn,
   type CellPointerHandler,
   type FrameStyleMatches,
   type GridFocus,
@@ -564,6 +565,7 @@ export function FieldsAsRowsFrameCard({
                           isDerived={isDerived}
                           paged={isPaged}
                           readOnly={readOnly}
+                          editable={isEditableGridColumn(computed, column, frame)}
                           readOnlyReason={computed.editing.reason}
                           editing={
                             isFocusCell && gridFocus.mode === "edit"

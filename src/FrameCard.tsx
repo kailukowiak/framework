@@ -15,6 +15,7 @@ import {
   chainFilterCount,
   chainSteps,
   filterWeight,
+  isCalculatedFrameColumn,
   isEditableGridColumn,
   isTextEntryTarget,
   nextColumnName,
@@ -65,6 +66,31 @@ import type {
   RenderedFrameStep,
   Row,
 } from "./lib/types";
+
+/**
+ * Why the last edit attempt at the focused cell was refused, said in the
+ * card's own status line rather than a window-level toast — errors go where
+ * the thing is. The engine's `editing.reason` is the frame-level answer; a
+ * calculated column beside editable inputs needs the column-level one.
+ */
+function editRefusalStatus(
+  frame: FrameCardProps["frame"],
+  computed: ComputedFrame,
+  focus: { editRefused?: boolean; columnId: string } | null
+) {
+  const refusedColumn = focus?.editRefused
+    ? frame.columns.find((column) => column.id === focus.columnId)
+    : undefined;
+  if (!refusedColumn) return null;
+  const text = isCalculatedFrameColumn(computed, refusedColumn)
+    ? `${refusedColumn.name} is calculated. Edit its formula instead of typing over one result.`
+    : computed.editing.reason ?? "This frame’s cells cannot be edited.";
+  return (
+    <div className="frame-page-controls frame-edit-refusal" role="status">
+      <span>{text}</span>
+    </div>
+  );
+}
 
 /** What a frame's authored chain does to its source, in three words or fewer. */
 function frameTransformationLabels(computed: ComputedFrame): Array<string | null> {
@@ -471,6 +497,7 @@ export function FrameCard({
 
   const gridFocusHere =
     gridFocus && gridFocus.objectId === frame.id ? gridFocus : null;
+  const editRefusalLine = editRefusalStatus(frame, computed, gridFocusHere);
 
   // `extend` is shift-click and drag-select: the focus moves to this cell
   // while the anchor stays put, so the two corners describe a rectangle. The
@@ -482,16 +509,17 @@ export function FrameCard({
     mode: GridFocusMode,
     options?: { extend?: boolean; span?: "row" | "column" | null }
   ) => {
+    const refused = mode === "edit" && !isEditableGridColumn(computed, column, frame);
     onSelect({ objectId: frame.id, rowId: row.id, columnId: column.id });
     onGridFocus((current) => ({
       viewId: view.id,
       objectId: frame.id,
       rowId: row.id,
       columnId: column.id,
-      mode:
-        mode === "edit" && !isEditableGridColumn(computed, column, frame)
-          ? "navigate"
-          : mode,
+      mode: refused ? "navigate" : mode,
+      // A demoted edit is not a plain click: record the refusal so the card
+      // can say why at the cell, instead of a double-click doing nothing.
+      editRefused: refused,
       editSeed: null,
       anchor:
         options?.extend && current?.objectId === frame.id
@@ -711,11 +739,17 @@ export function FrameCard({
       />
     ) : null;
   // Records-as-rows paged frames scroll freely through the virtualizer now,
-  // so there's no Previous/Next -- just a status line for load errors.
-  const pagedStatus =
-    isFileBacked && !isTransposed ? (
-      <FramePagedStatus total={totalRows} loading={pagedLoading} error={pagedError} />
-    ) : null;
+  // so there's no Previous/Next -- just a status line for load errors. The
+  // refusal line shares the slot: both are the card's own one-line answer to
+  // "why is the grid not doing what I asked".
+  const pagedStatus = (
+    <>
+      {editRefusalLine}
+      {isFileBacked && !isTransposed ? (
+        <FramePagedStatus total={totalRows} loading={pagedLoading} error={pagedError} />
+      ) : null}
+    </>
+  );
 
   if (frameOrientation(frame) === "fieldsAsRows") {
     // Click-to-sort column headers are not offered here: with fields as
@@ -749,7 +783,12 @@ export function FrameCard({
         readOnly={isReadOnly}
         rowOffset={page?.offset ?? 0}
         totalRows={totalRows}
-        footer={transposedPageControls}
+        footer={
+          <>
+            {editRefusalLine}
+            {transposedPageControls}
+          </>
+        }
       />
     );
   }

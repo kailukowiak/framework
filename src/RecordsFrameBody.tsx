@@ -5,6 +5,7 @@ import {
   effectiveFrameCellStyle,
   frameCellStyleProperties,
   isCalculatedFrameColumn,
+  isEditableGridColumn,
   isEntryFrameColumn,
 } from "./FrameGrid";
 import { positionInRange } from "./lib/gridNavigation";
@@ -147,6 +148,11 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                               !isEntryFrameColumn(frame, column)
                             }
                             readOnly={isReadOnly && !isEntryFrameColumn(frame, column)}
+                            // The per-column answer, from the same rule the
+                            // engine enforces: the frame-level flags above
+                            // choose how the value is drawn, this one alone
+                            // decides whether an editor may open.
+                            editable={isEditableGridColumn(computed, column, frame)}
                             readOnlyReason={computed.editing.reason}
                             editing={
                               isFocusCell && gridFocusHere.mode === "edit"

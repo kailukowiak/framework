@@ -22,6 +22,7 @@ export function movedGridFocus(
       columnId: target.column.id,
       mode: "navigate",
       editSeed: null,
+      editRefused: false,
       anchor: extend
         ? current.anchor ?? { rowId: current.rowId, columnId: current.columnId }
         : null,
@@ -53,6 +54,7 @@ export function rangedGridFocus(
       columnId: target.column.id,
       mode: "navigate",
       editSeed: null,
+      editRefused: false,
       anchor: { rowId: anchor.row.id, columnId: anchor.column.id },
       span,
     },

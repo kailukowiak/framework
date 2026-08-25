@@ -1,13 +1,618 @@
 {
-  "id": "fbb92e16-bfb8-4b82-9757-babd18210006",
+  "id": "fff8a7f8-8497-43e4-b60e-2a8513eeca32",
   "name": "Fixture",
-  "revision": 0,
-  "objects": [],
-  "views": [],
+  "revision": 5,
+  "objects": [
+    {
+      "kind": "frame",
+      "id": "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae",
+      "name": "Monthly sales",
+      "columns": [
+        {
+          "id": "month~pyrwj5",
+          "name": "Month",
+          "sourceName": null,
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "revenue~78y4cd",
+          "name": "Revenue",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "cost~7nvwbk",
+          "name": "Cost",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "margin~fixture",
+          "name": "Margin",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        }
+      ],
+      "rows": [
+        {
+          "id": "5ed74eb9-779d-4533-899b-7bfd82abd9da",
+          "cells": {
+            "cost~7nvwbk": {
+              "raw": "91000",
+              "overrideFormula": null
+            },
+            "month~pyrwj5": {
+              "raw": "2026-04",
+              "overrideFormula": null
+            },
+            "region~wytkfp": {
+              "raw": "West",
+              "overrideFormula": null
+            },
+            "revenue~78y4cd": {
+              "raw": "142000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "7ea3ed2e-843d-46d9-90df-f09034820f1f",
+          "cells": {
+            "cost~7nvwbk": {
+              "raw": "76000",
+              "overrideFormula": null
+            },
+            "month~pyrwj5": {
+              "raw": "2026-01",
+              "overrideFormula": null
+            },
+            "region~wytkfp": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~78y4cd": {
+              "raw": "118000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "1ca2df04-1ad0-4db5-b144-62c5b62ba6d7",
+          "cells": {
+            "cost~7nvwbk": {
+              "raw": "104000",
+              "overrideFormula": null
+            },
+            "month~pyrwj5": {
+              "raw": "2026-06",
+              "overrideFormula": null
+            },
+            "region~wytkfp": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~78y4cd": {
+              "raw": "168000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "4c4edc09-bda1-4c31-adc5-8f922ae1fc82",
+          "cells": {
+            "cost~7nvwbk": {
+              "raw": "85000",
+              "overrideFormula": null
+            },
+            "month~pyrwj5": {
+              "raw": "2026-03",
+              "overrideFormula": null
+            },
+            "region~wytkfp": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~78y4cd": {
+              "raw": "136000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "e30632dc-6384-4b04-bf3e-e2f2c3df85bf",
+          "cells": {
+            "cost~7nvwbk": {
+              "raw": "79000",
+              "overrideFormula": null
+            },
+            "month~pyrwj5": {
+              "raw": "2026-02",
+              "overrideFormula": null
+            },
+            "region~wytkfp": {
+              "raw": "West",
+              "overrideFormula": null
+            },
+            "revenue~78y4cd": {
+              "raw": "124000",
+              "overrideFormula": null
+            }
+          }
+        },
+        {
+          "id": "432c2cd4-282b-42a6-8eae-9539992c1d4b",
+          "cells": {
+            "cost~7nvwbk": {
+              "raw": "96000",
+              "overrideFormula": null
+            },
+            "month~pyrwj5": {
+              "raw": "2026-05",
+              "overrideFormula": null
+            },
+            "region~wytkfp": {
+              "raw": "East",
+              "overrideFormula": null
+            },
+            "revenue~78y4cd": {
+              "raw": "151000",
+              "overrideFormula": null
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "kind": "withColumns",
+          "columns": [
+            {
+              "outputColumnId": "margin~fixture",
+              "expression": {
+                "kind": "binary",
+                "operator": "subtract",
+                "left": {
+                  "kind": "column",
+                  "column_id": "revenue~78y4cd"
+                },
+                "right": {
+                  "kind": "column",
+                  "column_id": "cost~7nvwbk"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "select",
+          "columnIds": [
+            "month~pyrwj5",
+            "revenue~78y4cd",
+            "cost~7nvwbk",
+            "margin~fixture"
+          ]
+        }
+      ],
+      "baseColumns": [
+        {
+          "id": "month~pyrwj5",
+          "name": "Month",
+          "sourceName": null,
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "region~wytkfp",
+          "name": "Region",
+          "sourceName": null,
+          "dataType": "string",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "revenue~78y4cd",
+          "name": "Revenue",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        },
+        {
+          "id": "cost~7nvwbk",
+          "name": "Cost",
+          "sourceName": null,
+          "dataType": "integer",
+          "categories": [],
+          "format": null,
+          "formula": null
+        }
+      ],
+      "sourceFile": null,
+      "artifact": null,
+      "connector": null,
+      "derivation": null,
+      "materialization": null,
+      "uniqueKeys": [],
+      "summaries": []
+    },
+    {
+      "kind": "block",
+      "id": "09f1f751-e0f4-4e3d-b60d-98d33b42d436",
+      "name": "Checks",
+      "lines": [
+        {
+          "id": "5bee6bb0-7258-4668-9991-a8bac20fe86f",
+          "name": "Total revenue",
+          "named": true,
+          "nameQuoted": false,
+          "source": "`Monthly sales`.`Revenue`.sum()",
+          "formula": {
+            "expression": {
+              "kind": "method",
+              "input": {
+                "kind": "foreignColumn",
+                "frame_id": "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae",
+                "column_id": "revenue~78y4cd"
+              },
+              "path": [
+                "sum"
+              ],
+              "arguments": [],
+              "keyword_arguments": []
+            }
+          },
+          "error": null
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "52b93423-cdf7-452a-8d28-ee94d78a956e",
+      "objectId": "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae",
+      "x": 80.0,
+      "y": 80.0,
+      "width": 648.0,
+      "height": 300.0,
+      "collapsed": false
+    },
+    {
+      "id": "58ab6530-33f1-4d07-8644-25404fd6eaf7",
+      "objectId": "09f1f751-e0f4-4e3d-b60d-98d33b42d436",
+      "x": 80.0,
+      "y": 430.0,
+      "width": 340.0,
+      "height": 220.0,
+      "collapsed": false
+    }
+  ],
   "frozenValues": {},
-  "computedFrames": {},
+  "computedFrames": {
+    "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae": {
+      "fingerprint": "63e3a5828d071a3c",
+      "formulas": {
+        "margin~fixture": "`Revenue` - `Cost`"
+      },
+      "overrideFormulas": {},
+      "rows": {
+        "432c2cd4-282b-42a6-8eae-9539992c1d4b": {
+          "month~pyrwj5": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-05"
+            },
+            "display": "2026-05",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~78y4cd": {
+            "value": 151000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 151000.0
+            },
+            "display": "151000",
+            "error": null,
+            "isOverride": false
+          },
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~7nvwbk": {
+            "value": 96000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 96000.0
+            },
+            "display": "96000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "7ea3ed2e-843d-46d9-90df-f09034820f1f": {
+          "cost~7nvwbk": {
+            "value": 76000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 76000.0
+            },
+            "display": "76000",
+            "error": null,
+            "isOverride": false
+          },
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~78y4cd": {
+            "value": 118000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 118000.0
+            },
+            "display": "118000",
+            "error": null,
+            "isOverride": false
+          },
+          "month~pyrwj5": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-01"
+            },
+            "display": "2026-01",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "5ed74eb9-779d-4533-899b-7bfd82abd9da": {
+          "revenue~78y4cd": {
+            "value": 142000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 142000.0
+            },
+            "display": "142000",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~7nvwbk": {
+            "value": 91000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 91000.0
+            },
+            "display": "91000",
+            "error": null,
+            "isOverride": false
+          },
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "month~pyrwj5": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-04"
+            },
+            "display": "2026-04",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "1ca2df04-1ad0-4db5-b144-62c5b62ba6d7": {
+          "cost~7nvwbk": {
+            "value": 104000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 104000.0
+            },
+            "display": "104000",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~78y4cd": {
+            "value": 168000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 168000.0
+            },
+            "display": "168000",
+            "error": null,
+            "isOverride": false
+          },
+          "month~pyrwj5": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-06"
+            },
+            "display": "2026-06",
+            "error": null,
+            "isOverride": false
+          },
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "4c4edc09-bda1-4c31-adc5-8f922ae1fc82": {
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "month~pyrwj5": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-03"
+            },
+            "display": "2026-03",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~78y4cd": {
+            "value": 136000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 136000.0
+            },
+            "display": "136000",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~7nvwbk": {
+            "value": 85000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 85000.0
+            },
+            "display": "85000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "e30632dc-6384-4b04-bf3e-e2f2c3df85bf": {
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~7nvwbk": {
+            "value": 79000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 79000.0
+            },
+            "display": "79000",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~78y4cd": {
+            "value": 124000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 124000.0
+            },
+            "display": "124000",
+            "error": null,
+            "isOverride": false
+          },
+          "month~pyrwj5": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-02"
+            },
+            "display": "2026-02",
+            "error": null,
+            "isOverride": false
+          }
+        }
+      },
+      "summaries": {},
+      "derivation": null,
+      "steps": [
+        {
+          "kind": "withColumns",
+          "columns": [
+            {
+              "outputColumnId": "margin~fixture",
+              "formula": "`Revenue` - `Cost`"
+            }
+          ]
+        },
+        {
+          "kind": "select",
+          "columnIds": [
+            "month~pyrwj5",
+            "revenue~78y4cd",
+            "cost~7nvwbk",
+            "margin~fixture"
+          ]
+        }
+      ],
+      "paged": true,
+      "editing": {
+        "cells": false,
+        "rows": false,
+        "overrides": false,
+        "reason": "These rows are read from the copy imported into this document. Add a calculated column to work from them."
+      }
+    }
+  },
   "computedResults": {},
-  "computedBlocks": {},
+  "computedBlocks": {
+    "09f1f751-e0f4-4e3d-b60d-98d33b42d436": {
+      "source": "Total revenue = `Monthly sales`.`Revenue`.sum()",
+      "lines": [
+        {
+          "id": "5bee6bb0-7258-4668-9991-a8bac20fe86f",
+          "name": "Total revenue",
+          "text": "Total revenue = `Monthly sales`.`Revenue`.sum()",
+          "comment": false,
+          "blank": false,
+          "dataType": "integer",
+          "valueCount": 1,
+          "value": 839000.0,
+          "typedValue": {
+            "type": "number",
+            "value": 839000.0
+          },
+          "display": "839000",
+          "error": null,
+          "isOverride": false
+        }
+      ]
+    }
+  },
   "computedTexts": {},
   "computedCalculationMatrices": {},
   "formulaFunctions": [
@@ -5582,6 +6187,6 @@
       ]
     }
   ],
-  "canUndo": false,
+  "canUndo": true,
   "canRedo": false
 }

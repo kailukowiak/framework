@@ -19,6 +19,7 @@ export function GridCellContent({
   isDerived,
   paged = false,
   readOnly = false,
+  editable = false,
   readOnlyReason,
   editing,
   onNavigate,
@@ -33,6 +34,15 @@ export function GridCellContent({
   isDerived: boolean;
   paged?: boolean;
   readOnly?: boolean;
+  /**
+   * Whether a keystroke in this cell can become a real operation — the
+   * per-column answer (`isEditableGridColumn`), not the frame-level flag.
+   * The editor renders only when this is true: an editor whose commit the
+   * engine would refuse is an edit that appears to work and does nothing,
+   * which is the exact failure the engine's `FrameEditing` contract exists
+   * to prevent.
+   */
+  editable?: boolean;
   readOnlyReason?: string;
   editing: { seed: string | null } | null;
   /** Receives the click so shift-click can extend rather than reset. */
@@ -64,21 +74,18 @@ export function GridCellContent({
   // row's own value is the only value there is, derived column or not.
   if (paged || (readOnly && !isDerived)) {
     return (
-      <div
-        className={`cell-display read-only${displayFormat ? " formatted-numeric" : ""}`}
+      <DisplayCell
+        column={column}
+        raw={cell?.raw ?? ""}
+        displayFormat={displayFormat}
+        editable={false}
         title={readOnlyReason ?? "This cell comes from the frame's source"}
-        onClick={onNavigate}
-      >
-        {displayFormat ? (
-          <FormattedCellValue
-            raw={cell?.raw ?? ""}
-            format={displayFormat}
-            dataType={column.dataType}
-          />
-        ) : (
-          cell?.raw ?? ""
-        )}
-      </div>
+        onNavigate={onNavigate}
+        // Not an editor: the edit request is forwarded so the card can
+        // refuse it visibly, with the engine's reason, instead of a
+        // double-click doing nothing at all.
+        onEdit={onEdit}
+      />
     );
   }
   if (isDerived) {
@@ -94,7 +101,7 @@ export function GridCellContent({
       />
     );
   }
-  if (editing) {
+  if (editing && editable) {
     if (column.dataType === "categorical") {
       return (
         <select
@@ -141,21 +148,57 @@ export function GridCellContent({
       />
     );
   }
+  // The catch-all display also serves the cell whose edit request was
+  // refused above (`editing` set, `editable` false): rendering the value it
+  // actually holds, never an editor, is what keeps a refused keystroke from
+  // leaving a draft on screen that the document does not contain.
+  return (
+    <DisplayCell
+      column={column}
+      raw={cell?.raw ?? ""}
+      displayFormat={displayFormat}
+      editable={editable}
+      title={editable ? undefined : readOnlyReason}
+      onNavigate={onNavigate}
+      onEdit={editable ? onEdit : undefined}
+    />
+  );
+}
+
+/** A value shown as a value: read-only unless a keystroke here can commit. */
+function DisplayCell({
+  column,
+  raw,
+  displayFormat,
+  editable,
+  title,
+  onNavigate,
+  onEdit,
+}: {
+  column: Column;
+  raw: string;
+  displayFormat: ColumnFormat | null;
+  editable: boolean;
+  title?: string;
+  onNavigate: (event: React.MouseEvent) => void;
+  onEdit?: () => void;
+}) {
   return (
     <div
-      className={`cell-display${displayFormat ? " formatted-numeric" : ""}`}
-      title="Double-click or press F2 to edit"
+      className={`cell-display${editable ? "" : " read-only"}${
+        displayFormat ? " formatted-numeric" : ""
+      }`}
+      title={
+        title ??
+        (editable ? "Double-click or press F2 to edit" : "This cell cannot be edited")
+      }
       onClick={onNavigate}
       onDoubleClick={onEdit}
     >
       {displayFormat ? (
-        <FormattedCellValue
-          raw={cell?.raw ?? ""}
-          format={displayFormat}
-          dataType={column.dataType}
-        />
+        <FormattedCellValue raw={raw} format={displayFormat} dataType={column.dataType} />
       ) : (
-        cell?.raw ?? ""
+        raw
       )}
     </div>
   );

@@ -36,6 +36,22 @@ import type { DocumentView, Selection } from "../lib/types";
 import type { InspectorSection } from "../Inspector";
 
 /**
+ * Where an edit-starting keystroke lands: into edit mode when the cell can
+ * turn it into a real operation, and into a marked refusal when it cannot.
+ * The refusal is not silence — the flag makes the card show the engine's
+ * reason at the cell, and any movement clears it.
+ */
+function editKeyFocus(
+  gridFocus: GridFocus,
+  editable: boolean,
+  seed: string | null
+): GridFocus {
+  return editable
+    ? { ...gridFocus, mode: "edit", editSeed: seed, editRefused: false, anchor: null }
+    : { ...gridFocus, mode: "navigate", editSeed: null, editRefused: true };
+}
+
+/**
  * Keyboard handling for a focused grid cell: arrow/tab/enter movement,
  * range selection, fill-down/right, delete/backspace, and starting an
  * edit. Sits alongside (not inside) the window-level shortcut dispatcher —
@@ -193,24 +209,26 @@ export function useGridKeyboardNavigation({
         setGridFocus(null);
         setSelection({ objectId: gridFocus.objectId, viewId: gridFocus.viewId });
       } else if (event.key === "F2") {
-        if (!editable) return;
         event.preventDefault();
-        setGridFocus({ ...gridFocus, mode: "edit", editSeed: null, anchor: null });
-      } else if (event.key === "Delete") {
+        setGridFocus(editKeyFocus(gridFocus, editable, null));
+      } else if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault();
-        setCells(clearGridRangeUpdates(context, gridFocus));
-      } else if (event.key === "Backspace") {
-        event.preventDefault();
-        setCells(clearGridRangeUpdates(context, gridFocus));
+        const updates = clearGridRangeUpdates(context, gridFocus);
+        // Clearing filters itself to editable cells; when that leaves
+        // nothing and the focused cell itself refuses edits, say so
+        // instead of eating the keystroke.
+        if (updates.length === 0 && !editable)
+          setGridFocus(editKeyFocus(gridFocus, false, null));
+        else setCells(updates);
       } else if (isPrintableKey(event)) {
-        if (!editable) return;
         event.preventDefault();
-        setGridFocus({
-          ...gridFocus,
-          mode: "edit",
-          editSeed: column!.dataType === "categorical" ? null : event.key,
-          anchor: null,
-        });
+        setGridFocus(
+          editKeyFocus(
+            gridFocus,
+            editable,
+            column!.dataType === "categorical" ? null : event.key
+          )
+        );
       }
     },
     [
