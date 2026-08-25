@@ -40,6 +40,39 @@ function barModeClass(active: ActiveFormulaEditor | null): string {
   return `scratchwork-formula-bar${active ? " session" : ""}`;
 }
 
+/** What the bar says about the selected cell while no session owns it. */
+function SelectedCellNotice({
+  cell,
+  error,
+  dirty,
+}: {
+  cell: FormulaBarCell;
+  error: string | null;
+  dirty: boolean;
+}) {
+  return (
+    <span
+      className={`scratchwork-formula-answer${
+        error || cell.kind === "readOnly" ? " invalid" : ""
+      }`}
+      title={error ?? cell.reason}
+    >
+      <strong>{cell.label}</strong>
+      {error
+        ? ` · ${error}`
+        : cell.kind === "calculated"
+        ? " · calculated column · click to edit in Wrangle"
+        : cell.kind === "override"
+        ? " · legacy cell formula · click to inspect"
+        : cell.kind === "readOnly"
+        ? ` · ${cell.reason}`
+        : dirty
+        ? " · Enter saves"
+        : " · literal value"}
+    </span>
+  );
+}
+
 async function formatDraft({
   source,
   cursor,
@@ -204,12 +237,24 @@ export function ScratchworkFormulaBar({
     );
   }, [active, activeLine?.start, focused]);
 
+  // A rejected commit is the registry's "refused": the session stays alive
+  // (see ActiveFormulaEditorRegistry.commit), and the refusal reads here,
+  // where Return was pressed — the Wrangle panel that also renders it may
+  // not be open. The next keystroke clears it, like any feedback.
+  const refuse = (reason: unknown) =>
+    setFeedback({
+      saved: false,
+      error: String(reason).replace(/^Error:\s*/, ""),
+    });
+
   const commit = async () => {
     if (busy) return;
     if (active) {
       setBusy(true);
       try {
         await commitActiveEditor();
+      } catch (reason) {
+        refuse(reason);
       } finally {
         setBusy(false);
       }
@@ -379,6 +424,17 @@ export function ScratchworkFormulaBar({
       />
       {busy ? (
         <span className="scratchwork-formula-answer">…</span>
+      ) : active && feedback?.error ? (
+        // A refused session commit outranks the running commentary
+        // (parameter help, the live answer): it is the direct reply to the
+        // Return just pressed, and the session it kept alive is waiting on
+        // exactly this sentence.
+        <output
+          className="scratchwork-formula-answer invalid"
+          title={feedback.error}
+        >
+          {feedback.error}
+        </output>
       ) : formulaMode && completion.parameterHelp?.signature ? (
         <span className="scratchwork-formula-parameter">
           <code>{completion.parameterHelp.signature}</code>
@@ -406,25 +462,7 @@ export function ScratchworkFormulaBar({
           }}
         />
       ) : selectedCell ? (
-        <span
-          className={`scratchwork-formula-answer${
-            cellError || selectedCell.kind === "readOnly" ? " invalid" : ""
-          }`}
-          title={cellError ?? selectedCell.reason}
-        >
-          <strong>{selectedCell.label}</strong>
-          {cellError
-            ? ` · ${cellError}`
-            : selectedCell.kind === "calculated"
-            ? " · calculated column · click to edit in Wrangle"
-            : selectedCell.kind === "override"
-            ? " · legacy cell formula · click to inspect"
-            : selectedCell.kind === "readOnly"
-            ? ` · ${selectedCell.reason}`
-            : cellDirty
-            ? " · Enter saves"
-            : " · literal value"}
-        </span>
+        <SelectedCellNotice cell={selectedCell} error={cellError} dirty={cellDirty} />
       ) : feedback ? (
         <output
           className={`scratchwork-formula-answer${feedback.error ? " invalid" : ""}`}
@@ -445,7 +483,7 @@ export function ScratchworkFormulaBar({
         expanded={expanded}
         // Format persists through commit but is not a finishing gesture:
         // the person is tidying a formula they are still inside of.
-        onFormat={() => void formatDraft({ source: draft, cursor, input: input.current, change, setFreshCursor, persist: active ? () => commitActiveEditor({ keepEditing: true }) : null, setBusy })}
+        onFormat={() => void formatDraft({ source: draft, cursor, input: input.current, change, setFreshCursor, persist: active ? () => commitActiveEditor({ keepEditing: true }).catch(refuse) : null, setBusy })}
         onToggle={onToggle}
       />
     </form>

@@ -113,7 +113,12 @@ export function PipelineRecurrenceStep({
         <select
           value={step.partitionName ?? ""}
           onChange={(event) =>
-            void onCommit({ partitionName: event.target.value || undefined })
+            // A refused save rejects for the sake of sessions hosted outside
+            // the Wrangle panel; this select exists only inside it, beside
+            // the inline error, so the rejection has nothing left to report.
+            void Promise.resolve(
+              onCommit({ partitionName: event.target.value || undefined })
+            ).catch(() => {})
           }
         >
           <option value="">Never</option>

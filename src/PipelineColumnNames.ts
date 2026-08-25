@@ -44,3 +44,38 @@ export function nextBlankColumnName(existing: string[]): string {
   }
   return `Column ${largest + 1}`;
 }
+
+export function exactName(token: string): string | null {
+  const trimmed = token.trim();
+  if (!trimmed.startsWith("`") || !trimmed.endsWith("`")) return null;
+  return trimmed.slice(1, -1).replaceAll("``", "`");
+}
+
+export function parseNamedTransformation(
+  source: string
+): { name: string; formula: string } | null {
+  let backticked = false;
+  for (let index = 0; index < source.length; index += 1) {
+    if (source[index] === "`") {
+      if (backticked && source[index + 1] === "`") index += 1;
+      else backticked = !backticked;
+      continue;
+    }
+    if (backticked || source[index] !== "=") continue;
+    if (source[index - 1] === "=") continue;
+    const name = exactName(source.slice(0, index));
+    // The command already prints its assignment separator. Spreadsheet
+    // muscle memory can still add another `=` before the expression, either
+    // adjacent (`name == expression`) or after the separator's spaces
+    // (`name = = expression`). In this named-command surface neither spelling
+    // can mean a comparison: the left side is the output's name, not an input
+    // expression. Forgive the redundant mark here instead of saving an
+    // unusable formula or letting it masquerade as a Filter step.
+    const afterSeparator = source.slice(
+      index + (source[index + 1] === "=" ? 2 : 1)
+    );
+    const formula = afterSeparator.trim().replace(/^=\s*/, "");
+    return name && formula ? { name, formula } : null;
+  }
+  return null;
+}

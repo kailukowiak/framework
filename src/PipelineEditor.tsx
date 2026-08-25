@@ -29,8 +29,8 @@ import {
 import { previewFramePipeline, type PipelineSchema } from "./lib/api";
 import { meltedColumnIds } from "./lib/columnList";
 import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
-import { draftName, nextBlankColumnName, uniqueColumnName, type NamedDraft } from "./PipelineColumnNames";
-export { nextBlankColumnName, uniqueColumnName } from "./PipelineColumnNames";
+import { draftName, exactName, nextBlankColumnName, parseNamedTransformation, uniqueColumnName, type NamedDraft } from "./PipelineColumnNames";
+export { nextBlankColumnName, parseNamedTransformation, uniqueColumnName } from "./PipelineColumnNames";
 import {
   formattedFormula,
   formatPipelineFormulas,
@@ -274,12 +274,6 @@ function namedCommand(name: string, formula: string): string {
   return `${formulaToken(name)} = ${formula}`;
 }
 
-function exactName(token: string): string | null {
-  const trimmed = token.trim();
-  if (!trimmed.startsWith("`") || !trimmed.endsWith("`")) return null;
-  return trimmed.slice(1, -1).replaceAll("``", "`");
-}
-
 /** Split only at commas that are not inside a call, string, or identifier. */
 function commandPieces(source: string): string[] {
   const pieces: string[] = [];
@@ -314,35 +308,6 @@ function commandPieces(source: string): string[] {
   }
   if (current.trim()) pieces.push(current.trim());
   return pieces;
-}
-
-export function parseNamedTransformation(
-  source: string
-): { name: string; formula: string } | null {
-  let backticked = false;
-  for (let index = 0; index < source.length; index += 1) {
-    if (source[index] === "`") {
-      if (backticked && source[index + 1] === "`") index += 1;
-      else backticked = !backticked;
-      continue;
-    }
-    if (backticked || source[index] !== "=") continue;
-    if (source[index - 1] === "=") continue;
-    const name = exactName(source.slice(0, index));
-    // The command already prints its assignment separator. Spreadsheet
-    // muscle memory can still add another `=` before the expression, either
-    // adjacent (`name == expression`) or after the separator's spaces
-    // (`name = = expression`). In this named-command surface neither spelling
-    // can mean a comparison: the left side is the output's name, not an input
-    // expression. Forgive the redundant mark here instead of saving an
-    // unusable formula or letting it masquerade as a Filter step.
-    const afterSeparator = source.slice(
-      index + (source[index + 1] === "=" ? 2 : 1)
-    );
-    const formula = afterSeparator.trim().replace(/^=\s*/, "");
-    return name && formula ? { name, formula } : null;
-  }
-  return null;
 }
 
 /** Intentional name reuse means overwrite; a new name keeps its minted id. */
@@ -1342,6 +1307,44 @@ function useDocumentChainSync(
 }
 
 /**
+ * What the draft would actually produce, asked of the core rather than
+ * worked out here. It answers from the query plan, so this costs no scan
+ * — but it is a round trip, so it waits for typing to finish. `previewOf`
+ * is the draft the answer describes, held by identity, which is all that
+ * is needed: the inputs array is rebuilt whenever the chain changes, so
+ * anything but the very array that was sent means the answer is about a
+ * draft that no longer exists.
+ */
+function usePipelineSchemaPreview(
+  frameId: string,
+  stepScopeInputs: FrameStepInput[]
+) {
+  const [preview, setPreview] = useState<PipelineSchema | null>(null);
+  const [previewOf, setPreviewOf] = useState<FrameStepInput[] | null>(null);
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) return;
+    let disposed = false;
+    const timer = window.setTimeout(() => {
+      void previewFramePipeline(frameId, stepScopeInputs)
+        .then((next) => {
+          if (disposed) return;
+          setPreview(next);
+          setPreviewOf(stepScopeInputs);
+        })
+        // A preview that cannot be taken is not worth reporting: the
+        // fallback still describes the chain, and saving reports the real
+        // error against the real chain.
+        .catch(() => {});
+    }, 250);
+    return () => {
+      disposed = true;
+      window.clearTimeout(timer);
+    };
+  }, [frameId, stepScopeInputs]);
+  return { preview, previewOf };
+}
+
+/**
  * The transformation chain: an ordered list of steps, each editable, all
  * reorderable by dragging. Saving replaces the whole chain, which is also
  * how the core validates it -- a step naming a column no earlier step
@@ -1484,6 +1487,7 @@ export function DerivedFrameCreator({
         { inlineError: true }
       );
       setFormulaError(failure);
+      return failure;
     },
     [input.columns, passThroughSteps, editingFrame.id, onOperation]
   );
@@ -1660,35 +1664,10 @@ export function DerivedFrameCreator({
   // what keeps its completion effect from refiring on every edit anywhere.
   const stepScopeInputs = useMemo(() => steps.map(stepInput), [steps]);
 
-  // What the draft would actually produce, asked of the core rather than
-  // worked out here. It answers from the query plan, so this costs no scan
-  // — but it is a round trip, so it waits for typing to finish.
-  const [preview, setPreview] = useState<PipelineSchema | null>(null);
-  // The draft the preview above describes. Held by identity, which is all
-  // that is needed: `stepScopeInputs` is rebuilt whenever the chain changes,
-  // so anything but the very array that was sent means the answer is about
-  // a draft that no longer exists.
-  const [previewOf, setPreviewOf] = useState<FrameStepInput[] | null>(null);
-  useEffect(() => {
-    if (!("__TAURI_INTERNALS__" in window)) return;
-    let disposed = false;
-    const timer = window.setTimeout(() => {
-      void previewFramePipeline(editingFrame.id, stepScopeInputs)
-        .then((next) => {
-          if (disposed) return;
-          setPreview(next);
-          setPreviewOf(stepScopeInputs);
-        })
-        // A preview that cannot be taken is not worth reporting: the
-        // fallback below still describes the chain, and saving reports the
-        // real error against the real chain.
-        .catch(() => {});
-    }, 250);
-    return () => {
-      disposed = true;
-      window.clearTimeout(timer);
-    };
-  }, [editingFrame.id, stepScopeInputs]);
+  const { preview, previewOf } = usePipelineSchemaPreview(
+    editingFrame.id,
+    stepScopeInputs
+  );
 
   /**
    * The columns a step can read.
@@ -1743,12 +1722,34 @@ export function DerivedFrameCreator({
 
   const savePatch = async (stepId: string, update: (step: StepDraft) => StepDraft) =>
     persist(steps.map((step) => (step.id === stepId ? update(step) : step)));
+  /**
+   * savePatch for the commit gesture — Return in a formula surface. A save
+   * the engine refuses rejects instead of resolving, because the session
+   * committing it may be hosted by the formula bar with this panel closed:
+   * `formulaError` renders only here, the registry keeps a refused session
+   * alive only when its commit throws, and the bar shows the refusal it
+   * catches. Button- and drag-driven saves stay on savePatch — those
+   * gestures exist only inside this panel, where the inline error is
+   * already in view.
+   */
+  const commitPatch = async (
+    stepId: string,
+    update: (step: StepDraft) => StepDraft
+  ) => {
+    const failure = await savePatch(stepId, update);
+    if (failure) throw new Error(failure);
+  };
 
   const commandId = (step: StepDraft, itemId?: string) =>
     `pipeline:${editingFrame.id}:${step.id}:${itemId ?? step.kind}`;
   const commandFocus = (id: string, requested?: number) =>
     pendingEditor === id ? requested ?? 1 : requested;
-  const rejectCommand = (message: string) => setFormulaError(message);
+  // The parse-refusal half of commitPatch's contract: every caller is a
+  // commit gesture, so the throw reaches the surface hosting the session.
+  const rejectCommand = (message: string): never => {
+    setFormulaError(message);
+    throw new Error(message);
+  };
 
   return (
     <div className="derived-creator pipeline-outline">
@@ -1870,7 +1871,7 @@ export function DerivedFrameCreator({
                             ),
                           }
                         : current;
-                    if (saveNow) return savePatch(step.id, change);
+                    if (saveNow) return commitPatch(step.id, change);
                     patch(step.id, change);
                   };
                   return (
@@ -1988,7 +1989,7 @@ export function DerivedFrameCreator({
                             ),
                           }
                         : current;
-                    if (saveNow) return savePatch(step.id, change);
+                    if (saveNow) return commitPatch(step.id, change);
                     patch(step.id, change);
                   };
                   return (
@@ -2089,7 +2090,7 @@ export function DerivedFrameCreator({
                   )
                 }
                 onCommit={(update) =>
-                  savePatch(step.id, (current) =>
+                  commitPatch(step.id, (current) =>
                     current.kind === "recurrence"
                       ? { ...current, ...update }
                       : current
@@ -2246,7 +2247,7 @@ export function DerivedFrameCreator({
                   const kept = visible
                     .filter((column) => !ids.includes(column.id))
                     .map((column) => column.id);
-                  return savePatch(step.id, (current) =>
+                  return commitPatch(step.id, (current) =>
                     current.kind === "select"
                       ? { ...current, columnIds: kept }
                       : current
@@ -2283,7 +2284,7 @@ export function DerivedFrameCreator({
                         aggregates: current.aggregates.map(revise),
                       };
                     };
-                    if (saveNow) return savePatch(step.id, change);
+                    if (saveNow) return commitPatch(step.id, change);
                     patch(step.id, change);
                   };
                   return (
@@ -2365,7 +2366,7 @@ export function DerivedFrameCreator({
                   }
                   const change = (current: StepDraft): StepDraft =>
                     current.kind === "sort" ? { ...current, keys } : current;
-                  if (saveNow) return savePatch(step.id, change);
+                  if (saveNow) return commitPatch(step.id, change);
                   patch(step.id, change);
                 };
                 return (
@@ -2393,7 +2394,7 @@ export function DerivedFrameCreator({
                 onSelect={(frameId, saveNow) => {
                   const change = (current: StepDraft): StepDraft =>
                     current.kind === "union" ? { ...current, frameId } : current;
-                  if (saveNow) return savePatch(step.id, change);
+                  if (saveNow) return commitPatch(step.id, change);
                   patch(step.id, change);
                 }}
               />}
@@ -2410,7 +2411,7 @@ export function DerivedFrameCreator({
                 onSelect={(frameId, saveNow) => {
                   const change = (current: StepDraft): StepDraft =>
                     current.kind === "expand" ? { ...current, frameId } : current;
-                  if (saveNow) return savePatch(step.id, change);
+                  if (saveNow) return commitPatch(step.id, change);
                   patch(step.id, change);
                 }}
               />}
@@ -2428,7 +2429,7 @@ export function DerivedFrameCreator({
                   }
                   const change = (current: StepDraft): StepDraft =>
                     current.kind === "pivot" ? { ...current, ...parsed } : current;
-                  if (saveNow) return savePatch(step.id, change);
+                  if (saveNow) return commitPatch(step.id, change);
                   patch(step.id, change);
                 };
                 return (
@@ -2457,7 +2458,7 @@ export function DerivedFrameCreator({
                   }
                   const change = (current: StepDraft): StepDraft =>
                     current.kind === "unpivot" ? { ...current, ...parsed } : current;
-                  if (saveNow) return savePatch(step.id, change);
+                  if (saveNow) return commitPatch(step.id, change);
                   patch(step.id, change);
                 };
                 return (
@@ -2486,7 +2487,7 @@ export function DerivedFrameCreator({
                 ) => {
                   const patchStep = (current: StepDraft): StepDraft =>
                     current.kind === "broadcast" ? { ...current, ...change } : current;
-                  if (saveNow) return savePatch(step.id, patchStep);
+                  if (saveNow) return commitPatch(step.id, patchStep);
                   patch(step.id, patchStep);
                 };
                 return (
@@ -2517,7 +2518,7 @@ export function DerivedFrameCreator({
                     current.kind === "zipVector"
                       ? { ...current, name: parsed.name, vector: parsed.formula }
                       : current;
-                  if (saveNow) return savePatch(step.id, change);
+                  if (saveNow) return commitPatch(step.id, change);
                   patch(step.id, change);
                 };
                 return (

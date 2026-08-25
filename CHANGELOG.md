@@ -12,6 +12,12 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- A Wrangle formula the engine or the parser refuses now says so in the
+  formula bar itself, next to the formula, and keeps you editing. Before,
+  the error only appeared inside the Wrangle panel — with the panel closed,
+  Return on a bad formula ended the edit silently and the formula looked
+  saved when it wasn't.
+
 - Typing a new calculated column's formula in the bar works again. Adding a
   calculated column focuses its formula in the bar; pressing Return there
   used to do nothing — the column kept its blank placeholder with no error —

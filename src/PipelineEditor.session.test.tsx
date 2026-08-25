@@ -105,6 +105,17 @@ function echoOf(saved: FrameStepInput[]): RenderedFrameStep[] {
   });
 }
 
+/** Open the Margin column's session the way a person does: click its row. */
+function clickMarginAddress() {
+  const address = screen
+    .getByText(
+      (content, element) =>
+        element?.tagName === "CODE" && content.includes("Margin")
+    )
+    .closest("button")!;
+  fireEvent.click(address);
+}
+
 describe("PipelineEditor formula sessions", () => {
   it("keeps the created column's session through its save's round trip, so the bar commits it", async () => {
     const view = fixtures.salesWithMargin;
@@ -186,13 +197,7 @@ describe("PipelineEditor formula sessions", () => {
     const onOperation = vi.fn<OperationHandler>().mockResolvedValue(null);
 
     const { rerender } = render(editorFor(withMargin, frame, onOperation));
-    const address = screen
-      .getByText(
-        (content, element) =>
-          element?.tagName === "CODE" && content.includes("Margin")
-      )
-      .closest("button")!;
-    fireEvent.click(address);
+    clickMarginAddress();
     expect(commands.getActive()?.label).toBe("Margin");
 
     // The saved chain moves under the editor — an undo, a peer, another
@@ -201,5 +206,59 @@ describe("PipelineEditor formula sessions", () => {
     // would write the superseded chain back.
     rerender(editorFor(afterUndo, frameAfter, onOperation));
     await waitFor(() => expect(commands.getActive()).toBeNull());
+  });
+
+  // A commit can be refused with the inspector closed: the session lives in
+  // the bar through the registry's retained binding, and the refusal must
+  // read there — the panel that renders `formulaError` may not exist. The
+  // two refusals arrive differently (the engine answers the save; a parse
+  // rejection never reaches the engine), so each gets its own claim.
+
+  it("keeps a session the engine refused, and reads the refusal in the bar", async () => {
+    const view = fixtures.salesWithMargin;
+    const frame = objectNamed(view, "frame", "Monthly sales");
+    const onOperation = vi
+      .fn<OperationHandler>()
+      .mockResolvedValue("Unknown column `Revenu`");
+
+    render(editorFor(view, frame, onOperation));
+    clickMarginAddress();
+    expect(commands.getActive()?.label).toBe("Margin");
+
+    const editing = screen.getByLabelText("Edit Margin") as HTMLTextAreaElement;
+    fireEvent.change(editing, {
+      target: { value: "`Margin` = `Revenu` - `Cost`" },
+    });
+    fireEvent.keyDown(editing, { key: "Enter" });
+
+    // The bar's feedback area carries the engine's sentence, as plain text.
+    const notice = await screen.findByRole("status");
+    expect(notice.textContent).toContain("Unknown column `Revenu`");
+    // A refused commit is not "apply and be done": the session and the draft
+    // both stay, so the correction happens in place instead of via Wrangle.
+    expect(commands.getActive()?.label).toBe("Margin");
+    expect(commands.getActive()?.draft).toBe("`Margin` = `Revenu` - `Cost`");
+    expect(screen.getByLabelText("Edit Margin")).toBeTruthy();
+  });
+
+  it("keeps a session whose draft does not parse, and says what is missing", async () => {
+    const view = fixtures.salesWithMargin;
+    const frame = objectNamed(view, "frame", "Monthly sales");
+    const onOperation = vi.fn<OperationHandler>().mockResolvedValue(null);
+
+    render(editorFor(view, frame, onOperation));
+    clickMarginAddress();
+    const editing = screen.getByLabelText("Edit Margin") as HTMLTextAreaElement;
+    // The backticked name was deleted along the way: nothing here can be
+    // saved as a named column, and nothing is sent to the engine.
+    fireEvent.change(editing, { target: { value: "Revenue - Cost" } });
+    fireEvent.keyDown(editing, { key: "Enter" });
+
+    const notice = await screen.findByRole("status");
+    expect(notice.textContent).toContain(
+      "Write a backticked column name, =, and a formula"
+    );
+    expect(onOperation).not.toHaveBeenCalled();
+    expect(commands.getActive()?.label).toBe("Margin");
   });
 });

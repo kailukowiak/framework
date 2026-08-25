@@ -125,7 +125,10 @@ export function BroadcastStepRow({
   vectorEditorId: string;
   columnsFocusToken?: number;
   vectorFocusToken?: number;
-  onUpdate: (change: Partial<BroadcastStepDraft>, saveNow: boolean) => void;
+  onUpdate: (
+    change: Partial<BroadcastStepDraft>,
+    saveNow: boolean
+  ) => void | Promise<void>;
 }) {
   const count = meltedColumnIds(step.columns, visible).length;
   const repeats =
@@ -149,7 +152,12 @@ export function BroadcastStepRow({
           aria-label="Vector operation"
           value={step.operator}
           onChange={(event) =>
-            onUpdate({ operator: event.target.value as BroadcastOperator }, true)
+            // A refused save rejects for the sake of sessions hosted outside
+            // the Wrangle panel; this select exists only inside it, beside
+            // the inline error, so the rejection has nothing left to report.
+            void Promise.resolve(
+              onUpdate({ operator: event.target.value as BroadcastOperator }, true)
+            ).catch(() => {})
           }
         >
           <option value="multiply">×</option>
@@ -188,7 +196,7 @@ export function ZipVectorStepRow({
   references: FormulaReference[];
   editorId: string;
   focusToken?: number;
-  onDraft: (draft: string, saveNow: boolean) => void;
+  onDraft: (draft: string, saveNow: boolean) => void | Promise<void>;
 }) {
   return (
     <div className="pipeline-zip-vector">
