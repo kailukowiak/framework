@@ -1177,7 +1177,7 @@ fn apply_operation(
 ) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
-    apply_session_operation(&mut session, &state.writer_id, operation)
+    apply_session_operation(&window, &mut session, &state.writer_id, operation)
 }
 
 /// Imports a data file, either linked to it or holding its own copy.
@@ -1239,7 +1239,7 @@ fn import_dataset_file(
         x,
         y,
     };
-    apply_session_operation(&mut session, &state.writer_id, operation).map(Some)
+    apply_session_operation(&window, &mut session, &state.writer_id, operation).map(Some)
 }
 
 #[tauri::command]
@@ -1286,6 +1286,7 @@ async fn import_cli_source(
         .to_string();
     let mut session = session.lock().map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::ImportFrameFromArtifact {
@@ -1333,6 +1334,7 @@ async fn import_database_source(
     .map_err(|error| error.to_string())??;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::ImportFrameFromArtifact {
@@ -1417,6 +1419,7 @@ fn import_excel_range(
     )
     .map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::ImportFrameFromArtifact {
@@ -1471,6 +1474,7 @@ fn import_and_append_dataset_file(
         y,
         linked,
     )?;
+    sync_history_menu(&window, result.document.can_undo, result.document.can_redo);
     Ok(Some(result))
 }
 
@@ -1540,9 +1544,15 @@ fn import_and_append_file(
     // desktop-only mutation. Each is visible in history and collaboration as
     // the same import, linked-frame, and Stack-step actions it would have
     // been if someone had performed them one by one.
+    //
+    // Three operations land here as one user-visible action, so the menu
+    // push happens once, after all three, at the call site in
+    // `import_and_append_dataset_file` rather than three times through
+    // `apply_session_operation` — that is also what lets this function stay
+    // window-free and directly unit-testable (see the test below).
     let imported_id = apply_session_and_find_added_frame(session, writer_id, import())?;
     let appended_id = apply_session_and_find_added_frame(session, writer_id, linked_frame())?;
-    let document = apply_session_operation(
+    let document = apply_session_operation_inner(
         session,
         writer_id,
         Operation::SetFramePipeline {
@@ -1569,13 +1579,17 @@ fn apply_and_find_added_frame(store: &mut Store, operation: Operation) -> Result
     find_added_frame_id(&before, &after.document)
 }
 
+/// Used only inside [`import_and_append_file`], which pushes the menu once
+/// itself after its whole three-operation sequence lands — see the comment
+/// there for why the individual steps go through
+/// `apply_session_operation_inner` rather than `apply_session_operation`.
 fn apply_session_and_find_added_frame(
     session: &mut DocumentSession,
     writer_id: &str,
     operation: Operation,
 ) -> Result<String, String> {
     let before = frame_ids(&session.store.view().document);
-    let after = apply_session_operation(session, writer_id, operation)?;
+    let after = apply_session_operation_inner(session, writer_id, operation)?;
     find_added_frame_id(&before, &after.document)
 }
 
@@ -1653,6 +1667,7 @@ async fn refresh_frame_connector(
         return Ok(session.store.view());
     }
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::RefreshFrameArtifact { frame_id, artifact },
@@ -1687,6 +1702,7 @@ fn set_frame_source(
     let mut session = session.lock().map_err(|error| error.to_string())?;
     let artifact = stage_import_file(&session.path, session.store.document_id(), &path)?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::SetFrameSource {
@@ -1725,6 +1741,7 @@ fn freeze_value(
         .write_value_snapshot(&object_id, &data_directory)
         .map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::SetFrozenValue {
@@ -1744,6 +1761,7 @@ fn thaw_value(
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::SetFrozenValue {
@@ -1774,6 +1792,7 @@ fn materialize_frame(
         .write_frame_snapshot(&frame_id, &data_directory)
         .map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::SetFrameMaterialization { frame_id, artifact },
@@ -1838,6 +1857,7 @@ fn refresh_stale_snapshots(
             .map_err(|error| error.to_string())
             .and_then(|artifact| {
                 apply_session_operation(
+                    &window,
                     &mut session,
                     &state.writer_id,
                     Operation::SetFrameMaterialization { frame_id, artifact },
@@ -1888,6 +1908,7 @@ fn adopt_frame_rows(
         .write_owned_frame_data(&frame_id, &data_directory)
         .map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::AdoptFrameRows { frame_id, artifact },
@@ -1927,6 +1948,7 @@ fn freeze_frame_copy(
         .map_err(|error| error.to_string())?;
     let name = format!("{} (frozen)", frame_name(&session, &frame_id));
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::ImportFrameFromArtifact {
@@ -1981,6 +2003,7 @@ fn package_document(
         adopted.push((frame_id, artifact));
     }
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::PackageDocument { adopted },
@@ -2020,6 +2043,7 @@ fn clear_frame_materialization(
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     apply_session_operation(
+        &window,
         &mut session,
         &state.writer_id,
         Operation::ClearFrameMaterialization { frame_id },
@@ -2149,7 +2173,13 @@ fn export_document_excel(
     Ok(Some(path.display().to_string()))
 }
 
-fn apply_session_operation(
+/// The mutation itself, with no opinion about a menu: prepares, journals,
+/// applies, and persists one operation. Kept separate from
+/// [`apply_session_operation`] so the operation/history unit tests below
+/// (which run with no window and no menu at all) can drive the store
+/// directly rather than needing a live Tauri window to satisfy a parameter
+/// they have nothing to do with.
+fn apply_session_operation_inner(
     session: &mut DocumentSession,
     writer_id: &str,
     operation: Operation,
@@ -2170,12 +2200,49 @@ fn apply_session_operation(
     Ok(view)
 }
 
+/// Applies one operation and, in the same step, pushes the resulting
+/// undo/redo availability to the native Edit menu.
+///
+/// This is the choke point: every `#[tauri::command]` that mutates the
+/// document through an `Operation` calls this rather than
+/// `apply_session_operation_inner` directly, so the menu push is not
+/// something each command has to remember on its own — it happens wherever
+/// a store mutation turns into the `DocumentView` a command hands back.
+///
+/// Before this existed, the only push came from the webview: it watched
+/// `DocumentView.canUndo`/`canRedo` and, on a change, made a *second*,
+/// separate `set_history_menu_state` call back into Rust. That round trip
+/// gated on `window.is_focused()` at whatever moment the second call
+/// happened to land — a moment already once removed from the mutation
+/// itself — and a chain edit through the Wrangle editor (adding a Filter,
+/// Rearrange-columns, or Delete-columns step to an imported frame's own
+/// step chain) is exactly the kind of interaction with formula-editor
+/// focus churn around it. When that second call landed while the window's
+/// reported focus state did not yet agree, the greyed-out Undo/Redo items
+/// simply never heard about it: nothing was wrong with history — `can_undo`
+/// on the returned view was already `true` — only the menu never found out.
+/// Since ⌘Z is the Undo item's accelerator, a disabled item left the whole
+/// shortcut dead until some later edit's push happened to land cleanly.
+/// Pushing here, synchronously with the mutation that produced the view,
+/// removes that second hop and its separate timing entirely.
+fn apply_session_operation(
+    window: &tauri::WebviewWindow,
+    session: &mut DocumentSession,
+    writer_id: &str,
+    operation: Operation,
+) -> Result<DocumentView, String> {
+    let view = apply_session_operation_inner(session, writer_id, operation)?;
+    sync_history_menu(window, view.can_undo, view.can_redo);
+    Ok(view)
+}
+
 #[tauri::command]
 fn undo(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     let view = session.store.undo();
     persist_session(&mut session)?;
+    sync_history_menu(&window, view.can_undo, view.can_redo);
     Ok(view)
 }
 
@@ -2185,29 +2252,32 @@ fn redo(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Result<Docu
     let mut session = session.lock().map_err(|error| error.to_string())?;
     let view = session.store.redo();
     persist_session(&mut session)?;
+    sync_history_menu(&window, view.can_undo, view.can_redo);
     Ok(view)
 }
 
 /// Greys the menu's Undo and Redo out when there is nothing behind or ahead.
 ///
-/// The webview drives this rather than the store, because the store is asked
-/// for a document view by a dozen paths and every one of them would have to
-/// remember to report. The view it hands back already carries the two flags,
-/// so the window pushes them once, wherever a new one arrives.
-#[tauri::command]
-fn set_history_menu_state(
-    window: tauri::WebviewWindow,
-    app: AppHandle,
-    can_undo: bool,
-    can_redo: bool,
-) {
-    // e2e builds attach no menu, so the items are simply not in managed
-    // state; a build with nothing to grey out has nothing to do here.
+/// e2e builds attach no menu, so the items are simply not in managed state;
+/// a build with nothing to grey out has nothing to do here. Real builds
+/// reach this from two directions: every document-mutating command pushes
+/// synchronously through [`apply_session_operation`] (see its comment for
+/// why that exists), and the webview still calls the `set_history_menu_state`
+/// command below on every view it receives — a second, harmless push that
+/// covers the one path the desktop side cannot: a `DocumentView` arriving by
+/// event instead of by command return (a collaboration merge) still has to
+/// reach a window that regained focus without any command running at all.
+fn sync_history_menu(window: &tauri::WebviewWindow, can_undo: bool, can_redo: bool) {
     if window.is_focused().unwrap_or(false)
-        && let Some(history) = app.try_state::<menu::HistoryMenuItems<tauri::Wry>>()
+        && let Some(history) = window.try_state::<menu::HistoryMenuItems<tauri::Wry>>()
     {
         history.set(can_undo, can_redo);
     }
+}
+
+#[tauri::command]
+fn set_history_menu_state(window: tauri::WebviewWindow, can_undo: bool, can_redo: bool) {
+    sync_history_menu(&window, can_undo, can_redo);
 }
 
 fn build_document_window(
@@ -2344,6 +2414,18 @@ fn open_document_at(
         let _ = window.set_title(&title);
         let _ = window.show();
         let _ = window.set_focus();
+        // A freshly loaded store never has undo/redo history — it is not
+        // persisted — but the window itself, and the menu items it shares
+        // with every other window, are not fresh: opening a second document
+        // into an already-history-laden window (or into "New Document…"'s
+        // reused window) must actively grey Undo/Redo back out rather than
+        // leaving them enabled from whatever the previous document left
+        // behind.
+        sync_history_menu(
+            &window,
+            payload.document.can_undo,
+            payload.document.can_redo,
+        );
     }
     if emit_opened_event {
         app.emit_to(window_label, DOCUMENT_OPENED_EVENT, &payload)
@@ -2531,6 +2613,17 @@ fn watch_collaboration(app: AppHandle) {
                 match rescan_collaboration(&session) {
                     Ok(Some(document)) => {
                         last_errors.remove(&label);
+                        // A merged remote edit can change `can_redo` even
+                        // though it never touches this replica's own undo
+                        // stack (see `Store::apply_replicated_with_history`:
+                        // redo always clears on any new edit, local or
+                        // remote). This view reaches the window as an event
+                        // rather than a command return, so it is the one
+                        // legitimate case `apply_session_operation`'s push
+                        // cannot cover — push it here instead.
+                        if let Some(window) = app.get_webview_window(&label) {
+                            sync_history_menu(&window, document.can_undo, document.can_redo);
+                        }
                         let _ = app.emit_to(&label, DOCUMENT_CHANGED_EVENT, document);
                     }
                     Ok(None) => {
@@ -2927,7 +3020,7 @@ mod tests {
         let document_path = root.join("analysis.fw");
         let mut session = blank_session(document_path, false).unwrap();
         let writer_id = Uuid::new_v4().to_string();
-        apply_session_operation(
+        apply_session_operation_inner(
             &mut session,
             &writer_id,
             Operation::AddFrame {

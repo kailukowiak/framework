@@ -8,6 +8,7 @@
 
 use crate::common::*;
 use framework_core::*;
+use std::fs;
 use uuid::Uuid;
 
 fn frame_id(store: &Store, name: &str) -> Id {
@@ -382,4 +383,177 @@ fn undo_stops_ten_edits_back() {
         view.computed_blocks[&block_id].source, "Tax rate = 3",
         "ten steps back from the fourteenth edit, and no further"
     );
+}
+
+/// An artifact-backed frame ("Rows", columns Name/Score/Region) with an
+/// empty step chain, plus the three column ids a Filter/Select chain needs.
+/// Shared by the two tests below, which reproduce the desktop menu bug from
+/// the user's chair — does the engine's own `can_undo` flag go true after a
+/// chain edit lands on an imported frame? — from opposite ends: one after
+/// each step, one after undoing them.
+fn artifact_backed_pipeline_fixture(
+    directory_name: &str,
+) -> (std::path::PathBuf, Store, Id, Id, Id, Id) {
+    let directory = temporary_test_directory(directory_name);
+    let source = directory.join("rows.csv");
+    fs::write(
+        &source,
+        "Name,Score,Region\nA,10,East\nB,20,West\nC,30,East\n",
+    )
+    .unwrap();
+
+    let mut store = Store::new(Document::blank("Pipeline undo"));
+    let artifact = create_data_artifact(&source, &directory.join("data")).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Rows".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Rows").clone();
+    assert!(
+        frame.artifact.is_some(),
+        "the fixture must be artifact-backed for this to reproduce the reported bug"
+    );
+    let name_id = frame.columns[0].id.clone();
+    let score_id = frame.columns[1].id.clone();
+    let region_id = frame.columns[2].id.clone();
+    (directory, store, frame.id, name_id, score_id, region_id)
+}
+
+/// `SetFramePipeline` (Filter, Rearrange = `Select` reordered, Delete
+/// columns = `Select` with one left out) resolves to `SetFrameSteps`
+/// regardless of whether the frame's rows are typed in or read from an
+/// imported artifact — `Store::apply_replicated_with_history` pushes every
+/// successful edit onto the undo stack the same way, and `DocumentView`
+/// reports `can_undo` from that stack alone, never from the row source. If
+/// this ever fails, the defect has moved into the engine and the desktop
+/// menu-sync fix in `src-tauri` is no longer sufficient on its own.
+#[test]
+fn chain_edits_on_an_artifact_backed_frame_each_enable_undo() {
+    let (directory, mut store, frame_id, name_id, score_id, region_id) =
+        artifact_backed_pipeline_fixture("artifact-pipeline-undo-enables");
+    let filter = || FrameStepInput::Filter {
+        predicates: vec!["`Score` > 5".into()],
+        match_all: true,
+    };
+
+    // A Filter step, same as the reported repro.
+    let view = store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![filter()],
+        })
+        .unwrap();
+    assert!(view.can_undo, "a filter step must enable undo");
+
+    // A Rearrange-columns step (Select, same columns reordered).
+    let view = store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![
+                filter(),
+                FrameStepInput::Select {
+                    column_ids: vec![region_id.clone(), name_id.clone(), score_id.clone()],
+                },
+            ],
+        })
+        .unwrap();
+    assert!(view.can_undo, "a rearrange-columns step must enable undo");
+
+    // A Delete-columns step (Select, one column left out).
+    let view = store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![
+                filter(),
+                FrameStepInput::Select {
+                    column_ids: vec![region_id.clone(), name_id.clone(), score_id.clone()],
+                },
+                FrameStepInput::Select {
+                    column_ids: vec![region_id, name_id],
+                },
+            ],
+        })
+        .unwrap();
+    assert!(view.can_undo, "a delete-columns step must enable undo");
+    assert_eq!(
+        frame_named(&view.document, "Rows").steps.len(),
+        3,
+        "all three chain edits must have landed"
+    );
+
+    fs::remove_dir_all(directory).unwrap();
+}
+
+/// Undo reverts a chain edit on an artifact-backed frame the same way it
+/// reverts a `SetCell` on an owned one: one step at a time, per-edit, with
+/// the frame's own row source (and the earlier steps) left alone — the same
+/// contract `undo_reverts_one_edit_and_leaves_later_ones_alone` proves above.
+#[test]
+fn undo_reverts_one_chain_edit_at_a_time_on_an_artifact_backed_frame() {
+    let (directory, mut store, frame_id, name_id, score_id, region_id) =
+        artifact_backed_pipeline_fixture("artifact-pipeline-undo-reverts");
+    let filter = || FrameStepInput::Filter {
+        predicates: vec!["`Score` > 5".into()],
+        match_all: true,
+    };
+    let rearranged = || FrameStepInput::Select {
+        column_ids: vec![region_id.clone(), name_id.clone(), score_id.clone()],
+    };
+
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![filter()],
+        })
+        .unwrap();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![filter(), rearranged()],
+        })
+        .unwrap();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id,
+            steps: vec![
+                filter(),
+                rearranged(),
+                FrameStepInput::Select {
+                    column_ids: vec![region_id, name_id],
+                },
+            ],
+        })
+        .unwrap();
+
+    // Undo reverts the delete-columns step only.
+    let view = store.undo();
+    let after_first_undo = frame_named(&view.document, "Rows");
+    assert_eq!(
+        after_first_undo.steps.len(),
+        2,
+        "undo must remove exactly the last chain edit"
+    );
+    assert!(
+        after_first_undo.artifact.is_some(),
+        "undoing a chain edit must not touch the frame's own row source"
+    );
+    assert!(
+        view.can_undo,
+        "two more chain edits (and the import) are still behind this one"
+    );
+
+    // Undo again removes the rearrange step, leaving only the filter.
+    let view = store.undo();
+    assert_eq!(
+        frame_named(&view.document, "Rows").steps.len(),
+        1,
+        "the second undo must remove the rearrange step and stop there"
+    );
+
+    fs::remove_dir_all(directory).unwrap();
 }
