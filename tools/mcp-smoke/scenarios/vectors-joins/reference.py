@@ -15,6 +15,14 @@ def frame_id(client, name):
     raise AssertionError(f"frame {name} not found")
 
 
+def object_id(client, name, kind):
+    summary = client.call("inspect_document")
+    for candidate in summary["objects"]:
+        if candidate["kind"] == kind and candidate["name"] == name:
+            return candidate["id"]
+    raise AssertionError(f"{kind} {name} not found")
+
+
 def columns(client, name):
     snapshot = client.call("get_frame", {"frame": name, "limit": 1})
     return {column["name"]: column["id"] for column in snapshot["columns"]}
@@ -169,6 +177,59 @@ def main():
                             "vector": "[1, 1.15, 0.85]",
                         }
                     ],
+                }
+            },
+        )
+
+        variables = [
+            ("Scenario", '["Base", "Upside", "Downside"]'),
+            ("Multiplier", "[1, 1.15, 0.85]"),
+            ("Quarter", '["Q1", "Q2", "Q3", "Q4"]'),
+            ("Base revenue", "[100, 110, 120, 130]"),
+        ]
+        for index, (name, formula) in enumerate(variables):
+            client.call(
+                "apply_operation",
+                {
+                    "operation": {
+                        "type": "addVariable",
+                        "name": name,
+                        "formula": formula,
+                        "x": 800.0,
+                        "y": 100.0 + index * 70.0,
+                    }
+                },
+            )
+        client.call(
+            "apply_operation",
+            {
+                "operation": {
+                    "type": "addCalculationMatrix",
+                    "name": "Scenario × Quarter",
+                    "x": 800.0,
+                    "y": 400.0,
+                }
+            },
+        )
+        matrix_id = object_id(client, "Scenario × Quarter", "calculationMatrix")
+        client.call(
+            "apply_operation",
+            {
+                "operation": {
+                    "type": "setCalculationMatrix",
+                    "objectId": matrix_id,
+                    "rows": [
+                        {"name": "Scenario", "formula": "`Scenario`"},
+                        {"name": "Multiplier", "formula": "`Multiplier`"},
+                    ],
+                    "columns": [
+                        {"name": "Quarter", "formula": "`Quarter`"},
+                        {
+                            "name": "Base revenue",
+                            "formula": "`Base revenue`",
+                        },
+                    ],
+                    "body": "(`Base revenue` * `Multiplier`).round(2).cast(\"string\") + \" {}\".format(`Quarter`)",
                 }
             },
         )

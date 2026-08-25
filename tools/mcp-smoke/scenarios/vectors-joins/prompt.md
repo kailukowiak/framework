@@ -23,10 +23,25 @@ Hard requirements:
    Scenario = Base, Upside, Downside and Multiplier = 1, 1.15, 0.85. It must
    retain a generated-vector rule and a paired-vector/zip step rather than
    becoming a hand-entered two-column table.
-6. Leave the editable launch source at six rows. The verifier will append a
+6. Recreate the tutorial's Calculation Matrix workflow with four standalone
+   Variables (not hand-entered tables):
+   - Scenario = Base, Upside, Downside
+   - Multiplier = 1, 1.15, 0.85
+   - Quarter = Q1, Q2, Q3, Q4
+   - Base revenue = 100, 110, 120, 130
+   Build a Calculation Matrix named Scenario × Quarter. Zip Scenario and
+   Multiplier on Rows, zip Quarter and Base revenue on Columns, and use this
+   exact body formula so the result exercises chained text formatting:
+
+   (`Base revenue` * `Multiplier`).round(2).cast("string") + " {}".format(`Quarter`)
+
+   It must produce three row tuples, four column tuples, and twelve live
+   answers.
+7. Leave the editable launch source at six rows. The verifier will append a
    seventh C-300 row and expects the monthly date calculation and joined
    result to grow live.
 
 Use semantic names where named tools support them. Inspect the operation
-catalog when you need a pipeline, linked frame, vector-pairing step, or join.
-Do not import helper files and do not paste a precomputed answer table.
+catalog when you need a pipeline, linked frame, vector-pairing step, join,
+Variable, or Calculation Matrix. Do not import helper files and do not paste a
+precomputed answer table.
