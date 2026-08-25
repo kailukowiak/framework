@@ -74,6 +74,7 @@ import { JoinDialog } from "./JoinDialog";
 import { DataSidebar } from "./DataSidebar";
 import { LeftRail } from "./LeftRail";
 import { defaultPlotSpec, viewHolding } from "./lib/canvasCards";
+import { CARD_SIZES, placeNewCard, type CardSize, type Rect } from "./lib/cardPlacement";
 import { CanvasObject, LineageCords } from "./CanvasObject";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { DatasetDialog } from "./DatasetDialog";
@@ -161,11 +162,19 @@ import type {
  * the canvas only ever has to know whether something is there.
  */
 export type LeftPanel = "data" | "project" | null;
-function importPosition(viewport: HTMLDivElement | null): { x: number; y: number } {
-  return {
+// The anchor a fresh import prefers — just inside the viewport's corner —
+// displaced only if a card is already sitting there. Importing a CSV used
+// to land the new frame exactly on top of an existing card (Frame 1, most
+// often, since both computed the same fixed point), hiding it outright.
+function importPosition(
+  viewport: HTMLDivElement | null,
+  existingViews: Rect[]
+): { x: number; y: number } {
+  const anchor = {
     x: (viewport?.scrollLeft ?? 0) + 110,
     y: (viewport?.scrollTop ?? 0) + 100,
   };
+  return placeNewCard(existingViews, anchor, CARD_SIZES.frame);
 }
 
 
@@ -177,6 +186,7 @@ export default function App() {
     getActive: getActiveFormulaEditor,
     insertReference: insertActiveFormulaReference,
     replaceSelection: replaceActiveFormulaSelection,
+    cancel: cancelActiveFormulaEditor,
     clear: clearActiveFormulaEditor,
   } = useActiveFormulaEditorCommands();
   const [document, setDocument] = useState<DocumentView | null>(null);
@@ -494,13 +504,23 @@ export default function App() {
   // out — otherwise a card inserted at 40% lands a long way in from the
   // corner you asked for.
   //
-  // Only refs are read, so this never goes stale and never needs rebuilding.
+  // That corner is only where a new card *prefers* to land: every caller
+  // used to get exactly that point regardless of what already sat there,
+  // which is how clicking Matrix right after an Arrange dropped the new
+  // card behind Frame 1 instead of beside it. `placeNewCard` checks the
+  // preferred spot against the document's current views and steps aside
+  // only if something is actually in the way — see `src/lib/cardPlacement.ts`.
+  // `size` defaults to a Block's footprint since most no-argument callers
+  // (Scratchwork's block, in particular) are creating one.
   const insertPosition = useCallback(
-    () => ({
-      x: ((canvasRef.current?.scrollLeft ?? 0) + 110) / canvasZoomRef.current,
-      y: ((canvasRef.current?.scrollTop ?? 0) + 100) / canvasZoomRef.current,
-    }),
-    [canvasZoomRef]
+    (size: CardSize = CARD_SIZES.block) => {
+      const anchor = {
+        x: ((canvasRef.current?.scrollLeft ?? 0) + 110) / canvasZoomRef.current,
+        y: ((canvasRef.current?.scrollTop ?? 0) + 100) / canvasZoomRef.current,
+      };
+      return placeNewCard(document?.views ?? [], anchor, size);
+    },
+    [canvasZoomRef, document]
   );
 
   const fitViewToWindow = useFitViewToWindow(canvasRef, canvasZoomRef, run);
@@ -699,20 +719,20 @@ export default function App() {
         else if (shortcut === "add-block") void run({
           type: "addBlock",
           name: nextObjectName(document?.objects ?? [], "Block"),
-          ...insertPosition(),
+          ...insertPosition(CARD_SIZES.block),
         });
         else if (shortcut === "add-text")
-          void run({ type: "addText", ...insertPosition() });
+          void run({ type: "addText", ...insertPosition(CARD_SIZES.text) });
         else if (shortcut === "add-frame") void run({
           type: "addFrame",
           name: "Frame 1",
           grid: [["Column 1", "Column 2"], ["", ""], ["", ""]],
-          ...insertPosition(),
+          ...insertPosition(CARD_SIZES.frame),
         });
         else if (shortcut === "add-container") void run({
           type: "addContainer",
           name: nextContainerName(document?.objects ?? []),
-          ...insertPosition(),
+          ...insertPosition(CARD_SIZES.container),
         });
         else if (shortcut.startsWith("inspector-"))
           setInspectorSection(shortcut.replace("inspector-", "") as InspectorSection);
@@ -757,6 +777,14 @@ export default function App() {
       }
       if (isTextEntryTarget(event.target)) return;
       if (contextMenu || preferencesOpen) return;
+      // Canvas-level Escape for the formula session. The editor surfaces
+      // handle their own Escape while they hold the keyboard; this is the
+      // fallback for a session whose surface lost focus — without it, Escape
+      // pressed over the canvas ended nothing and the session had no exit.
+      if (event.key === "Escape" && getActiveFormulaEditor()) {
+        cancelActiveFormulaEditor();
+        return;
+      }
       if (gridFocus?.mode === "navigate") {
         handleNavigateKey(event);
         return;
@@ -787,11 +815,13 @@ export default function App() {
       window.removeEventListener("paste", handleGridPaste);
     };
   }, [
+    cancelActiveFormulaEditor,
     canvasZoomRef,
     contextMenu,
     document,
     documentPath,
     fitViewToWindow,
+    getActiveFormulaEditor,
     gridFocus,
     handleGridCopy,
     handleGridCut,
@@ -871,7 +901,7 @@ export default function App() {
     run({
       type: "addBlock",
       name: nextObjectName(document?.objects ?? [], "Block"),
-      ...(position ?? insertPosition()),
+      ...(position ?? insertPosition(CARD_SIZES.block)),
     });
 
   const addVariable = (position?: { x: number; y: number }) =>
@@ -879,21 +909,21 @@ export default function App() {
       type: "addVariable",
       name: nextObjectName(document?.objects ?? [], "x"),
       formula: "0",
-      ...(position ?? insertPosition()),
+      ...(position ?? insertPosition(CARD_SIZES.variable)),
     });
 
   const addCalculationMatrix = (position?: { x: number; y: number }) =>
     run({
       type: "addCalculationMatrix",
       name: nextObjectName(document?.objects ?? [], "Calculation Matrix"),
-      ...(position ?? insertPosition()),
+      ...(position ?? insertPosition(CARD_SIZES.calculationMatrix)),
     });
 
   /** A card of prose: markdown, with `{{…}}` holes that print live values. */
   const addText = (position?: { x: number; y: number }) =>
     run({
       type: "addText",
-      ...(position ?? insertPosition()),
+      ...(position ?? insertPosition(CARD_SIZES.text)),
     });
 
   /**
@@ -914,14 +944,14 @@ export default function App() {
         ["", ""],
         ["", ""],
       ],
-      ...(position ?? insertPosition()),
+      ...(position ?? insertPosition(CARD_SIZES.frame)),
     });
 
   const addContainer = (position?: { x: number; y: number }) =>
     run({
       type: "addContainer",
       name: nextContainerName(document?.objects ?? []),
-      ...(position ?? insertPosition()),
+      ...(position ?? insertPosition(CARD_SIZES.container)),
     });
 
   useEffect(() => {
@@ -1712,7 +1742,7 @@ export default function App() {
           onClose={() => setDatasetLibrary(false)}
           onImportFile={async () => {
             const viewport = canvasRef.current;
-            const position = importPosition(viewport);
+            const position = importPosition(viewport, document.views);
             // The question comes before the file picker rather than after:
             // it is about what this document becomes, not about the file,
             // and answering it first means the picker is the last step.
@@ -1731,21 +1761,21 @@ export default function App() {
             const viewport = canvasRef.current;
             setExcelImport({
               workbook,
-              position: importPosition(viewport),
+              position: importPosition(viewport, document.views),
             });
             setDatasetLibrary(false);
             return true;
           }}
           onImportCliSource={async (source) => {
             const viewport = canvasRef.current;
-            const next = await importCliSource(importPosition(viewport), source);
+            const next = await importCliSource(importPosition(viewport, document.views), source);
             setDocument(next);
             setDatasetLibrary(false);
             setNotice(`Connected ${source.sourceLabel}.`);
           }}
           onImportDatabaseSource={async (source) => {
             const viewport = canvasRef.current;
-            const next = await importDatabaseSource(importPosition(viewport), source);
+            const next = await importDatabaseSource(importPosition(viewport, document.views), source);
             setDocument(next);
             setDatasetLibrary(false);
             setNotice(`Connected ${source.sourceName}.`);
@@ -1777,14 +1807,21 @@ export default function App() {
             setError(null);
             setNotice(`Imported ${selection.name} from ${selection.sheetName}!${selection.cellRange}.`);
             if (another) {
+              // The frame just imported now occupies `current.position`, so
+              // re-anchoring there and running it back through the shared
+              // helper (against `next.views`, which already includes that
+              // new card) finds the next free spot instead of the flat +42
+              // nudge this used to apply blindly, which could still land a
+              // second or third range on top of an unrelated card.
               setExcelImport((current) =>
                 current
                   ? {
                       ...current,
-                      position: {
-                        x: current.position.x + 42,
-                        y: current.position.y + 42,
-                      },
+                      position: placeNewCard(
+                        next.views,
+                        current.position,
+                        CARD_SIZES.frame
+                      ),
                     }
                   : null
               );
