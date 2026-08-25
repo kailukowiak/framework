@@ -286,13 +286,23 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 }
 
 /// Forwards a chosen item to the webview, which owns what it means.
+///
+/// The focused window is asked first so a multi-window document routes the
+/// command to the window the person is looking at. But focus is not a
+/// precondition: during the instant after a menu closes — or under any
+/// input that activates the menu without making a window key — no window
+/// reports focus, and a command dropped here dies silently behind an
+/// enabled menu item. With one window there is nothing to disambiguate, so
+/// any window is the right recipient; with several, the first is still
+/// better than a swallowed Undo.
 #[cfg_attr(feature = "e2e", allow(dead_code))]
 pub fn forward<R: Runtime>(app: &AppHandle<R>, id: &str) {
-    if let Some(window) = app
-        .webview_windows()
-        .into_values()
+    let windows = app.webview_windows();
+    let target = windows
+        .values()
         .find(|window| window.is_focused().unwrap_or(false))
-    {
+        .or_else(|| windows.values().next());
+    if let Some(window) = target {
         let _ = app.emit_to(window.label(), MENU_COMMAND_EVENT, id);
     }
 }

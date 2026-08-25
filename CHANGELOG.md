@@ -12,6 +12,13 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Typing a new calculated column's formula in the bar works again. Adding a
+  calculated column focuses its formula in the bar; pressing Return there
+  used to do nothing — the column kept its blank placeholder with no error —
+  because the save that created it quietly disconnected the formula from its
+  editor. Return now applies the formula, including after the Wrangle panel
+  was closed mid-edit.
+
 - Plots render again in installed builds. Charts now evaluate through Vega's
   sandboxed interpreter instead of eval, which the app's security policy
   blocks — development builds never enforced that policy, so plots worked at
@@ -26,7 +33,9 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 - Undo and Redo in the Edit menu enable reliably after every edit, including
   Wrangle chain edits on imported frames — previously they could stay greyed
   out, leaving ⌘Z dead. Opening another document no longer carries the
-  previous document's undo state with it.
+  previous document's undo state with it. Menu commands also no longer
+  disappear when no window reports focus at the instant the menu closes —
+  an enabled Undo now always reaches the document.
 
 - Cells that cannot take a typed value no longer open an editor or keep
   showing text that was never saved. The refusal appears at the frame with
