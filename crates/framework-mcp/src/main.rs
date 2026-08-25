@@ -3257,12 +3257,18 @@ mod tests {
             }))
             .unwrap()
             .0;
-        assert!(
-            frame
-                .columns
-                .iter()
-                .any(|column| column.name == "Adjusted" && column.formula.is_none())
-        );
+        // The view renders a calculated column's chain declaration onto the
+        // column itself (`rendered_column_formulas`), so an MCP reader sees
+        // what computes the column instead of a bare schema entry. This
+        // asserted `formula.is_none()` before the view carried that
+        // declaration; a None here now would mean the column lost it.
+        assert!(frame.columns.iter().any(|column| {
+            column.name == "Adjusted"
+                && column
+                    .formula
+                    .as_deref()
+                    .is_some_and(|formula| formula.contains("Safety Factor"))
+        }));
         let inspected = server.lock().unwrap().store.view();
         let orders =
             frame_by_id(&inspected, result.affected_object_id.as_deref().unwrap()).unwrap();
