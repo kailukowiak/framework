@@ -1,5 +1,5 @@
 import { CircleAlert, FileSpreadsheet, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { DocumentView, FrameObject } from "./lib/types";
 
@@ -30,6 +30,16 @@ export function ExcelExportDialog({
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const allSelected = frames.length > 0 && selected.size === frames.length;
+
+  // Escape closes, same as every other dialog — but not mid-export, when the
+  // native save panel owns the keyboard and the work is already running.
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !exporting) onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [exporting, onClose]);
 
   const exportWorkbook = async () => {
     setExporting(true);

@@ -193,6 +193,15 @@ export function ExcelImportDialog({
   const controller = useExcelImport(workbook, onImport);
   const { draft } = controller;
   const disabled = draft.busy || !draft.preview || Boolean(draft.error) || !draft.name.trim();
+  // Escape closes, same as every other dialog — but not mid-import, when
+  // closing would orphan a range that is already on its way in.
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !draft.busy) onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [draft.busy, onClose]);
   return (
     <div className="dialog-backdrop">
       <div className="insert-dialog excel-import-dialog">

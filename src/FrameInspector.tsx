@@ -674,13 +674,16 @@ export function FrameInspector({
               <div className="info-panel">
                 <Database size={16} />
                 <p>
-                  This frame is an immutable, paged snapshot
-                  {frame.artifact?.sourceName ? ` of ${frame.artifact.sourceName}` : ""}
-                  .{" "}
+                  {/* The engine's editing verdict is the one source of truth
+                      here. A connector-less snapshot is the document's own
+                      copy and takes typing; a linked import is read-only
+                      until refreshed. Hard-coding "immutable" for both
+                      taught people the opposite of what the grid does. */}
+                  {computed?.editing.reason ??
+                    "This frame reads an imported snapshot. Filter, add columns, or summarize it on the Wrangle tab."}
                   {frame.connector
-                    ? "Refresh it from the Frame section when the source file changes. "
+                    ? " Refresh it from the Frame section when the source file changes."
                     : ""}
-                  Filter, add columns, or summarize it on the Wrangle tab.
                 </p>
               </div>
             )}

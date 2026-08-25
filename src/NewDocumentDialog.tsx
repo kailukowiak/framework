@@ -1,5 +1,5 @@
 import { CircleAlert, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { newDocumentDialog } from "./lib/api";
 import type { DocumentView } from "./lib/types";
 
@@ -13,6 +13,16 @@ export function NewDocumentDialog({
   const [name, setName] = useState("Untitled");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Escape closes, same as every other dialog — except while the native
+  // save panel is up, when this dialog is not the surface being answered.
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !creating) onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [creating, onClose]);
 
   const create = async () => {
     if (!name.trim() || creating) return;

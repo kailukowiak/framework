@@ -370,6 +370,18 @@ export function DatasetDialog({
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [confirmTutorialReset, setConfirmTutorialReset] = useState(false);
   const [commandSource, setCommandSource] = useState<AddDataSourceKind | null>(null);
+  // Escape peels one layer at a time: a stacked CLI/database source editor
+  // closes first, and only a bare library closes the dialog itself —
+  // otherwise one keypress would tear down both and lose the form.
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (commandSource) setCommandSource(null);
+      else onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [commandSource, onClose]);
   // Every frame in this document that reads from a file. Listing them
   // together is the difference between fixing one moved file and fixing a
   // project someone moved wholesale.

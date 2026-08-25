@@ -12,6 +12,44 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Plots render again in installed builds. Charts now evaluate through Vega's
+  sandboxed interpreter instead of eval, which the app's security policy
+  blocks — development builds never enforced that policy, so plots worked at
+  the desk while every packaged build showed only an error.
+
+- Formula editing sessions now end. Return applies the formula and finishes
+  the session, Escape cancels back to the saved formula, and clicking
+  elsewhere deactivates instead of silently inserting references into a
+  formula you already committed. The bar shows when a session is active and
+  returns to the selected cell afterwards.
+
+- Undo and Redo in the Edit menu enable reliably after every edit, including
+  Wrangle chain edits on imported frames — previously they could stay greyed
+  out, leaving ⌘Z dead. Opening another document no longer carries the
+  previous document's undo state with it.
+
+- Cells that cannot take a typed value no longer open an editor or keep
+  showing text that was never saved. The refusal appears at the frame with
+  the reason, and a literal column stays typeable beside a calculated one.
+  Rearranging or deleting columns no longer freezes a hand-entered table's
+  remaining cells.
+
+- The grid and the Wrangle step list follow the document immediately:
+  deleting a column updates the grid at once, and undoing a step removes it
+  from the list instead of leaving it to be silently re-saved.
+
+- New cards land in free space instead of exactly on top of existing cards —
+  imports, the Add rail, keyboard shortcuts, and the Scratchwork drawer all
+  place beside what is already there.
+
+- Escape closes the Data Library, Join, New Document, and Excel import and
+  export dialogs, matching every other dialog.
+
+- The Selection panel no longer calls every imported frame an "immutable,
+  paged snapshot": it now states the engine's actual verdict, so a snapshot
+  the document owns is described as typeable and a linked import explains
+  what a refresh will do.
+
 - Build live calculation matrices from zipped row and column vectors, with
   evenly repeating shorter vectors, a shared formula body, and a long-form
   result that updates whenever its inputs change. The body formula can expand

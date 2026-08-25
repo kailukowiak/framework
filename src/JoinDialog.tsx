@@ -1,5 +1,5 @@
 import { CircleAlert, GitMerge, KeyRound, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useJoinDiagnostics } from "./hooks/useJoinDiagnostics";
 import type { JoinDiagnostics } from "./lib/api";
 import { LookupJoinPrompt } from "./LookupJoinPrompt";
@@ -26,6 +26,15 @@ export function JoinDialog({
   onCreated: () => void;
 }) {
   const [moreOptions, setMoreOptions] = useState(false);
+  // Escape closes, same as every other dialog; handled once here so both
+  // the compact prompt and the advanced form get it.
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
   if (state.lookupOutputColumnIds?.length && !moreOptions)
     return (
       <LookupJoinPrompt
