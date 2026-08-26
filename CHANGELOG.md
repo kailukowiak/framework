@@ -12,6 +12,8 @@ the version being tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.5
+
 - Plots chart the whole frame. A plot on a file-backed frame was quietly
   charting only the first 1,000 rows, so every aggregate was computed over a
   slice. Charts now load every row; a chart that aggregates a very large
