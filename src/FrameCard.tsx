@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FrameCardProps } from "./FrameCardProps";
-import { commitFrameCellEdit } from "./lib/commitFrameCellEdit";
+import { commitFrameCellEdit, commitDraftRowEdit } from "./lib/commitFrameCellEdit";
 import {
   FieldsAsRowsFrameCard,
   FramePageControls,
@@ -11,11 +11,12 @@ import {
   useFrameColumnDrag,
   useFrameScrollState,
 } from "./useFrameCardInteraction";
+import { useFillHandleDrag } from "./hooks/useFillHandleDrag";
+import { focusGridClipboardTarget } from "./lib/gridClipboardTarget";
 import {
   chainFilterCount,
   chainSteps,
   filterWeight,
-  isCalculatedFrameColumn,
   isEditableGridColumn,
   isTextEntryTarget,
   nextColumnName,
@@ -29,6 +30,7 @@ import {
 } from "./FrameGrid";
 import { getFramePage, type FramePage } from "./lib/api";
 import {
+  focusScrollTarget,
   normalizeRange,
   scrollLeftToRevealColumn,
   scrollTopToRevealRow,
@@ -47,6 +49,7 @@ import {
   planPageFetch,
 } from "./lib/pagedWindow";
 import { calculateVirtualRowRange } from "./lib/frameVirtualization";
+import { frameEditRefusalStatus } from "./FrameEditRefusalStatus";
 
 /**
  * One cached page: the values as they came back, and what the rules made of
@@ -67,29 +70,11 @@ import type {
   Row,
 } from "./lib/types";
 
-/**
- * Why the last edit attempt at the focused cell was refused, said in the
- * card's own status line rather than a window-level toast — errors go where
- * the thing is. The engine's `editing.reason` is the frame-level answer; a
- * calculated column beside editable inputs needs the column-level one.
- */
-function editRefusalStatus(
-  frame: FrameCardProps["frame"],
-  computed: ComputedFrame,
-  focus: { editRefused?: boolean; columnId: string } | null
+function gridFocusForFrame(
+  frameId: string,
+  focus: FrameCardProps["gridFocus"]
 ) {
-  const refusedColumn = focus?.editRefused
-    ? frame.columns.find((column) => column.id === focus.columnId)
-    : undefined;
-  if (!refusedColumn) return null;
-  const text = isCalculatedFrameColumn(computed, refusedColumn)
-    ? `${refusedColumn.name} is calculated. Edit its formula instead of typing over one result.`
-    : computed.editing.reason ?? "This frame’s cells cannot be edited.";
-  return (
-    <div className="frame-page-controls frame-edit-refusal" role="status">
-      <span>{text}</span>
-    </div>
-  );
+  return focus?.objectId === frameId ? focus : null;
 }
 
 /** What a frame's authored chain does to its source, in three words or fewer. */
@@ -495,9 +480,8 @@ export function FrameCard({
     virtualRange.start,
   ]);
 
-  const gridFocusHere =
-    gridFocus && gridFocus.objectId === frame.id ? gridFocus : null;
-  const editRefusalLine = editRefusalStatus(frame, computed, gridFocusHere);
+  const gridFocusHere = gridFocusForFrame(frame.id, gridFocus);
+  const editRefusalLine = frameEditRefusalStatus(frame, computed, gridFocusHere);
 
   // `extend` is shift-click and drag-select: the focus moves to this cell
   // while the anchor stays put, so the two corners describe a rectangle. The
@@ -510,6 +494,7 @@ export function FrameCard({
     options?: { extend?: boolean; span?: "row" | "column" | null }
   ) => {
     const refused = mode === "edit" && !isEditableGridColumn(computed, column, frame);
+    if (mode === "navigate") focusGridClipboardTarget();
     onSelect({ objectId: frame.id, rowId: row.id, columnId: column.id });
     onGridFocus((current) => ({
       viewId: view.id,
@@ -624,10 +609,16 @@ export function FrameCard({
     const element = scrollRef.current;
     if (!element) return;
     const rowIndex = displayedRows.findIndex((row) => row.id === gridFocusHere.rowId);
-    if (rowIndex >= 0) {
+    const target = focusScrollTarget(
+      rowIndex,
+      displayedRows.length,
+      gridFocusHere.rowIndex,
+      totalRows
+    );
+    if (target) {
       const nextTop = scrollTopToRevealRow(
-        rowIndex,
-        displayedRows.length,
+        target.rowIndex,
+        target.rowCount,
         element.scrollTop,
         element.clientHeight
       );
@@ -689,6 +680,9 @@ export function FrameCard({
   const { frameColumnDrop, beginFrameColumnDrag } = useFrameColumnDrag(
     frame, totalRows, selectionRange, onRearrangeColumns, onJoinColumns
   );
+  const fillHandle = useFillHandleDrag(
+    frame, selectionRange, rangeFocus, gridFocusHere, onTransformColumn
+  );
 
   // For the records-as-rows paged path, displayedRows *is* the visible
   // window (already sized to virtualRange) rather than the full row set,
@@ -697,14 +691,15 @@ export function FrameCard({
     isFileBacked && !isTransposed
       ? displayedRows
       : displayedRows.slice(virtualRange.start, virtualRange.end);
-  const commitDraftRow = (allowEmpty = false) => {
-    const values = Object.fromEntries(
-      Object.entries(draftRow).filter(([, value]) => value.length > 0)
-    );
-    if (!allowEmpty && Object.keys(values).length === 0) return;
-    setDraftRow({});
-    onOperation({ type: "addRow", frameId: frame.id, values });
-  };
+  const commitDraftRow = (allowEmpty = false) =>
+    commitDraftRowEdit({
+      frame,
+      draftRow,
+      allowEmpty,
+      onOperation,
+      onTransformColumn,
+      onReset: () => setDraftRow({}),
+    });
   const addColumn = (afterColumnId: string | null) => {
     if (isFileBacked) return;
     void onOperation({
@@ -797,6 +792,7 @@ export function FrameCard({
     <RecordsAsRowsFrameCard
       frame={frame}
       computed={computed}
+      onTransformColumn={onTransformColumn}
       selection={selection}
       gridFocus={gridFocusHere}
       displayedRows={displayedRows}
@@ -804,6 +800,7 @@ export function FrameCard({
       visibleRows={visibleRows}
       virtualRange={virtualRange}
       selectionRange={selectionRange}
+      fillHandle={fillHandle}
       filterMark={filterMark}
       filterPredicateCount={filter.predicates.length}
       filterPredicates={filter.predicates}

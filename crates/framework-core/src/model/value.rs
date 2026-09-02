@@ -328,6 +328,21 @@ pub enum ColumnFormatScale {
     Millions,
 }
 
+/// A date column's display pattern. `Iso` is the format the raw cell text
+/// already carries, so it normalises away to `None` rather than being
+/// stored as an explicit choice — see `normalized_column_format`.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum DatePattern {
+    #[default]
+    Iso,
+    DayMonthYear,
+    MonthDayYear,
+    MonthYear,
+    Quarter,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -348,6 +363,9 @@ pub struct ColumnFormat {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub currency_code: Option<String>,
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub date_pattern: Option<DatePattern>,
 }
 
 pub fn normalized_column_format(mut format: ColumnFormat) -> ColumnFormat {
@@ -355,5 +373,8 @@ pub fn normalized_column_format(mut format: ColumnFormat) -> ColumnFormat {
         .currency_code
         .map(|code| code.trim().to_uppercase())
         .filter(|code| !code.is_empty());
+    if format.date_pattern == Some(DatePattern::Iso) {
+        format.date_pattern = None;
+    }
     format
 }

@@ -1,8 +1,10 @@
 import { Check, Database, FolderOpen } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { SetFrameSourceHandler } from "./FrameGrid";
 import { FormulaErrorDetails } from "./FormulaEditor";
+import { useConnectorRefreshDiff } from "./hooks/useConnectorRefreshOutcome";
 import { connectorSourceLabel } from "./lib/dataSources";
+import { schemaDiffLines } from "./lib/schemaDiffText";
 import type { FrameObject } from "./lib/types";
 
 function connectorName(frame: FrameObject): string {
@@ -44,6 +46,15 @@ function ConnectorActions({
   );
 }
 
+/**
+ * What the last read of this source did, in three registers: it worked,
+ * what it changed about the shape of the data, and what went wrong.
+ *
+ * The schema report is plain lines in the panel's own type size rather than
+ * a table or a row of chips. It is at most four facts, it is read once, and
+ * a refresh that changed nothing says nothing — which is nearly every
+ * refresh anyone ever runs.
+ */
 function ConnectorResult({
   frame,
   done,
@@ -53,11 +64,22 @@ function ConnectorResult({
   done: string | null;
   error: string | null;
 }) {
+  const changes = schemaDiffLines(useConnectorRefreshDiff(frame.id));
   return (
     <>
       {done && (
         <p className="connector-refresh-success">
           <Check size={12} /> {done} · {(frame.artifact?.rowCount ?? 0).toLocaleString()} rows
+        </p>
+      )}
+      {changes.length > 0 && (
+        <p>
+          {changes.map((line, index) => (
+            <Fragment key={line}>
+              {index > 0 && <br />}
+              <span>{line}</span>
+            </Fragment>
+          ))}
         </p>
       )}
       {error && <FormulaErrorDetails title="Could not refresh the source" error={error} />}
@@ -79,7 +101,7 @@ export function FrameSourcePanel({
   const source = connector ? connectorSourceLabel(connector) : undefined;
   const shortSource = source?.split(/[\\/]/).pop();
   const description = connector
-    ? "Refresh reads the source into a new immutable artifact while this frame and its surviving columns keep their IDs. New columns are added, unused missing columns are removed, and a missing column used downstream stays visible with an explicit error."
+    ? "Refresh reads the source into a new immutable artifact while this frame and its surviving columns keep their IDs. New columns are added, unused missing columns are removed, and a missing column something still reads stays in place and empty, carrying the error itself — every other column, and everything downstream that does not read it, goes on computing."
     : "This snapshot has no source file recorded. Linking one lets it be refreshed from then on; columns are reconciled by their physical source names so surviving formulas keep their references.";
 
   const run = (

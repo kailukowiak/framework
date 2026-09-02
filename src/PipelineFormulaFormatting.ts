@@ -1,4 +1,4 @@
-import type { StepDraft } from "./PipelineEditor";
+import type { StepDraft } from "./lib/pipelineSteps";
 import { parseRecurrenceFormula } from "./RecurrenceDialog";
 import { formatFormulaChains } from "./lib/formulaFormatting";
 import type { RenderedFrameStep } from "./lib/types";

@@ -320,6 +320,30 @@ export function scrollTopToRevealRow(
 }
 
 /**
+ * Which row a focus effect should reveal, and against what row count.
+ *
+ * A focus resolved to a row already in the loaded window scrolls within
+ * that window, exactly as before. A focus that names a row nowhere in the
+ * window — a paged Find hit landing outside the loaded page — has no local
+ * index to scroll to; its `rowIndex` is the frame's absolute position
+ * instead, and that has to be revealed against the frame's total row count,
+ * not the window's, or the scale in `scrollTopToRevealRow` describes the
+ * wrong frame. Returns null when neither position is known, so the caller
+ * scrolls nothing.
+ */
+export function focusScrollTarget(
+  localRowIndex: number,
+  localRowCount: number,
+  focusRowIndex: number | undefined,
+  totalRows: number
+): { rowIndex: number; rowCount: number } | null {
+  if (localRowIndex >= 0) return { rowIndex: localRowIndex, rowCount: localRowCount };
+  if (focusRowIndex !== undefined && focusRowIndex >= 0)
+    return { rowIndex: focusRowIndex, rowCount: totalRows };
+  return null;
+}
+
+/**
  * Horizontal scroll offset that reveals a cell spanning [left, left + width), or null
  * when it is already visible. stickyLeadingWidth is the width of a sticky leading
  * column that overlays the left edge of the viewport.

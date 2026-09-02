@@ -75,7 +75,8 @@ impl Store {
     }
 
     pub fn load(path: &Path) -> Result<Self, CoreError> {
-        let json = fs::read_to_string(path).map_err(|error| CoreError::Load(error.to_string()))?;
+        let json = fs::read_to_string(path)
+            .map_err(|error| CoreError::Load(describe_io_error(&error, path)))?;
         let value: serde_json::Value =
             serde_json::from_str(&json).map_err(|error| CoreError::Load(error.to_string()))?;
         let (document, version_vector, tutorial_version) = if value.get("format").is_some() {
@@ -179,6 +180,17 @@ impl Store {
             .ok()
             .and_then(|frame| frame.artifact.as_ref())
             .map(|artifact| artifact.id.as_str())
+    }
+
+    /// What binding this artifact to this frame would change about its
+    /// schema. Asked before the refresh is applied, because it is a
+    /// comparison against the schema the frame still has.
+    pub fn frame_source_schema_diff(
+        &self,
+        frame_id: &str,
+        artifact: &DataArtifact,
+    ) -> Result<SchemaDiff, CoreError> {
+        self.document.source_schema_diff(frame_id, artifact)
     }
 
     /// Whether this frame's snapshot has fallen behind what it reads from.
@@ -494,8 +506,13 @@ impl Store {
     /// Write selected frames and every named scalar answer to an Excel
     /// workbook. This is a values-only handoff: FrameWork remains the place
     /// where formulas live, while the workbook receives their current answers.
-    pub fn export_excel(&self, frame_ids: &[Id], path: &Path) -> Result<(), CoreError> {
-        self.document.export_excel(frame_ids, path)
+    pub fn export_excel(
+        &self,
+        frame_ids: &[Id],
+        path: &Path,
+        include_lineage: bool,
+    ) -> Result<(), CoreError> {
+        self.document.export_excel(frame_ids, path, include_lineage)
     }
 
     pub fn get_frame_page(
@@ -506,6 +523,20 @@ impl Store {
     ) -> Result<FramePage, CoreError> {
         self.document
             .get_frame_page(frame_id, offset, limit, &self.sorted_page_cache)
+    }
+
+    /// Cells of `frame_id` whose text contains `query`, case-insensitively.
+    ///
+    /// Only paged frames need this: everything a small frame holds is already
+    /// in the document view the interface was handed, and asking the engine to
+    /// re-scan it would be a round trip to learn something already on screen.
+    pub fn search_frame_rows(
+        &self,
+        frame_id: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<RowHit>, CoreError> {
+        self.document.search_frame_rows(frame_id, query, limit)
     }
 
     pub fn get_block_line_page(
@@ -740,6 +771,7 @@ impl Store {
             computed_blocks: document.compute_blocks(),
             computed_texts: document.compute_texts(),
             computed_calculation_matrices: document.compute_calculation_matrices(),
+            computed_values: document.compute_values(),
             document,
             formula_functions: formula_function_catalog(),
             can_undo: !self.undo.is_empty(),
@@ -762,6 +794,7 @@ impl Store {
             computed_blocks: HashMap::new(),
             computed_texts: HashMap::new(),
             computed_calculation_matrices: HashMap::new(),
+            computed_values: HashMap::new(),
             formula_functions: formula_function_catalog(),
             can_undo: !self.undo.is_empty(),
             can_redo: !self.redo.is_empty(),

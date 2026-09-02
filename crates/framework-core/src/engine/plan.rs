@@ -7,7 +7,7 @@ use std::collections::HashSet;
 
 /// Column name for the row index a page read carries between the data and
 /// display layers. Not a column id, so it cannot collide with one.
-const ROW_INDEX: &str = "__framework_row";
+pub(crate) const ROW_INDEX: &str = "__framework_row";
 
 /// A page never exceeds 1,000 rows and never runs past the end.
 fn page_limit(offset: usize, limit: usize, total_rows: usize) -> usize {
@@ -289,7 +289,10 @@ impl Document {
         }
     }
 
-    fn indexed_frame_page_plan(&self, frame: &FrameObject) -> Result<pl::LazyFrame, CoreError> {
+    pub(crate) fn indexed_frame_page_plan(
+        &self,
+        frame: &FrameObject,
+    ) -> Result<pl::LazyFrame, CoreError> {
         let plan = self.frame_page_plan(frame, Layer::Data)?;
         let plan = if frame.preserves_own_row_identity() {
             plan
@@ -1234,7 +1237,7 @@ impl Document {
     /// Read off the row index the plan carried when there is one; otherwise
     /// synthesized from the page position, which is all a row streamed
     /// straight out of a parquet scan ever had.
-    fn page_row_ids(
+    pub(crate) fn page_row_ids(
         &self,
         frame: &FrameObject,
         data_frame: &pl::DataFrame,
@@ -1403,6 +1406,8 @@ mod tests {
             objects: Vec::new(),
             views: Vec::new(),
             frozen_values: Default::default(),
+            scenarios: Vec::new(),
+            active_scenario: None,
         });
         // The desktop app imports through ImportFrameFromArtifact (it stages
         // a parquet artifact first), so measure that path, not the

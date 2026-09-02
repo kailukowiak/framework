@@ -8,6 +8,7 @@ export type ApplicationShortcut =
   | "save-as"
   | "settings"
   | "shortcuts"
+  | "find"
   | "formula-help"
   | "framework-help"
   | "scratchpad"
@@ -15,6 +16,7 @@ export type ApplicationShortcut =
   | "arrange"
   | "fit"
   | "collapse"
+  | "inspector-toggle"
   | "inspector-selection"
   | "inspector-format"
   | "inspector-wrangle"
@@ -45,13 +47,13 @@ export const hasNativeMenu = isDesktopShell;
 
 const PLAIN: Record<string, ApplicationShortcut> = {
   z: "undo", n: "new", o: "open", s: "save", ",": "settings",
-  "/": "shortcuts", j: "scratchpad", "1": "inspector-selection",
+  "/": "shortcuts", j: "scratchpad", f: "find", "1": "inspector-selection",
   "2": "inspector-format", "3": "inspector-wrangle", "=": "zoom-in",
   "+": "zoom-in", "-": "zoom-out", _: "zoom-out", "0": "zoom-reset",
 };
 const SHIFTED: Record<string, ApplicationShortcut> = {
   z: "redo", n: "new-window", s: "save-as", l: "library", a: "arrange", f: "fit",
-  m: "collapse", p: "formula-help", h: "framework-help",
+  m: "collapse", p: "formula-help", h: "framework-help", i: "inspector-toggle",
 };
 const INSERT: Record<string, ApplicationShortcut> = {
   b: "add-block", t: "add-text", f: "add-frame", g: "add-container",

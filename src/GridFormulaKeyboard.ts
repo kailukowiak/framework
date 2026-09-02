@@ -27,7 +27,6 @@ export function handleGridFormulaKey({
   columnToken,
   onCellRequest,
   onColumnRequest,
-  onScratchworkRequest,
   onSelect,
   onOpenWrangle,
   onOperation,
@@ -40,7 +39,6 @@ export function handleGridFormulaKey({
   columnToken: MutableRefObject<number>;
   onCellRequest: (request: CellFormulaRequest | null) => void;
   onColumnRequest: (request: ColumnFormulaRequest) => void;
-  onScratchworkRequest: () => void;
   onSelect: (selection: Selection) => void;
   onOpenWrangle: () => void;
   onOperation: OperationHandler;
@@ -53,7 +51,6 @@ export function handleGridFormulaKey({
       context.computed?.rows[focus.rowId]?.[focus.columnId]?.isOverride
     ),
     singleCell: !focus.anchor && !focus.span,
-    wholeColumn: focus.span === "column",
   });
   if (!action || (action.kind === "column" && !column)) return false;
   event.preventDefault();
@@ -72,9 +69,6 @@ export function handleGridFormulaKey({
       cellId: `${context.frame.id}:${focus.rowId}:${focus.columnId}`,
       seed: action.seed,
     });
-  } else if (action.kind === "scratchwork") {
-    onCellRequest(null);
-    onScratchworkRequest();
   } else {
     const target = column;
     if (!target) return false;

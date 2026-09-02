@@ -2,6 +2,7 @@
 import type { CanvasView } from "./CanvasView";
 import type { DataObject } from "./DataObject";
 import type { FrozenValue } from "./FrozenValue";
+import type { Scenario } from "./Scenario";
 
 export type Document = {
   id: string;
@@ -27,4 +28,21 @@ export type Document = {
    * beside the document survives it by having the same id it always had.
    */
   frozenValues?: { [key in string]: FrozenValue };
+  /**
+   * Named assumption bundles: Base, Upside, Downside.
+   *
+   * A list rather than a map because the order is the order somebody put
+   * them in, and a switcher that reshuffles itself alphabetically when a
+   * scenario is renamed is a switcher nobody trusts.
+   */
+  scenarios: Array<Scenario>;
+  /**
+   * Which of them the document is reading through, or `None` for the
+   * base — the numbers as the value cards hold them.
+   *
+   * Part of the document rather than of the session on purpose: an
+   * activation changes every answer in the workbook, so it is an edit,
+   * with an undo and a place in the history like any other.
+   */
+  activeScenario?: string | null;
 };

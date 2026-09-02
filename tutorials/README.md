@@ -9,6 +9,12 @@ The lessons are also manual smoke tests. If a named control is missing, a step
 cannot be completed, or the observed result differs from the checkpoint, record
 it in the lesson's smoke-test notes rather than working around it silently.
 
+For a release-sized pass, use the **[human release review](HUMAN-REVIEW.md)**.
+It is a short, repeatable script for the native menu, multi-window, clipboard,
+focus, and visual checks that the automated desktop driver cannot reproduce
+faithfully. It samples the tutorials rather than asking someone to rebuild all
+five every time.
+
 ## How the practical lessons work
 
 Each practical lesson follows the same rhythm:

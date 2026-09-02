@@ -259,6 +259,58 @@ pub(crate) fn validate_category_raw(column: &Column, raw: &str) -> Result<(), Co
     Ok(())
 }
 
+/// A cell write the column's type cannot hold is refused before anything is
+/// written. A typed column that stored `= 12*100` and showed a null would be
+/// text pretending to be a number; refusing names the column and the type it
+/// wanted. Empty means null and is always allowed; a categorical column
+/// checks its allowed values; every other type parses the raw the way
+/// evaluation will, so what is accepted here is exactly what computes.
+pub(crate) fn validate_cell_raw(column: &Column, raw: &str) -> Result<(), CoreError> {
+    validate_category_raw(column, raw)?;
+    if raw.trim().is_empty() || parse_scalar_value(raw, column.data_type).is_ok() {
+        return Ok(());
+    }
+    Err(CoreError::InvalidOperation(format!(
+        "'{}' is not a valid {} for column '{}'{}",
+        raw,
+        data_type_name(column.data_type),
+        column.name,
+        type_hint(column.data_type)
+    )))
+}
+
+/// The same refusal for a scenario's override of a value object.
+///
+/// A scenario disagrees with the base about a number, not about what kind of
+/// thing the value is — the compiled formula still parses the override with
+/// the value's own `data_type` — so a raw the type cannot hold is refused
+/// here rather than becoming a null the moment somebody switches scenarios.
+/// Deliberately the same sentence shape as a cell's refusal: it is the same
+/// mistake, and there is no reason for it to read differently.
+pub(crate) fn validate_value_raw(value: &ValueObject, raw: &str) -> Result<(), CoreError> {
+    if raw.trim().is_empty() || parse_scalar_value(raw, value.data_type).is_ok() {
+        return Ok(());
+    }
+    Err(CoreError::InvalidOperation(format!(
+        "'{}' is not a valid {} for value '{}'{}",
+        raw,
+        data_type_name(value.data_type),
+        value.name,
+        type_hint(value.data_type)
+    )))
+}
+
+/// What to try instead, for the types where the answer is short enough to
+/// say in the same breath as the complaint.
+fn type_hint(data_type: DataType) -> &'static str {
+    match data_type {
+        DataType::Integer => "; use a whole number",
+        DataType::Boolean => "; use true or false",
+        DataType::Date => "; use YYYY-MM-DD",
+        _ => "",
+    }
+}
+
 pub(crate) fn validate_category_values(
     column: &Column,
     rows: &[Row],
@@ -596,6 +648,8 @@ mod tests {
             objects: Vec::new(),
             views: Vec::new(),
             frozen_values: Default::default(),
+            scenarios: Vec::new(),
+            active_scenario: None,
         });
         store
             .apply(Operation::AddFrame {

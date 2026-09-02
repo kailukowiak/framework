@@ -81,6 +81,26 @@ impl Document {
         })
     }
 
+    /// Freezing is refused, not clamped, above the column count: a request to
+    /// pin six columns of a four-column frame is a mistake about which frame
+    /// is being looked at, and silently pinning four would hide it.
+    pub(crate) fn prepare_set_frame_display_pinned_columns(
+        &self,
+        frame_id: Id,
+        pinned_columns: u32,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let columns = self.frame(&frame_id)?.columns.len();
+        if pinned_columns as usize > columns {
+            return Err(CoreError::InvalidOperation(format!(
+                "This frame has {columns} columns, so it cannot keep {pinned_columns} of them in view"
+            )));
+        }
+        Ok(ReplicatedOperation::SetFrameDisplayPinnedColumns {
+            frame_id,
+            pinned_columns,
+        })
+    }
+
     /// A crosstab is a way of looking, so it asks only that its two columns
     /// exist and differ; the grouping of the remaining columns is worked
     /// out at render time from whatever the chain currently produces.

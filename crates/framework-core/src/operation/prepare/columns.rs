@@ -394,6 +394,7 @@ mod tests {
                     negative_parens: Some(true),
                     zero_dash: Some(false),
                     currency_code: Some("EUR".into()),
+                    date_pattern: None,
                 }),
             })
             .unwrap();
@@ -425,6 +426,7 @@ mod tests {
                     negative_parens: None,
                     zero_dash: None,
                     currency_code: None,
+                    date_pattern: None,
                 }),
                 ..
             }

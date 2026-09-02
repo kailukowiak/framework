@@ -8,6 +8,7 @@
 //! something landed in the wrong module.
 
 mod error;
+mod io_error;
 mod model;
 
 mod formula;
@@ -27,6 +28,7 @@ pub use data::*;
 pub use engine::*;
 pub use error::*;
 pub use formula::*;
+pub use io_error::*;
 pub use model::*;
 pub use operation::*;
 pub use persist::*;

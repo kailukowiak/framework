@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Info, X, PanelRightClose } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { FrameInspector } from "./FrameInspector";
 import type {
@@ -23,6 +23,7 @@ import type {
   DataObject,
   FormulaFunction,
   FrameObject,
+  Scenario,
   Selection,
 } from "./lib/types";
 import { PlotInspector, ValueInspector } from "./PlotInspector";
@@ -39,11 +40,15 @@ type InspectorProps = {
   documentId: string;
   object: DataObject;
   objects: DataObject[];
+  /** Every scenario in the document, for a selected value's override table. */
+  scenarios: Scenario[];
   formulaFunctions: FormulaFunction[];
   selection: Selection;
   computed?: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   onClose: () => void;
+  /** Hides the panel without dropping the selection; ⌘⇧I or the menu brings it back. */
+  onHide: () => void;
   section: InspectorSection;
   onSectionChange: Dispatch<SetStateAction<InspectorSection>>;
   addCalculatedColumnRequest?: AddCalculatedColumnEditorRequest;
@@ -73,11 +78,13 @@ export function Inspector({
   documentId,
   object,
   objects,
+  scenarios,
   formulaFunctions,
   selection,
   computed,
   suggestedPosition,
   onClose,
+  onHide,
   section,
   onSectionChange,
   addCalculatedColumnRequest,
@@ -109,6 +116,14 @@ export function Inspector({
           <span className="eyebrow">INSPECTOR</span>
           <h2>{object.name || "Unnamed object"}</h2>
         </div>
+        <button
+          className="icon-button"
+          aria-label="Hide inspector"
+          title="Hide inspector (⌘⇧I)"
+          onClick={onHide}
+        >
+          <PanelRightClose size={14} />
+        </button>
         <button className="icon-button" aria-label="Close inspector" onClick={onClose}>
           <X size={17} />
         </button>
@@ -134,7 +149,11 @@ export function Inspector({
         </nav>
       )}
       {object.kind === "value" && (
-        <ValueInspector value={object} onOperation={onOperation} />
+        <ValueInspector
+          value={object}
+          scenarios={scenarios}
+          onOperation={onOperation}
+        />
       )}
       {/* A vector is edited on its card, where the whole of it is visible. The
           inspector says the two things the card cannot: what it is called in
@@ -186,8 +205,32 @@ export function Inspector({
         />
       )}
       {object.kind === "plot" && (
-        <PlotInspectorForSource object={object} objects={objects} onOperation={onOperation} />
+        <PlotInspectorForSource
+          object={object}
+          objects={objects}
+          onOperation={onOperation}
+        />
       )}
+    </aside>
+  );
+}
+
+/**
+ * The inspector collapses back into the edge it came from. Keeping this as a
+ * full-height sliver makes the hidden state visible without putting a second
+ * inspector control in unrelated navigation on the other side of the canvas.
+ */
+export function CollapsedInspector({ onShow }: { onShow: () => void }) {
+  return (
+    <aside className="inspector-collapsed" aria-label="Collapsed inspector">
+      <button
+        className="inspector-collapsed-toggle"
+        aria-label="Show inspector"
+        title="Show inspector (⌘⇧I)"
+        onClick={onShow}
+      >
+        <Info size={16} />
+      </button>
     </aside>
   );
 }
@@ -205,6 +248,7 @@ function PlotInspectorForSource({
     (candidate): candidate is FrameObject =>
       candidate.kind === "frame" && candidate.id === object.sourceFrameId
   );
-  return frame ? <PlotInspector plot={object} frame={frame} onOperation={onOperation} /> : null;
+  return frame ? (
+    <PlotInspector plot={object} frame={frame} onOperation={onOperation} />
+  ) : null;
 }
-

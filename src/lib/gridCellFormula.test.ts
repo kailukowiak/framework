@@ -11,24 +11,14 @@ const action = (
     printable: key.length === 1,
     isOverride: false,
     singleCell: true,
-    wholeColumn: false,
     ...options,
   });
 
 describe("grid formula keyboard gestures", () => {
-  it("sends a cell-level equals gesture to Scratchwork", () => {
-    expect(action("=")).toEqual({ kind: "scratchwork" });
+  it("opens the column formula from any cell, range, or selected header", () => {
+    expect(action("=")).toEqual({ kind: "column" });
+    expect(action("=", { singleCell: false })).toEqual({ kind: "column" });
     expect(action("=", { modifier: true })).toBeNull();
-  });
-
-  it("uses the same key on a selected header for the whole column", () => {
-    expect(action("=", { wholeColumn: true, singleCell: false })).toEqual({
-      kind: "column",
-    });
-  });
-
-  it("does not turn a range anchor into a hidden cell formula", () => {
-    expect(action("=", { singleCell: false })).toEqual({ kind: "scratchwork" });
   });
 
   it("edits, replaces, and clears an existing formula", () => {
@@ -40,9 +30,7 @@ describe("grid formula keyboard gestures", () => {
     expect(action("Delete", { isOverride: true, printable: false })).toEqual({
       kind: "clear",
     });
-    expect(action("=", { isOverride: true })).toEqual({
-      kind: "edit",
-      seed: "",
-    });
+    expect(action("=", { isOverride: true })).toEqual({ kind: "edit", seed: "" });
+    expect(action("=", { isOverride: true, singleCell: false })).toEqual({ kind: "column" });
   });
 });

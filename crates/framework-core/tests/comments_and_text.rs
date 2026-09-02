@@ -13,6 +13,8 @@ fn blank_store() -> Store {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     })
 }
 
@@ -396,6 +398,8 @@ fn a_legacy_text_card_reads_as_one_literal_and_survives_an_edit() {
         })],
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
 
     assert_eq!(computed_text(&store).source, "An old plain note");

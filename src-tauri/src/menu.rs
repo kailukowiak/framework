@@ -41,6 +41,7 @@ struct CanvasMenuItems<R: Runtime> {
     add_container: MenuItem<R>,
     data_library: MenuItem<R>,
     toggle_sources: MenuItem<R>,
+    inspector_toggle: MenuItem<R>,
     inspector_selection: MenuItem<R>,
     inspector_format: MenuItem<R>,
     inspector_wrangle: MenuItem<R>,
@@ -73,6 +74,7 @@ impl<R: Runtime> CanvasMenuItems<R> {
             .item(&self.toggle_sources)
             .item(&self.data_library)
             .separator()
+            .item(&self.inspector_toggle)
             .item(&self.inspector_selection)
             .item(&self.inspector_format)
             .item(&self.inspector_wrangle)
@@ -118,6 +120,7 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
         add_container: item("add-container", "Container", "CmdOrCtrl+Alt+G")?,
         data_library: item("data-library", "Data Library…", "CmdOrCtrl+Shift+L")?,
         toggle_sources: item("toggle-sources", "Data Panel", "CmdOrCtrl+Shift+D")?,
+        inspector_toggle: item("inspector-toggle", "Inspector", "CmdOrCtrl+Shift+I")?,
         inspector_selection: item(
             "inspector-selection",
             "Selection Inspector",
@@ -201,6 +204,13 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     // Not the predefined undo/redo: those are the text field's, routed to
     // whatever holds focus, and this application's undo is the document's.
     // They start disabled because a freshly opened document has no history.
+    // Find lives in Edit next to the system's own text commands, which is
+    // where every application puts it and therefore the only place looking
+    // for it costs nothing.
+    let find = MenuItemBuilder::with_id("find", "Find…")
+        .accelerator("CmdOrCtrl+F")
+        .build(app)?;
+
     let undo = MenuItemBuilder::with_id("undo", "Undo")
         .accelerator("CmdOrCtrl+Z")
         .enabled(false)
@@ -236,6 +246,8 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let edit = SubmenuBuilder::new(app, "Edit")
         .item(&undo)
         .item(&redo)
+        .separator()
+        .item(&find)
         .separator()
         .cut()
         .copy()

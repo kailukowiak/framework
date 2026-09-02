@@ -23,6 +23,8 @@ fn csv_imports_round_trip_through_typed_frames_and_export() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     let view = store
         .apply(Operation::ImportFrameFromFile {
@@ -111,7 +113,7 @@ fn excel_export_writes_selected_tables_and_named_answers() {
         .unwrap();
 
     let orders_id = frame_named(store.document(), "Orders").id.clone();
-    store.export_excel(&[orders_id], &path).unwrap();
+    store.export_excel(&[orders_id], &path, false).unwrap();
 
     let workbook = inspect_excel_workbook(&path).unwrap();
     assert_eq!(
@@ -195,7 +197,7 @@ fn excel_export_qualifies_names_and_disambiguates_duplicate_paths() {
             .unwrap();
     }
 
-    store.export_excel(&[], &path).unwrap();
+    store.export_excel(&[], &path, false).unwrap();
     let values = preview_excel_range(&path, "Values", "A1:B5", true, 10).unwrap();
     let names = values
         .rows
@@ -265,6 +267,8 @@ fn tsv_imports_split_on_tabs() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -320,6 +324,8 @@ fn parquet_imports_keep_schema_types_instead_of_string_inference() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -365,6 +371,8 @@ fn file_imports_support_large_files() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -833,12 +841,20 @@ fn a_missing_source_field_keeps_its_id_when_downstream_reads_it() {
             .iter()
             .any(|column| column.id.starts_with("total~"))
     );
-    let error = store
-        .get_frame_page(&frame_id, 0, 10)
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("Source field ‘amount’"));
-    assert!(error.contains(&amount_id));
+    // The frame still reads. `amount` has no data behind it any more, so it
+    // is a column of blanks that says why against itself -- the failure
+    // belongs to the one column that has it, not to the whole frame and
+    // everything below it. See tests/schema_change.rs for the rest of that
+    // claim.
+    let page = store.get_frame_page(&frame_id, 0, 10).unwrap();
+    assert_eq!(page.rows, vec![vec!["Beta", "20", ""]]);
+    assert_eq!(
+        store.view().computed_frames[&frame_id]
+            .column_errors
+            .get(&amount_id)
+            .map(String::as_str),
+        Some("Source field \"amount\" is missing since the last refresh")
+    );
     fs::remove_dir_all(directory).unwrap();
 }
 
@@ -957,6 +973,79 @@ fn pasting_into_an_empty_frame_builds_typed_columns_from_the_clipboard() {
             text: "Other\nvalue\n".into(),
         }),
         Err(CoreError::InvalidOperation(_))
+    ));
+}
+
+/// Pasting with nothing selected drops a new frame on the canvas: the
+/// empty-frame paste without the empty frame. Same reader, same types, one
+/// operation — so one undo takes the whole frame back.
+#[test]
+fn pasting_onto_the_canvas_adds_a_typed_frame_where_it_was_dropped() {
+    let mut store = Store::new(Document::blank("Paste"));
+    store
+        .apply(Operation::AddFrameFromPastedText {
+            name: "Frame 1".into(),
+            text: "Item\tAmount\tSold on\nWidget\t3\t2026-01-15\nGadget\t4.5\t2026-02-01\n".into(),
+            x: 120.0,
+            y: 80.0,
+        })
+        .unwrap();
+
+    let frame = frame_named(store.document(), "Frame 1");
+    assert_eq!(
+        frame
+            .columns
+            .iter()
+            .map(|column| (column.name.as_str(), column.data_type))
+            .collect::<Vec<_>>(),
+        vec![
+            ("Item", DataType::String),
+            ("Amount", DataType::Number),
+            ("Sold on", DataType::Date),
+        ]
+    );
+    assert_eq!(frame.rows.len(), 2);
+    assert_eq!(
+        store.get_frame_page(&frame.id, 0, 10).unwrap().rows[1],
+        vec!["Gadget", "4.5", "2026-02-01"]
+    );
+    let view = store
+        .document()
+        .views
+        .iter()
+        .find(|view| view.object_id == frame.id)
+        .unwrap();
+    assert_eq!((view.x, view.y), (120.0, 80.0));
+
+    // The next paste asks for the same default name and gets the next free
+    // one, as a frame made from the menu would.
+    store
+        .apply(Operation::AddFrameFromPastedText {
+            name: "Frame 1".into(),
+            text: "Only\n1\n".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    assert_eq!(frame_named(store.document(), "Frame 2").rows.len(), 1);
+    store.undo();
+    assert!(
+        !store
+            .document()
+            .objects
+            .iter()
+            .any(|object| object.name() == "Frame 2")
+    );
+
+    // Whitespace is not a frame.
+    assert!(matches!(
+        store.apply(Operation::AddFrameFromPastedText {
+            name: "Frame 1".into(),
+            text: "  \n".into(),
+            x: 0.0,
+            y: 0.0,
+        }),
+        Err(CoreError::Import(_))
     ));
 }
 
@@ -1428,7 +1517,11 @@ fn an_edit_to_owned_data_is_checked_against_the_column_type() {
             raw: "not a number".into(),
         })
         .unwrap_err();
-    assert!(error.to_string().contains("Invalid integer"));
+    assert!(
+        error
+            .to_string()
+            .contains("'not a number' is not a valid integer for column")
+    );
     assert_eq!(
         store.get_frame_page(&ledger_id, 0, 10).unwrap().rows[0][1]
             .parse::<f64>()
@@ -1559,5 +1652,166 @@ fn packaging_a_document_cuts_its_links_and_the_sweep_reclaims_what_is_left() {
         555.0,
         "the file it still reads was not the one swept"
     );
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn excel_export_lineage_sheet_documents_source_and_calculated_columns() {
+    let directory = temporary_test_directory("excel-export-lineage-columns");
+    let path = directory.join("lineage.xlsx");
+    let source = directory.join("orders.csv");
+    fs::write(&source, "Item,Amount\nWidget,3\nGadget,5\n").unwrap();
+
+    let mut store = Store::new(Document::blank("Lineage"));
+    store
+        .apply(Operation::ImportFrameFromFile {
+            name: "Orders".into(),
+            path: source.display().to_string(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let orders_id = frame_named(store.document(), "Orders").id.clone();
+    let container_id = a_container(&mut store);
+    store
+        .apply(Operation::AddValue {
+            name: "Rate".into(),
+            raw: "0.1".into(),
+            x: 0.0,
+            y: 0.0,
+            container_id: Some(container_id),
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddComputedColumn {
+            frame_id: orders_id.clone(),
+            name: "Total".into(),
+            formula: "`Amount` * `Holder`.`Rate`".into(),
+            after_column_id: None,
+        })
+        .unwrap();
+
+    store.export_excel(&[orders_id], &path, true).unwrap();
+
+    let workbook = inspect_excel_workbook(&path).unwrap();
+    assert!(
+        workbook
+            .sheets
+            .iter()
+            .any(|sheet| sheet.name == "How it was computed"),
+        "the lineage sheet is appended when requested"
+    );
+
+    let lineage = preview_excel_range(&path, "How it was computed", "A1:E5", true, 20).unwrap();
+    assert_eq!(
+        lineage.columns,
+        vec!["Frame", "Column", "Type", "Computed as", "Reads"]
+    );
+    assert_eq!(
+        lineage.rows,
+        vec![
+            vec!["Orders", "Item", "Text", "source field \"Item\"", ""],
+            vec!["Orders", "Amount", "Integer", "source field \"Amount\"", ""],
+            vec![
+                "Orders",
+                "Total",
+                "Number",
+                "`Amount` * `Holder`.`Rate`",
+                "Holder.Rate"
+            ],
+            vec!["Values", "Holder.Rate", "Number", "typed in", ""],
+        ]
+    );
+
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn excel_export_lineage_sheet_lists_a_derived_frames_filter_step() {
+    let directory = temporary_test_directory("excel-export-lineage-steps");
+    let path = directory.join("lineage.xlsx");
+
+    let mut store = Store::new(Document::blank("Chain"));
+    store
+        .apply(Operation::AddFrame {
+            name: "Orders".into(),
+            grid: vec![
+                vec!["Item".into(), "Amount".into()],
+                vec!["Widget".into(), "3".into()],
+                vec!["Gadget".into(), "5".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let source_id = frame_named(store.document(), "Orders").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: source_id,
+            name: "Big orders".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let derived_id = frame_named(store.document(), "Big orders").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: derived_id.clone(),
+            steps: vec![FrameStepInput::Filter {
+                predicates: vec!["`Amount` > 3".into()],
+                match_all: true,
+            }],
+        })
+        .unwrap();
+
+    store.export_excel(&[derived_id], &path, true).unwrap();
+
+    let lineage = preview_excel_range(&path, "How it was computed", "A1:E20", true, 40).unwrap();
+    let rows = lineage.rows;
+
+    let source_row = rows
+        .iter()
+        .find(|row| row[0] == "Big orders" && row[1] == "(source)")
+        .expect("a derived frame gets a row naming what it was derived from");
+    assert_eq!(source_row[3], "derived from \"Orders\"");
+
+    let step_row = rows
+        .iter()
+        .find(|row| row[0] == "Big orders" && row[1] == "(step 1)")
+        .expect("the filter step is listed in chain order");
+    assert_eq!(step_row[3], "filter(`Amount` > 3)");
+
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn excel_export_can_omit_the_lineage_sheet() {
+    let directory = temporary_test_directory("excel-export-lineage-off");
+    let path = directory.join("plain.xlsx");
+    let mut store = Store::new(Document::blank("Plain"));
+    store
+        .apply(Operation::AddFrame {
+            name: "Orders".into(),
+            grid: vec![
+                vec!["Item".into(), "Amount".into()],
+                vec!["Widget".into(), "3".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let orders_id = frame_named(store.document(), "Orders").id.clone();
+
+    store.export_excel(&[orders_id], &path, false).unwrap();
+
+    let workbook = inspect_excel_workbook(&path).unwrap();
+    assert!(
+        !workbook
+            .sheets
+            .iter()
+            .any(|sheet| sheet.name == "How it was computed"),
+        "the lineage sheet is left out when it was not requested"
+    );
+
     fs::remove_dir_all(directory).unwrap();
 }

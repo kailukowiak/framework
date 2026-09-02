@@ -1,15 +1,15 @@
 {
   "format": "framework-document",
   "formatVersion": 1,
-  "tutorialVersion": 1,
+  "tutorialVersion": 2,
   "document": {
-    "id": "d483a97a-8fd1-4a8f-a21f-35838501aa91",
+    "id": "01f658b1-e7b8-4471-b2c8-308fa256008d",
     "name": "Importing an Excel workbook",
     "revision": 4,
     "objects": [
       {
         "kind": "text",
-        "id": "5b26503b-8b58-4f5c-aa7e-bd69271fa44d",
+        "id": "19ac585e-6756-404d-8435-a7816873259d",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -22,8 +22,8 @@
     ],
     "views": [
       {
-        "id": "1d00ed3d-2b89-468a-9635-fd3cb1c812fd",
-        "objectId": "5b26503b-8b58-4f5c-aa7e-bd69271fa44d",
+        "id": "08624ccd-dce9-41d6-8095-c288bdc444a0",
+        "objectId": "19ac585e-6756-404d-8435-a7816873259d",
         "x": 60.0,
         "y": 50.0,
         "width": 920.0,

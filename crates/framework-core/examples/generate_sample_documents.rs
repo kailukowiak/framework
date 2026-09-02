@@ -106,6 +106,8 @@ fn document(name: &str, note: &str, frames: Vec<FrameObject>) -> Document {
         objects,
         views,
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     }
 }
 

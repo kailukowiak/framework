@@ -44,6 +44,8 @@ function documentOf(
     computedBlocks: {},
     computedTexts: {},
     computedCalculationMatrices: {},
+    computedValues: {},
+    scenarios: [],
     formulaFunctions: [],
     canUndo: false,
     canRedo: false,

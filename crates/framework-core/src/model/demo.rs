@@ -151,6 +151,8 @@ impl Document {
             name: "Commerce join playground".into(),
             revision: 0,
             frozen_values: std::collections::BTreeMap::new(),
+            scenarios: Vec::new(),
+            active_scenario: None,
             objects: vec![
                 // The one assumption this playground makes, written where an
                 // assumption goes: a line of a block. A card holding `5%` and

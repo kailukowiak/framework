@@ -8,7 +8,7 @@ import {
   type ScratchworkFormulaFeedback,
 } from "./ScratchworkFormulaBar";
 import { formulaBarCell } from "./lib/formulaBarCell";
-import { columnFillFormula } from "./lib/columnFillFormula";
+import { typedColumnFormula } from "./lib/typedColumnFormula";
 import type { FormulaReference } from "./lib/formulaReferences";
 import type { OperationHandler } from "./lib/handlers";
 import type { GridContext, GridFocus } from "./FrameGrid";
@@ -100,7 +100,7 @@ export function CellAwareFormulaBar({
         references={references}
         cell={cell}
         onCommitCell={(selected, raw) => {
-          const formula = columnFillFormula(raw);
+          const formula = typedColumnFormula(raw);
           const frame = context?.frame.id === selected.frameId ? context.frame : null;
           const column = frame?.columns.find(
             (candidate) => candidate.id === selected.columnId

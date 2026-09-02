@@ -8,6 +8,7 @@ pub mod cells;
 pub mod columns;
 pub mod derivation;
 pub mod objects;
+pub mod scenarios;
 pub mod views;
 
 use crate::*;
@@ -108,6 +109,10 @@ impl Document {
                 frame_id,
                 orientation,
             } => self.apply_set_frame_display_orientation(frame_id, orientation)?,
+            ReplicatedOperation::SetFrameDisplayPinnedColumns {
+                frame_id,
+                pinned_columns,
+            } => self.apply_set_frame_display_pinned_columns(frame_id, pinned_columns)?,
             ReplicatedOperation::SetFrameDisplayCrosstab { frame_id, crosstab } => {
                 self.apply_set_frame_display_crosstab(frame_id, crosstab)?
             }
@@ -306,6 +311,25 @@ impl Document {
                 self.apply_restore_object(object, views)?
             }
             ReplicatedOperation::RestoreViews { views } => self.apply_restore_views(views)?,
+            ReplicatedOperation::AddScenario { scenario } => self.apply_add_scenario(scenario)?,
+            ReplicatedOperation::RemoveScenario { scenario_id } => {
+                self.apply_remove_scenario(scenario_id)?
+            }
+            ReplicatedOperation::RenameScenario { scenario_id, name } => {
+                self.apply_rename_scenario(scenario_id, name)?
+            }
+            ReplicatedOperation::SetScenarioValue {
+                scenario_id,
+                value_id,
+                raw,
+            } => self.apply_set_scenario_value(scenario_id, value_id, raw)?,
+            ReplicatedOperation::ActivateScenario { scenario_id } => {
+                self.apply_activate_scenario(scenario_id)?
+            }
+            ReplicatedOperation::RestoreScenarios {
+                scenarios,
+                active_scenario,
+            } => self.apply_restore_scenarios(scenarios, active_scenario),
         }
         self.validate_unique_keys()?;
         self.validate_join_derivations()?;

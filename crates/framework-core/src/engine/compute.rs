@@ -16,6 +16,14 @@ pub struct DocumentView {
     pub computed_blocks: HashMap<Id, ComputedBlock>,
     pub computed_texts: HashMap<Id, ComputedText>,
     pub computed_calculation_matrices: HashMap<Id, ComputedCalculationMatrix>,
+    /// What each value object holds right now, once the active scenario has
+    /// had its say. Keyed by value id.
+    ///
+    /// A separate map rather than a rewritten `raw` on the object itself:
+    /// the card has to be able to show the effective number *and* say that
+    /// it is not the one stored, and an interface handed only the override
+    /// could not tell an assumption apart from an edit.
+    pub computed_values: HashMap<Id, ComputedValue>,
     pub formula_functions: Vec<FormulaFunction>,
     pub can_undo: bool,
     pub can_redo: bool,
@@ -23,6 +31,29 @@ pub struct DocumentView {
     /// can say so and offer to turn it back on. The computed maps above are
     /// empty in that state, not merely not-yet-filled.
     pub safe_mode: bool,
+}
+
+/// A value object as the canvas shows it under the scenario in force.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ComputedValue {
+    /// The literal every formula reading this value will parse: the active
+    /// scenario's override, or the value's own `raw`.
+    pub raw: String,
+    /// The scenario supplying `raw`, when it is not the value's own. Present
+    /// is the whole signal — a card appends the name and shows the override,
+    /// absent and it is reading the base.
+    ///
+    /// The id travels beside the name because the card is editable: typing
+    /// over a displayed override has to change *that scenario's* number, not
+    /// the base the field is no longer showing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub scenario_id: Option<Id>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub scenario_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -393,6 +424,17 @@ pub struct ComputedFrame {
     /// computed from a parent's stale one.
     #[serde(default, skip_serializing_if = "is_false")]
     pub upstream_stale: bool,
+    /// Columns that cannot be read right now, by column id — today, the
+    /// ones whose source field disappeared from the artifact at the last
+    /// refresh, and the calculated columns reading them.
+    ///
+    /// Per column rather than per frame for the same reason
+    /// `style_rule_errors` is per rule: one broken thing should say so
+    /// where it is, and leave the rest of the frame computing. The column
+    /// itself is still in the schema and still renders — as nulls — so this
+    /// is the only place its emptiness is explained.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub column_errors: HashMap<Id, String>,
     /// What the conditional-formatting rules make of each row, by row id, in
     /// the frame's own rule order.
     ///
@@ -583,6 +625,27 @@ impl Document {
             .iter()
             .filter_map(|object| match object {
                 DataObject::Frame(frame) => Some((frame.id.clone(), frame.compute(self))),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub(crate) fn compute_values(&self) -> HashMap<Id, ComputedValue> {
+        self.objects
+            .iter()
+            .filter_map(|object| match object {
+                DataObject::Value(value) => Some((
+                    value.id.clone(),
+                    ComputedValue {
+                        raw: self.effective_value_raw(value).to_string(),
+                        scenario_id: self
+                            .overriding_scenario(&value.id)
+                            .map(|scenario| scenario.id.clone()),
+                        scenario_name: self
+                            .overriding_scenario(&value.id)
+                            .map(|scenario| scenario.name.clone()),
+                    },
+                )),
                 _ => None,
             })
             .collect()
@@ -1521,7 +1584,14 @@ impl Document {
             }
             match self.object(&object_id) {
                 Ok(DataObject::Value(value)) => {
-                    hasher.update(value.raw.as_bytes());
+                    // The effective raw, not the stored one: activating a
+                    // scenario or editing one of its overrides changes what
+                    // this frame computes without touching a single field
+                    // hashed above it, and a fingerprint that missed that
+                    // would leave a cached page and a stale-snapshot badge
+                    // both answering for the base while the canvas showed
+                    // the Upside.
+                    hasher.update(self.effective_value_raw(value).as_bytes());
                     hasher.update([value.data_type as u8]);
                 }
                 Ok(DataObject::Result(result)) => collect(&result.formula.expression, &mut ids),

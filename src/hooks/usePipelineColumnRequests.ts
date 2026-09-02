@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from "react";
+import { formulaToken } from "../lib/formulaReferences";
+import { needsDeclaredOrder } from "../lib/typedColumnFormula";
 import type { Column, FrameObject, Selection } from "../lib/types";
 
 export type AddCalculatedColumnRequest = {
@@ -269,7 +271,18 @@ export function usePipelineColumnRequests({
       formula: string,
       _rowIndex?: number,
       viewId?: string
-    ) => requestColumnTransformation(frame, column, formula, false, viewId, column.id),
+    ) =>
+      requestColumnTransformation(
+        frame,
+        column,
+        // An empty formula is the doorway from a cell: the editor opens on
+        // the column's own name, the way the header gesture does, with the
+        // whole column visibly the subject before anything is typed.
+        formula || formulaToken(column.name),
+        true,
+        viewId,
+        needsDeclaredOrder(formula) ? column.id : undefined
+      ),
     [requestColumnTransformation]
   );
 

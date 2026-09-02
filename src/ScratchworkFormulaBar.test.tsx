@@ -15,7 +15,6 @@ import type { DocumentView } from "./lib/types";
 
 const selectedCell: FormulaBarCell = {
   id: "ledger:r1:amount",
-  address: "A1",
   label: "Amount · row 1",
   kind: "literal",
   value: "42",

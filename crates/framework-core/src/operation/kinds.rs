@@ -12,6 +12,7 @@ use crate::model::frame::{
     FrameStyleRule, FrameStyleTarget, FrameViewOrientation, Row, Summary, SummaryOperation,
 };
 use crate::model::layout::ViewPlacement;
+use crate::model::scenario::Scenario;
 use crate::model::value::BlockLine;
 use crate::model::value::ColumnFormat;
 use crate::model::value::DataType;
@@ -185,6 +186,19 @@ pub enum Operation {
         x: f64,
         y: f64,
     },
+    /// A frame made from the clipboard, dropped on the canvas: what pasting
+    /// with nothing selected means.
+    ///
+    /// The text is read by the same Polars reader as `SetFrameFromPastedText`,
+    /// so the headers, column count, and types all come from the clipboard
+    /// rather than from a 2×2 placeholder that then has to be replaced —
+    /// and the frame arrives in one operation, so one undo takes it back.
+    AddFrameFromPastedText {
+        name: String,
+        text: String,
+        x: f64,
+        y: f64,
+    },
     /// A frame whose rows are a rule instead of data: `sequence(0, 16)`,
     /// `sequence(2026-01-01, 2026-02-01, 1d)`, or bounds that name a value
     /// so the rows follow it. The table-shaped generator that Expand steps
@@ -316,6 +330,15 @@ pub enum Operation {
     SetFrameDisplayOrientation {
         frame_id: Id,
         orientation: FrameViewOrientation,
+    },
+    /// Freezes the first `pinned_columns` columns of a frame so they stay in
+    /// view while the rest of the grid scrolls sideways. `0` unfreezes.
+    /// Positional, like every spreadsheet's frozen panes, and refused above
+    /// the frame's column count so the number always names real columns when
+    /// it is set.
+    SetFrameDisplayPinnedColumns {
+        frame_id: Id,
+        pinned_columns: u32,
     },
     /// Shows a long frame wide: one column per value of the names column,
     /// cells from the values column. Display only — the data stays long,
@@ -521,6 +544,56 @@ pub enum Operation {
     SetFrozenValue {
         object_id: Id,
         frozen: Option<FrozenValue>,
+    },
+    /// A named assumption bundle — Base, Upside, Downside — over the
+    /// document's value objects.
+    ///
+    /// It starts empty and agreeing with the base about everything, unless
+    /// `copy_from` names another scenario, which is how a Downside is
+    /// usually written: take the Upside and change the two numbers that
+    /// differ.
+    AddScenario {
+        /// Minted when absent. Supplying one is for a caller that has to
+        /// know the id before the edit lands.
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        scenario_id: Option<Id>,
+        name: String,
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        copy_from: Option<Id>,
+    },
+    /// Deletes a scenario and every override in it. If it was the active
+    /// one, the document goes back to reading the base.
+    RemoveScenario {
+        scenario_id: Id,
+    },
+    RenameScenario {
+        scenario_id: Id,
+        name: String,
+    },
+    /// What one value holds in one scenario. `None` — or empty text — drops
+    /// the override, so the value reads its own number there again.
+    ///
+    /// The raw is checked against the value's own data type rather than
+    /// re-inferred the way `SetValue` re-infers one: a scenario disagrees
+    /// with the base about a number, never about what kind of thing the
+    /// value is, and a `Downside` that quietly turned a currency into text
+    /// would break every formula reading it the moment it was activated.
+    SetScenarioValue {
+        scenario_id: Id,
+        value_id: Id,
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        raw: Option<String>,
+    },
+    /// Switches the whole document onto a scenario, or `None` back to the
+    /// base. Every result, calculated column and Scratchwork line reading an
+    /// overridden value recomputes.
+    ActivateScenario {
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        scenario_id: Option<Id>,
     },
     /// Cuts every outside dependency the document has, in one edit.
     ///
@@ -743,6 +816,10 @@ pub enum ReplicatedOperation {
         frame_id: Id,
         orientation: FrameViewOrientation,
     },
+    SetFrameDisplayPinnedColumns {
+        frame_id: Id,
+        pinned_columns: u32,
+    },
     SetFrameDisplayCrosstab {
         frame_id: Id,
         crosstab: Option<CrosstabDisplay>,
@@ -941,6 +1018,27 @@ pub enum ReplicatedOperation {
         object_id: Id,
         frozen: Option<FrozenValue>,
     },
+    /// The whole scenario, values and all, so a replica adds the same
+    /// bundle rather than re-resolving `copy_from` against a document that
+    /// may have moved on.
+    AddScenario {
+        scenario: Scenario,
+    },
+    RemoveScenario {
+        scenario_id: Id,
+    },
+    RenameScenario {
+        scenario_id: Id,
+        name: String,
+    },
+    SetScenarioValue {
+        scenario_id: Id,
+        value_id: Id,
+        raw: Option<String>,
+    },
+    ActivateScenario {
+        scenario_id: Option<Id>,
+    },
     AdoptFrameRows {
         frame_id: Id,
         artifact: DataArtifact,
@@ -1003,6 +1101,18 @@ pub enum ReplicatedOperation {
     /// card can appear or disappear as its strip empties or fills.
     RestoreViews {
         views: Vec<CanvasView>,
+    },
+    /// Puts the scenario list and the activation back exactly as they were.
+    ///
+    /// The inverse of the two edits that destroy more than they name:
+    /// deleting a scenario, which takes every override in it and possibly
+    /// the activation as well, and deleting a *value*, which silently drops
+    /// that value's override from every scenario at once. Neither has a
+    /// forward operation that can describe what was there, and the list is
+    /// a handful of names and literals, so it travels whole.
+    RestoreScenarios {
+        scenarios: Vec<Scenario>,
+        active_scenario: Option<Id>,
     },
 }
 

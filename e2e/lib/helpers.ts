@@ -187,3 +187,106 @@ export async function blockDraft(blockName?: string): Promise<string> {
     blockSourceSelector(blockName)
   );
 }
+
+/**
+ * Rendered text of every cell in one grid column, top to bottom — found by
+ * the column's own sort header (`Sort by <name>`) rather than by value, so
+ * a spec can read what landed at a row without already knowing what to
+ * expect there (a fresh paste, a cell a cut just cleared). Literal cells
+ * render as `div.cell-display` and calculated ones as the clickable
+ * `button.computed-cell`; reading `textContent` off the `td` picks up
+ * whichever the cell is showing.
+ */
+export async function columnCellTexts(columnName: string): Promise<string[]> {
+  return browser.execute((name: string) => {
+    const header = document
+      .querySelector<HTMLElement>(`button[aria-label="Sort by ${name}"]`)
+      ?.closest("th");
+    const columnId = header?.getAttribute("data-column-id");
+    if (!columnId) throw new Error(`no column header for ${name}`);
+    return Array.from(
+      document.querySelectorAll<HTMLElement>(`td[data-column-id="${columnId}"]`)
+    ).map((cell) => cell.textContent?.trim() ?? "");
+  }, columnName);
+}
+
+/**
+ * Points at a grid cell by column name and row index (0-based, in display
+ * order) rather than by rendered value — needed once two columns can hold
+ * the same number (a copy pasted into a second column reads identically to
+ * its source until one of them changes), where `pointAtCell`'s value match
+ * would find whichever comes first in the DOM and not necessarily the one
+ * meant. Dispatched in-page for the same reason `pointAtCell` is: the
+ * embedded driver never synthesizes pointer events, and cell selection
+ * listens for pointerdown on the `td` itself.
+ */
+export async function pointAtColumnCell(
+  columnName: string,
+  rowIndex: number
+): Promise<void> {
+  await browser.execute(
+    (name: string, index: number) => {
+      const header = document
+        .querySelector<HTMLElement>(`button[aria-label="Sort by ${name}"]`)
+        ?.closest("th");
+      const columnId = header?.getAttribute("data-column-id");
+      if (!columnId) throw new Error(`no column header for ${name}`);
+      const cell = Array.from(
+        document.querySelectorAll<HTMLElement>(`td[data-column-id="${columnId}"]`)
+      )[index];
+      if (!cell) throw new Error(`no ${name} cell at row ${index}`);
+      cell.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0 })
+      );
+      cell.dispatchEvent(
+        new PointerEvent("pointerup", { bubbles: true, cancelable: true, button: 0 })
+      );
+    },
+    columnName,
+    rowIndex
+  );
+}
+
+/**
+ * Extends a grid selection by dispatching a native ArrowDown keydown with
+ * `shiftKey: true`, in-page, rather than `browser.keys([Key.Shift,
+ * Key.ArrowDown])`: the grid reads `event.shiftKey` straight off the
+ * KeyboardEvent to decide extend vs. plain move
+ * (`useGridKeyboardNavigation.ts`), and the driver's own modifier-plus-key
+ * action does not reliably set it — the arrow moves the focus cell but
+ * never grows the range. Dispatched on `window` because App.tsx's
+ * navigation keydown listener is window-level.
+ */
+export async function extendSelectionDown(): Promise<void> {
+  await browser.execute(() => {
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "ArrowDown",
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+  });
+}
+
+/**
+ * A press-and-release on the element matching `selector`, dispatched
+ * in-page for the same reason `pointAtCell`/`selectCard` are: the embedded
+ * driver never synthesizes pointer events. Used for the bare-canvas click
+ * that clears card selection and re-arms the grid clipboard target — the
+ * canvas's own pointerdown/pointerup handler (`App.tsx`) needs both halves,
+ * not just the press.
+ */
+export async function pressAndRelease(selector: string): Promise<void> {
+  await browser.execute((sel: string) => {
+    const target = document.querySelector<HTMLElement>(sel);
+    if (!target) throw new Error(`no element matches ${sel}`);
+    target.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0 })
+    );
+    target.dispatchEvent(
+      new PointerEvent("pointerup", { bubbles: true, cancelable: true, button: 0 })
+    );
+  }, selector);
+}

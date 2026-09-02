@@ -17,6 +17,7 @@ describe("applicationShortcut", () => {
     expect(shortcut("1")).toBe("inspector-selection");
     expect(shortcut("2")).toBe("inspector-format");
     expect(shortcut("3")).toBe("inspector-wrangle");
+    expect(shortcut("i", { shiftKey: true })).toBe("inspector-toggle");
     expect(shortcut("b", { altKey: true })).toBe("add-block");
     expect(shortcut("f", { altKey: true })).toBe("add-frame");
     expect(shortcut("f", { shiftKey: true })).toBe("fit");
@@ -30,6 +31,12 @@ describe("applicationShortcut", () => {
   it("keeps a new document distinct from a new window", () => {
     expect(shortcut("n")).toBe("new");
     expect(shortcut("n", { shiftKey: true })).toBe("new-window");
+  });
+
+  it("keeps Find on the plain chord and Fit on the shifted one", () => {
+    expect(shortcut("f")).toBe("find");
+    expect(shortcut("f", { shiftKey: true })).toBe("fit");
+    expect(shortcut("f", { altKey: true })).toBe("add-frame");
   });
 
   it("opens formula search and the product guide independently", () => {

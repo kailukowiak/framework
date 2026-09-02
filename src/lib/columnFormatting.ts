@@ -1,4 +1,4 @@
-import type { ColumnFormat, DataType, ScalarValue } from "./types";
+import type { ColumnFormat, DataType, DatePattern, ScalarValue } from "./types";
 
 // Display-only formatting: stored values are never rounded or mutated here.
 // The value / unit / presentation layers stay separate — this module only
@@ -16,6 +16,57 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 const MAX_DISPLAY_DECIMALS = 20;
 const EN_DASH = "–";
+
+// Fixed English month table: deterministic, no `Intl` (a document's
+// display should not depend on the machine that opens it).
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Render a strict `YYYY-MM-DD` string per the column's date pattern.
+ * Anything that doesn't match that exact shape — including an already
+ * malformed month or day — passes through unchanged.
+ */
+function formatDateValue(
+  raw: string | number | null | undefined,
+  pattern: DatePattern | null | undefined
+): string {
+  const text = typeof raw === "string" ? raw : raw == null ? "" : String(raw);
+  const match = ISO_DATE_PATTERN.exec(text);
+  if (!match) return text;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return text;
+  const month = MONTH_NAMES[monthIndex];
+  switch (pattern) {
+    case "dayMonthYear":
+      return `${day} ${month} ${year}`;
+    case "monthDayYear":
+      return `${month} ${day}, ${year}`;
+    case "monthYear":
+      return `${month} ${year}`;
+    case "quarter":
+      return `Q${Math.floor(monthIndex / 3) + 1} ${year}`;
+    case "iso":
+    default:
+      return text;
+  }
+}
 
 export interface FormattedCellParts {
   /** Left-pinned currency symbol for accounting cells; empty otherwise. */
@@ -101,6 +152,9 @@ export function formatCellValue(
   format: ColumnFormat,
   options: NumberDisplayOptions = {}
 ): FormattedCellParts {
+  if (options.dataType === "date") {
+    return { symbol: "", value: formatDateValue(raw, format.datePattern) };
+  }
   if (format.style === "plain") {
     if (typeof raw === "number")
       return { symbol: "", value: Number.isFinite(raw) ? String(raw) : "" };
@@ -182,6 +236,7 @@ export function formatComputedScalar(
  * columns whose symbols already appear in each cell).
  */
 export function columnFormatBadge(format: ColumnFormat): string | null {
+  if (format.datePattern) return null;
   const scaleSuffix =
     format.scale === "thousands" ? "K" : format.scale === "millions" ? "M" : "";
   if (format.style === "percent") return `%${scaleSuffix}`;

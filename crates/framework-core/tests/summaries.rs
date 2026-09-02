@@ -8,6 +8,8 @@ fn profile_fixture() -> (Store, FrameObject) {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {

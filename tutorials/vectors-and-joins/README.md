@@ -175,7 +175,7 @@ Revenue = `Units` * `Unit price`
 Format **Unit price** and **Revenue** as USD Accounting. In `Checks`, enter:
 
 ```text
-Rows scheduled = `Scheduled launches`.len()
+Rows scheduled = `Scheduled launches`.`Line`.len()
 Revenue scheduled = `Scheduled launches`.`Revenue`.sum()
 ```
 

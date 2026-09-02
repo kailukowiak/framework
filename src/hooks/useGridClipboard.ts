@@ -28,6 +28,7 @@ import { positionsInRange } from "../lib/gridNavigation";
 import { PAGED_ROW_PAGE_SIZE } from "../lib/pagedWindow";
 import { parseGrid } from "../lib/parseGrid";
 import type { Column, DocumentView, FrameObject, Operation } from "../lib/types";
+import { useGridClipboardTarget } from "./useGridClipboardTarget";
 
 /**
  * The grid's clipboard: building copyable text from a region (paged out of
@@ -55,9 +56,8 @@ export function useGridClipboard({
     options?: { inlineError?: boolean }
   ) => Promise<string | null>;
 }) {
-  const [copyIncludesHeaders, setCopyIncludesHeaders] = useState(
-    readCopyHeadersPreference
-  );
+  const [copyIncludesHeaders, setCopyIncludesHeaders] = useState(readCopyHeadersPreference);
+  useGridClipboardTarget(gridFocus?.mode === "navigate");
 
   const buildCopyText = useCallback(
     async (

@@ -20,6 +20,21 @@ impl Document {
         Self::build_frame_with_types(name, grid, data_types, x, y)
     }
 
+    /// A frame read out of pasted text, typed by the same reader a paste
+    /// into an empty frame uses.
+    pub(crate) fn build_frame_from_pasted_text(
+        name: String,
+        text: &str,
+        x: f64,
+        y: f64,
+    ) -> Result<(FrameObject, CanvasView), CoreError> {
+        let (columns, rows) = Self::frame_content_from_frame(&read_pasted_frame(text)?);
+        if columns.is_empty() {
+            return Err(CoreError::Import("There is nothing to paste".into()));
+        }
+        Ok(Self::frame_with_view(name, columns, rows, x, y))
+    }
+
     /// Build a new source frame from a CSV, TSV, or Parquet file.
     ///
     /// The file's Polars schema decides each column type, so a Parquet string
@@ -297,6 +312,19 @@ impl Document {
                     .collect(),
             })
             .collect();
+        Self::frame_with_view(name, columns, rows, x, y)
+    }
+
+    /// The object and its card for freshly built columns and rows. The card
+    /// is sized to the column count, the way every new literal frame's is.
+    fn frame_with_view(
+        name: String,
+        columns: Vec<Column>,
+        rows: Vec<Row>,
+        x: f64,
+        y: f64,
+    ) -> (FrameObject, CanvasView) {
+        let width = columns.len().max(1);
         let frame_id = id();
         let frame = FrameObject {
             comment: None,

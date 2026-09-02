@@ -308,9 +308,11 @@ export function ScratchworkFormulaBar({
         void commit();
       }}
     >
-      <span className="scratchwork-formula-prefix" aria-hidden>
-        {selectedCell?.address ?? "="}
-      </span>
+      {!selectedCell && (
+        <span className="scratchwork-formula-prefix" aria-hidden>
+          =
+        </span>
+      )}
       <HighlightedFormulaTextarea
         ref={input}
         rows={draft.split("\n").length}

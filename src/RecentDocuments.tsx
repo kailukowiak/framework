@@ -1,7 +1,13 @@
 import { ChevronRight, FolderOpen } from "lucide-react";
 import type { RecentDocument } from "./lib/api";
+import { libraryEntryState } from "./lib/datasetLibraryEntries";
 
-/** The device-local recents, each openable normally or (⌥) in safe mode. */
+/**
+ * The device-local recents, each openable normally or (⌥) in safe mode. One
+ * that FrameWork can no longer read — most often a stored macOS TCC deny —
+ * stays listed, disabled and labelled, rather than opening into a bare
+ * "Operation not permitted" error.
+ */
 export function RecentDocuments({
   loading,
   recents,
@@ -28,24 +34,32 @@ export function RecentDocuments({
             Documents you open or create will appear here.
           </div>
         )}
-        {recents.map((recent) => (
-          <button
-            className="recent-document"
-            key={recent.path}
-            disabled={opening !== null}
-            title="Hold ⌥ to open in safe mode (no evaluation or data loading)"
-            onClick={(event) => onOpen(recent, event.altKey)}
-          >
-            <span className="sample-icon">
-              <FolderOpen size={16} />
-            </span>
-            <span>
-              <strong>{recent.title}</strong>
-              <small>{recent.path}</small>
-            </span>
-            <ChevronRight size={14} />
-          </button>
-        ))}
+        {recents.map((recent) => {
+          const state = libraryEntryState({ exists: true, readable: recent.readable });
+          return (
+            <button
+              className="recent-document"
+              key={recent.path}
+              disabled={opening !== null || state.disabled}
+              title="Hold ⌥ to open in safe mode (no evaluation or data loading)"
+              onClick={(event) => onOpen(recent, event.altKey)}
+            >
+              <span className="sample-icon">
+                <FolderOpen size={16} />
+              </span>
+              <span>
+                <strong>
+                  {recent.title}
+                  {state.suffix && (
+                    <span className="library-entry-suffix"> — {state.suffix}</span>
+                  )}
+                </strong>
+                <small>{recent.path}</small>
+              </span>
+              <ChevronRight size={14} />
+            </button>
+          );
+        })}
       </div>
     </>
   );

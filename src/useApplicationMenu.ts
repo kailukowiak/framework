@@ -1,4 +1,4 @@
-import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useEffect, useRef } from "react";
 
 type MenuHandlers = Record<string, () => void>;
@@ -18,7 +18,12 @@ export function useApplicationMenu(
     if (!enabled) return;
     let disposed = false;
     let stop: (() => void) | undefined;
-    void listen<string>("framework-menu-command", (event) => {
+    // Tauri's top-level `listen` defaults to the `Any` target. An Any
+    // listener is intentionally reached even by `emit_to(window_label, ...)`,
+    // so using it here makes one native menu command run in every open
+    // workbook. Listening through this webview window gives the listener the
+    // exact WebviewWindow target that menu::forward emits to.
+    void getCurrentWebviewWindow().listen<string>("framework-menu-command", (event) => {
       handlersRef.current[event.payload]?.();
     })
       .then((unlisten) => {

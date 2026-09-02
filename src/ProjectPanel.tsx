@@ -127,7 +127,9 @@ export function ProjectPanel({
         <ExcelExportDialog
           document={document}
           onClose={() => setExcelExport(false)}
-          onExport={async (frameIds) => Boolean(await exportDocumentExcel(frameIds))}
+          onExport={async (frameIds, includeLineage) =>
+            Boolean(await exportDocumentExcel(frameIds, includeLineage))
+          }
         />
       )}
     </aside>

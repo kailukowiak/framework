@@ -92,7 +92,7 @@ impl Document {
                 name: value.name.clone(),
                 kind: DependencyKind::Value,
                 formula: None,
-                display: Some(value.raw.clone()),
+                display: Some(self.effective_value_raw(value).to_string()),
                 error: None,
                 children: Vec::new(),
             },
@@ -377,6 +377,8 @@ mod tests {
             objects: Vec::new(),
             views: Vec::new(),
             frozen_values: Default::default(),
+            scenarios: Vec::new(),
+            active_scenario: None,
         })
     }
 

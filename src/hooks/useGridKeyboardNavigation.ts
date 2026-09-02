@@ -108,16 +108,6 @@ export function useGridKeyboardNavigation({
           columnToken: transformColumnToken,
           onCellRequest: setCellFormulaRequest,
           onColumnRequest: setTransformColumnRequest,
-          onScratchworkRequest: () => {
-            clearActiveFormulaEditor();
-            setGridFocus(null);
-            setSelection(null);
-            window.requestAnimationFrame(() => {
-              window.document
-                .querySelector<HTMLTextAreaElement>(".scratchwork-formula-bar textarea")
-                ?.focus();
-            });
-          },
           onSelect: setSelection,
           onOpenWrangle: () => setInspectorSection("wrangle"),
           onOperation: run,

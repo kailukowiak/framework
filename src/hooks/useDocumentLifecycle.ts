@@ -8,7 +8,6 @@ import {
   materializeFrame,
   packageDocument,
   redo,
-  refreshFrameConnector,
   refreshStaleSnapshots,
   setFrameSource,
   undo,
@@ -16,6 +15,7 @@ import {
 import { formatBytes } from "../lib/formatBytes";
 import { reconcileSelection } from "../lib/reconcileSelection";
 import type { DocumentView, Selection } from "../lib/types";
+import { refreshConnectorAndRecord } from "./useConnectorRefreshOutcome";
 
 /**
  * The document-level operations that read back a whole document and update
@@ -56,10 +56,14 @@ export function useDocumentLifecycle({
     [setDocument, setError]
   );
 
+  // The refresh also answers with what the new data did to the frame's
+  // schema. That report is filed where the frame's own source panel can
+  // find it rather than threaded through here — see
+  // useConnectorRefreshOutcome, which owns both ends of it.
   const refreshConnector = useCallback(
     async (frameId: string, options?: { inlineError?: boolean }) => {
       try {
-        setDocument(await refreshFrameConnector(frameId));
+        setDocument(await refreshConnectorAndRecord(frameId));
         setDataRefreshRevision((revision) => revision + 1);
         setError(null);
         return null;

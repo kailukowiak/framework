@@ -16,7 +16,7 @@ pub const FRAMEWORK_FILE_VERSION: u32 = 1;
 /// teach an interaction that no longer exists. Bump this when a tutorial must
 /// be regenerated; old working copies will then ask to be reset instead of
 /// opening under different behavior.
-pub const FRAMEWORK_TUTORIAL_VERSION: u32 = 1;
+pub const FRAMEWORK_TUTORIAL_VERSION: u32 = 2;
 
 pub const MAX_IMPORT_ROWS: usize = 5_000_000;
 

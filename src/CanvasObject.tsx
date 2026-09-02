@@ -38,6 +38,7 @@ import type {
   ComputedFrame,
   ComputedResult,
   ComputedText,
+  ComputedValue,
   ContainerObject,
   DataObject,
   DocumentView,
@@ -252,6 +253,7 @@ export function CanvasObject({
   tabs,
   computedFrames,
   computedResults,
+  computedValues,
   computedBlocks,
   computedTexts,
   computedCalculationMatrices,
@@ -290,6 +292,8 @@ export function CanvasObject({
   tabs: TabObject[];
   computedFrames: Record<string, ComputedFrame>;
   computedResults: Record<string, ComputedResult>;
+  /** What each value holds under the active scenario, keyed by value id. */
+  computedValues: Record<string, ComputedValue>;
   computedBlocks: Record<string, ComputedBlock>;
   computedTexts: Record<string, ComputedText>;
   computedCalculationMatrices: Record<string, ComputedCalculationMatrix>;
@@ -573,6 +577,7 @@ export function CanvasObject({
       {!isCollapsed && object.kind === "value" && (
         <ValueCard
           value={object}
+          computed={computedValues[object.id]}
           formula={objectFormulaToken(objects, object.id)}
           onOperation={onOperation}
         />
@@ -635,6 +640,7 @@ export function CanvasObject({
           objects={objects}
           computedFrames={computedFrames}
           computedResults={computedResults}
+          computedValues={computedValues}
           formulaFunctions={formulaFunctions}
           onOperation={onOperation}
           onAddList={onAddList}
@@ -812,6 +818,7 @@ function ContainerCard({
   objects,
   computedFrames,
   computedResults,
+  computedValues,
   formulaFunctions,
   onOperation,
   onFreeze,
@@ -821,6 +828,7 @@ function ContainerCard({
   objects: DataObject[];
   computedFrames: Record<string, ComputedFrame>;
   computedResults: Record<string, ComputedResult>;
+  computedValues: Record<string, ComputedValue>;
   formulaFunctions: FormulaFunction[];
   onOperation: OperationHandler;
   onFreeze: (objectId: string) => Promise<void>;
@@ -856,6 +864,7 @@ function ContainerCard({
             {member.kind === "value" && (
               <ValueCard
                 value={member}
+                computed={computedValues[member.id]}
                 formula={objectFormulaToken(objects, member.id)}
                 onOperation={onOperation}
               />
@@ -887,6 +896,7 @@ function ContainerCard({
                 objects={objects}
                 computedFrames={computedFrames}
                 computedResults={computedResults}
+                computedValues={computedValues}
                 formulaFunctions={formulaFunctions}
                 onOperation={onOperation}
                 onFreeze={onFreeze}

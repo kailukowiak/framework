@@ -20,13 +20,14 @@ export function ExcelExportDialog({
 }: {
   document: DocumentView;
   onClose: () => void;
-  onExport: (frameIds: string[]) => Promise<boolean>;
+  onExport: (frameIds: string[], includeLineage: boolean) => Promise<boolean>;
 }) {
   const frames = document.objects.filter(
     (object): object is FrameObject => object.kind === "frame"
   );
   const namedValues = hasNamedValues(document);
   const [selected, setSelected] = useState(() => new Set(frames.map((frame) => frame.id)));
+  const [includeLineage, setIncludeLineage] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const allSelected = frames.length > 0 && selected.size === frames.length;
@@ -45,7 +46,12 @@ export function ExcelExportDialog({
     setExporting(true);
     setError(null);
     try {
-      if (await onExport(frames.filter((frame) => selected.has(frame.id)).map((frame) => frame.id))) {
+      if (
+        await onExport(
+          frames.filter((frame) => selected.has(frame.id)).map((frame) => frame.id),
+          includeLineage
+        )
+      ) {
         onClose();
       }
     } catch (reason) {
@@ -113,6 +119,14 @@ export function ExcelExportDialog({
         {frames.length === 0 && !namedValues && (
           <p className="excel-export-empty">This document has no tables or named values to export.</p>
         )}
+        <label className="excel-export-row">
+          <input
+            type="checkbox"
+            checked={includeLineage}
+            onChange={(event) => setIncludeLineage(event.target.checked)}
+          />
+          <span>Include a sheet explaining how each column was computed</span>
+        </label>
         {error && (
           <div className="formula-editor-error">
             <CircleAlert size={12} />

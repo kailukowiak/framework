@@ -1,13 +1,17 @@
 import { CircleAlert, RefreshCw } from "lucide-react";
+import { ScenarioSwitcher } from "./ScenarioSwitcher";
 import { SelectionStatisticsStatus } from "./SelectionStatisticsStatus";
 import { displayedSummaryRows } from "./FrameSummaryFooter";
 import type { GridContext, GridFocus } from "./FrameGrid";
 import { DEFAULT_CANVAS_ZOOM, formatCanvasZoom } from "./lib/canvasZoom";
 import type { OperationHandler } from "./lib/handlers";
+import type { DocumentView } from "./lib/types";
 
 /** Readouts and exceptional actions that belong in the canvas corner. */
 export function CanvasStatus({
   withInspector,
+  withCollapsedInspector,
+  document,
   context,
   focus,
   documentPath,
@@ -20,6 +24,10 @@ export function CanvasStatus({
   onZoom,
 }: {
   withInspector: boolean;
+  withCollapsedInspector: boolean;
+  /** Only for the scenario switcher, which is a statement about the whole
+      document rather than about whatever card is selected. */
+  document: Pick<DocumentView, "scenarios" | "activeScenario">;
   context: GridContext | null;
   focus: GridFocus | null;
   documentPath: string | null;
@@ -32,7 +40,11 @@ export function CanvasStatus({
   onZoom: (zoom: number) => void;
 }) {
   return (
-    <div className={`canvas-status ${withInspector ? "with-inspector" : ""}`}>
+    <div
+      className={`canvas-status ${withInspector ? "with-inspector" : ""} ${
+        withCollapsedInspector ? "with-inspector-collapsed" : ""
+      }`}
+    >
       <SelectionStatisticsStatus
         context={context}
         focus={focus}
@@ -46,6 +58,11 @@ export function CanvasStatus({
             });
           }
         }}
+      />
+      <ScenarioSwitcher
+        scenarios={document.scenarios ?? []}
+        activeScenario={document.activeScenario ?? null}
+        onOperation={onOperation}
       />
       {!documentPath && (
         <button

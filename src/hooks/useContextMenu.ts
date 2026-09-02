@@ -1,13 +1,84 @@
 import { useCallback, type Dispatch, type RefObject, type SetStateAction } from "react";
 import {
+  gridRangeForFocus,
   resolveGridContext,
+  visualGridPosition,
   type ContextMenuState,
   type GridFocus,
   type RenderedGrid,
 } from "../FrameGrid";
 import { canvasPoint } from "../lib/canvasZoom";
 import { inferContextGenerator } from "../lib/contextGeneratorInference";
+import { positionInRange } from "../lib/gridNavigation";
 import type { DocumentView, FrameObject, Operation, Selection } from "../lib/types";
+
+export function gridFocusAfterContextClick(
+  document: DocumentView | null,
+  current: GridFocus | null,
+  rendered: Map<string, RenderedGrid>,
+  hit: { frameId?: string; viewId?: string; rowId?: string; columnId?: string }
+): GridFocus | null {
+  if (!document || !hit.frameId || !hit.viewId || !hit.rowId || !hit.columnId)
+    return current;
+  const context = current ? resolveGridContext(document, current, rendered) : null;
+  const range = context && current ? gridRangeForFocus(context, current) : null;
+  const position = context
+    ? visualGridPosition(context, hit.rowId, hit.columnId)
+    : null;
+  if (
+    current?.objectId === hit.frameId &&
+    range &&
+    position &&
+    positionInRange(position, range)
+  )
+    return current;
+  return {
+    viewId: hit.viewId,
+    objectId: hit.frameId,
+    rowId: hit.rowId,
+    columnId: hit.columnId,
+    mode: "navigate",
+    editSeed: null,
+    anchor: null,
+    span: null,
+  };
+}
+
+function contextMenuAt(
+  event: React.MouseEvent,
+  viewport: HTMLDivElement | null,
+  zoom: number
+): ContextMenuState {
+  const target = event.target as HTMLElement;
+  const rowIndexText = target.closest<HTMLElement>("[data-row-index]")?.dataset
+    .rowIndex;
+  const bounds = viewport?.getBoundingClientRect();
+  const { x: canvasX, y: canvasY } = canvasPoint(
+    { x: event.clientX, y: event.clientY },
+    {
+      left: bounds?.left ?? 0,
+      top: bounds?.top ?? 0,
+      scrollLeft: viewport?.scrollLeft ?? 0,
+      scrollTop: viewport?.scrollTop ?? 0,
+    },
+    zoom
+  );
+  return {
+    screenX: event.clientX,
+    screenY: event.clientY,
+    canvasX,
+    canvasY,
+    frameId: target.closest<HTMLElement>("[data-frame-id]")?.dataset.frameId,
+    columnId: target.closest<HTMLElement>("[data-column-id]")?.dataset.columnId,
+    rowId: target.closest<HTMLElement>("[data-row-id]")?.dataset.rowId,
+    rowIndex:
+      rowIndexText !== undefined && Number.isFinite(Number(rowIndexText))
+        ? Number(rowIndexText)
+        : undefined,
+    objectId: target.closest<HTMLElement>("[data-object-id]")?.dataset.objectId,
+    viewId: target.closest<HTMLElement>("[data-view-id]")?.dataset.viewId,
+  };
+}
 
 /**
  * Everything the right-click menu needs to know about what it was opened
@@ -38,6 +109,7 @@ export function useContextMenu({
   canvasRef,
   canvasZoomRef,
   setSelection,
+  setGridFocus,
   run,
 }: {
   contextMenu: ContextMenuState | null;
@@ -48,6 +120,7 @@ export function useContextMenu({
   canvasRef: RefObject<HTMLDivElement | null>;
   canvasZoomRef: RefObject<number>;
   setSelection: (value: Selection | null) => void;
+  setGridFocus: Dispatch<SetStateAction<GridFocus | null>>;
   run: (operation: Operation) => Promise<string | null>;
 }) {
   const contextObject =
@@ -133,42 +206,20 @@ export function useContextMenu({
   const openContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
-      const target = event.target as HTMLElement;
-      const frameId = target.closest<HTMLElement>("[data-frame-id]")?.dataset.frameId;
-      const columnId = target.closest<HTMLElement>("[data-column-id]")?.dataset.columnId;
-      const rowId = target.closest<HTMLElement>("[data-row-id]")?.dataset.rowId;
-      const rowIndexText = target.closest<HTMLElement>("[data-row-index]")?.dataset
-        .rowIndex;
-      const rowIndex = rowIndexText === undefined ? undefined : Number(rowIndexText);
-      const objectId = target.closest<HTMLElement>("[data-object-id]")?.dataset.objectId;
-      const viewId = target.closest<HTMLElement>("[data-view-id]")?.dataset.viewId;
-      const viewport = canvasRef.current;
-      const bounds = viewport?.getBoundingClientRect();
-      const { x: canvasX, y: canvasY } = canvasPoint(
-        { x: event.clientX, y: event.clientY },
-        {
-          left: bounds?.left ?? 0,
-          top: bounds?.top ?? 0,
-          scrollLeft: viewport?.scrollLeft ?? 0,
-          scrollTop: viewport?.scrollTop ?? 0,
-        },
-        canvasZoomRef.current
+      const next = contextMenuAt(event, canvasRef.current, canvasZoomRef.current);
+      setContextMenu(next);
+      setGridFocus((current) =>
+        gridFocusAfterContextClick(document, current, renderedRows.current, next)
       );
-      setContextMenu({
-        screenX: event.clientX,
-        screenY: event.clientY,
-        canvasX,
-        canvasY,
-        frameId,
-        columnId,
-        rowId,
-        rowIndex: Number.isFinite(rowIndex) ? rowIndex : undefined,
-        objectId,
-        viewId,
-      });
-      if (objectId) setSelection({ objectId, viewId, columnId, rowId });
+      if (next.objectId)
+        setSelection({
+          objectId: next.objectId,
+          viewId: next.viewId,
+          columnId: next.columnId,
+          rowId: next.rowId,
+        });
     },
-    [canvasRef, canvasZoomRef, setContextMenu, setSelection]
+    [canvasRef, canvasZoomRef, document, renderedRows, setContextMenu, setGridFocus, setSelection]
   );
 
   const deleteFromContext = useCallback(

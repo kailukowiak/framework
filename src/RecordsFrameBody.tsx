@@ -1,4 +1,6 @@
 import { Plus } from "lucide-react";
+import type { CSSProperties } from "react";
+import { FillHandle } from "./FillHandle";
 import { GridCellContent } from "./FrameCells";
 import type { RecordsAsRowsFrameCardProps } from "./FrameCardProps";
 import {
@@ -9,6 +11,7 @@ import {
   isEntryFrameColumn,
 } from "./FrameGrid";
 import { positionInRange } from "./lib/gridNavigation";
+import { pinnedCellClass, pinnedCellStyle } from "./lib/pinnedColumns";
 
 function cellEditHandlers(
   model: RecordsAsRowsFrameCardProps,
@@ -21,14 +24,101 @@ function cellEditHandlers(
     onEditFormula: isCalculatedFrameColumn(model.computed, column)
       ? () => model.editCalculatedColumn(column, rowIndex)
       : undefined,
+    // A leading `=` in the value editor: the editor settles and the
+    // column's formula opens instead, the same door as from navigation.
+    onFormulaKey: () => {
+      model.settleCellEdit(row, column);
+      model.onTransformColumn(model.frame, column, "");
+    },
   };
 }
 
-export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps }) {
+/** Every state a body cell can be in, gathered out of the render loop. */
+function bodyCellClasses(
+  model: RecordsAsRowsFrameCardProps,
+  row: RecordsAsRowsFrameCardProps["displayedRows"][number],
+  column: RecordsAsRowsFrameCardProps["frame"]["columns"][number],
+  rowIndex: number,
+  state: { error: boolean; focus: boolean; inRange: boolean; pinned: string }
+): string {
+  const active =
+    model.selection?.rowId === row.id && model.selection.columnId === column.id;
+  return [
+    "styled-frame-cell",
+    active ? "active" : "",
+    state.error ? "cell-error" : "",
+    state.focus ? "cell-focus" : "",
+    state.inRange ? "cell-range" : "",
+    state.pinned,
+    model.fillHandle.cellClass(column.id, rowIndex),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * A body cell's own styling and, where the column is frozen, the offset it
+ * sticks to. Gathered here so the render loop stays a loop.
+ */
+function bodyCellStyle(
+  model: RecordsAsRowsFrameCardProps,
+  row: RecordsAsRowsFrameCardProps["displayedRows"][number],
+  column: RecordsAsRowsFrameCardProps["frame"]["columns"][number],
+  columnIndex: number,
+  pinned: number[]
+): CSSProperties {
+  return {
+    ...frameCellStyleProperties(
+      effectiveFrameCellStyle(model.frame, row.id, column.id, model.styleMatches)
+    ),
+    ...pinnedCellStyle(columnIndex + 1, pinned),
+  };
+}
+
+/** The row's index in the gutter, which freezes with the frozen columns. */
+function RowNumberCell({
+  model,
+  row,
+  rowIndex,
+  pinned,
+  blank,
+}: {
+  model: RecordsAsRowsFrameCardProps;
+  row: RecordsAsRowsFrameCardProps["displayedRows"][number];
+  rowIndex: number;
+  pinned: number[];
+  blank: boolean;
+}) {
+  return (
+    <td
+      className={`row-number styled-frame-cell selectable-header ${pinnedCellClass(0, pinned)}`}
+      title={`Select row ${rowIndex + 1}`}
+      onPointerDown={(event) => model.selectWholeRow(event, row)}
+      style={{
+        // No column: the gutter takes a rule that styles the whole row and
+        // nothing narrower.
+        ...frameCellStyleProperties(
+          effectiveFrameCellStyle(model.frame, row.id, undefined, model.styleMatches)
+        ),
+        ...pinnedCellStyle(0, pinned),
+      }}
+    >
+      {blank ? "" : rowIndex + 1}
+    </td>
+  );
+}
+
+export function RecordsFrameBody({
+  model,
+  pinned,
+}: {
+  model: RecordsAsRowsFrameCardProps;
+  /** Sticky offsets for the frozen gutter and leading columns. */
+  pinned: number[];
+}) {
   const {
     frame,
     computed,
-    selection,
     gridFocus: gridFocusHere,
     visibleRows, virtualRange, selectionRange,
     isDerived,
@@ -37,8 +127,6 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
     isReadOnly,
     canAddColumns,
     placeholderOffsets,
-    styleMatches,
-    selectWholeRow,
     beginCellSelection,
     extendCellSelection,
     focusCell,
@@ -71,18 +159,13 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                   aria-rowindex={rowIndex + 3}
                   className={isPlaceholderRow ? "row-loading-skeleton" : ""}
                 >
-                  <td
-                    className="row-number styled-frame-cell selectable-header"
-                    title={`Select row ${rowIndex + 1}`}
-                    onPointerDown={(event) => selectWholeRow(event, row)}
-                    style={frameCellStyleProperties(
-                      // No column: the gutter takes a rule that styles the
-                      // whole row and nothing narrower.
-                      effectiveFrameCellStyle(frame, row.id, undefined, styleMatches)
-                    )}
-                  >
-                    {isPlaceholderRow ? "" : rowIndex + 1}
-                  </td>
+                  <RowNumberCell
+                    model={model}
+                    row={row}
+                    rowIndex={rowIndex}
+                    pinned={pinned}
+                    blank={isPlaceholderRow}
+                  />
                   {frame.columns.map((column, columnIndex) => {
                     const result = computed.rows[row.id]?.[column.id];
                     const calculated = isCalculatedFrameColumn(computed, column);
@@ -106,22 +189,13 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                         onPointerEnter={(event) =>
                           extendCellSelection(event, row, column)
                         }
-                        style={frameCellStyleProperties(
-                          effectiveFrameCellStyle(
-                            frame,
-                            row.id,
-                            column.id,
-                            styleMatches
-                          )
-                        )}
-                        className={`styled-frame-cell ${
-                          selection?.rowId === row.id &&
-                          selection.columnId === column.id
-                            ? "active"
-                            : ""
-                        } ${result?.error ? "cell-error" : ""} ${
-                          isFocusCell ? "cell-focus" : ""
-                        } ${inRange ? "cell-range" : ""}`}
+                        style={bodyCellStyle(model, row, column, columnIndex, pinned)}
+                        className={bodyCellClasses(model, row, column, rowIndex, {
+                          error: Boolean(result?.error),
+                          focus: isFocusCell,
+                          inRange,
+                          pinned: pinnedCellClass(columnIndex + 1, pinned),
+                        })}
                       >
                         {isPlaceholderRow ? (
                           <span className="cell-skeleton" aria-hidden="true" />
@@ -171,6 +245,7 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                             onCancel={() => settleCellEdit(row, column)}
                           />
                         )}
+                        <FillHandle model={model} column={column} rowIndex={rowIndex} />
                       </td>
                     );
                   })}
@@ -191,15 +266,17 @@ export function RecordsFrameBody({ model }: { model: RecordsAsRowsFrameCardProps
                 />
               </tr>
             )}
-            <DraftFrameRow model={model} />
+            <DraftFrameRow model={model} pinned={pinned} />
           </tbody>
   );
 }
 
 function DraftFrameRow({
   model,
+  pinned,
 }: {
   model: RecordsAsRowsFrameCardProps;
+  pinned: number[];
 }) {
   const {
     frame,
@@ -209,6 +286,7 @@ function DraftFrameRow({
     setDraftRow,
     commitDraftRow,
     addColumn,
+    onTransformColumn,
   } = model;
   return canAddRows ? (
               <tr
@@ -218,13 +296,21 @@ function DraftFrameRow({
                     commitDraftRow();
                 }}
               >
-                <td className="row-number">
+                <td
+                  className={`row-number ${pinnedCellClass(0, pinned)}`}
+                  style={pinnedCellStyle(0, pinned)}
+                >
                   <button title="Add empty row" onClick={() => commitDraftRow(true)}>
                     <Plus size={12} />
                   </button>
                 </td>
-                {frame.columns.map((column) => (
-                  <td key={column.id} data-column-id={column.id}>
+                {frame.columns.map((column, columnIndex) => (
+                  <td
+                    key={column.id}
+                    data-column-id={column.id}
+                    className={pinnedCellClass(columnIndex + 1, pinned)}
+                    style={pinnedCellStyle(columnIndex + 1, pinned)}
+                  >
                     {isCalculatedFrameColumn(computed, column) ? (
                       <span className="draft-formula">ƒ</span>
                     ) : column.dataType === "categorical" ? (
@@ -265,6 +351,12 @@ function DraftFrameRow({
                         }
                         onKeyDown={(event) => {
                           if (event.key === "Enter") commitDraftRow();
+                          // The same doorway as in the grid: a leading `=`
+                          // opens the column's formula, not a value.
+                          else if (event.key === "=" && !event.currentTarget.value) {
+                            event.preventDefault();
+                            onTransformColumn(frame, column, "");
+                          }
                         }}
                       />
                     )}

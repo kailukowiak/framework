@@ -9,7 +9,6 @@ import {
 
 export type FormulaBarCell = {
   id: string;
-  address: string;
   label: string;
   kind: "literal" | "calculated" | "override" | "readOnly";
   value: string;
@@ -19,18 +18,6 @@ export type FormulaBarCell = {
   columnId: string;
   rowIndex: number;
 };
-
-/** Spreadsheet letters remain the quickest compact way to identify a cell. */
-export function columnLetters(index: number): string {
-  let current = index + 1;
-  let result = "";
-  while (current > 0) {
-    current -= 1;
-    result = String.fromCharCode(65 + (current % 26)) + result;
-    current = Math.floor(current / 26);
-  }
-  return result;
-}
 
 /** The one selected grid cell as the top formula bar should present it. */
 export function formulaBarCell(
@@ -45,11 +32,11 @@ export function formulaBarCell(
   const column = context.frame.columns[columnIndex];
   if (!position || rowIndex < 0 || !column) return null;
 
+  // Named by column and row, never by a coordinate: a cell here has no
+  // address a formula could reach for, and the bar should not suggest one.
   const logicalRow = context.rowOffset + rowIndex;
-  const address = `${columnLetters(columnIndex)}${logicalRow + 1}`;
   const common = {
     id: `${context.frame.id}:${focus.rowId}:${column.id}`,
-    address,
     label: `${column.name} · row ${logicalRow + 1}`,
     frameId: context.frame.id,
     rowId: focus.rowId,

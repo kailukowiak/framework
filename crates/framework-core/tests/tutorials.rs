@@ -6,6 +6,19 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
+const BUNDLED_TUTORIALS: [[&str; 2]; 10] = [
+    ["first-workbook", "first-workbook-start.fw"],
+    ["first-workbook", "first-workbook-finished.fw"],
+    ["excel-import", "excel-import-start.fw"],
+    ["excel-import", "excel-import-finished.fw"],
+    ["formula-clicks", "formula-clicks-start.fw"],
+    ["formula-clicks", "formula-clicks-finished.fw"],
+    ["month-end-close", "month-end-close-start.fw"],
+    ["month-end-close", "month-end-close-finished.fw"],
+    ["vectors-and-joins", "vectors-and-joins-start.fw"],
+    ["vectors-and-joins", "vectors-and-joins-finished.fw"],
+];
+
 fn tutorial_path(parts: &[&str]) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     path.push("tutorials");
@@ -27,20 +40,111 @@ fn frame_named<'a>(store: &'a Store, name: &str) -> &'a FrameObject {
         .unwrap_or_else(|| panic!("tutorial frame {name:?} exists"))
 }
 
+fn block_answers(store: &Store, name: &str) -> Vec<String> {
+    let id = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Block(block) if block.name == name => Some(block.id.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("tutorial block {name:?} exists"));
+    store.view().computed_blocks[&id]
+        .lines
+        .iter()
+        .map(|line| line.cell.display.clone())
+        .collect()
+}
+
+fn add_seventh_launch_row(store: &mut Store, source: &FrameObject) {
+    let mut values = BTreeMap::new();
+    for (name, value) in [("Line", "7"), ("SKU", "C-300"), ("Units", "50")] {
+        let column = source
+            .columns
+            .iter()
+            .find(|column| column.name == name)
+            .unwrap_or_else(|| panic!("launch input column {name:?} exists"));
+        values.insert(column.id.clone(), value.into());
+    }
+    store
+        .apply(Operation::AddRow {
+            frame_id: source.id.clone(),
+            values,
+        })
+        .unwrap();
+}
+
+fn tutorial_computation_errors(store: &Store) -> Vec<String> {
+    let view = store.view();
+    let mut errors = Vec::new();
+    for object in &view.document.objects {
+        let name = object.name();
+        match object {
+            DataObject::Result(result) => {
+                if let Some(error) = &view.computed_results[&result.id].cell.error {
+                    errors.push(format!("result {name:?}: {error}"));
+                }
+            }
+            DataObject::Block(block) => {
+                for line in &view.computed_blocks[&block.id].lines {
+                    if let Some(error) = &line.cell.error {
+                        errors.push(format!("block {name:?}, line {:?}: {error}", line.text));
+                    }
+                }
+            }
+            DataObject::Text(text) => {
+                for segment in &view.computed_texts[&text.id].segments {
+                    match segment {
+                        ComputedTextSegment::Value { cell, formula, .. } => {
+                            if let Some(error) = &cell.error {
+                                errors.push(format!("text {name:?}, formula {formula:?}: {error}"));
+                            }
+                        }
+                        ComputedTextSegment::Broken { source, error } => {
+                            errors.push(format!("text {name:?}, formula {source:?}: {error}"));
+                        }
+                        ComputedTextSegment::Literal { .. } => {}
+                    }
+                }
+            }
+            DataObject::Frame(frame) => {
+                let computed = &view.computed_frames[&frame.id];
+                for error in computed.style_rule_errors.values() {
+                    errors.push(format!("frame {name:?}, conditional format: {error}"));
+                }
+                for cell in computed.summaries.values() {
+                    if let Some(error) = &cell.error {
+                        errors.push(format!("frame {name:?}, summary: {error}"));
+                    }
+                }
+                if let Err(error) = store.get_frame_page(&frame.id, 0, 1_000) {
+                    errors.push(format!("frame {name:?} could not produce a page: {error}"));
+                }
+            }
+            DataObject::CalculationMatrix(matrix) => {
+                let computed = &view.computed_calculation_matrices[&matrix.id];
+                if let Some(error) = &computed.error {
+                    errors.push(format!("calculation matrix {name:?}: {error}"));
+                }
+                for cell in computed.cells.iter().flatten() {
+                    if let Some(error) = &cell.error {
+                        errors.push(format!("calculation matrix {name:?}: {error}"));
+                    }
+                }
+            }
+            DataObject::Value(_)
+            | DataObject::Series(_)
+            | DataObject::Container(_)
+            | DataObject::Plot(_) => {}
+        }
+    }
+    errors
+}
+
 #[test]
 fn every_bundled_tutorial_declares_the_current_tutorial_version() {
-    for parts in [
-        ["first-workbook", "first-workbook-start.fw"],
-        ["first-workbook", "first-workbook-finished.fw"],
-        ["excel-import", "excel-import-start.fw"],
-        ["excel-import", "excel-import-finished.fw"],
-        ["formula-clicks", "formula-clicks-start.fw"],
-        ["formula-clicks", "formula-clicks-finished.fw"],
-        ["month-end-close", "month-end-close-start.fw"],
-        ["month-end-close", "month-end-close-finished.fw"],
-        ["vectors-and-joins", "vectors-and-joins-start.fw"],
-        ["vectors-and-joins", "vectors-and-joins-finished.fw"],
-    ] {
+    for parts in BUNDLED_TUTORIALS {
         let path = tutorial_path(&parts);
         let serialized: serde_json::Value =
             serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
@@ -75,6 +179,21 @@ fn every_bundled_tutorial_declares_the_current_tutorial_version() {
                 .all(|segment| !matches!(segment, ComputedTextSegment::Broken { .. })),
             "{} has a broken formula example in its walkthrough",
             path.display()
+        );
+    }
+}
+
+#[test]
+fn every_bundled_tutorial_loads_and_computes_without_errors() {
+    for parts in BUNDLED_TUTORIALS {
+        let path = tutorial_path(&parts);
+        let store = Store::load(&path).unwrap();
+        let errors = tutorial_computation_errors(&store);
+        assert!(
+            errors.is_empty(),
+            "{} contains computation errors:\n{}",
+            path.display(),
+            errors.join("\n")
         );
     }
 }
@@ -239,27 +358,7 @@ fn formula_clicks_tutorial_still_has_the_intermediate_answer_key() {
     assert_eq!(page.rows[1][4], "118000");
     assert_eq!(page.rows[1][5], "6000");
     assert!(finished.document().frozen_values.is_empty());
-    let checks = finished
-        .document()
-        .objects
-        .iter()
-        .find_map(|object| match object {
-            DataObject::Block(block) if block.name == "Checks" => Some(block.id.clone()),
-            _ => None,
-        })
-        .expect("finished tutorial keeps its Scratchwork checks");
-    assert_eq!(
-        finished
-            .view()
-            .computed_blocks
-            .get(&checks)
-            .unwrap()
-            .lines
-            .iter()
-            .map(|line| line.cell.display.as_str())
-            .collect::<Vec<_>>(),
-        ["839000", "168000"]
-    );
+    assert_eq!(block_answers(&finished, "Checks"), ["839000", "168000"]);
 }
 
 #[test]
@@ -376,25 +475,8 @@ fn month_end_close_tutorial_reconciles_every_output() {
         2
     );
     assert!(finished.document().frozen_values.is_empty());
-    let checks = finished
-        .document()
-        .objects
-        .iter()
-        .find_map(|object| match object {
-            DataObject::Block(block) if block.name == "Close checks" => Some(block.id.clone()),
-            _ => None,
-        })
-        .expect("finished close tutorial keeps its live control block");
     assert_eq!(
-        finished
-            .view()
-            .computed_blocks
-            .get(&checks)
-            .unwrap()
-            .lines
-            .iter()
-            .map(|line| line.cell.display.as_str())
-            .collect::<Vec<_>>(),
+        block_answers(&finished, "Close checks"),
         ["1651000", "1615000"]
     );
 }
@@ -513,26 +595,9 @@ fn vectors_and_joins_tutorial_grows_dates_and_lookup_results_from_its_source() {
         finished.get_frame_page(&scheduled.id, 0, 20).unwrap().rows[0][7],
         "30000"
     );
+    assert_eq!(block_answers(&finished, "Checks"), ["6", "137600"]);
 
-    let mut values = BTreeMap::new();
-    let column_id = |name: &str| {
-        source
-            .columns
-            .iter()
-            .find(|column| column.name == name)
-            .unwrap()
-            .id
-            .clone()
-    };
-    values.insert(column_id("Line"), "7".into());
-    values.insert(column_id("SKU"), "C-300".into());
-    values.insert(column_id("Units"), "50".into());
-    finished
-        .apply(Operation::AddRow {
-            frame_id: source.id,
-            values,
-        })
-        .unwrap();
+    add_seventh_launch_row(&mut finished, &source);
 
     let grown_launch = finished.get_frame_page(&launch.id, 0, 20).unwrap();
     assert_eq!(grown_launch.total_rows, 7);
@@ -541,4 +606,5 @@ fn vectors_and_joins_tutorial_grows_dates_and_lookup_results_from_its_source() {
     assert_eq!(grown_join.total_rows, 7);
     assert_eq!(grown_join.rows[6][4], "Cedar");
     assert_eq!(grown_join.rows[6][7], "16000");
+    assert_eq!(block_answers(&finished, "Checks"), ["7", "153600"]);
 }

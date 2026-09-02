@@ -10,6 +10,7 @@ import {
 import { expandRangeForSpan } from "./lib/gridSpan";
 import { themedColor } from "./lib/palette";
 import { parseUseThousandsSeparators } from "./lib/preferences";
+import { isGridClipboardTarget } from "./lib/gridClipboardTarget";
 import type {
   CanvasView,
   Column,
@@ -240,6 +241,13 @@ export type GridFocus = {
    * Cleared by any movement or fresh click.
    */
   editRefused?: boolean;
+  /**
+   * The row's absolute position in the frame, for a focus that names a row
+   * outside the currently loaded window — a paged Find hit, say. The grid
+   * uses it to scroll to the row before the normal page load can find it
+   * by id; a focus resolved from an on-screen row leaves this unset.
+   */
+  rowIndex?: number;
   /** Range-selection anchor left behind by Shift+Arrow, or null for a single cell. */
   anchor: { rowId: string; columnId: string } | null;
   /**
@@ -670,6 +678,7 @@ export function readThousandsSeparatorsPreference(): boolean {
 
 export function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
+  if (isGridClipboardTarget(target)) return false;
   return (
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||

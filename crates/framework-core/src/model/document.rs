@@ -3,6 +3,7 @@ use crate::error::CoreError;
 use crate::model::calculation_matrix::CalculationMatrixObject;
 use crate::model::frame::FrameObject;
 use crate::model::plot::PlotObject;
+use crate::model::scenario::Scenario;
 use crate::model::value::{
     BlockLine, BlockObject, ContainerObject, DataType, FrozenValue, ResultObject, SeriesObject,
     TextObject, ValueObject,
@@ -104,6 +105,22 @@ pub struct Document {
     #[serde(default)]
     #[ts(optional, as = "Option<BTreeMap<Id, FrozenValue>>")]
     pub frozen_values: BTreeMap<Id, FrozenValue>,
+    /// Named assumption bundles: Base, Upside, Downside.
+    ///
+    /// A list rather than a map because the order is the order somebody put
+    /// them in, and a switcher that reshuffles itself alphabetically when a
+    /// scenario is renamed is a switcher nobody trusts.
+    #[serde(default)]
+    pub scenarios: Vec<Scenario>,
+    /// Which of them the document is reading through, or `None` for the
+    /// base — the numbers as the value cards hold them.
+    ///
+    /// Part of the document rather than of the session on purpose: an
+    /// activation changes every answer in the workbook, so it is an edit,
+    /// with an undo and a place in the history like any other.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub active_scenario: Option<Id>,
 }
 
 /// Measured: 704 bytes, all of it `FrameObject`. The other variants are
@@ -225,6 +242,8 @@ impl Document {
             objects: Vec::new(),
             views: Vec::new(),
             frozen_values: BTreeMap::new(),
+            scenarios: Vec::new(),
+            active_scenario: None,
         }
     }
 

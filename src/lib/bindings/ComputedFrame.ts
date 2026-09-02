@@ -100,6 +100,18 @@ export type ComputedFrame = {
    */
   upstreamStale?: boolean;
   /**
+   * Columns that cannot be read right now, by column id — today, the
+   * ones whose source field disappeared from the artifact at the last
+   * refresh, and the calculated columns reading them.
+   *
+   * Per column rather than per frame for the same reason
+   * `style_rule_errors` is per rule: one broken thing should say so
+   * where it is, and leave the rest of the frame computing. The column
+   * itself is still in the schema and still renders — as nulls — so this
+   * is the only place its emptiness is explained.
+   */
+  columnErrors?: { [key in string]: string };
+  /**
    * What the conditional-formatting rules make of each row, by row id, in
    * the frame's own rule order.
    *

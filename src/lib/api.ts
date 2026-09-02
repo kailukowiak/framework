@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./invoke";
 import type {
   CompletionResult,
   DocumentView,
@@ -18,10 +18,12 @@ import type {
 
 import type { ArtifactSweep } from "./bindings/ArtifactSweep";
 import type { BlockLinePage } from "./bindings/BlockLinePage";
+import type { ConnectorRefreshOutcome } from "./bindings/ConnectorRefreshOutcome";
 import type { DependencyKind } from "./bindings/DependencyKind";
 import type { DependencyNode } from "./bindings/DependencyNode";
 import type { PipelineSchema } from "./bindings/PipelineSchema";
 import type { RecentDocument } from "./bindings/RecentDocument";
+import type { RowHit } from "./bindings/RowHit";
 import type { SampleDocument } from "./bindings/SampleDocument";
 import type { SnapshotRefresh } from "./bindings/SnapshotRefresh";
 import type { StepSample } from "./bindings/StepSample";
@@ -40,6 +42,7 @@ import type { DatabaseConnection } from "./bindings/DatabaseConnection";
 export type {
   ArtifactSweep,
   BlockLinePage,
+  ConnectorRefreshOutcome,
   DependencyKind,
   DependencyNode,
   PipelineSchema,
@@ -327,7 +330,17 @@ export async function pickDataFile(): Promise<string | null> {
   return invoke("pick_data_file");
 }
 
-export async function refreshFrameConnector(frameId: string): Promise<DocumentView> {
+/**
+ * Reads a linked frame's source again.
+ *
+ * Answers with the document *and* what the refresh did to that frame's
+ * schema — fields that arrived, fields that went, a column kept without
+ * data because something still reads it. The diff is returned rather than
+ * recorded: it is true about the moment the data landed and nothing else.
+ */
+export async function refreshFrameConnector(
+  frameId: string
+): Promise<ConnectorRefreshOutcome> {
   return invoke("refresh_frame_connector", { frameId });
 }
 
@@ -458,6 +471,20 @@ export async function getFramePage(
 }
 
 /**
+ * Cells of a paged frame whose text contains `query`, case-insensitively.
+ *
+ * Only paged frames need asking: a frame small enough to travel with the
+ * document view is searched on this side, without a round trip.
+ */
+export async function searchFrameRows(
+  frameId: string,
+  query: string,
+  limit: number
+): Promise<RowHit[]> {
+  return invoke("search_frame_rows", { frameId, query, limit });
+}
+
+/**
  * Profiles every configured footer row in one scan of the displayed frame.
  * Kept separate from the document view so a visible profile on a large
  * import does not re-run after an unrelated canvas edit.
@@ -553,8 +580,11 @@ export async function exportFrameCsv(frameId: string): Promise<string | null> {
   return invoke("export_frame_csv", { frameId });
 }
 
-export async function exportDocumentExcel(frameIds: string[]): Promise<string | null> {
-  return invoke("export_document_excel", { frameIds });
+export async function exportDocumentExcel(
+  frameIds: string[],
+  includeLineage: boolean
+): Promise<string | null> {
+  return invoke("export_document_excel", { frameIds, includeLineage });
 }
 
 export async function listSampleDocuments(): Promise<SampleDocument[]> {

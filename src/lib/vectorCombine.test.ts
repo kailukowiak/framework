@@ -14,6 +14,8 @@ function document(overrides: Partial<DocumentView> = {}): DocumentView {
     computedResults: {},
     computedBlocks: {},
     computedTexts: {},
+    computedValues: {},
+    scenarios: [],
     objects: [
       frame("frame-1", "Rows", "Row"),
     ],

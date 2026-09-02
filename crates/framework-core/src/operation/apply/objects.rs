@@ -192,6 +192,10 @@ impl Document {
             return Err(CoreError::ReferencedByFormula(refusal));
         }
         self.objects.remove(object_index);
+        // A scenario holds an override against a value's id, so a deleted
+        // value takes its overrides with it — otherwise every scenario
+        // carries a number for something nothing can name.
+        self.drop_scenario_overrides(&object_id);
         // Whatever container held it stops holding it. A member id left
         // pointing at nothing would draw a gap in that container's card and
         // break every name that resolved through it.

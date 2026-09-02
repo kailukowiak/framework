@@ -1,8 +1,7 @@
 export type GridCellFormulaAction =
   | { kind: "edit"; seed: string | null }
   | { kind: "clear" }
-  | { kind: "column" }
-  | { kind: "scratchwork" };
+  | { kind: "column" };
 
 /** Formula-scope keys routed before literal grid editing sees them. */
 export function gridCellFormulaAction({
@@ -11,28 +10,24 @@ export function gridCellFormulaAction({
   printable,
   isOverride,
   singleCell,
-  wholeColumn,
 }: {
   key: string;
   modifier: boolean;
   printable: boolean;
   isOverride: boolean;
   singleCell: boolean;
-  wholeColumn: boolean;
 }): GridCellFormulaAction | null {
-  if (key === "=" && !modifier && wholeColumn) return { kind: "column" };
+  // `=` is a doorway, not a place to type. From any cell, or a selected
+  // column, it opens that column's formula in Wrangle, where the whole
+  // column is visibly the subject: a column is the declaration slot a
+  // spreadsheet hand is reaching for. Excel fills a range; FrameWork fills
+  // a column. A legacy override keeps its own editor so old documents are
+  // not stranded, but nothing new is ever stored in a cell.
+  if (key === "=" && !modifier)
+    return isOverride && singleCell ? { kind: "edit", seed: "" } : { kind: "column" };
   if (key === "F2" && isOverride) return { kind: "edit", seed: null };
   if ((key === "Delete" || key === "Backspace") && isOverride && singleCell)
     return { kind: "clear" };
-  // A single cell is a value, not another formula scope. `=` still has a
-  // useful spreadsheet-shaped meaning here, but the calculation belongs in
-  // Scratchwork where it has a name, a durable address, and no hidden
-  // exception to a typed column. Existing overrides remain editable so old
-  // documents are not stranded; this gesture no longer creates a new one.
-  if (key === "=" && !modifier)
-    return isOverride && singleCell
-      ? { kind: "edit", seed: "" }
-      : { kind: "scratchwork" };
   if (printable && isOverride) return { kind: "edit", seed: key };
   return null;
 }

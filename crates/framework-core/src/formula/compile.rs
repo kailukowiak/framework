@@ -37,9 +37,16 @@ impl Expr {
                     .iter()
                     .find(|object| object.id() == object_id);
                 match object {
-                    Some(DataObject::Value(value)) => {
-                        scalar_to_polars_literal(parse_scalar_value(&value.raw, value.data_type)?)
-                    }
+                    // The active scenario's override, when it has one for
+                    // this value, and the value's own literal otherwise.
+                    // Inlining it here rather than anywhere later is what
+                    // makes a scenario switch reach calculated columns,
+                    // Scratchwork lines and results alike: they all compile
+                    // through this arm.
+                    Some(DataObject::Value(value)) => scalar_to_polars_literal(parse_scalar_value(
+                        document.effective_value_raw(value),
+                        value.data_type,
+                    )?),
                     // A result is its formula. Inlined rather than evaluated
                     // here, so a chain of results compiles into one Polars
                     // expression; the document refuses a result that reaches

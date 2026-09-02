@@ -1,10 +1,15 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   filterUsesColumn,
+  RecordsFrameHeader,
   vectorDropMode,
   vectorTargetColumns,
 } from "./RecordsFrameHeader";
 import { lookupDragColumnIds } from "./useFrameCardInteraction";
+import type { RecordsAsRowsFrameCardProps } from "./FrameCardProps";
+import type { ComputedFrame, FrameObject } from "./lib/types";
 
 describe("filterUsesColumn", () => {
   it("marks the header whose backticked reference appears in a condition", () => {
@@ -64,5 +69,58 @@ describe("lookup column drag", () => {
     expect(
       lookupDragColumnIds(frame, "a", { top: 0, bottom: 9, left: 1, right: 3 })
     ).toEqual(["a"]);
+  });
+});
+
+describe("RecordsFrameHeader column errors", () => {
+  afterEach(cleanup);
+
+  it("shows a column's error in its type row and as the header's title", () => {
+    const frame = {
+      id: "frame-1",
+      columns: [{ id: "amount", name: "Amount", dataType: "number", formula: null }],
+      display: {},
+      uniqueKeys: [],
+    } as unknown as FrameObject;
+    const computed = {
+      formulas: {},
+      columnErrors: {
+        amount: 'Source field "Amount" is missing since the last refresh',
+      },
+    } as unknown as ComputedFrame;
+    const model = {
+      frame,
+      computed,
+      virtualRange: { start: 0, end: 0, paddingTop: 0, paddingBottom: 0 },
+      canAddColumns: true,
+      addColumn: vi.fn(),
+      editCalculatedColumn: vi.fn(),
+      pairVector: vi.fn(),
+      selection: null,
+      selectionRange: null,
+      frameColumnDrop: null,
+      filterPredicates: [],
+      sortKeys: [],
+      onOperation: vi.fn(),
+      onSelect: vi.fn(),
+      selectWholeColumn: vi.fn(),
+      beginFrameColumnDrag: vi.fn(),
+      filterColumn: vi.fn(),
+    } as unknown as RecordsAsRowsFrameCardProps;
+
+    const { container } = render(
+      <table>
+        <RecordsFrameHeader model={model} pinned={[]} />
+      </table>
+    );
+
+    const typeCell = container.querySelector('tr.type-row th[data-column-id="amount"]')!;
+    expect(typeCell.querySelector(".formula-error-line")?.textContent).toBe(
+      'Source field "Amount" is missing since the last refresh'
+    );
+    const nameCell = container.querySelector('th[data-column-id="amount"].column-header')!;
+    expect(nameCell.getAttribute("title")).toBe(
+      'Source field "Amount" is missing since the last refresh'
+    );
   });
 });

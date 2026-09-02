@@ -149,6 +149,8 @@ fn multi_cell_updates_are_atomic_and_use_one_history_entry() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -292,6 +294,7 @@ fn column_formats_are_display_only_typed_operations_with_history() {
         negative_parens: None,
         zero_dash: None,
         currency_code: Some(" usd ".into()),
+        date_pattern: None,
     };
     let view = store
         .apply(Operation::SetColumnFormat {

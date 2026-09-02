@@ -12,6 +12,7 @@ import type {
   GridFocusMode,
   RenderedGrid,
 } from "./FrameGrid";
+import type { FillHandleDrag } from "./hooks/useFillHandleDrag";
 import type { GridDirection, GridRange } from "./lib/gridNavigation";
 import type { OperationHandler } from "./lib/handlers";
 import type {
@@ -82,6 +83,8 @@ export type RecordsAsRowsFrameCardProps = {
   visibleRows: Row[];
   virtualRange: VirtualRange;
   selectionRange: GridRange | null;
+  /** Drag-fill, reinterpreted: the handle opens the column's formula. */
+  fillHandle: FillHandleDrag;
   filterMark: {
     weight: "unfiltered" | "structural";
     count: number;
@@ -109,6 +112,8 @@ export type RecordsAsRowsFrameCardProps = {
   setScrollState: Dispatch<SetStateAction<{ top: number; height: number }>>;
   frameColumnDrop: { columnId: string; after: boolean } | null;
   onOperation: OperationHandler;
+  /** Opens the column's formula in Wrangle; an empty formula seeds the column's own name. */
+  onTransformColumn: (frame: FrameObject, column: Column, formula: string) => void;
   onSelect: (selection: Selection) => void;
   selectWholeColumn: (event: ReactPointerEvent, column: Column) => void;
   beginFrameColumnDrag: (event: ReactPointerEvent, columnId: string) => void;

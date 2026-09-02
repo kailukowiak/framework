@@ -1,4 +1,5 @@
 import { PipelineCommand } from "./PipelineCommand";
+import { reportIgnoredFailure } from "./lib/errorReporting";
 import type { FormulaReference } from "./lib/formulaReferences";
 import type { FrameStepInput } from "./lib/types";
 
@@ -118,7 +119,7 @@ export function PipelineRecurrenceStep({
             // the inline error, so the rejection has nothing left to report.
             void Promise.resolve(
               onCommit({ partitionName: event.target.value || undefined })
-            ).catch(() => {})
+            ).catch(reportIgnoredFailure("recurrence partition update"))
           }
         >
           <option value="">Never</option>

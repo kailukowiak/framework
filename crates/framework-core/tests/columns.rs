@@ -44,6 +44,8 @@ fn date_columns_and_nulls_are_typed_and_formula_aware() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -290,4 +292,74 @@ fn operation_api_accepts_frontend_camel_case_fields() {
         Operation::AddColumn { frame_id, after_column_id, .. }
             if frame_id == "frame-1" && after_column_id.as_deref() == Some("column-1")
     ));
+}
+
+#[test]
+fn column_format_date_pattern_round_trips_and_drops_iso() {
+    let mut store = Store::new(Document::demo());
+    store
+        .apply(Operation::AddFrame {
+            name: "Schedule".into(),
+            grid: vec![vec!["Start".into()], vec!["2024-01-15".into()]],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame_id = crate::common::frame_named(store.document(), "Schedule")
+        .id
+        .clone();
+    let column_id = crate::common::frame_named(store.document(), "Schedule").columns[0]
+        .id
+        .clone();
+
+    // Setting `Iso` explicitly normalises away to no date pattern: it is
+    // the format the raw cell text already carries.
+    let iso_format = ColumnFormat {
+        style: ColumnFormatStyle::Plain,
+        decimals: None,
+        scale: ColumnFormatScale::Units,
+        negative_parens: None,
+        zero_dash: None,
+        currency_code: None,
+        date_pattern: Some(DatePattern::Iso),
+    };
+    let after_iso = store
+        .apply(Operation::SetColumnFormat {
+            frame_id: frame_id.clone(),
+            column_id: column_id.clone(),
+            format: Some(iso_format),
+        })
+        .unwrap();
+    let stored = &crate::common::frame_named(&after_iso.document, "Schedule").columns[0];
+    assert_eq!(stored.format.as_ref().unwrap().date_pattern, None);
+
+    // A real pattern round-trips through save and load.
+    let quarter_format = ColumnFormat {
+        style: ColumnFormatStyle::Plain,
+        decimals: None,
+        scale: ColumnFormatScale::Units,
+        negative_parens: None,
+        zero_dash: None,
+        currency_code: None,
+        date_pattern: Some(DatePattern::Quarter),
+    };
+    store
+        .apply(Operation::SetColumnFormat {
+            frame_id: frame_id.clone(),
+            column_id: column_id.clone(),
+            format: Some(quarter_format),
+        })
+        .unwrap();
+
+    let directory = crate::common::temporary_test_directory("column-date-format");
+    let path = directory.join("dates.fw");
+    store.save(&path).unwrap();
+    let loaded = Store::load(&path).unwrap();
+    assert_eq!(loaded.document(), store.document());
+    let loaded_column = &crate::common::frame_named(loaded.document(), "Schedule").columns[0];
+    assert_eq!(
+        loaded_column.format.as_ref().unwrap().date_pattern,
+        Some(DatePattern::Quarter)
+    );
+    std::fs::remove_dir_all(directory).unwrap();
 }

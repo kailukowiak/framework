@@ -11,6 +11,8 @@ fn a_pipeline_shift_requires_a_sort_in_its_resulting_lineage() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -62,6 +64,8 @@ fn a_running_calculation_requires_and_uses_declared_order() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -132,6 +136,8 @@ fn an_ordered_recurrence_reads_its_previous_result_and_restarts_by_group() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -279,6 +285,8 @@ fn a_frame_length_sequence_fills_the_rows_after_a_declared_sort() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -350,6 +358,8 @@ fn a_frame_length_date_sequence_fills_calendar_months() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -440,6 +450,8 @@ fn with_columns_can_transform_existing_columns_in_place() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -498,6 +510,8 @@ fn replacing_a_pipeline_replaces_its_trailing_header_sort() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -557,6 +571,8 @@ fn an_ordered_unique_summary_reads_after_replacing_a_trailing_header_sort() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -1132,6 +1148,8 @@ fn materializing_a_grouped_frame_caches_it_and_reports_staleness() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     let artifact = create_data_artifact(&source, &directory.join("data")).unwrap();
     store
@@ -1265,6 +1283,8 @@ fn set_frame_pipeline_resolves_names_against_each_step() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -1349,6 +1369,8 @@ fn set_frame_pipeline_rejects_a_sort_on_a_column_no_step_produces() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -1399,6 +1421,8 @@ fn steps_run_in_order_so_later_steps_see_earlier_columns() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -1472,6 +1496,8 @@ fn derived_frames_export_materialized_values_to_csv() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -1600,6 +1626,8 @@ fn a_source_frame_filters_and_summarizes_through_its_own_chain() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -2634,6 +2662,8 @@ fn staleness_inherits_and_refreshing_walks_the_lineage_from_the_top() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     let artifact = create_data_artifact(&source, &directory.join("data")).unwrap();
     store

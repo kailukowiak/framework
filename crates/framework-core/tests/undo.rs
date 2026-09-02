@@ -57,7 +57,7 @@ fn a_remote_edit_no_longer_voids_the_undo_stack() {
             column_id: store.document().frame(&orders).unwrap().columns[0]
                 .id
                 .clone(),
-            raw: "mine".into(),
+            raw: "41".into(),
         })
         .unwrap();
     assert!(store.view().can_undo);
@@ -97,7 +97,7 @@ fn undo_reverts_one_edit_and_leaves_later_ones_alone() {
             frame_id: orders.clone(),
             row_id: row.clone(),
             column_id: first_column,
-            raw: "first".into(),
+            raw: "41".into(),
         })
         .unwrap();
     store
@@ -105,7 +105,7 @@ fn undo_reverts_one_edit_and_leaves_later_ones_alone() {
             frame_id: orders.clone(),
             row_id: row,
             column_id: second_column,
-            raw: "second".into(),
+            raw: "9.75".into(),
         })
         .unwrap();
 
@@ -113,12 +113,12 @@ fn undo_reverts_one_edit_and_leaves_later_ones_alone() {
     assert_eq!(cell(&store, &orders, 0, 1), second_before);
     assert_eq!(
         cell(&store, &orders, 0, 0),
-        "first",
+        "41",
         "undoing the second edit must not reach back into the first"
     );
 
     store.redo();
-    assert_eq!(cell(&store, &orders, 0, 1), "second");
+    assert_eq!(cell(&store, &orders, 0, 1), "9.75");
 }
 
 /// Deleting a column takes its summaries and its cells' one-off overrides

@@ -22,12 +22,16 @@ import { nextSortKeys } from "./lib/sortKeys";
 import { formulaToken } from "./lib/formulaReferences";
 import type { Column } from "./lib/types";
 import type { GridRange } from "./lib/gridNavigation";
+import { pinnedCellClass, pinnedCellStyle } from "./lib/pinnedColumns";
 import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
 
 export function RecordsFrameHeader({
   model,
+  pinned,
 }: {
   model: RecordsAsRowsFrameCardProps;
+  /** Sticky offsets for the frozen gutter and leading columns; see `pinnedColumns`. */
+  pinned: number[];
 }) {
   const {
     frame,
@@ -44,8 +48,11 @@ export function RecordsFrameHeader({
           <thead>
             <tr>
               <th
-                className="row-number-header styled-frame-cell"
-                style={frameCellStyleProperties(effectiveFrameCellStyle(frame))}
+                className={`row-number-header styled-frame-cell ${pinnedCellClass(0, pinned)}`}
+                style={{
+                  ...frameCellStyleProperties(effectiveFrameCellStyle(frame)),
+                  ...pinnedCellStyle(0, pinned),
+                }}
               />
               {frame.columns.map((column, columnIndex) => (
                 <RecordsColumnHeader
@@ -53,6 +60,7 @@ export function RecordsFrameHeader({
                   model={model}
                   column={column}
                   columnIndex={columnIndex}
+                  pinned={pinned}
                   vectorTarget={vectorTarget}
                   setVectorTarget={setVectorTarget}
                 />
@@ -66,30 +74,42 @@ export function RecordsFrameHeader({
               />
             </tr>
             <tr className="type-row">
-              <th />
-              {frame.columns.map((column) => (
-                <th
-                  key={column.id}
-                  data-column-id={column.id}
-                  className="styled-frame-cell"
-                  style={frameCellStyleProperties(
-                    effectiveFrameCellStyle(frame, undefined, column.id)
-                  )}
-                >
-                  {isCalculatedFrameColumn(computed, column) ? (
-                    <button
-                      className="column-formula-declaration"
-                      title={`Edit ${column.name} for all rows`}
-                      onClick={() => editCalculatedColumn(column, virtualRange.start)}
-                    >
-                      <FunctionSquare size={11} />
-                      <code>{computed.formulas[column.id]}</code>
-                    </button>
-                  ) : column.dataType === "categorical"
-                    ? `categorical · ${column.categories?.length ?? 0}`
-                    : column.dataType}
-                </th>
-              ))}
+              <th
+                className={pinnedCellClass(0, pinned)}
+                style={pinnedCellStyle(0, pinned)}
+              />
+              {frame.columns.map((column, columnIndex) => {
+                const columnError = computed.columnErrors?.[column.id];
+                return (
+                  <th
+                    key={column.id}
+                    data-column-id={column.id}
+                    className={`styled-frame-cell ${pinnedCellClass(columnIndex + 1, pinned)}`}
+                    style={{
+                      ...frameCellStyleProperties(
+                        effectiveFrameCellStyle(frame, undefined, column.id)
+                      ),
+                      ...pinnedCellStyle(columnIndex + 1, pinned),
+                    }}
+                  >
+                    {isCalculatedFrameColumn(computed, column) ? (
+                      <button
+                        className="column-formula-declaration"
+                        title={`Edit ${column.name} for all rows`}
+                        onClick={() => editCalculatedColumn(column, virtualRange.start)}
+                      >
+                        <FunctionSquare size={11} />
+                        <code>{computed.formulas[column.id]}</code>
+                      </button>
+                    ) : column.dataType === "categorical"
+                      ? `categorical · ${column.categories?.length ?? 0}`
+                      : column.dataType}
+                    {columnError && (
+                      <span className="formula-error-line">{columnError}</span>
+                    )}
+                  </th>
+                );
+              })}
               <th className="frame-edge-cell" />
             </tr>
           </thead>
@@ -101,17 +121,20 @@ function RecordsColumnHeader({
   model,
   column,
   columnIndex,
+  pinned,
   vectorTarget,
   setVectorTarget,
 }: {
   model: RecordsAsRowsFrameCardProps;
   column: Column;
   columnIndex: number;
+  pinned: number[];
   vectorTarget: string | null;
   setVectorTarget: Dispatch<SetStateAction<string | null>>;
 }) {
   const { frame, computed, selection, frameColumnDrop } = model;
   const calculated = isCalculatedFrameColumn(computed, column);
+  const columnError = computed.columnErrors?.[column.id];
   const selectedVectorColumns =
     model.selectionRange &&
     columnIndex >= model.selectionRange.left &&
@@ -125,17 +148,23 @@ function RecordsColumnHeader({
       data-vector-selected-columns={selectedVectorColumns}
       data-vector-combine={isFreshVectorFrame(frame, computed) ? "true" : undefined}
       title={
-        calculated
-          ? `Select ${column.name} · type = or click its formula below to edit all rows`
-          : `Select ${column.name} · type = to calculate all rows`
+        columnError
+          ? columnError
+          : calculated
+            ? `Select ${column.name} · type = or click its formula below to edit all rows`
+            : `Select ${column.name} · type = to calculate all rows`
       }
       onPointerDown={(event) => model.selectWholeColumn(event, column)}
-      style={frameCellStyleProperties(
-        effectiveFrameCellStyle(frame, undefined, column.id)
-      )}
-      className={`column-header styled-frame-cell selectable-header ${
-        selection?.columnId === column.id ? "active" : ""
-      } ${
+      style={{
+        ...frameCellStyleProperties(
+          effectiveFrameCellStyle(frame, undefined, column.id)
+        ),
+        ...pinnedCellStyle(columnIndex + 1, pinned),
+      }}
+      className={`column-header styled-frame-cell selectable-header ${pinnedCellClass(
+        columnIndex + 1,
+        pinned
+      )} ${selection?.columnId === column.id ? "active" : ""} ${
         frameColumnDrop?.columnId === column.id
           ? frameColumnDrop.after
             ? "column-drop-after"

@@ -1,31 +1,31 @@
 {
   "format": "framework-document",
   "formatVersion": 1,
-  "tutorialVersion": 1,
+  "tutorialVersion": 2,
   "document": {
-    "id": "9297e128-5809-4e6a-b71e-8a6e7d55e821",
+    "id": "2517e8f3-3574-40ec-bb13-c3847392031b",
     "name": "Vectors, Calculation Matrix, dates, and visual joins",
     "revision": 8,
     "objects": [
       {
         "kind": "text",
-        "id": "1fe672d2-7c90-47ff-a3f3-07b7825e3951",
+        "id": "2c5a18da-5ac1-4739-85ea-b656b87d276e",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# Vectors, Calculation Matrix, dates, and visual joins\n\nThis final tutorial builds one small launch model with four spreadsheet-shaped\ngestures: continue a visible date pattern down a table, write four standalone\nvectors, run a calculation across every combination of them, and drag lookup\ncolumns onto a matching key. The saved result remains a FrameWork model rather\nthan a pasted answer.\n\nThis same guide is rendered as the **Tutorial walkthrough** markdown card on\nthe left side of both the Start workbook and the Answer key.\n\nIt demonstrates:\n\n- an Excel-like two-cell gesture that becomes a row-count-aware date formula;\n- why a standalone vector has its own length while a table-bound vector uses\n  `frame.len()`;\n- writing a one-dimensional vector as one compact variable;\n- using Calculation Matrix as a visual nested `for each` loop;\n- selecting lookup columns and dragging them onto a destination key;\n- full-dataset match and duplicate diagnostics before a join is created;\n- live propagation when the source table gains a row.\n\n## Files\n\n- [`vectors-and-joins-start.fw`](vectors-and-joins-start.fw) — launch inputs, a\n  linked plan, product catalog, and an empty checks block.\n- [`vectors-and-joins-finished.fw`](vectors-and-joins-finished.fw) — the answer\n  key with the date series, four variables, Calculation Matrix, validated join,\n  and live checks.\n\n## Before you begin\n\nAllow about 25 minutes. In **Data Library**, choose **Create tutorials** if the\nlesson is not present, open the answer key for one minute, then make every\nchange in the Start workbook. Repository contributors can instead open the two\nlinked `.fw` files with **File → Open**.\n\nThe canvas begins with four useful objects:\n\n- `Launch inputs` owns the six rows you can edit;\n- `Launch plan` is a live table made from those inputs;\n- `Product catalog` has one row per SKU but is not marked unique yet;\n- `Checks` is an empty Scratchwork block for the final control totals.\n\nThat source/plan split is deliberate. A calculated table reads its rows from\nupstream. Adding a row to `Launch inputs` near the end will therefore prove that\nthe date formula and the join follow changing data rather than a fixed preview.\n\n## 1. Continue the date pattern down the live table\n\n`Launch plan` shows `2026-09-01` and `2026-10-01` in its first two **Launch\nmonth** cells. The remaining cells are blank.\n\n1. Select those first two date cells.\n2. Right-click the selection and choose **Fill series down frame…**.\n3. Keep the starting date `2026-09-01` and change of `1` month.\n4. Choose **Line — ascending** for the row order.\n5. Click **Fill column**.\n\nCheckpoint: the six dates run monthly from `2026-09-01` through `2027-02-01`.\nOpen **Wrangle** and find a Sort followed by this calculated-column formula:\n\n```text\nsequence(2026-09-01, periods=frame.len(), step=1mo)\n```\n\nThis is the important distinction:\n\n- a vector such as `Base, Upside, Downside` owns exactly three values;\n- a vector calculated in a table can ask for `frame.len()` values.\n\nThe fill dialog writes the second form by default. It also records the sort,\nbecause a row-wise series without an order would attach dates to accidental\npositions.\n\n## 2. Make four standalone vectors\n\nClick **Variable** in the left rail and replace the starter name and formula:\n\n```text\nScenario = [\"Base\", \"Upside\", \"Downside\"]\n```\n\nClick **Variable** again and enter:\n\n```text\nMultiplier = [1, 1.15, 0.85]\n```\n\nAdd two more variables:\n\n```text\nQuarter = [\"Q1\", \"Q2\", \"Q3\", \"Q4\"]\nBase revenue = [100, 110, 120, 130]\n```\n\nCheckpoint: `Scenario` and `Multiplier` each have **3 values**; `Quarter` and\n`Base revenue` each have **4 values**. Every one is a simple one-dimensional\nvector: one name, one formula, and an intentional number of values. None is a\ntiny table, and they do not need a container around them.\n\n## 3. Build a Calculation Matrix\n\n1. Add a blank **Calculation Matrix** and name it `Scenario × Quarter`.\n2. Drag `Scenario` and `Multiplier` into **Rows**.\n3. Drag `Quarter` and `Base revenue` into **Columns**.\n4. Enter this body formula:\n\n```text\n`Base revenue` * `Multiplier`\n```\n\nCheckpoint: the matrix has three row tuples, four column tuples, and twelve\nanswers:\n\n| Scenario | Multiplier | Q1 · 100 | Q2 · 110 | Q3 · 120 | Q4 · 130 |\n|---|---:|---:|---:|---:|---:|\n| Base | 1 | 100 | 110 | 120 | 130 |\n| Upside | 1.15 | 115 | 126.5 | 138 | 149.5 |\n| Downside | 0.85 | 85 | 93.5 | 102 | 110.5 |\n\nCalculation Matrix is the visual answer to a nested loop:\n\n```text\nfor each (Scenario, Multiplier) row:\n    for each (Quarter, Base revenue) column:\n        Base revenue * Multiplier\n```\n\nRows and columns are independent axes, so every row tuple meets every column\ntuple. Within one axis, fields are zipped: `Scenario` and `Multiplier` describe\nthe same three loop items, while `Quarter` and `Base revenue` describe the same\nfour. They do not create four Cartesian layers. Nothing is appended below or\ncopied into twelve separate formulas. Shorten both column vectors to two values;\nthe matrix should immediately become 3 × 2. Undo those edits before continuing.\n\n## 4. Bring catalog columns over with a visual join\n\nIn `Product catalog`, select the adjacent headers **Product**, **Region**, and\n**Unit price**. Drag that selected header run onto the **SKU** header in\n`Launch plan`.\n\nThe compact lookup prompt should read as an equation:\n\n```text\nMatch Launch plan.SKU to Product catalog.SKU\n```\n\nWait for the full-dataset diagnostics. They should show:\n\n- 6 matched;\n- 0 missing;\n- 0 duplicate keys.\n\nClick **Mark SKU as unique**, then **Bring columns over**. Rename the result\n`Scheduled launches`.\n\nCheckpoint: all six Launch plan rows remain, and Product, Region, and Unit\nprice appear beside them. The lookup table shows a key marker on SKU. Open\nWrangle on the result: its first step should state the key relationship rather\nthan hiding it in a dialog that has disappeared.\n\nIf the prompt offers a wrong key, if the counts only reflect visible rows, or\nif the join can be created without a unique lookup key, record that as a smoke\ntest failure.\n\n## 5. Add one joined calculation and two live checks\n\nOn `Scheduled launches`, add a calculated column in Wrangle:\n\n```text\nRevenue = `Units` * `Unit price`\n```\n\nFormat **Unit price** and **Revenue** as USD Accounting. In `Checks`, enter:\n\n```text\nRows scheduled = `Scheduled launches`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()\n```\n\nCheckpoint:\n\n- Rows scheduled is `6`;\n- Revenue scheduled is `137600`;\n- the first Aurora row has Revenue `30000`.\n\n## 6. Prove that the model scales with its source\n\nAdd this seventh row to `Launch inputs`:\n\n| Line | SKU | Units | Launch month |\n|---:|---|---:|---|\n| 7 | C-300 | 50 | blank |\n\nDo not type a date into the new row.\n\nCheckpoint:\n\n- `Launch plan` grows to seven rows and calculates `2027-03-01`;\n- `Scheduled launches` grows to seven rows and brings over Cedar, North, and\n  the `320` unit price;\n- Rows scheduled becomes `7`;\n- Revenue scheduled becomes `153600`.\n\nUndo and redo the source-row addition. The date, joined values, row count, and\nrevenue total should travel together. Nothing should require reapplying the\nvector or recreating the join.\n\n## Finish line\n\nYou have now used four related but different ideas:\n\n1. **A standalone vector** is one named formula with an intentional length.\n2. **A table-bound vector formula** produces one value per current row by using\n   `frame.len()` and a declared order.\n3. **A Calculation Matrix** evaluates every combination of its independent row\n   and column axes.\n4. **A join** matches by key, not by row position, and refuses an unsafe lookup\n   side until its uniqueness is explicit.\n\nThose distinctions are the guardrails. The gestures stay Excel-simple, while\nthe Wrangle steps say what will remain true when the data changes.\n\n## Smoke-test notes\n\nThis lesson is expected to work as a manual product smoke test. Capture the\nfirst broken checkpoint with the template in the parent tutorial README.\nThe matching agent smoke scenario is `tools/mcp-smoke/scenarios/vectors-joins`;\nit builds and verifies the tabular promises without pretending MCP can perform\nthe tutorial's pointer gestures.\n\n## Rebuilding the files\n\nThe workbooks are generated through the same validated operation boundary used\nby the desktop and MCP:\n\n```bash\ncargo run -p framework-core --example generate_tutorial_workbooks -- vectors-and-joins\n```\n\nThe generator reloads the answer key and proves the date range, Calculation\nMatrix, joined revenue, and upstream-row growth.\n"
+            "text": "# Vectors, Calculation Matrix, dates, and visual joins\n\nThis final tutorial builds one small launch model with four spreadsheet-shaped\ngestures: continue a visible date pattern down a table, write four standalone\nvectors, run a calculation across every combination of them, and drag lookup\ncolumns onto a matching key. The saved result remains a FrameWork model rather\nthan a pasted answer.\n\nThis same guide is rendered as the **Tutorial walkthrough** markdown card on\nthe left side of both the Start workbook and the Answer key.\n\nIt demonstrates:\n\n- an Excel-like two-cell gesture that becomes a row-count-aware date formula;\n- why a standalone vector has its own length while a table-bound vector uses\n  `frame.len()`;\n- writing a one-dimensional vector as one compact variable;\n- using Calculation Matrix as a visual nested `for each` loop;\n- selecting lookup columns and dragging them onto a destination key;\n- full-dataset match and duplicate diagnostics before a join is created;\n- live propagation when the source table gains a row.\n\n## Files\n\n- [`vectors-and-joins-start.fw`](vectors-and-joins-start.fw) — launch inputs, a\n  linked plan, product catalog, and an empty checks block.\n- [`vectors-and-joins-finished.fw`](vectors-and-joins-finished.fw) — the answer\n  key with the date series, four variables, Calculation Matrix, validated join,\n  and live checks.\n\n## Before you begin\n\nAllow about 25 minutes. In **Data Library**, choose **Create tutorials** if the\nlesson is not present, open the answer key for one minute, then make every\nchange in the Start workbook. Repository contributors can instead open the two\nlinked `.fw` files with **File → Open**.\n\nThe canvas begins with four useful objects:\n\n- `Launch inputs` owns the six rows you can edit;\n- `Launch plan` is a live table made from those inputs;\n- `Product catalog` has one row per SKU but is not marked unique yet;\n- `Checks` is an empty Scratchwork block for the final control totals.\n\nThat source/plan split is deliberate. A calculated table reads its rows from\nupstream. Adding a row to `Launch inputs` near the end will therefore prove that\nthe date formula and the join follow changing data rather than a fixed preview.\n\n## 1. Continue the date pattern down the live table\n\n`Launch plan` shows `2026-09-01` and `2026-10-01` in its first two **Launch\nmonth** cells. The remaining cells are blank.\n\n1. Select those first two date cells.\n2. Right-click the selection and choose **Fill series down frame…**.\n3. Keep the starting date `2026-09-01` and change of `1` month.\n4. Choose **Line — ascending** for the row order.\n5. Click **Fill column**.\n\nCheckpoint: the six dates run monthly from `2026-09-01` through `2027-02-01`.\nOpen **Wrangle** and find a Sort followed by this calculated-column formula:\n\n```text\nsequence(2026-09-01, periods=frame.len(), step=1mo)\n```\n\nThis is the important distinction:\n\n- a vector such as `Base, Upside, Downside` owns exactly three values;\n- a vector calculated in a table can ask for `frame.len()` values.\n\nThe fill dialog writes the second form by default. It also records the sort,\nbecause a row-wise series without an order would attach dates to accidental\npositions.\n\n## 2. Make four standalone vectors\n\nClick **Variable** in the left rail and replace the starter name and formula:\n\n```text\nScenario = [\"Base\", \"Upside\", \"Downside\"]\n```\n\nClick **Variable** again and enter:\n\n```text\nMultiplier = [1, 1.15, 0.85]\n```\n\nAdd two more variables:\n\n```text\nQuarter = [\"Q1\", \"Q2\", \"Q3\", \"Q4\"]\nBase revenue = [100, 110, 120, 130]\n```\n\nCheckpoint: `Scenario` and `Multiplier` each have **3 values**; `Quarter` and\n`Base revenue` each have **4 values**. Every one is a simple one-dimensional\nvector: one name, one formula, and an intentional number of values. None is a\ntiny table, and they do not need a container around them.\n\n## 3. Build a Calculation Matrix\n\n1. Add a blank **Calculation Matrix** and name it `Scenario × Quarter`.\n2. Drag `Scenario` and `Multiplier` into **Rows**.\n3. Drag `Quarter` and `Base revenue` into **Columns**.\n4. Enter this body formula:\n\n```text\n`Base revenue` * `Multiplier`\n```\n\nCheckpoint: the matrix has three row tuples, four column tuples, and twelve\nanswers:\n\n| Scenario | Multiplier | Q1 · 100 | Q2 · 110 | Q3 · 120 | Q4 · 130 |\n|---|---:|---:|---:|---:|---:|\n| Base | 1 | 100 | 110 | 120 | 130 |\n| Upside | 1.15 | 115 | 126.5 | 138 | 149.5 |\n| Downside | 0.85 | 85 | 93.5 | 102 | 110.5 |\n\nCalculation Matrix is the visual answer to a nested loop:\n\n```text\nfor each (Scenario, Multiplier) row:\n    for each (Quarter, Base revenue) column:\n        Base revenue * Multiplier\n```\n\nRows and columns are independent axes, so every row tuple meets every column\ntuple. Within one axis, fields are zipped: `Scenario` and `Multiplier` describe\nthe same three loop items, while `Quarter` and `Base revenue` describe the same\nfour. They do not create four Cartesian layers. Nothing is appended below or\ncopied into twelve separate formulas. Shorten both column vectors to two values;\nthe matrix should immediately become 3 × 2. Undo those edits before continuing.\n\n## 4. Bring catalog columns over with a visual join\n\nIn `Product catalog`, select the adjacent headers **Product**, **Region**, and\n**Unit price**. Drag that selected header run onto the **SKU** header in\n`Launch plan`.\n\nThe compact lookup prompt should read as an equation:\n\n```text\nMatch Launch plan.SKU to Product catalog.SKU\n```\n\nWait for the full-dataset diagnostics. They should show:\n\n- 6 matched;\n- 0 missing;\n- 0 duplicate keys.\n\nClick **Mark SKU as unique**, then **Bring columns over**. Rename the result\n`Scheduled launches`.\n\nCheckpoint: all six Launch plan rows remain, and Product, Region, and Unit\nprice appear beside them. The lookup table shows a key marker on SKU. Open\nWrangle on the result: its first step should state the key relationship rather\nthan hiding it in a dialog that has disappeared.\n\nIf the prompt offers a wrong key, if the counts only reflect visible rows, or\nif the join can be created without a unique lookup key, record that as a smoke\ntest failure.\n\n## 5. Add one joined calculation and two live checks\n\nOn `Scheduled launches`, add a calculated column in Wrangle:\n\n```text\nRevenue = `Units` * `Unit price`\n```\n\nFormat **Unit price** and **Revenue** as USD Accounting. In `Checks`, enter:\n\n```text\nRows scheduled = `Scheduled launches`.`Line`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()\n```\n\nCheckpoint:\n\n- Rows scheduled is `6`;\n- Revenue scheduled is `137600`;\n- the first Aurora row has Revenue `30000`.\n\n## 6. Prove that the model scales with its source\n\nAdd this seventh row to `Launch inputs`:\n\n| Line | SKU | Units | Launch month |\n|---:|---|---:|---|\n| 7 | C-300 | 50 | blank |\n\nDo not type a date into the new row.\n\nCheckpoint:\n\n- `Launch plan` grows to seven rows and calculates `2027-03-01`;\n- `Scheduled launches` grows to seven rows and brings over Cedar, North, and\n  the `320` unit price;\n- Rows scheduled becomes `7`;\n- Revenue scheduled becomes `153600`.\n\nUndo and redo the source-row addition. The date, joined values, row count, and\nrevenue total should travel together. Nothing should require reapplying the\nvector or recreating the join.\n\n## Finish line\n\nYou have now used four related but different ideas:\n\n1. **A standalone vector** is one named formula with an intentional length.\n2. **A table-bound vector formula** produces one value per current row by using\n   `frame.len()` and a declared order.\n3. **A Calculation Matrix** evaluates every combination of its independent row\n   and column axes.\n4. **A join** matches by key, not by row position, and refuses an unsafe lookup\n   side until its uniqueness is explicit.\n\nThose distinctions are the guardrails. The gestures stay Excel-simple, while\nthe Wrangle steps say what will remain true when the data changes.\n\n## Smoke-test notes\n\nThis lesson is expected to work as a manual product smoke test. Capture the\nfirst broken checkpoint with the template in the parent tutorial README.\nThe matching agent smoke scenario is `tools/mcp-smoke/scenarios/vectors-joins`;\nit builds and verifies the tabular promises without pretending MCP can perform\nthe tutorial's pointer gestures.\n\n## Rebuilding the files\n\nThe workbooks are generated through the same validated operation boundary used\nby the desktop and MCP:\n\n```bash\ncargo run -p framework-core --example generate_tutorial_workbooks -- vectors-and-joins\n```\n\nThe generator reloads the answer key and proves the date range, Calculation\nMatrix, joined revenue, and upstream-row growth.\n"
           }
         ]
       },
       {
         "kind": "frame",
-        "id": "c2751f73-34f7-478f-a59f-938c397c79c3",
+        "id": "591ccba3-9a50-4f56-9d69-672a20b4375f",
         "name": "Launch inputs",
         "columns": [
           {
-            "id": "line~6kby19",
+            "id": "line~p4kb99",
             "name": "Line",
             "sourceName": null,
             "dataType": "integer",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "sku~ajhnaw",
+            "id": "sku~sj82jp",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -43,7 +43,7 @@
             "formula": null
           },
           {
-            "id": "units~ykmxe7",
+            "id": "units~sqfy0b",
             "name": "Units",
             "sourceName": null,
             "dataType": "integer",
@@ -52,7 +52,7 @@
             "formula": null
           },
           {
-            "id": "launch_month~xvcvea",
+            "id": "launch_month~220x5q",
             "name": "Launch month",
             "sourceName": null,
             "dataType": "date",
@@ -63,126 +63,126 @@
         ],
         "rows": [
           {
-            "id": "65609d05-6706-4fc0-9c68-b226832947ef",
+            "id": "6bfc041c-206e-4cb9-bb03-f1bbcc87f509",
             "cells": {
-              "launch_month~xvcvea": {
+              "launch_month~220x5q": {
                 "raw": "2026-09-01",
                 "overrideFormula": null
               },
-              "line~6kby19": {
+              "line~p4kb99": {
                 "raw": "1",
                 "overrideFormula": null
               },
-              "sku~ajhnaw": {
+              "sku~sj82jp": {
                 "raw": "A-100",
                 "overrideFormula": null
               },
-              "units~ykmxe7": {
+              "units~sqfy0b": {
                 "raw": "120",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "97516c88-e963-4d48-95f4-c318a668ba72",
+            "id": "15e80e2e-3f31-42a5-87fc-afa3192f7578",
             "cells": {
-              "launch_month~xvcvea": {
+              "launch_month~220x5q": {
                 "raw": "2026-10-01",
                 "overrideFormula": null
               },
-              "line~6kby19": {
+              "line~p4kb99": {
                 "raw": "2",
                 "overrideFormula": null
               },
-              "sku~ajhnaw": {
+              "sku~sj82jp": {
                 "raw": "B-200",
                 "overrideFormula": null
               },
-              "units~ykmxe7": {
+              "units~sqfy0b": {
                 "raw": "90",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "0d9618ef-3053-4bb1-825c-96adc54f729f",
+            "id": "d1d6d03e-8155-4f16-b229-54c4c4700d2c",
             "cells": {
-              "launch_month~xvcvea": {
+              "launch_month~220x5q": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~6kby19": {
+              "line~p4kb99": {
                 "raw": "3",
                 "overrideFormula": null
               },
-              "sku~ajhnaw": {
+              "sku~sj82jp": {
                 "raw": "C-300",
                 "overrideFormula": null
               },
-              "units~ykmxe7": {
+              "units~sqfy0b": {
                 "raw": "75",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "5be0be41-5f21-4fec-8384-cffa50317b9b",
+            "id": "ae8ed0e3-1937-45e7-a3ef-ea28694ca8b5",
             "cells": {
-              "launch_month~xvcvea": {
+              "launch_month~220x5q": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~6kby19": {
+              "line~p4kb99": {
                 "raw": "4",
                 "overrideFormula": null
               },
-              "sku~ajhnaw": {
+              "sku~sj82jp": {
                 "raw": "A-100",
                 "overrideFormula": null
               },
-              "units~ykmxe7": {
+              "units~sqfy0b": {
                 "raw": "140",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "f8a5ab55-7c0f-4cf0-969b-3a2efafe5c2c",
+            "id": "083430c6-612f-4927-b5c9-3779eb876016",
             "cells": {
-              "launch_month~xvcvea": {
+              "launch_month~220x5q": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~6kby19": {
+              "line~p4kb99": {
                 "raw": "5",
                 "overrideFormula": null
               },
-              "sku~ajhnaw": {
+              "sku~sj82jp": {
                 "raw": "D-400",
                 "overrideFormula": null
               },
-              "units~ykmxe7": {
+              "units~sqfy0b": {
                 "raw": "60",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "77eabce1-3430-44c1-8b5b-f7920208fcaa",
+            "id": "7fccc3f5-a38b-4a70-a05f-0fb1973d20c1",
             "cells": {
-              "launch_month~xvcvea": {
+              "launch_month~220x5q": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~6kby19": {
+              "line~p4kb99": {
                 "raw": "6",
                 "overrideFormula": null
               },
-              "sku~ajhnaw": {
+              "sku~sj82jp": {
                 "raw": "B-200",
                 "overrideFormula": null
               },
-              "units~ykmxe7": {
+              "units~sqfy0b": {
                 "raw": "110",
                 "overrideFormula": null
               }
@@ -199,11 +199,11 @@
       },
       {
         "kind": "frame",
-        "id": "5d2a75e3-b37f-4c30-8406-af4c5bf68434",
+        "id": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
         "name": "Launch plan",
         "columns": [
           {
-            "id": "line~59es2r",
+            "id": "line~r2ecb8",
             "name": "Line",
             "sourceName": null,
             "dataType": "integer",
@@ -212,7 +212,7 @@
             "formula": null
           },
           {
-            "id": "sku~9tqbr6",
+            "id": "sku~8aqvsj",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -221,7 +221,7 @@
             "formula": null
           },
           {
-            "id": "units~pmxmhe",
+            "id": "units~vqbv2k",
             "name": "Units",
             "sourceName": null,
             "dataType": "integer",
@@ -230,7 +230,7 @@
             "formula": null
           },
           {
-            "id": "launch_month~vn3j2w",
+            "id": "launch_month~httsp7",
             "name": "Launch month",
             "sourceName": null,
             "dataType": "date",
@@ -244,38 +244,38 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "c2751f73-34f7-478f-a59f-938c397c79c3",
+          "sourceFrameId": "591ccba3-9a50-4f56-9d69-672a20b4375f",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "line~59es2r",
+                  "outputColumnId": "line~r2ecb8",
                   "expression": {
                     "kind": "column",
-                    "column_id": "line~6kby19"
+                    "column_id": "line~p4kb99"
                   }
                 },
                 {
-                  "outputColumnId": "sku~9tqbr6",
+                  "outputColumnId": "sku~8aqvsj",
                   "expression": {
                     "kind": "column",
-                    "column_id": "sku~ajhnaw"
+                    "column_id": "sku~sj82jp"
                   }
                 },
                 {
-                  "outputColumnId": "units~pmxmhe",
+                  "outputColumnId": "units~vqbv2k",
                   "expression": {
                     "kind": "column",
-                    "column_id": "units~ykmxe7"
+                    "column_id": "units~sqfy0b"
                   }
                 },
                 {
-                  "outputColumnId": "launch_month~vn3j2w",
+                  "outputColumnId": "launch_month~httsp7",
                   "expression": {
                     "kind": "column",
-                    "column_id": "launch_month~xvcvea"
+                    "column_id": "launch_month~220x5q"
                   }
                 }
               ]
@@ -283,10 +283,10 @@
             {
               "kind": "select",
               "columnIds": [
-                "line~59es2r",
-                "sku~9tqbr6",
-                "units~pmxmhe",
-                "launch_month~vn3j2w"
+                "line~r2ecb8",
+                "sku~8aqvsj",
+                "units~vqbv2k",
+                "launch_month~httsp7"
               ]
             }
           ]
@@ -297,11 +297,11 @@
       },
       {
         "kind": "frame",
-        "id": "0fdd251b-e9bd-4e7f-95ab-76a551e403c6",
+        "id": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
         "name": "Product catalog",
         "columns": [
           {
-            "id": "sku~ytjbrm",
+            "id": "sku~a5k53d",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -310,7 +310,7 @@
             "formula": null
           },
           {
-            "id": "product~ehmm8p",
+            "id": "product~y54vvg",
             "name": "Product",
             "sourceName": null,
             "dataType": "string",
@@ -319,7 +319,7 @@
             "formula": null
           },
           {
-            "id": "region~n0svfy",
+            "id": "region~3gccc7",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -328,7 +328,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~57vnmm",
+            "id": "unit_price~20y0cj",
             "name": "Unit price",
             "sourceName": null,
             "dataType": "integer",
@@ -339,84 +339,84 @@
         ],
         "rows": [
           {
-            "id": "fe9d6021-9275-41f8-85ee-6b2853eef4f7",
+            "id": "6381b934-b708-44d0-95d4-e27d22d9bfa5",
             "cells": {
-              "product~ehmm8p": {
+              "product~y54vvg": {
                 "raw": "Aurora",
                 "overrideFormula": null
               },
-              "region~n0svfy": {
+              "region~3gccc7": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "sku~ytjbrm": {
+              "sku~a5k53d": {
                 "raw": "A-100",
                 "overrideFormula": null
               },
-              "unit_price~57vnmm": {
+              "unit_price~20y0cj": {
                 "raw": "250",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "20a0d204-14c0-4215-99df-148d789e93b8",
+            "id": "6a6bc8fd-625e-4d14-a13c-5ae49ab3b6e2",
             "cells": {
-              "product~ehmm8p": {
+              "product~y54vvg": {
                 "raw": "Boreal",
                 "overrideFormula": null
               },
-              "region~n0svfy": {
+              "region~3gccc7": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "sku~ytjbrm": {
+              "sku~a5k53d": {
                 "raw": "B-200",
                 "overrideFormula": null
               },
-              "unit_price~57vnmm": {
+              "unit_price~20y0cj": {
                 "raw": "180",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "9259ebe7-d9ae-4277-a0d2-b2fb9c2a769f",
+            "id": "0e43f10f-022f-4cf3-afcb-22089f57d48d",
             "cells": {
-              "product~ehmm8p": {
+              "product~y54vvg": {
                 "raw": "Cedar",
                 "overrideFormula": null
               },
-              "region~n0svfy": {
+              "region~3gccc7": {
                 "raw": "North",
                 "overrideFormula": null
               },
-              "sku~ytjbrm": {
+              "sku~a5k53d": {
                 "raw": "C-300",
                 "overrideFormula": null
               },
-              "unit_price~57vnmm": {
+              "unit_price~20y0cj": {
                 "raw": "320",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "d0d84496-2512-451f-8a78-5d881975a1c2",
+            "id": "340aeffb-7a34-4f4e-b0a6-1ad07f55a55b",
             "cells": {
-              "product~ehmm8p": {
+              "product~y54vvg": {
                 "raw": "Delta",
                 "overrideFormula": null
               },
-              "region~n0svfy": {
+              "region~3gccc7": {
                 "raw": "South",
                 "overrideFormula": null
               },
-              "sku~ytjbrm": {
+              "sku~a5k53d": {
                 "raw": "D-400",
                 "overrideFormula": null
               },
-              "unit_price~57vnmm": {
+              "unit_price~20y0cj": {
                 "raw": "210",
                 "overrideFormula": null
               }
@@ -433,15 +433,15 @@
       },
       {
         "kind": "block",
-        "id": "4fdb8de4-b37f-4893-9da3-e8b85fb180b1",
+        "id": "a35a1b2c-90d4-4756-929f-74e6b532fc02",
         "name": "Checks",
         "lines": []
       }
     ],
     "views": [
       {
-        "id": "07d44dd1-878f-45be-a563-385ee92d1601",
-        "objectId": "1fe672d2-7c90-47ff-a3f3-07b7825e3951",
+        "id": "054ca37f-e42b-4d71-8d3c-e2f68394b0ef",
+        "objectId": "2c5a18da-5ac1-4739-85ea-b656b87d276e",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -449,8 +449,8 @@
         "collapsed": false
       },
       {
-        "id": "81f09dcc-ff07-4be1-b7bf-b2c2aa553800",
-        "objectId": "c2751f73-34f7-478f-a59f-938c397c79c3",
+        "id": "108baf6e-2dc3-4a36-bf9d-ebe09b8406b3",
+        "objectId": "591ccba3-9a50-4f56-9d69-672a20b4375f",
         "x": 720.0,
         "y": 540.0,
         "width": 648.0,
@@ -458,8 +458,8 @@
         "collapsed": false
       },
       {
-        "id": "db6a510d-4d97-4e62-9d40-0a60a115b7c9",
-        "objectId": "5d2a75e3-b37f-4c30-8406-af4c5bf68434",
+        "id": "db2eb40f-7bb5-4940-b6c6-5f8a25eb9407",
+        "objectId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
         "x": 720.0,
         "y": 70.0,
         "width": 520.0,
@@ -467,8 +467,8 @@
         "collapsed": false
       },
       {
-        "id": "5d1a1c4a-4d65-4af4-9ccf-432f653b1f25",
-        "objectId": "0fdd251b-e9bd-4e7f-95ab-76a551e403c6",
+        "id": "2fa62337-0085-4c41-8682-86bb82fd11a5",
+        "objectId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
         "x": 1410.0,
         "y": 70.0,
         "width": 648.0,
@@ -476,8 +476,8 @@
         "collapsed": false
       },
       {
-        "id": "08ce03bd-32b9-4100-83ca-8392468ab879",
-        "objectId": "4fdb8de4-b37f-4893-9da3-e8b85fb180b1",
+        "id": "bcf870f3-54ca-47a4-bfa1-6543e16d8813",
+        "objectId": "a35a1b2c-90d4-4756-929f-74e6b532fc02",
         "x": 1410.0,
         "y": 470.0,
         "width": 340.0,

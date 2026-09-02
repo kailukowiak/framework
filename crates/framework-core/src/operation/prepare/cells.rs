@@ -82,10 +82,7 @@ impl Document {
                 .iter()
                 .find(|column| column.id == column_id)
                 .ok_or(CoreError::ColumnNotFound)?;
-            validate_category_raw(column, &raw)?;
-            // Parsed here so a bad value is refused before anything is
-            // written, with the message that names the type it wanted.
-            parse_scalar_value(&raw, column.data_type).map_err(CoreError::Import)?;
+            validate_cell_raw(column, &raw)?;
             let row_ordinal =
                 Self::artifact_row_ordinal(&frame_id, &row_id).ok_or(CoreError::RowNotFound)?;
             return Ok(ReplicatedOperation::SetArtifactCell {
@@ -103,7 +100,7 @@ impl Document {
                 .iter()
                 .find(|column| column.id == column_id)
                 .ok_or(CoreError::ColumnNotFound)?;
-            validate_category_raw(column, &raw)?;
+            validate_cell_raw(column, &raw)?;
             ReplicatedOperation::SetCell {
                 frame_id,
                 row_id,
@@ -131,7 +128,7 @@ impl Document {
                     .find(|column| column.id == update.column_id)
                     .ok_or(CoreError::ColumnNotFound)?;
                 self.ensure_column_is_editable(&frame_id, &update.column_id)?;
-                validate_category_raw(column, &update.raw)?;
+                validate_cell_raw(column, &update.raw)?;
             }
             ReplicatedOperation::SetCells { frame_id, cells }
         })
@@ -218,7 +215,7 @@ impl Document {
                 if !self.frame_column_is_editable(&frame_id, &column.id) {
                     continue;
                 }
-                validate_category_raw(column, raw)?;
+                validate_cell_raw(column, raw)?;
                 match frame.rows.get(row_index) {
                     Some(row) => cells.push(CellUpdate {
                         row_id: row.id.clone(),
@@ -277,7 +274,7 @@ impl Document {
                 self.ensure_column_is_editable(&frame_id, column_id)?;
             }
             for column in frame.input_columns() {
-                validate_category_raw(
+                validate_cell_raw(
                     column,
                     values
                         .get(&column.id)
@@ -453,6 +450,9 @@ impl Document {
                     "Only an entry column stores values by key. Use setCell elsewhere.".into(),
                 )
             })?;
+        if let Some(column) = frame.columns.iter().find(|column| column.id == column_id) {
+            validate_cell_raw(column, &raw)?;
+        }
         if key.len() != entry_column.key_column_ids.len() {
             return Err(CoreError::InvalidOperation(format!(
                 "This entry column is keyed by {} column{}, so the key needs that many values",

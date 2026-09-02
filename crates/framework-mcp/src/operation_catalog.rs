@@ -53,5 +53,16 @@ mod tests {
         assert!(catalog.contains("type FrameStepInput ="));
         assert!(catalog.contains(r#""kind": "expand""#));
         assert!(catalog.contains("type DataArtifact ="));
+        // Scenarios reach an agent through the generic surface alone, so
+        // the catalog naming them is the whole of their discoverability.
+        for scenario_operation in [
+            r#""type": "addScenario""#,
+            r#""type": "removeScenario""#,
+            r#""type": "renameScenario""#,
+            r#""type": "setScenarioValue""#,
+            r#""type": "activateScenario""#,
+        ] {
+            assert!(catalog.contains(scenario_operation), "{scenario_operation}");
+        }
     }
 }

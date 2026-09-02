@@ -29,6 +29,33 @@ fn block_id(store: &Store, name: &str) -> String {
         .unwrap_or_else(|| panic!("tutorial block {name:?} exists"))
 }
 
+fn assert_block_answers(store: &Store, name: &str, expected: &[&str]) {
+    let id = block_id(store, name);
+    assert_eq!(
+        store.view().computed_blocks[&id]
+            .lines
+            .iter()
+            .map(|line| line.cell.display.as_str())
+            .collect::<Vec<_>>(),
+        expected
+    );
+}
+
+fn add_seventh_launch_row(
+    store: &mut Store,
+    source: &framework_core::FrameObject,
+) -> Result<(), framework_core::CoreError> {
+    let mut values = std::collections::BTreeMap::new();
+    for (name, value) in [("Line", "7"), ("SKU", "C-300"), ("Units", "50")] {
+        values.insert(column_id_named(source, name), value.into());
+    }
+    store.apply(Operation::AddRow {
+        frame_id: source.id.clone(),
+        values,
+    })?;
+    Ok(())
+}
+
 fn text_id(store: &Store, name: &str) -> String {
     store
         .document()
@@ -84,6 +111,7 @@ fn money_format() -> ColumnFormat {
         negative_parens: Some(true),
         zero_dash: Some(true),
         currency_code: Some("USD".into()),
+        date_pattern: None,
     }
 }
 
@@ -95,6 +123,7 @@ fn percent_format() -> ColumnFormat {
         negative_parens: Some(true),
         zero_dash: Some(true),
         currency_code: None,
+        date_pattern: None,
     }
 }
 
@@ -877,7 +906,7 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
 
     store.apply(Operation::SetBlockSource {
         block_id: block_id(&store, "Checks"),
-        source: "Rows scheduled = `Scheduled launches`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()".into(),
+        source: "Rows scheduled = `Scheduled launches`.`Line`.len()\nRevenue scheduled = `Scheduled launches`.`Revenue`.sum()".into(),
         editing: None,
     })?;
     store.apply(Operation::MoveView {
@@ -957,21 +986,16 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
     let joined_page = reloaded.get_frame_page(&scheduled.id, 0, 20)?;
     assert_eq!(joined_page.total_rows, 6);
     assert_eq!(joined_page.rows[0][7], "30000");
+    assert_block_answers(&reloaded, "Checks", &["6", "137600"]);
 
     // The tutorial's central promise is behavior, not merely a stored formula:
     // appending a source row grows the calendar and the visual join together.
-    let mut values = std::collections::BTreeMap::new();
-    values.insert(column_id_named(&launch_inputs, "Line"), "7".into());
-    values.insert(column_id_named(&launch_inputs, "SKU"), "C-300".into());
-    values.insert(column_id_named(&launch_inputs, "Units"), "50".into());
-    reloaded.apply(Operation::AddRow {
-        frame_id: launch_inputs.id.clone(),
-        values,
-    })?;
+    add_seventh_launch_row(&mut reloaded, &launch_inputs)?;
     let grown_launch = reloaded.get_frame_page(&launch.id, 0, 20)?;
     assert_eq!(grown_launch.total_rows, 7);
     assert_eq!(grown_launch.rows[6][3], "2027-03-01");
     assert_eq!(reloaded.get_frame_page(&scheduled.id, 0, 20)?.total_rows, 7);
+    assert_block_answers(&reloaded, "Checks", &["7", "153600"]);
 
     println!("wrote {}", start.display());
     println!("wrote {}", finished.display());

@@ -11,4 +11,10 @@ export type TutorialDocument = {
   kind: string;
   path: string;
   exists: boolean;
+  /**
+   * `exists` says the path is a file; this says FrameWork can actually
+   * open it for reading. They diverge under macOS TCC: a stored Deny on
+   * the Documents folder leaves a real file that opening still refuses.
+   */
+  readable: boolean;
 };

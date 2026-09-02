@@ -52,6 +52,16 @@ export type FrameDisplay = {
    * is the spreadsheet-shaped face of a keyed long frame.
    */
   crosstab?: CrosstabDisplay | null;
+  /**
+   * How many leading columns stay put while the grid scrolls sideways.
+   * A count rather than a set of column IDs: freezing is positional in
+   * every spreadsheet, and a count survives a rename or a retype without
+   * carrying a reference that could go stale. Reordering or dropping
+   * columns may leave it larger than the frame is wide; the view clamps
+   * what it draws and the stored number is left alone, so putting the
+   * columns back puts the freeze back too.
+   */
+  pinnedColumns?: number;
   styles?: Array<FrameStyle>;
   /**
    * Ordered, row-wise presentation rules. Their predicates are formulas

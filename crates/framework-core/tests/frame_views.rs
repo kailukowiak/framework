@@ -1296,3 +1296,89 @@ fn every_preset_formula_the_panel_offers_is_one_the_engine_takes() {
         vec!["true", "false"]
     );
 }
+
+/// Freezing the leading columns is a way of looking, so it lives in the
+/// display layer with sorting and orientation: it survives a save, it undoes
+/// in one step, and it refuses a count the frame cannot honour rather than
+/// quietly pinning fewer columns than were asked for.
+#[test]
+fn pinned_columns_are_display_state_that_undoes_and_persists() {
+    let mut store = demo_store();
+    let orders_id = frame_id(&store, "Orders");
+    let column_count = frame_named(store.document(), "Orders").columns.len();
+    assert!(column_count >= 2, "the demo Orders frame is wide enough");
+
+    assert!(
+        frame_named(store.document(), "Orders").display.is_empty(),
+        "a fresh frame has nothing in its display layer"
+    );
+
+    store
+        .apply(Operation::SetFrameDisplayPinnedColumns {
+            frame_id: orders_id.clone(),
+            pinned_columns: 2,
+        })
+        .unwrap();
+    let display = &frame_named(store.document(), "Orders").display;
+    assert_eq!(display.pinned_columns, 2);
+    assert!(!display.is_empty(), "a frozen column is display state");
+
+    // A whole document round trip: the number has to come back, and an
+    // unpinned frame must not start writing a field into every workbook.
+    let json = serde_json::to_string(store.document()).unwrap();
+    let reopened: Document = serde_json::from_str(&json).unwrap();
+    assert_eq!(
+        frame_named(&reopened, "Orders").display.pinned_columns,
+        2,
+        "{json}"
+    );
+    assert!(!json.contains(r#""pinnedColumns":0"#));
+
+    // Pinning more columns than the frame has is a mistake about which frame
+    // is being looked at, and says so instead of pinning what fits.
+    let refusal = store
+        .apply(Operation::SetFrameDisplayPinnedColumns {
+            frame_id: orders_id.clone(),
+            pinned_columns: column_count as u32 + 1,
+        })
+        .unwrap_err()
+        .to_string();
+    assert!(refusal.contains(&column_count.to_string()), "{refusal}");
+    assert_eq!(
+        frame_named(store.document(), "Orders")
+            .display
+            .pinned_columns,
+        2,
+        "a refused freeze leaves the old one alone"
+    );
+
+    store
+        .apply(Operation::SetFrameDisplayPinnedColumns {
+            frame_id: orders_id.clone(),
+            pinned_columns: 0,
+        })
+        .unwrap();
+    assert_eq!(
+        frame_named(store.document(), "Orders")
+            .display
+            .pinned_columns,
+        0
+    );
+
+    store.undo();
+    assert_eq!(
+        frame_named(store.document(), "Orders")
+            .display
+            .pinned_columns,
+        2,
+        "undo restores the count that was there before"
+    );
+    store.undo();
+    assert_eq!(
+        frame_named(store.document(), "Orders")
+            .display
+            .pinned_columns,
+        0
+    );
+    assert!(frame_named(store.document(), "Orders").display.is_empty());
+}

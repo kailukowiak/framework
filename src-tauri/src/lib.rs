@@ -1,6 +1,6 @@
 use framework_core::{
     ArtifactSweep, CollaborationPaths, ConnectorRecipe, DataArtifact, DataObject, Document,
-    DocumentView, EventJournal, ExcelRangePreview, ExcelWorkbookInfo, Operation, Store,
+    DocumentView, EventJournal, ExcelRangePreview, ExcelWorkbookInfo, Operation, SchemaDiff, Store,
     create_data_artifact, create_excel_range_artifact,
     inspect_excel_workbook as read_excel_workbook, is_framework_document_path,
     preview_excel_range as read_excel_range_preview,
@@ -150,6 +150,10 @@ struct TutorialDocument {
     kind: String,
     path: String,
     exists: bool,
+    /// `exists` says the path is a file; this says FrameWork can actually
+    /// open it for reading. They diverge under macOS TCC: a stored Deny on
+    /// the Documents folder leaves a real file that opening still refuses.
+    readable: bool,
 }
 
 #[derive(Clone, Serialize, TS)]
@@ -315,6 +319,17 @@ const BUNDLED_TUTORIALS: &[BundledTutorial] = &[
 struct RecentDocument {
     title: String,
     path: String,
+    /// See `TutorialDocument::readable`: a stored macOS TCC deny leaves a
+    /// real file on disk that opening it still refuses.
+    #[serde(default = "readable_default_true")]
+    readable: bool,
+}
+
+/// Recent-document entries persisted before `readable` existed have no such
+/// field on disk; treat them as readable until the next refresh recomputes
+/// it, rather than hiding every recent document a person already had.
+fn readable_default_true() -> bool {
+    true
 }
 
 #[derive(Clone, Serialize)]
@@ -393,6 +408,27 @@ fn get_frame_page(
     session
         .store
         .get_frame_page(&frame_id, offset, limit)
+        .map_err(|error| error.to_string())
+}
+
+/// Find, for the frames whose rows are not in the document view.
+///
+/// Asked only of paged frames: everything a small frame holds already crossed
+/// with the view, and the palette searches those without a round trip.
+#[tauri::command]
+fn search_frame_rows(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    frame_id: String,
+    query: String,
+    limit: usize,
+) -> Result<Vec<framework_core::RowHit>, String> {
+    let session = state.document_for(window.label())?;
+    let session = session.lock().map_err(|error| error.to_string())?;
+    ensure_live(&session)?;
+    session
+        .store
+        .search_frame_rows(&frame_id, &query, limit)
         .map_err(|error| error.to_string())
 }
 
@@ -678,6 +714,22 @@ fn save_document_as_dialog(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<Option<OpenedDocument>, String> {
+    let result = save_document_as_dialog_inner(window, app, state);
+    match &result {
+        Ok(Some(payload)) => log::info!("saved document as {}", payload.path),
+        // `Ok(None)` means the user cancelled the save dialog -- not a
+        // failure worth a log line.
+        Ok(None) => {}
+        Err(error) => log::error!("failed to save document as: {error}"),
+    }
+    result
+}
+
+fn save_document_as_dialog_inner(
+    window: tauri::WebviewWindow,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Option<OpenedDocument>, String> {
     // A scratch canvas has no file name worth proposing — it is called
     // `untitled.fw` in a temporary directory — so the dialog proposes what
     // the user named the document instead.
@@ -753,6 +805,13 @@ fn list_recent_documents(app: AppHandle) -> Result<Vec<RecentDocument>, String> 
         let path = Path::new(&document.path);
         path.is_file() && is_framework_document_path(path)
     });
+    // Recomputed on every list, not trusted from the stored JSON: a file
+    // that was readable when it was recorded can go dark later (a macOS TCC
+    // deny arriving, or permissions changing underneath it), and the entry
+    // should reflect that rather than repeat what was true when it was added.
+    for document in &mut documents {
+        document.readable = fs::File::open(&document.path).is_ok();
+    }
     documents.truncate(MAX_RECENT_DOCUMENTS);
     Ok(documents)
 }
@@ -835,6 +894,9 @@ fn remember_recent_document(app: &AppHandle, opened: &OpenedDocument) -> Result<
         RecentDocument {
             title: opened.document.document.name.clone(),
             path: opened.path.clone(),
+            // This entry is being recorded because the document was just
+            // opened successfully.
+            readable: true,
         },
     );
     documents.truncate(MAX_RECENT_DOCUMENTS);
@@ -969,11 +1031,15 @@ fn tutorial_library(directory: &Path) -> TutorialLibrary {
             .iter()
             .map(|tutorial| {
                 let path = directory.join(tutorial.relative_path);
+                let exists = path.is_file();
                 TutorialDocument {
                     title: format!("{} — {}", tutorial.lesson, tutorial.kind),
                     lesson: tutorial.lesson.into(),
                     kind: tutorial.kind.into(),
-                    exists: path.is_file(),
+                    exists,
+                    // A separate check from `exists`: a stored macOS TCC deny
+                    // leaves a real file behind that opening it still refuses.
+                    readable: exists && fs::File::open(&path).is_ok(),
                     path: path.display().to_string(),
                 }
             })
@@ -1658,13 +1724,27 @@ fn find_added_frame_id(before: &HashSet<String>, document: &Document) -> Result<
     }
 }
 
+/// A refresh's two answers: the document as it now stands, and what the
+/// refresh did to the frame's schema.
+///
+/// The diff is returned rather than recorded. It is true about one moment —
+/// the moment the new data arrived — and a document reopened tomorrow would
+/// be lying if it still said a column had just appeared.
+#[derive(serde::Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+struct ConnectorRefreshOutcome {
+    view: DocumentView,
+    schema: SchemaDiff,
+}
+
 #[tauri::command]
 async fn refresh_frame_connector(
     window: tauri::WebviewWindow,
     app: AppHandle,
     frame_id: String,
     state: State<'_, AppState>,
-) -> Result<DocumentView, String> {
+) -> Result<ConnectorRefreshOutcome, String> {
     let session = state.document_for(window.label())?;
     let (document_path, document_id, connector) = {
         let session = session.lock().map_err(|error| error.to_string())?;
@@ -1704,14 +1784,26 @@ async fn refresh_frame_connector(
     }
     let unchanged = session.store.frame_artifact_id(&frame_id) == Some(artifact.id.as_str());
     if unchanged {
-        return Ok(session.store.view());
+        // Byte-identical data. Nothing moved, so there is nothing to say —
+        // an empty diff, which the interface renders as silence.
+        return Ok(ConnectorRefreshOutcome {
+            view: session.store.view(),
+            schema: SchemaDiff::default(),
+        });
     }
-    apply_session_operation(
+    // Asked before the operation lands, because it is a comparison against
+    // the schema the frame still has.
+    let schema = session
+        .store
+        .frame_source_schema_diff(&frame_id, &artifact)
+        .map_err(|error| error.to_string())?;
+    let view = apply_session_operation(
         &window,
         &mut session,
         &state.writer_id,
         Operation::RefreshFrameArtifact { frame_id, artifact },
-    )
+    )?;
+    Ok(ConnectorRefreshOutcome { view, schema })
 }
 
 /// Points an imported frame at a different file.
@@ -2187,6 +2279,7 @@ fn export_document_excel(
     window: tauri::WebviewWindow,
     frame_ids: Vec<String>,
     path: Option<String>,
+    include_lineage: bool,
     state: State<'_, AppState>,
 ) -> Result<Option<String>, String> {
     let path = match path {
@@ -2214,7 +2307,7 @@ fn export_document_excel(
     let session = session.lock().map_err(|error| error.to_string())?;
     session
         .store
-        .export_excel(&frame_ids, &path)
+        .export_excel(&frame_ids, &path, include_lineage)
         .map_err(|error| error.to_string())?;
     Ok(Some(path.display().to_string()))
 }
@@ -2326,6 +2419,24 @@ fn set_history_menu_state(window: tauri::WebviewWindow, can_undo: bool, can_redo
     sync_history_menu(&window, can_undo, can_redo);
 }
 
+/// Lets the frontend put an entry in the same log as the Rust shell's own,
+/// rather than a render-time exception or a rejected command promise
+/// vanishing the moment nothing on screen renders it. This is the one choke
+/// point for frontend-originated log lines -- see `src/lib/errorReporting.ts`
+/// -- rather than a command added per call site.
+#[tauri::command]
+fn log_frontend_event(level: String, message: String, context: Option<String>) {
+    let line = match context.filter(|context| !context.is_empty()) {
+        Some(context) => format!("frontend: {message} ({context})"),
+        None => format!("frontend: {message}"),
+    };
+    match level.as_str() {
+        "warn" => log::warn!("{line}"),
+        "info" => log::info!("{line}"),
+        _ => log::error!("{line}"),
+    }
+}
+
 fn build_document_window(
     app: &AppHandle,
     session: DocumentSession,
@@ -2417,7 +2528,30 @@ fn focus_window_for_path(
     Ok(false)
 }
 
+/// Opens the document at `path`, logging the outcome.
+///
+/// This is a thin logging wrapper around [`open_document_at_inner`] rather
+/// than logging inline: the inner function returns early through `?` at
+/// several points, and duplicating a `log::error!` at each of those is more
+/// likely to drift out of sync than one log line taken from the `Result`
+/// this returns.
 fn open_document_at(
+    app: &AppHandle,
+    window_label: &str,
+    path: PathBuf,
+    emit_opened_event: bool,
+    safe_mode: bool,
+) -> Result<OpenedDocument, String> {
+    let path_display = path.display().to_string();
+    let result = open_document_at_inner(app, window_label, path, emit_opened_event, safe_mode);
+    match &result {
+        Ok(payload) => log::info!("opened document at {}", payload.path),
+        Err(error) => log::error!("failed to open document at {path_display}: {error}"),
+    }
+    result
+}
+
+fn open_document_at_inner(
     app: &AppHandle,
     window_label: &str,
     path: PathBuf,
@@ -2610,10 +2744,13 @@ fn load_session(path: PathBuf) -> Result<(DocumentSession, Option<String>), Stri
 
 fn persist_session(session: &mut DocumentSession) -> Result<(), String> {
     session.snapshot_dirty = true;
-    session
-        .store
-        .save(&session.path)
-        .map_err(|error| error.to_string())?;
+    if let Err(error) = session.store.save(&session.path) {
+        log::error!(
+            "failed to persist document at {}: {error}",
+            session.path.display()
+        );
+        return Err(error.to_string());
+    }
     session.snapshot_dirty = false;
     Ok(())
 }
@@ -2756,7 +2893,28 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Every `#[tauri::command]` returns `Result<T, String>`, and a failure is
+/// otherwise visible only if the webview chooses to render the rejected
+/// promise -- a silent path that has hidden real bugs. `env_logger` reads
+/// `RUST_LOG` from the environment (e.g. `RUST_LOG=debug npm run tauri dev`)
+/// and otherwise logs at `info`, to stderr: the terminal running `tauri dev`,
+/// or Console.app for a bundled build. The panic hook logs the panic's
+/// message and location before handing off to the default hook, so a panic
+/// is not just a silent process exit.
+///
+/// A function of its own rather than inlined at the top of `run()`: this is
+/// the one addition to that function `too_many_lines` would have flagged.
+fn install_logging_and_panic_hook() {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    let default_panic_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        log::error!("panic: {panic_info}");
+        default_panic_hook(panic_info);
+    }));
+}
+
 pub fn run() {
+    install_logging_and_panic_hook();
     // The app_id a Wayland compositor sees is GLib's program name, which
     // defaults to the executable's basename -- `framework-desktop`. Desktop
     // environments map a window to its launcher by matching that app_id
@@ -2842,6 +3000,7 @@ pub fn run() {
             should_open_library,
             new_window,
             get_frame_page,
+            search_frame_rows,
             get_frame_summary,
             get_join_diagnostics,
             get_block_line_page,
@@ -2890,7 +3049,8 @@ pub fn run() {
             export_document_excel,
             undo,
             redo,
-            set_history_menu_state
+            set_history_menu_state,
+            log_frontend_event
         ])
         .build(tauri::generate_context!())
         .expect("error while building FrameWork");

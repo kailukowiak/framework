@@ -96,6 +96,15 @@ impl Document {
         Ok(())
     }
 
+    pub(crate) fn apply_set_frame_display_pinned_columns(
+        &mut self,
+        frame_id: Id,
+        pinned_columns: u32,
+    ) -> Result<(), CoreError> {
+        self.frame_mut(&frame_id)?.display.pinned_columns = pinned_columns;
+        Ok(())
+    }
+
     pub(crate) fn apply_set_frame_display_crosstab(
         &mut self,
         frame_id: Id,

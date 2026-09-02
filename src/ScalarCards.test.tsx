@@ -197,6 +197,39 @@ describe("ValueCard", () => {
     );
   });
 
+  it("shows the override and names the scenario, and edits that scenario", async () => {
+    const onOperation = vi.fn<OperationHandler>(async () => null);
+    render(
+      <ValueCard
+        value={
+          {
+            id: "rate",
+            kind: "value",
+            name: "Growth rate",
+            raw: "0.05",
+            dataType: "number",
+          } as ValueObject
+        }
+        computed={{ raw: "0.12", scenarioId: "upside", scenarioName: "Upside" }}
+        formula="`Growth rate`"
+        onOperation={onOperation}
+      />
+    );
+
+    const field = screen.getByDisplayValue("0.12") as HTMLInputElement;
+    expect(screen.getByText("number · 1 value · Upside")).toBeTruthy();
+
+    await userEvent.clear(field);
+    await userEvent.type(field, "0.2");
+    fireEvent.blur(field);
+    expect(onOperation).toHaveBeenCalledWith({
+      type: "setScenarioValue",
+      scenarioId: "upside",
+      valueId: "rate",
+      raw: "0.2",
+    });
+  });
+
   it("drags a qualified Container value through the shared drop lane", () => {
     let dropped: VectorDrag | null = null;
     render(

@@ -369,6 +369,8 @@ fn grouped_aggregates_over_an_imported_frame_read_back_through_pages() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {

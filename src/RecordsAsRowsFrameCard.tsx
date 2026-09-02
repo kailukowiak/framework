@@ -9,6 +9,8 @@ import {
   useFrameSummary,
 } from "./FrameSummaryFooter";
 import { FrameTitleRow } from "./FrameTitleRow";
+import { useGridColumnWidths } from "./hooks/useGridColumnWidths";
+import { pinnedColumnOffsets } from "./lib/pinnedColumns";
 
 export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
   const {
@@ -26,6 +28,13 @@ export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
   const summaryScrollRef = useRef<HTMLDivElement>(null);
   const summaryDrawerRef = useRef<HTMLElement>(null);
   const summary = useFrameSummary(frame, model.computed.fingerprint, drawerOpen);
+  // One measurement serves both readers of the grid's geometry: the drawer
+  // lines its columns up with it, and the frozen columns need to know where
+  // each of them starts.
+  const pinned = frame.display?.pinnedColumns ?? 0;
+  const columns = frame.columns.length;
+  const columnWidths = useGridColumnWidths(scrollRef, drawerOpen || pinned > 0, columns);
+  const pinnedOffsets = pinnedColumnOffsets(columnWidths, pinned, columns);
   useEffect(() => setDrawerHeight(persistedHeight), [persistedHeight]);
   useEffect(() => {
     if (drawerOpen && summaryScrollRef.current && scrollRef.current)
@@ -129,8 +138,8 @@ export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
               ))}
               <col className="frame-edge-column" />
             </colgroup>
-            <RecordsFrameHeader model={model} />
-            <RecordsFrameBody model={model} />
+            <RecordsFrameHeader model={model} pinned={pinnedOffsets} />
+            <RecordsFrameBody model={model} pinned={pinnedOffsets} />
           </table>
         )}
       </div>
@@ -140,6 +149,8 @@ export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
           frame={frame}
           summary={summary}
           height={drawerHeight}
+          columnWidths={columnWidths}
+          pinned={pinnedOffsets}
           drawerRef={summaryDrawerRef}
           scrollRef={summaryScrollRef}
           onScroll={(scrollLeft) => {

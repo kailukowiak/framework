@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { PipelineCommand } from "./PipelineCommand";
 import { meltedColumnIds } from "./lib/columnList";
+import { reportIgnoredFailure } from "./lib/errorReporting";
 import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
 import type {
   BroadcastOperator,
@@ -157,7 +158,7 @@ export function BroadcastStepRow({
             // the inline error, so the rejection has nothing left to report.
             void Promise.resolve(
               onUpdate({ operator: event.target.value as BroadcastOperator }, true)
-            ).catch(() => {})
+            ).catch(reportIgnoredFailure("vector operator update"))
           }
         >
           <option value="multiply">×</option>

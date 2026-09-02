@@ -1,6 +1,7 @@
 import type { Update } from "@tauri-apps/plugin-updater";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isDesktopShell } from "../lib/applicationShortcuts";
+import { reportIgnoredFailure } from "../lib/errorReporting";
 import {
   checkForUpdate,
   installUpdate,
@@ -39,34 +40,44 @@ export function useUpdateCheck() {
   const pending = useRef<Update | null>(null);
 
   const runCheck = useCallback(async (explicit: boolean) => {
-    // The browser dev server and the e2e shell have no updater plugin behind
-    // them. Saying so is only useful to someone who asked.
-    if (!isDesktopShell()) {
-      if (explicit) setStatus({ kind: "unsupported" });
-      return;
-    }
-    if (!explicit && !shouldCheckInBackground(Date.now())) return;
-    if (explicit) setStatus({ kind: "checking" });
+    // `checkForUpdate` catches its own failures and always resolves; what
+    // can still throw here is the local-storage bookkeeping around it
+    // (`recordUpdateCheck` and friends), and this is `void`-called from an
+    // effect and from `check` below, so an uncaught throw would otherwise be
+    // an unhandled rejection instead of a reported one.
+    try {
+      // The browser dev server and the e2e shell have no updater plugin
+      // behind them. Saying so is only useful to someone who asked.
+      if (!isDesktopShell()) {
+        if (explicit) setStatus({ kind: "unsupported" });
+        return;
+      }
+      if (!explicit && !shouldCheckInBackground(Date.now())) return;
+      if (explicit) setStatus({ kind: "checking" });
 
-    const outcome = await checkForUpdate();
-    recordUpdateCheck(Date.now());
+      const outcome = await checkForUpdate();
+      recordUpdateCheck(Date.now());
 
-    if (outcome.kind === "available") {
-      if (!explicit && skippedUpdateVersion() === outcome.version) return;
-      pending.current = outcome.update;
-      setStatus({
-        kind: "available",
-        version: outcome.version,
-        notes: outcome.notes,
-      });
-      return;
+      if (outcome.kind === "available") {
+        if (!explicit && skippedUpdateVersion() === outcome.version) return;
+        pending.current = outcome.update;
+        setStatus({
+          kind: "available",
+          version: outcome.version,
+          notes: outcome.notes,
+        });
+        return;
+      }
+      if (!explicit) return;
+      setStatus(
+        outcome.kind === "failed"
+          ? { kind: "failed", message: outcome.message }
+          : { kind: outcome.kind }
+      );
+    } catch (error) {
+      reportIgnoredFailure("update check")(error);
+      if (explicit) setStatus({ kind: "failed", message: String(error) });
     }
-    if (!explicit) return;
-    setStatus(
-      outcome.kind === "failed"
-        ? { kind: "failed", message: outcome.message }
-        : { kind: outcome.kind }
-    );
   }, []);
 
   // One background check per window, on open. The throttle inside runCheck is

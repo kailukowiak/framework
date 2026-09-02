@@ -413,6 +413,8 @@ fn documents_carry_their_data_by_relative_path_and_save_as_copies_all_of_it() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     let document_id = store.document().id.clone();
     let artifact = create_data_artifact(&source, &original.join("data")).unwrap();
@@ -519,4 +521,44 @@ fn documents_carry_their_data_by_relative_path_and_save_as_copies_all_of_it() {
         "both the imported bytes and the snapshot came along"
     );
     fs::remove_dir_all(copy_directory).unwrap();
+}
+
+/// macOS surfaces a stored TCC deny as `Operation not permitted (os error
+/// 1)` through `fs::read_to_string`; `Store::load` should translate that
+/// (and the ordinary `EACCES` a chmod produces here) into a sentence naming
+/// the folder, not the errno. Skipped when running as root, since root
+/// ignores Unix permission bits and the file would read successfully.
+#[cfg(unix)]
+#[test]
+fn loading_an_unreadable_file_names_the_folder_instead_of_the_errno() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = temporary_test_directory("unreadable-document");
+    let path = directory.join("Locked.fw");
+    let store = demo_store();
+    store.save(&path).unwrap();
+
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o000)).unwrap();
+    let result = Store::load(&path);
+    // Restore permissions before any assertion can early-return, so the
+    // temporary directory can still be cleaned up.
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+
+    match result {
+        Ok(_) => {
+            // Running as root: permission bits are not enforced.
+        }
+        Err(error) => {
+            let message = error.to_string();
+            assert!(
+                message.contains(directory.to_str().unwrap()),
+                "expected the parent folder in: {message}"
+            );
+            assert!(
+                message.contains("FrameWork"),
+                "expected an actionable sentence, not the raw errno, in: {message}"
+            );
+        }
+    }
+    fs::remove_dir_all(directory).unwrap();
 }

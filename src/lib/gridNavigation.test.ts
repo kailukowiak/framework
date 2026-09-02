@@ -5,6 +5,7 @@ import {
   documentEdgePosition,
   enterPosition,
   fillPairs,
+  focusScrollTarget,
   fullColumnRange,
   fullGridRange,
   fullRowRange,
@@ -366,6 +367,30 @@ describe("scrollTopToRevealRow", () => {
       TABLE_HEADER_HEIGHT + (500_000_001 * TABLE_ROW_HEIGHT) / scale - 300,
       0
     );
+  });
+});
+
+describe("focusScrollTarget", () => {
+  it("prefers a row already in the loaded window", () => {
+    expect(focusScrollTarget(3, 50, 900, 10_000)).toEqual({
+      rowIndex: 3,
+      rowCount: 50,
+    });
+  });
+
+  it("falls back to the focus's absolute position against the frame's total rows", () => {
+    expect(focusScrollTarget(-1, 50, 900, 10_000)).toEqual({
+      rowIndex: 900,
+      rowCount: 10_000,
+    });
+  });
+
+  it("returns null when neither a local nor an absolute position is known", () => {
+    expect(focusScrollTarget(-1, 50, undefined, 10_000)).toBeNull();
+  });
+
+  it("does not fall back to a negative absolute position", () => {
+    expect(focusScrollTarget(-1, 50, -1, 10_000)).toBeNull();
   });
 });
 

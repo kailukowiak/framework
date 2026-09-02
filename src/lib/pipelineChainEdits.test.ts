@@ -1,28 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
-  appendBlankCalculatedColumn,
   appendColumnFilter,
+  columnFilterDraft,
+} from "../PipelineColumnFilters";
+import { formatPipelineFormulas } from "../PipelineFormulaFormatting";
+import {
+  appendBlankCalculatedColumn,
   appendInPlaceColumnTransformation,
   appendOrderedColumnTransformation,
   focusExistingCalculatedColumn,
-  columnFilterDraft,
-  nextBlankColumnName,
-  normalizeCalculatedColumnNames,
-  outputColumnIdForName,
-  parseNamedTransformation,
-  parsePivotCommand,
-  parseSortCommand,
-  parseUnpivotCommand,
-  rearrangePipelineColumns,
-  reorderColumnIds,
   hidePipelineColumn,
-  isOrderingOnlySelect,
-  mintColumnId,
+  normalizeCalculatedColumnNames,
+  rearrangePipelineColumns,
   stepsFromRendered,
-  uniqueColumnName,
-} from "./PipelineEditor";
-import { formatPipelineFormulas } from "./PipelineFormulaFormatting";
-import type { Column, RenderedFrameStep, FrameObject } from "./lib/types";
+} from "./pipelineChainEdits";
+import type { Column, RenderedFrameStep, FrameObject } from "./types";
 
 const column = (id: string, name: string): Column => ({
   id,
@@ -31,7 +23,7 @@ const column = (id: string, name: string): Column => ({
   formula: null,
 });
 
-describe("stepsFromRendered", () => {
+describe("pipeline chain edits", () => {
   it("keeps list gestures as one compact Wrangle row", () => {
     const month = column("month", "Month");
     const jan = column("jan", "Jan");
@@ -175,60 +167,6 @@ describe("stepsFromRendered", () => {
     });
   });
 
-  it("reads named transformations and forgives a redundant spreadsheet equals", () => {
-    expect(
-      parseNamedTransformation("`Currency Lower` = `currency`.str.to_lowercase()")
-    ).toEqual({
-      name: "Currency Lower",
-      formula: "`currency`.str.to_lowercase()",
-    });
-    expect(parseNamedTransformation("`amount` == 10")).toEqual({
-      name: "amount",
-      formula: "10",
-    });
-    expect(parseNamedTransformation("`amount` = = `Revenue` - `Cost`")).toEqual({
-      name: "amount",
-      formula: "`Revenue` - `Cost`",
-    });
-    expect(parseNamedTransformation("`flag` = `Revenue` == `Cost`")).toEqual({
-      name: "flag",
-      formula: "`Revenue` == `Cost`",
-    });
-  });
-
-  it("binds a same-name transformation to the existing column id", () => {
-    const visible = [{ id: "memo", name: "Memo" }];
-    expect(outputColumnIdForName(visible, "new-id", "Memo")).toBe("memo");
-    expect(outputColumnIdForName(visible, "new-id", "Clean memo")).toBe("new-id");
-  });
-
-  it("reads ordered sort commands from the bar", () => {
-    expect(
-      parseSortCommand("`posted_date` desc, `line_no` asc", [
-        { id: "date", name: "posted_date" },
-        { id: "line", name: "line_no" },
-      ])
-    ).toMatchObject([
-      { columnId: "date", descending: true },
-      { columnId: "line", descending: false },
-    ]);
-  });
-
-  it("places a dragged column on either side of its drop target", () => {
-    expect(reorderColumnIds(["a", "b", "c", "d"], "a", "c", false)).toEqual([
-      "b",
-      "a",
-      "c",
-      "d",
-    ]);
-    expect(reorderColumnIds(["a", "b", "c", "d"], "a", "c", true)).toEqual([
-      "b",
-      "c",
-      "a",
-      "d",
-    ]);
-  });
-
   it("records a frame-header reorder as an authored rearrange step", () => {
     const next = rearrangePipelineColumns([], ["memo", "account", "amount"]);
     expect(next).toMatchObject([
@@ -238,28 +176,6 @@ describe("stepsFromRendered", () => {
         columnIds: ["memo", "account", "amount"],
       },
     ]);
-  });
-
-  it("reads pivot and unpivot named commands", () => {
-    expect(
-      parsePivotCommand("columns=`period`, values=`amount`, aggregate=sum", [
-        { id: "period", name: "period" },
-        { id: "amount", name: "amount" },
-      ])
-    ).toEqual({
-      namesColumnId: "period",
-      valuesColumnId: "amount",
-      aggregate: "sum",
-    });
-    expect(
-      parseUnpivotCommand(
-        'columns=`Jan`, starts_with("Q"), names=`Period`, values=`Amount`'
-      )
-    ).toEqual({
-      columns: '`Jan`, starts_with("Q")',
-      nameColumnName: "Period",
-      valueColumnName: "Amount",
-    });
   });
 
   it("keeps linked pass-through names after a summarize replaces the final schema", () => {
@@ -560,36 +476,6 @@ describe("stepsFromRendered", () => {
     expect(steps[2].kind).toBe("withColumns");
   });
 
-  it("distinguishes placement bookkeeping from a real column choice", () => {
-    const source = [column("amount", "amount"), column("memo", "memo")];
-    const placed = stepsFromRendered(
-      [
-        {
-          kind: "withColumns",
-          columns: [{ outputColumnId: "calculated", formula: "1" }],
-        },
-        {
-          kind: "select",
-          columnIds: ["amount", "calculated", "memo"],
-        },
-      ],
-      {
-        columns: [
-          column("amount", "amount"),
-          column("calculated", "Calculated"),
-          column("memo", "memo"),
-        ],
-      } as FrameObject,
-      source
-    );
-    expect(isOrderingOnlySelect(source, placed, 1)).toBe(true);
-    expect(placed[1]).toMatchObject({ kind: "select", mode: "placement" });
-
-    if (placed[1].kind !== "select") return;
-    const hidden = [placed[0], { ...placed[1], columnIds: ["amount", "calculated"] }];
-    expect(isOrderingOnlySelect(source, hidden, 1)).toBe(false);
-  });
-
   it("reads projections back as delete or rearrange decisions", () => {
     const source = [
       column("account", "account"),
@@ -625,20 +511,6 @@ describe("stepsFromRendered", () => {
       mode: "rearrange",
       columnIds: ["memo", "account", "amount"],
     });
-  });
-
-  it("increments blank column names and suffixes explicit collisions", () => {
-    expect(nextBlankColumnName(["Column 1", "Amount", "Column 4"])).toBe("Column 5");
-    expect(uniqueColumnName("amount", ["amount", "amount_2"])).toBe("amount_3");
-    expect(uniqueColumnName("amount_2", ["amount_2"])).toBe("amount_3");
-    expect(uniqueColumnName("Column 1", ["Column 1", "Column 2"])).toBe("Column 3");
-  });
-
-  it("mints readable immutable column ids", () => {
-    expect(mintColumnId("Net Revenue ($)")).toMatch(
-      /^net_revenue~[0-9a-hjkmnp-tv-z]{6}$/
-    );
-    expect(mintColumnId("   ")).toMatch(/^column~[0-9a-hjkmnp-tv-z]{6}$/);
   });
 
   it("normalizes typed and formula-suggested pipeline names before save", () => {

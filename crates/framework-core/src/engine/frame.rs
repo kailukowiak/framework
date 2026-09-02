@@ -6,6 +6,7 @@ use polars::prelude as pl;
 use polars::prelude::{IntoLazy, NamedFrom};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::{Arc, LazyLock, Mutex};
 
 impl FrameObject {
     /// The columns the frame's own data provides -- what the base scan
@@ -458,6 +459,68 @@ impl FrameObject {
         })
     }
 
+    /// Input columns the current artifact no longer supplies, as
+    /// `(column id, source field name)`.
+    ///
+    /// Reconciliation drops a vanished field unless something still reads
+    /// it, so this is empty in the ordinary case; when it is not, it is the
+    /// exact list of columns now showing nulls because their field went
+    /// away. Empty for every frame that is not artifact-backed, and empty
+    /// when the artifact cannot be read at all — that is a whole-frame
+    /// failure, and the scan reports it as one.
+    pub(crate) fn missing_source_fields(&self) -> Vec<(Id, String)> {
+        let Some(artifact) = self.artifact.as_ref() else {
+            return Vec::new();
+        };
+        let Ok(present) = artifact_field_names(artifact) else {
+            return Vec::new();
+        };
+        self.input_columns()
+            .iter()
+            .filter(|column| column.formula.is_none())
+            .filter_map(|column| {
+                let source_name = column.source_name.as_deref().unwrap_or(&column.name);
+                (!present.contains(source_name))
+                    .then(|| (column.id.clone(), source_name.to_string()))
+            })
+            .collect()
+    }
+
+    /// Why each column that cannot be read right now cannot be read.
+    ///
+    /// The failure of one field is reported against the columns that field
+    /// feeds, not against the frame: everything else in the frame computed
+    /// perfectly well, and saying otherwise would hide forty good columns
+    /// behind one bad one. A calculated column that reads a vanished field
+    /// is named too — it is computing over nulls, which is an honest answer
+    /// to a question whose input has disappeared, but the person reading it
+    /// deserves to know which field went.
+    fn column_errors(&self) -> HashMap<Id, String> {
+        let missing = self.missing_source_fields();
+        if missing.is_empty() {
+            return HashMap::new();
+        }
+        let mut errors: HashMap<Id, String> = missing
+            .iter()
+            .map(|(id, source_name)| (id.clone(), missing_source_field_message(source_name)))
+            .collect();
+        for column in self.columns.iter().chain(self.base_columns.iter()) {
+            if errors.contains_key(&column.id) {
+                continue;
+            }
+            let Some(formula) = column.formula.as_ref() else {
+                continue;
+            };
+            if let Some((_, source_name)) = missing
+                .iter()
+                .find(|(id, _)| formula.expression.references_column(id))
+            {
+                errors.insert(column.id.clone(), missing_source_field_message(source_name));
+            }
+        }
+        errors
+    }
+
     pub(crate) fn compute(&self, document: &Document) -> ComputedFrame {
         // A chained frame's stored rows are its *input*; what it shows is
         // the chain's output, which is read through pages like any other
@@ -633,7 +696,6 @@ impl FrameObject {
                     stale: document.frame_fingerprint_string(&self.id)
                         != materialization.fingerprint,
                 });
-        let upstream_stale = document.upstream_snapshot_is_stale(&self.id);
         let live = document.frame_is_live(&self.id);
         let editing = FrameEditing::for_frame(
             self,
@@ -665,7 +727,8 @@ impl FrameObject {
             editing,
             live,
             source_name,
-            upstream_stale,
+            upstream_stale: document.upstream_snapshot_is_stale(&self.id),
+            column_errors: self.column_errors(),
             style_matches,
             style_rule_errors: style_rules.errors,
             style_rule_formulas: self
@@ -684,31 +747,32 @@ impl FrameObject {
 
     pub(crate) fn base_polars_lazy(&self) -> Result<pl::LazyFrame, String> {
         if let Some(artifact) = &self.artifact {
-            let mut scan = pl::LazyFrame::scan_parquet(
+            let scan = pl::LazyFrame::scan_parquet(
                 pl::PlRefPath::new(&artifact.path),
                 pl::ScanArgsParquet::default(),
             )
             .map_err(|error| error.to_string())?;
-            let schema = scan.collect_schema().map_err(|error| error.to_string())?;
-            for column in self
-                .input_columns()
-                .iter()
-                .filter(|column| column.formula.is_none())
-            {
-                let source_name = column.source_name.as_deref().unwrap_or(&column.name);
-                if schema.get(source_name).is_none() {
-                    return Err(format!(
-                        "Source field ‘{source_name}’ for ‘{}’ [{}] is missing",
-                        column.name, column.id
-                    ));
-                }
-            }
+            // A field the refreshed source no longer supplies used to fail
+            // the whole scan, which failed every column of the frame and
+            // everything downstream of it — one dropped field in a hundred
+            // and the model went dark. The scan is built from the fields
+            // that are actually there instead, and a column whose field
+            // vanished is kept as a typed column of nulls so the shape of
+            // the frame survives. What went wrong is reported against that
+            // one column (`ComputedFrame::column_errors`), where a broken
+            // formula's error already goes. A missing *file* still fails
+            // the frame, because then nothing can be read at all.
+            let present = artifact_field_names(artifact)?;
             return Ok(scan.select(
                 self.input_columns()
                     .iter()
                     .filter(|column| column.formula.is_none())
                     .map(|column| {
-                        let source = pl::col(column.source_name.as_deref().unwrap_or(&column.name));
+                        let source_name = column.source_name.as_deref().unwrap_or(&column.name);
+                        if !present.contains(source_name) {
+                            return null_column_expression(column).alias(&column.id);
+                        }
+                        let source = pl::col(source_name);
                         // A parquet scan preserves the physical width its
                         // importer chose (a CSV count is often UInt32), but
                         // FrameWork's declared Integer is an i64. Normalize
@@ -1118,6 +1182,77 @@ fn pass_through_prefix(steps: &[FrameStep]) -> usize {
             .zip(columns)
             .all(|(selected, column)| *selected == column.output_column_id);
     if renames_only && adopts_them { 2 } else { 0 }
+}
+
+/// What a column whose source field has gone away says about itself.
+///
+/// One sentence, named after the field rather than the column, because the
+/// column is still there on screen and the field is the thing that is not.
+pub(crate) fn missing_source_field_message(source_name: &str) -> String {
+    format!("Source field \"{source_name}\" is missing since the last refresh")
+}
+
+/// The physical field names an artifact holds, remembered for the life of
+/// the process.
+///
+/// An artifact's id is the SHA-256 of its bytes and a refresh writes a new
+/// file with a new id, so an id that has been read once can never describe
+/// different fields later — which is what makes memoizing safe. It is also
+/// what makes it necessary: without the memo, every `view()` would reopen
+/// the parquet footer of every linked frame merely to ask whether its
+/// columns are still there, and `view()` runs after every edit anywhere in
+/// the document.
+fn artifact_field_names(artifact: &DataArtifact) -> Result<Arc<HashSet<String>>, String> {
+    static FIELDS: LazyLock<Mutex<HashMap<String, Arc<HashSet<String>>>>> =
+        LazyLock::new(|| Mutex::new(HashMap::new()));
+    if let Some(remembered) = FIELDS
+        .lock()
+        .ok()
+        .and_then(|fields| fields.get(&artifact.id).cloned())
+    {
+        return Ok(remembered);
+    }
+    let mut scan = pl::LazyFrame::scan_parquet(
+        pl::PlRefPath::new(&artifact.path),
+        pl::ScanArgsParquet::default(),
+    )
+    .map_err(|error| error.to_string())?;
+    let schema = scan.collect_schema().map_err(|error| error.to_string())?;
+    let names: Arc<HashSet<String>> = Arc::new(
+        schema
+            .iter_names()
+            .map(|name| name.as_str().to_string())
+            .collect(),
+    );
+    if let Ok(mut fields) = FIELDS.lock() {
+        // A session that refreshes all day accumulates one small set per
+        // artifact it has ever read. Cheap, but not unbounded: past a few
+        // hundred, start again rather than grow forever.
+        if fields.len() >= 512 {
+            fields.clear();
+        }
+        fields.insert(artifact.id.clone(), names.clone());
+    }
+    Ok(names)
+}
+
+/// A column of nulls standing in for a source field that is not there.
+///
+/// Typed, and as long as the frame: the declared type is what the rest of
+/// the plan was built against, and a bare literal would broadcast to one
+/// row and quietly shorten a frame whose every field had vanished.
+fn null_column_expression(column: &Column) -> pl::Expr {
+    let data_type = match column.data_type {
+        DataType::Integer => pl::DataType::Int64,
+        DataType::Number | DataType::Currency | DataType::Percentage => pl::DataType::Float64,
+        DataType::Boolean => pl::DataType::Boolean,
+        DataType::Date => pl::DataType::Date,
+        DataType::Categorical if !column.categories.is_empty() => {
+            category_dtype(&column.categories).unwrap_or(pl::DataType::String)
+        }
+        DataType::Categorical | DataType::String => pl::DataType::String,
+    };
+    pl::repeat(pl::lit(pl::NULL).cast(data_type), pl::len())
 }
 
 #[cfg(test)]

@@ -326,6 +326,35 @@ had only the indirect coverage in `viewFiltering.test.ts` and `viewStyling.test.
 The deletion eliminated the ongoing risk this assessment identified: parallel semantics
 that had to track `operation/apply/` by hand, with nothing that failed when they drifted.
 
+### Executed on the TypeScript side (2026-09-02)
+
+`App.tsx` had already fallen from 4,702 lines to 2,615 by the time this was
+revisited: every named component below lives in its own file and eighteen hooks
+under `src/hooks/` hold the wiring. The next cut was `PipelineEditor.tsx`
+(2,593 → 959 lines), split by responsibility rather than size: the pure step
+logic moved to `src/lib/pipelineSteps.ts` (the draft model),
+`src/lib/pipelineStepCommands.ts` (one-line command text and its parsers) and
+`src/lib/pipelineChainEdits.ts` (whole-chain edits and reading a saved chain),
+each with its own test file; the four largest step editors became
+`PipelineFilterStep.tsx`, `PipelineWithColumnsStep.tsx`,
+`PipelineRearrangeStep.tsx` and `PipelineSummarizeStep.tsx`; and
+`useDocumentChainSync` and `usePipelineSchemaPreview` moved to `src/hooks/`.
+The request-token effects and the small step blocks stayed where they were:
+wide, shallow dispatch reads fine in place.
+
+`App.tsx` followed the same day (2,650 → about 1,660 lines; the `App` function
+2,154 → 1,512, complexity 107 → 58). Two cuts: the six canvas-object creation
+helpers and the `nextObjectName`/`nextContainerName`/`nextEntryColumnName`
+helpers became `src/hooks/useCanvasObjectCreation.ts`; the right-click menu
+became `src/CanvasContextMenu.tsx` (dispatch by target kind) over
+`ContextMenuGridItems.tsx`, `ContextMenuColumnItems.tsx`,
+`ContextMenuObjectItems.tsx` and `ContextMenuFrameItems.tsx`, split that
+finely because the 150-line function cap bites before the 600-line file cap.
+Deliberately not cut: the window keydown dispatcher and the native-menu
+handler map (wide, flat, ~25 arms each), the dialogs block, and the canvas
+`<main>` — extracting the last would only relocate a ~35-prop surface. The
+snapshot below is left as it was written.
+
 ### App.tsx — split, but do not expect tests to follow
 
 4,702 lines holding roughly forty components:

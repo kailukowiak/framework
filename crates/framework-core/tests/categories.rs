@@ -14,6 +14,8 @@ fn severity_store() -> (Store, FrameObject) {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -282,6 +284,8 @@ fn a_categorical_string_filter_on_an_artifact_does_not_panic() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -317,6 +321,8 @@ fn a_join_still_matches_when_the_two_sides_allow_different_values() {
         objects: Vec::new(),
         views: Vec::new(),
         frozen_values: Default::default(),
+        scenarios: Vec::new(),
+        active_scenario: None,
     });
     let mut side = |name: &str, values: &[&str], x: f64| {
         let mut grid = vec![vec!["Key".into(), "Note".into()]];

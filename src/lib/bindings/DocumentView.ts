@@ -5,9 +5,11 @@ import type { ComputedCalculationMatrix } from "./ComputedCalculationMatrix";
 import type { ComputedFrame } from "./ComputedFrame";
 import type { ComputedResult } from "./ComputedResult";
 import type { ComputedText } from "./ComputedText";
+import type { ComputedValue } from "./ComputedValue";
 import type { DataObject } from "./DataObject";
 import type { FormulaFunction } from "./FormulaFunction";
 import type { FrozenValue } from "./FrozenValue";
+import type { Scenario } from "./Scenario";
 
 export type DocumentView = {
   computedFrames: { [key in string]: ComputedFrame };
@@ -15,6 +17,16 @@ export type DocumentView = {
   computedBlocks: { [key in string]: ComputedBlock };
   computedTexts: { [key in string]: ComputedText };
   computedCalculationMatrices: { [key in string]: ComputedCalculationMatrix };
+  /**
+   * What each value object holds right now, once the active scenario has
+   * had its say. Keyed by value id.
+   *
+   * A separate map rather than a rewritten `raw` on the object itself:
+   * the card has to be able to show the effective number *and* say that
+   * it is not the one stored, and an interface handed only the override
+   * could not tell an assumption apart from an edit.
+   */
+  computedValues: { [key in string]: ComputedValue };
   formulaFunctions: Array<FormulaFunction>;
   canUndo: boolean;
   canRedo: boolean;
@@ -47,4 +59,21 @@ export type DocumentView = {
    * beside the document survives it by having the same id it always had.
    */
   frozenValues?: { [key in string]: FrozenValue };
+  /**
+   * Named assumption bundles: Base, Upside, Downside.
+   *
+   * A list rather than a map because the order is the order somebody put
+   * them in, and a switcher that reshuffles itself alphabetically when a
+   * scenario is renamed is a switcher nobody trusts.
+   */
+  scenarios: Array<Scenario>;
+  /**
+   * Which of them the document is reading through, or `None` for the
+   * base — the numbers as the value cards hold them.
+   *
+   * Part of the document rather than of the session on purpose: an
+   * activation changes every answer in the workbook, so it is an edit,
+   * with an undo and a place in the history like any other.
+   */
+  activeScenario?: string | null;
 };

@@ -27,6 +27,7 @@ export function GridCellContent({
   onEditFormula,
   onCommit,
   onCancel,
+  onFormulaKey,
 }: {
   column: Column;
   row: Row;
@@ -51,6 +52,8 @@ export function GridCellContent({
   onEditFormula?: () => void;
   onCommit: (raw: string, move: GridDirection | null) => void;
   onCancel: () => void;
+  /** `=` typed into an empty editor: the column's formula editor opens instead. */
+  onFormulaKey?: () => void;
 }) {
   const cell = row.cells[column.id];
   const displayFormat = displayedColumnFormat(column);
@@ -145,6 +148,7 @@ export function GridCellContent({
         }
         onCommit={onCommit}
         onCancel={onCancel}
+        onFormulaKey={onFormulaKey}
       />
     );
   }
@@ -254,11 +258,13 @@ function GridCellEditor({
   placeholder,
   onCommit,
   onCancel,
+  onFormulaKey,
 }: {
   initial: string;
   placeholder?: string;
   onCommit: (raw: string, move: GridDirection | null) => void;
   onCancel: () => void;
+  onFormulaKey?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const settled = useRef(false);
@@ -289,6 +295,12 @@ function GridCellEditor({
           event.stopPropagation();
           settled.current = true;
           onCancel();
+        } else if (event.key === "=" && !event.currentTarget.value && onFormulaKey) {
+          // A leading `=` is a doorway, not a character: this value editor
+          // closes untouched and the column's formula editor opens.
+          event.preventDefault();
+          settled.current = true;
+          onFormulaKey();
         }
       }}
       onBlur={(event) => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { reorderColumnIds } from "./PipelineEditor";
+import { reorderColumnIds } from "./lib/pipelineStepCommands";
 import type { FrameObject } from "./lib/types";
 import type { GridRange } from "./lib/gridNavigation";
 import { formulaToken } from "./lib/formulaReferences";

@@ -1,4 +1,4 @@
-import type { StepDraft } from "./PipelineEditor";
+import type { StepDraft } from "./lib/pipelineSteps";
 import { formulaToken } from "./lib/formulaReferences";
 import type { Column } from "./lib/types";
 

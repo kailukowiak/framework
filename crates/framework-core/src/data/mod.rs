@@ -3,6 +3,7 @@ pub mod excel;
 mod excel_regions;
 pub mod export;
 pub mod import;
+mod lineage;
 
 pub use arrow::*;
 pub use excel::*;

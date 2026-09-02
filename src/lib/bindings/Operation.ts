@@ -103,6 +103,13 @@ export type Operation =
     y: number;
   }
   | {
+    "type": "addFrameFromPastedText";
+    name: string;
+    text: string;
+    x: number;
+    y: number;
+  }
+  | {
     "type": "addGeneratorFrame";
     name: string;
     /**
@@ -180,6 +187,11 @@ export type Operation =
     "type": "setFrameDisplayOrientation";
     frameId: string;
     orientation: FrameViewOrientation;
+  }
+  | {
+    "type": "setFrameDisplayPinnedColumns";
+    frameId: string;
+    pinnedColumns: number;
   }
   | {
     "type": "setFrameDisplayCrosstab";
@@ -330,6 +342,25 @@ export type Operation =
   }
   | { "type": "clearFrameMaterialization"; frameId: string }
   | { "type": "setFrozenValue"; objectId: string; frozen: FrozenValue | null }
+  | {
+    "type": "addScenario";
+    /**
+     * Minted when absent. Supplying one is for a caller that has to
+     * know the id before the edit lands.
+     */
+    scenarioId?: string | null;
+    name: string;
+    copyFrom?: string | null;
+  }
+  | { "type": "removeScenario"; scenarioId: string }
+  | { "type": "renameScenario"; scenarioId: string; name: string }
+  | {
+    "type": "setScenarioValue";
+    scenarioId: string;
+    valueId: string;
+    raw?: string | null;
+  }
+  | { "type": "activateScenario"; scenarioId?: string | null }
   | { "type": "packageDocument"; adopted: Array<[string, DataArtifact]> }
   | { "type": "adoptFrameRows"; frameId: string; artifact: DataArtifact }
   | { "type": "promoteDisplayToSteps"; frameId: string }

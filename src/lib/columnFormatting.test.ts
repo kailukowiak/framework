@@ -247,6 +247,90 @@ describe("formatCellValue", () => {
   });
 });
 
+describe("formatCellValue with a date column", () => {
+  it("renders each date pattern from a strict ISO cell", () => {
+    expect(
+      formatCellValue("2026-09-01", format({ datePattern: "iso" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "2026-09-01" });
+    expect(
+      formatCellValue("2026-09-01", format({ datePattern: "dayMonthYear" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "1 Sep 2026" });
+    expect(
+      formatCellValue("2026-09-01", format({ datePattern: "monthDayYear" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Sep 1, 2026" });
+    expect(
+      formatCellValue("2026-09-01", format({ datePattern: "monthYear" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Sep 2026" });
+    expect(
+      formatCellValue("2026-09-01", format({ datePattern: "quarter" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Q3 2026" });
+  });
+
+  it("defaults to ISO passthrough when no pattern is set", () => {
+    expect(
+      formatCellValue("2026-09-01", format({}), { dataType: "date" })
+    ).toEqual({ symbol: "", value: "2026-09-01" });
+  });
+
+  it("passes non-ISO text through unchanged, strictly", () => {
+    const cases = ["", "not a date", "2026/09/01", "2026-9-1", "2026-09-01T00:00:00"];
+    for (const raw of cases) {
+      expect(
+        formatCellValue(raw, format({ datePattern: "quarter" }), {
+          dataType: "date",
+        })
+      ).toEqual({ symbol: "", value: raw });
+    }
+    expect(
+      formatCellValue(null, format({ datePattern: "quarter" }), { dataType: "date" })
+    ).toEqual({ symbol: "", value: "" });
+  });
+
+  it("gets the quarter and month boundaries right", () => {
+    expect(
+      formatCellValue("2026-12-31", format({ datePattern: "quarter" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Q4 2026" });
+    expect(
+      formatCellValue("2026-01-01", format({ datePattern: "quarter" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Q1 2026" });
+    expect(
+      formatCellValue("2026-03-31", format({ datePattern: "quarter" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Q1 2026" });
+    expect(
+      formatCellValue("2026-04-01", format({ datePattern: "quarter" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Q2 2026" });
+    expect(
+      formatCellValue("2026-12-31", format({ datePattern: "monthYear" }), {
+        dataType: "date",
+      })
+    ).toEqual({ symbol: "", value: "Dec 2026" });
+  });
+
+  it("leaves a non-date column's formatting untouched by a stray date pattern", () => {
+    expect(
+      formatCellValue(1234.5, format({ style: "currency", datePattern: "quarter" }))
+    ).toEqual(formatCellValue(1234.5, format({ style: "currency" })));
+  });
+});
+
 describe("formatComputedScalar", () => {
   it("uses the same default numeric presentation outside frame cells", () => {
     expect(
@@ -322,5 +406,13 @@ describe("columnFormatBadge", () => {
     expect(columnFormatBadge(format({ style: "currency" }))).toBeNull();
     expect(columnFormatBadge(format({ style: "accounting" }))).toBeNull();
     expect(columnFormatBadge(format({ style: "plain" }))).toBeNull();
+  });
+
+  it("returns nothing for a date column, regardless of pattern", () => {
+    expect(columnFormatBadge(format({ datePattern: "iso" }))).toBeNull();
+    expect(columnFormatBadge(format({ datePattern: "quarter" }))).toBeNull();
+    expect(
+      columnFormatBadge(format({ style: "currency", scale: "thousands", datePattern: "monthYear" }))
+    ).toBeNull();
   });
 });

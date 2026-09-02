@@ -222,6 +222,13 @@ impl Document {
                 }]
             }
 
+            ReplicatedOperation::SetFrameDisplayPinnedColumns { frame_id, .. } => {
+                vec![ReplicatedOperation::SetFrameDisplayPinnedColumns {
+                    frame_id: frame_id.clone(),
+                    pinned_columns: self.frame(frame_id)?.display.pinned_columns,
+                }]
+            }
+
             ReplicatedOperation::SetFrameDisplayCrosstab { frame_id, .. } => {
                 vec![ReplicatedOperation::SetFrameDisplayCrosstab {
                     frame_id: frame_id.clone(),
@@ -542,7 +549,63 @@ impl Document {
             }
             ReplicatedOperation::RestoreObject { object, .. } => self.invert_restore_object(object),
             ReplicatedOperation::RestoreViews { .. } => vec![Self::restore_views(self)],
+            ReplicatedOperation::RestoreScenarios { .. } => vec![self.restore_scenarios()],
+
+            ReplicatedOperation::AddScenario { scenario } => {
+                vec![ReplicatedOperation::RemoveScenario {
+                    scenario_id: scenario.id.clone(),
+                }]
+            }
+
+            // A removed scenario takes its whole set of overrides with it,
+            // and the activation too when it was the one being read. No
+            // forward operation describes that, so the list goes back whole.
+            ReplicatedOperation::RemoveScenario { .. } => vec![self.restore_scenarios()],
+
+            ReplicatedOperation::RenameScenario { scenario_id, .. } => {
+                vec![ReplicatedOperation::RenameScenario {
+                    scenario_id: scenario_id.clone(),
+                    name: self.require_scenario_name(scenario_id)?,
+                }]
+            }
+
+            // The override as it stands, `None` included: undoing the first
+            // override a scenario ever gave a value has to take it back off
+            // again, not set it to the base's number.
+            ReplicatedOperation::SetScenarioValue {
+                scenario_id,
+                value_id,
+                ..
+            } => vec![ReplicatedOperation::SetScenarioValue {
+                scenario_id: scenario_id.clone(),
+                value_id: value_id.clone(),
+                raw: self
+                    .scenario(scenario_id)
+                    .and_then(|scenario| scenario.values.get(value_id).cloned()),
+            }],
+
+            ReplicatedOperation::ActivateScenario { .. } => {
+                vec![ReplicatedOperation::ActivateScenario {
+                    scenario_id: self.active_scenario.clone(),
+                }]
+            }
         })
+    }
+
+    /// The scenario list and the activation exactly as they stand.
+    fn restore_scenarios(&self) -> ReplicatedOperation {
+        ReplicatedOperation::RestoreScenarios {
+            scenarios: self.scenarios.clone(),
+            active_scenario: self.active_scenario.clone(),
+        }
+    }
+
+    fn require_scenario_name(&self, scenario_id: &str) -> Result<String, CoreError> {
+        self.scenario(scenario_id)
+            .map(|scenario| scenario.name.clone())
+            .ok_or_else(|| {
+                CoreError::InvalidOperation("That scenario is no longer in this document.".into())
+            })
     }
 
     fn restore_frame(frame: &FrameObject) -> ReplicatedOperation {
@@ -597,6 +660,16 @@ impl Document {
             inverse.push(ReplicatedOperation::SetContainerMembers {
                 members: vec![(container.id.clone(), container.member_ids.clone())],
             });
+        }
+        // And it takes its scenario overrides with it, which is a change to
+        // every scenario at once and so has no forward operation of its own.
+        // Only paid for when some scenario actually said something about it.
+        if self
+            .scenarios
+            .iter()
+            .any(|scenario| scenario.values.contains_key(object_id))
+        {
+            inverse.push(self.restore_scenarios());
         }
         Ok(inverse)
     }

@@ -11,6 +11,7 @@ import type { OperationHandler } from "./lib/handlers";
 import type {
   ComputedResult,
   ComputedFrame,
+  ComputedValue,
   ContainerObject,
   DataObject,
   DataType,
@@ -293,15 +294,33 @@ export function SeriesCard({
   );
 }
 
+/**
+ * A number somebody typed, and — when a scenario is overriding it — the
+ * number actually being read, with the scenario's name after it.
+ *
+ * The override goes in the field itself and its provenance in the muted line
+ * already under it (`number · 1 value · Upside`), rather than into a badge.
+ * A chip would be a second thing on a card that holds one number, and the
+ * line below is where this card already says what it is.
+ */
 export function ValueCard({
   value,
+  computed,
   formula,
   onOperation,
 }: {
   value: ValueObject;
+  /** Absent while a document has no scenarios, which is most of them. */
+  computed?: ComputedValue;
   formula: string;
   onOperation: OperationHandler;
 }) {
+  // The number actually being read. Under an override that is the
+  // scenario's, and editing it edits *that scenario* — the card is a window
+  // onto whatever is in force, not a fixed window onto the base.
+  const scenarioId = computed?.scenarioId ?? null;
+  const scenarioName = computed?.scenarioName ?? null;
+  const raw = scenarioId ? computed!.raw : value.raw;
   return (
     <div className="value-card">
       <input
@@ -321,15 +340,20 @@ export function ValueCard({
         <input
           className="value-input"
           type={value.dataType === "date" ? "date" : "text"}
-          defaultValue={value.raw}
-          key={value.raw}
+          defaultValue={raw}
+          key={raw}
           onBlur={(event) => {
-            if (event.target.value !== value.raw)
-              onOperation({
-                type: "setValue",
-                objectId: value.id,
-                raw: event.target.value,
-              });
+            if (event.target.value === raw) return;
+            onOperation(
+              scenarioId
+                ? {
+                    type: "setScenarioValue",
+                    scenarioId,
+                    valueId: value.id,
+                    raw: event.target.value === "" ? null : event.target.value,
+                  }
+                : { type: "setValue", objectId: value.id, raw: event.target.value }
+            );
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();
@@ -348,7 +372,7 @@ export function ValueCard({
           })
         }
       >
-        {value.dataType} · 1 value
+        {value.dataType} · 1 value{scenarioName ? ` · ${scenarioName}` : ""}
       </small>
     </div>
   );

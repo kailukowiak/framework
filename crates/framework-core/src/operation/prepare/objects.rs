@@ -6,7 +6,44 @@
 //! values, frames, plots, and text a document holds.
 
 use crate::*;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
+use ts_rs::TS;
+
+/// What a refresh or a repoint did to a frame's schema, in the words the
+/// person reading it uses: column display names, not ids.
+///
+/// Deliberately not stored. History records the columns a refresh produced,
+/// which is the durable fact; *how they differ from the ones before* is a
+/// sentence about one moment, useful when the refresh lands and misleading
+/// forever after — a document reopened next week would otherwise still be
+/// announcing that Region arrived.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SchemaDiff {
+    /// Fields the source now supplies that it did not before.
+    pub added: Vec<String>,
+    /// Columns dropped because their field went away and nothing read them.
+    pub removed: Vec<String>,
+    /// Columns whose field went away but which something still reads, with
+    /// what reads them. These keep their id and show nulls rather than
+    /// disappearing out from under a formula.
+    pub kept_missing: Vec<(String, String)>,
+    /// Columns the source still supplies under a different type.
+    pub type_changed: Vec<(String, DataType, DataType)>,
+}
+
+impl SchemaDiff {
+    /// Whether the refresh changed nothing about the shape of the data —
+    /// the ordinary case, and the one that should say nothing at all.
+    pub fn is_empty(&self) -> bool {
+        self.added.is_empty()
+            && self.removed.is_empty()
+            && self.kept_missing.is_empty()
+            && self.type_changed.is_empty()
+    }
+}
 
 /// A name field accepts the spelling people see in formulas, but quoting is
 /// syntax rather than part of the name. This is kept at the operation boundary
@@ -502,6 +539,25 @@ impl Document {
         })
     }
 
+    /// The clipboard version of `prepare_add_frame`: the text is read the way
+    /// a paste into an empty frame is, so a pasted column of dates becomes a
+    /// date column here for the same reason.
+    pub(crate) fn prepare_add_frame_from_pasted_text(
+        &self,
+        name: String,
+        text: String,
+        x: f64,
+        y: f64,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let name = self.unique_frame_name(&name, None);
+        let (frame, view) = Self::build_frame_from_pasted_text(name, &text, x, y)?;
+        Ok(ReplicatedOperation::AddObject {
+            object: DataObject::Frame(frame),
+            view,
+            container_id: None,
+        })
+    }
+
     /// Resolves a generated frame: the rule parsed in scalar scope, run once
     /// to learn what it makes, and refused if it cannot run at all — a
     /// generator that has never produced rows is a typo, not a frame.
@@ -640,13 +696,31 @@ impl Document {
                 "This imported snapshot has no connector to refresh".into(),
             ));
         }
-        let (columns, base_columns) = self.reconcile_source_schemas(frame, &artifact)?;
+        let (columns, base_columns, _) = self.reconcile_source_schemas(frame, &artifact)?;
         Ok(ReplicatedOperation::RefreshFrameArtifact {
             frame_id,
             artifact,
             columns,
             base_columns,
         })
+    }
+
+    /// What binding this artifact to this frame would change about its
+    /// schema, worked out without changing anything.
+    ///
+    /// The same reconciliation the refresh itself runs, asked for its
+    /// account rather than its columns. Answered separately instead of
+    /// riding along inside the operation because the operation is history:
+    /// it must replicate to a collaborator and replay under undo, and a
+    /// sentence about what somebody saw once is neither.
+    pub fn source_schema_diff(
+        &self,
+        frame_id: &str,
+        artifact: &DataArtifact,
+    ) -> Result<SchemaDiff, CoreError> {
+        let frame = self.frame(frame_id)?;
+        let (_, _, diff) = self.reconcile_source_schemas(frame, artifact)?;
+        Ok(diff)
     }
 
     /// Points an imported frame at a different file.
@@ -663,7 +737,7 @@ impl Document {
         connector: ConnectorRecipe,
     ) -> Result<ReplicatedOperation, CoreError> {
         let frame = self.frame(&frame_id)?;
-        let (columns, base_columns) = self.reconcile_source_schemas(frame, &artifact)?;
+        let (columns, base_columns, _) = self.reconcile_source_schemas(frame, &artifact)?;
         Ok(ReplicatedOperation::SetFrameSource {
             frame_id,
             artifact,
@@ -683,10 +757,10 @@ impl Document {
         &self,
         frame: &FrameObject,
         artifact: &DataArtifact,
-    ) -> Result<(Vec<Column>, Vec<Column>), CoreError> {
-        let inputs = self.reconcile_source_columns(frame, artifact)?;
+    ) -> Result<(Vec<Column>, Vec<Column>, SchemaDiff), CoreError> {
+        let (inputs, diff) = self.reconcile_source_columns(frame, artifact)?;
         if frame.base_columns.is_empty() {
-            return Ok((inputs, Vec::new()));
+            return Ok((inputs, Vec::new(), diff));
         }
 
         let mut candidate = self.clone();
@@ -729,7 +803,7 @@ impl Document {
                 .collect::<Result<Vec<_>, CoreError>>()
         })()
         .unwrap_or_else(|_| frame.columns.clone());
-        Ok((output, inputs))
+        Ok((output, inputs, diff))
     }
 
     /// Binds a replacement artifact to the identities this frame already has.
@@ -743,7 +817,7 @@ impl Document {
         &self,
         frame: &FrameObject,
         artifact: &DataArtifact,
-    ) -> Result<Vec<Column>, CoreError> {
+    ) -> Result<(Vec<Column>, SchemaDiff), CoreError> {
         frame.artifact.as_ref().ok_or_else(|| {
             CoreError::InvalidOperation("Only an imported frame has a source file".into())
         })?;
@@ -751,6 +825,7 @@ impl Document {
         let inputs = frame.input_columns();
         let mut reconciled = Vec::with_capacity(replacement_schema.len());
         let mut matched = std::collections::HashSet::new();
+        let mut diff = SchemaDiff::default();
 
         // Source order is the useful order after a replacement. Identity is
         // found through the physical binding rather than the editable label.
@@ -760,10 +835,15 @@ impl Document {
                 .find(|column| column.source_name.as_deref() == Some(source_name.as_str()))
             {
                 let mut column = existing.clone();
+                if column.data_type != data_type {
+                    diff.type_changed
+                        .push((column.name.clone(), column.data_type, data_type));
+                }
                 column.data_type = data_type;
                 matched.insert(column.id.clone());
                 reconciled.push(column);
             } else {
+                diff.added.push(source_name.clone());
                 reconciled.push(Column {
                     id: column_id(&source_name),
                     name: source_name.clone(),
@@ -780,28 +860,12 @@ impl Document {
             .iter()
             .filter(|column| column.source_name.is_some() && !matched.contains(column.id.as_str()))
         {
-            let referenced_here = frame.references_column_from_other_formulas(&missing.id)
-                || frame.display.references_column(&missing.id)
-                || frame
-                    .summaries
-                    .iter()
-                    .any(|summary| summary.column_id == missing.id)
-                || frame.unique_keys.iter().any(|key| {
-                    key.column_ids
-                        .iter()
-                        .any(|column_id| column_id == &missing.id)
-                });
-            let referenced_elsewhere = self.objects.iter().any(|object| match object {
-                DataObject::Frame(candidate) if candidate.id != frame.id => {
-                    candidate.wrangle_reads_foreign_column(&frame.id, &missing.id)
+            match self.column_still_read(frame, missing) {
+                Some(reason) => {
+                    diff.kept_missing.push((missing.name.clone(), reason));
+                    reconciled.push(missing.clone());
                 }
-                DataObject::Plot(plot) if plot.source_frame_id == frame.id => {
-                    json_contains_string(&plot.spec, &missing.id)
-                }
-                _ => false,
-            }) || self.column_read_by(&frame.id, &missing.id).is_some();
-            if referenced_here || referenced_elsewhere {
-                reconciled.push(missing.clone());
+                None => diff.removed.push(missing.name.clone()),
             }
         }
         // Calculations layered onto an imported frame are model columns, not
@@ -814,7 +878,68 @@ impl Document {
                 .filter(|column| column.source_name.is_none())
                 .cloned(),
         );
-        Ok(reconciled)
+        Ok((reconciled, diff))
+    }
+
+    /// What still reads a column whose source field has gone, in words,
+    /// or `None` when nothing does and it can simply be dropped.
+    ///
+    /// The phrase is the whole point of the answer: "kept" on its own reads
+    /// as a bug — a column with no data that will not go away — where "kept,
+    /// still read by the Margin formula" reads as an explanation and points
+    /// at the thing to fix. Checked in the order a person would care about:
+    /// this frame's own work first, then the document around it.
+    fn column_still_read(&self, frame: &FrameObject, missing: &Column) -> Option<String> {
+        if let Some(reader) = frame.columns.iter().find(|column| {
+            column.id != missing.id
+                && column
+                    .formula
+                    .as_ref()
+                    .is_some_and(|formula| formula.expression.references_column(&missing.id))
+        }) {
+            return Some(format!("still read by the {} formula", reader.name));
+        }
+        if frame.references_column_from_other_formulas(&missing.id) {
+            return Some("still read by a cell formula".into());
+        }
+        if frame.display.references_column(&missing.id) {
+            return Some("still used by this frame's filter or sort".into());
+        }
+        if frame
+            .summaries
+            .iter()
+            .any(|summary| summary.column_id == missing.id)
+        {
+            return Some("still summarised in this frame's footer".into());
+        }
+        if frame.unique_keys.iter().any(|key| {
+            key.column_ids
+                .iter()
+                .any(|column_id| column_id == &missing.id)
+        }) {
+            return Some("still part of this frame's unique key".into());
+        }
+        self.objects
+            .iter()
+            .find_map(|object| match object {
+                DataObject::Frame(candidate)
+                    if candidate.id != frame.id
+                        && candidate.wrangle_reads_foreign_column(&frame.id, &missing.id) =>
+                {
+                    Some(format!("still read by {}", candidate.name))
+                }
+                DataObject::Plot(plot)
+                    if plot.source_frame_id == frame.id
+                        && json_contains_string(&plot.spec, &missing.id) =>
+                {
+                    Some(format!("still drawn by {}", plot.name))
+                }
+                _ => None,
+            })
+            .or_else(|| {
+                self.column_read_by(&frame.id, &missing.id)
+                    .map(|reader| format!("still read by {reader}"))
+            })
     }
 
     /// A plot either gets a window of its own or joins the card that already

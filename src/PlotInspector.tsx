@@ -1,8 +1,15 @@
 import { BarChart3, Braces, CircleAlert, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Field } from "./Field";
+import { ScenarioTable } from "./ScenarioTable";
 import type { OperationHandler } from "./lib/handlers";
-import type { Column, FrameObject, PlotObject, ValueObject } from "./lib/types";
+import type {
+  Column,
+  FrameObject,
+  PlotObject,
+  Scenario,
+  ValueObject,
+} from "./lib/types";
 
 type PlotEditorTab = "build" | "style" | "spec";
 
@@ -340,9 +347,11 @@ export function PlotInspector({
 
 export function ValueInspector({
   value,
+  scenarios,
   onOperation,
 }: {
   value: ValueObject;
+  scenarios: Scenario[];
   onOperation: OperationHandler;
 }) {
   return (
@@ -359,6 +368,17 @@ export function ValueInspector({
         initial={value.raw}
         onCommit={(raw) => onOperation({ type: "setValue", objectId: value.id, raw })}
       />
+      {/* The base above, and what each scenario says instead below it — one
+          grid, so the assumption and its alternatives are read together. */}
+      <label className="inspector-field">
+        Scenarios
+        <ScenarioTable
+          valueId={value.id}
+          valueRaw={value.raw}
+          scenarios={scenarios}
+          onOperation={onOperation}
+        />
+      </label>
       <div className="info-panel">
         <Braces size={16} />
         <p>

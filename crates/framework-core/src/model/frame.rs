@@ -412,6 +412,15 @@ pub struct FrameDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional = nullable)]
     pub crosstab: Option<CrosstabDisplay>,
+    /// How many leading columns stay put while the grid scrolls sideways.
+    /// A count rather than a set of column IDs: freezing is positional in
+    /// every spreadsheet, and a count survives a rename or a retype without
+    /// carrying a reference that could go stale. Reordering or dropping
+    /// columns may leave it larger than the frame is wide; the view clamps
+    /// what it draws and the stored number is left alone, so putting the
+    /// columns back puts the freeze back too.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub pinned_columns: u32,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub styles: Vec<FrameStyle>,
     /// Ordered, row-wise presentation rules. Their predicates are formulas
@@ -431,6 +440,7 @@ impl FrameDisplay {
             && self.style_rules.is_empty()
             && self.orientation == FrameViewOrientation::default()
             && self.crosstab.is_none()
+            && self.pinned_columns == 0
     }
 
     /// The display filter, as `(predicates, match_all)`.
@@ -511,6 +521,10 @@ impl FrameDisplay {
 
 fn is_false(value: &bool) -> bool {
     !*value
+}
+
+fn is_zero(value: &u32) -> bool {
+    *value == 0
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, TS)]

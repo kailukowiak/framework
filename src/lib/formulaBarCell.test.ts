@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isEditableGridColumn, type GridContext, type GridFocus } from "../FrameGrid";
 import type { Column, ComputedFrame, Row, FrameObject } from "./types";
-import { columnLetters, formulaBarCell } from "./formulaBarCell";
+import { formulaBarCell } from "./formulaBarCell";
 
 const columns: Column[] = [
   { id: "a", name: "Amount", dataType: "number", formula: null },
@@ -54,24 +54,12 @@ const context = (next: ComputedFrame = computed): GridContext => ({
 });
 
 describe("formula bar cells", () => {
-  it("uses spreadsheet addresses beyond Z", () => {
-    expect([0, 25, 26, 51, 52].map(columnLetters)).toEqual([
-      "A",
-      "Z",
-      "AA",
-      "AZ",
-      "BA",
-    ]);
-  });
-
   it("shows the raw literal and the saved calculated-column declaration", () => {
     expect(formulaBarCell(context(), focus("a"))).toMatchObject({
-      address: "A21",
       kind: "literal",
       value: "12.50",
     });
     expect(formulaBarCell(context(), focus("b"))).toMatchObject({
-      address: "B21",
       kind: "calculated",
       value: "`Amount` * 0.05",
     });
@@ -98,7 +86,6 @@ describe("formula bar cells", () => {
       overrideFormulas: { r1: { b: "`Amount` * 0.10" } },
     } satisfies ComputedFrame;
     expect(formulaBarCell(context(overridden), focus("b"))).toMatchObject({
-      address: "B21",
       kind: "override",
       value: "`Amount` * 0.10",
     });

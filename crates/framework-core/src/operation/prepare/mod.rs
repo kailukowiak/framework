@@ -10,6 +10,7 @@ pub mod columns;
 pub mod derivation;
 pub mod objects;
 pub mod pass_through;
+pub mod scenarios;
 pub mod views;
 
 use crate::*;
@@ -98,6 +99,9 @@ impl Document {
                 data_type,
             },
             Operation::AddFrame { name, grid, x, y } => self.prepare_add_frame(name, grid, x, y)?,
+            Operation::AddFrameFromPastedText { name, text, x, y } => {
+                self.prepare_add_frame_from_pasted_text(name, text, x, y)?
+            }
             Operation::AddGeneratorFrame {
                 name,
                 formula,
@@ -171,6 +175,10 @@ impl Document {
                 frame_id,
                 orientation,
             } => self.prepare_set_frame_display_orientation(frame_id, orientation)?,
+            Operation::SetFrameDisplayPinnedColumns {
+                frame_id,
+                pinned_columns,
+            } => self.prepare_set_frame_display_pinned_columns(frame_id, pinned_columns)?,
             Operation::SetFrameDisplayCrosstab { frame_id, crosstab } => {
                 self.prepare_set_frame_display_crosstab(frame_id, crosstab)?
             }
@@ -378,6 +386,25 @@ impl Document {
             )?,
             Operation::SetFramePipeline { frame_id, steps } => {
                 self.prepare_set_frame_pipeline(frame_id, steps)?
+            }
+            Operation::AddScenario {
+                scenario_id,
+                name,
+                copy_from,
+            } => self.prepare_add_scenario(scenario_id, name, copy_from)?,
+            Operation::RemoveScenario { scenario_id } => {
+                self.prepare_remove_scenario(scenario_id)?
+            }
+            Operation::RenameScenario { scenario_id, name } => {
+                self.prepare_rename_scenario(scenario_id, name)?
+            }
+            Operation::SetScenarioValue {
+                scenario_id,
+                value_id,
+                raw,
+            } => self.prepare_set_scenario_value(scenario_id, value_id, raw)?,
+            Operation::ActivateScenario { scenario_id } => {
+                self.prepare_activate_scenario(scenario_id)?
             }
         })
     }

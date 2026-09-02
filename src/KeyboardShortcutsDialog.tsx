@@ -19,6 +19,7 @@ const GROUPS = [
   {
     name: "Inspector",
     shortcuts: [
+      ["Show or hide", "⌘⇧I"],
       ["Selection", "⌘1"],
       ["Format", "⌘2"],
       ["Wrangle", "⌘3"],
@@ -42,6 +43,7 @@ const GROUPS = [
       ["Save As", "⇧⌘S"],
       ["Undo", "⌘Z"],
       ["Redo", "⇧⌘Z"],
+      ["Find in document", "⌘F"],
       ["Data library", "⇧⌘L"],
       ["Data panel", "⇧⌘D"],
       ["Settings", "⌘,"],

@@ -1,15 +1,15 @@
 {
   "format": "framework-document",
   "formatVersion": 1,
-  "tutorialVersion": 1,
+  "tutorialVersion": 2,
   "document": {
-    "id": "d483a97a-8fd1-4a8f-a21f-35838501aa91",
+    "id": "01f658b1-e7b8-4471-b2c8-308fa256008d",
     "name": "Importing an Excel workbook",
     "revision": 13,
     "objects": [
       {
         "kind": "text",
-        "id": "5b26503b-8b58-4f5c-aa7e-bd69271fa44d",
+        "id": "19ac585e-6756-404d-8435-a7816873259d",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -21,11 +21,11 @@
       },
       {
         "kind": "frame",
-        "id": "95531221-1cc5-481c-bfc1-f66ec4ab57c9",
+        "id": "b5300b35-ca3c-4511-90a0-25463bc25549",
         "name": "Customers",
         "columns": [
           {
-            "id": "customer_id~yb23b9",
+            "id": "customer_id~j250ck",
             "name": "Customer ID",
             "sourceName": "Customer ID",
             "dataType": "string",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "customer~0exgyh",
+            "id": "customer~y4ax1x",
             "name": "Customer",
             "sourceName": "Customer",
             "dataType": "string",
@@ -43,7 +43,7 @@
             "formula": null
           },
           {
-            "id": "segment~18n5gw",
+            "id": "segment~m5kzjg",
             "name": "Segment",
             "sourceName": "Segment",
             "dataType": "string",
@@ -52,7 +52,7 @@
             "formula": null
           },
           {
-            "id": "annual_spend~v4bhbv",
+            "id": "annual_spend~7f3bp7",
             "name": "Annual Spend",
             "sourceName": "Annual Spend",
             "dataType": "integer",
@@ -78,11 +78,11 @@
       },
       {
         "kind": "frame",
-        "id": "42437743-5c8e-4183-a07f-c0a6089f8eac",
+        "id": "d9164fcc-badd-409c-a214-2b9daf8dd9ab",
         "name": "Inventory",
         "columns": [
           {
-            "id": "sku~zzwcp5",
+            "id": "sku~4d70sz",
             "name": "SKU",
             "sourceName": "SKU",
             "dataType": "string",
@@ -91,7 +91,7 @@
             "formula": null
           },
           {
-            "id": "product~sqpx48",
+            "id": "product~hfs22m",
             "name": "Product",
             "sourceName": "Product",
             "dataType": "string",
@@ -100,7 +100,7 @@
             "formula": null
           },
           {
-            "id": "supplier_id~mq25g5",
+            "id": "supplier_id~kqw0kq",
             "name": "Supplier ID",
             "sourceName": "Supplier ID",
             "dataType": "string",
@@ -109,7 +109,7 @@
             "formula": null
           },
           {
-            "id": "on_hand~yvqh9f",
+            "id": "on_hand~v2d9yt",
             "name": "On Hand",
             "sourceName": "On Hand",
             "dataType": "integer",
@@ -118,7 +118,7 @@
             "formula": null
           },
           {
-            "id": "reorder_point~f0gxm1",
+            "id": "reorder_point~kdpg38",
             "name": "Reorder Point",
             "sourceName": "Reorder Point",
             "dataType": "integer",
@@ -127,7 +127,7 @@
             "formula": null
           },
           {
-            "id": "unit_cost~nbqs2p",
+            "id": "unit_cost~w0wfdn",
             "name": "Unit Cost",
             "sourceName": "Unit Cost",
             "dataType": "number",
@@ -153,11 +153,11 @@
       },
       {
         "kind": "frame",
-        "id": "241c1a21-6ca4-4692-a156-50a0e473bf09",
+        "id": "3bdd9207-66da-46f1-aadf-0f5b342d8d24",
         "name": "Suppliers",
         "columns": [
           {
-            "id": "supplier_id~r4pqh1",
+            "id": "supplier_id~m3f851",
             "name": "Supplier ID",
             "sourceName": "Supplier ID",
             "dataType": "string",
@@ -166,7 +166,7 @@
             "formula": null
           },
           {
-            "id": "supplier~52xwhn",
+            "id": "supplier~6vbfrs",
             "name": "Supplier",
             "sourceName": "Supplier",
             "dataType": "string",
@@ -175,7 +175,7 @@
             "formula": null
           },
           {
-            "id": "city~nfpvxe",
+            "id": "city~jdhezz",
             "name": "City",
             "sourceName": "City",
             "dataType": "string",
@@ -184,7 +184,7 @@
             "formula": null
           },
           {
-            "id": "lead_days~mxgmp8",
+            "id": "lead_days~v247g3",
             "name": "Lead Days",
             "sourceName": "Lead Days",
             "dataType": "integer",
@@ -193,7 +193,7 @@
             "formula": null
           },
           {
-            "id": "status~9rkvqj",
+            "id": "status~9p290x",
             "name": "Status",
             "sourceName": "Status",
             "dataType": "string",
@@ -219,11 +219,11 @@
       },
       {
         "kind": "frame",
-        "id": "334c4ae5-3f2b-4db0-aba5-ee1640d45680",
+        "id": "9dfc437e-9a1c-4c92-82ed-1e907b708173",
         "name": "Orders",
         "columns": [
           {
-            "id": "order_id~sw61mt",
+            "id": "order_id~qxngm4",
             "name": "Order ID",
             "sourceName": "Order ID",
             "dataType": "string",
@@ -232,7 +232,7 @@
             "formula": null
           },
           {
-            "id": "order_date~28g994",
+            "id": "order_date~sy1xx5",
             "name": "Order Date",
             "sourceName": "Order Date",
             "dataType": "date",
@@ -241,7 +241,7 @@
             "formula": null
           },
           {
-            "id": "sku~pqktge",
+            "id": "sku~0hcs5q",
             "name": "SKU",
             "sourceName": "SKU",
             "dataType": "string",
@@ -250,7 +250,7 @@
             "formula": null
           },
           {
-            "id": "customer~cq7dd4",
+            "id": "customer~jh2bsz",
             "name": "Customer",
             "sourceName": "Customer",
             "dataType": "string",
@@ -259,7 +259,7 @@
             "formula": null
           },
           {
-            "id": "region~bcxtcb",
+            "id": "region~8j3yvh",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -268,7 +268,7 @@
             "formula": null
           },
           {
-            "id": "units~ww54vx",
+            "id": "units~mzbz2a",
             "name": "Units",
             "sourceName": "Units",
             "dataType": "integer",
@@ -277,7 +277,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~q7h9pv",
+            "id": "unit_price~vfketk",
             "name": "Unit Price",
             "sourceName": "Unit Price",
             "dataType": "number",
@@ -286,7 +286,7 @@
             "formula": null
           },
           {
-            "id": "revenue~ev9z24",
+            "id": "revenue~h3jcnd",
             "name": "Revenue",
             "sourceName": "Revenue",
             "dataType": "number",
@@ -312,11 +312,11 @@
       },
       {
         "kind": "frame",
-        "id": "f4e2fe6b-c980-4516-b57b-b2225ffc7487",
+        "id": "8faf1d81-4065-4ad8-a7d3-d4d98653cc69",
         "name": "Adjustments",
         "columns": [
           {
-            "id": "adjustment_id~brz7bd",
+            "id": "adjustment_id~kg0fjz",
             "name": "Adjustment ID",
             "sourceName": "Adjustment ID",
             "dataType": "string",
@@ -325,7 +325,7 @@
             "formula": null
           },
           {
-            "id": "region~0k3e33",
+            "id": "region~xxrxm9",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -334,7 +334,7 @@
             "formula": null
           },
           {
-            "id": "amount~v77rqd",
+            "id": "amount~18w3sj",
             "name": "Amount",
             "sourceName": "Amount",
             "dataType": "integer",
@@ -343,7 +343,7 @@
             "formula": null
           },
           {
-            "id": "reason~8fx9dm",
+            "id": "reason~1j4h6m",
             "name": "Reason",
             "sourceName": "Reason",
             "dataType": "string",
@@ -369,11 +369,11 @@
       },
       {
         "kind": "frame",
-        "id": "092c55a3-4183-4514-beed-8c7a8ca24267",
+        "id": "bbf1f1db-7b4b-4733-968b-076175a33d4c",
         "name": "Targets",
         "columns": [
           {
-            "id": "scenario~b28stv",
+            "id": "scenario~0ggge1",
             "name": "Scenario",
             "sourceName": "Scenario",
             "dataType": "string",
@@ -382,7 +382,7 @@
             "formula": null
           },
           {
-            "id": "region~gqf998",
+            "id": "region~kammng",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -391,7 +391,7 @@
             "formula": null
           },
           {
-            "id": "target_units~cqr6a8",
+            "id": "target_units~e1fm24",
             "name": "Target Units",
             "sourceName": "Target Units",
             "dataType": "integer",
@@ -400,7 +400,7 @@
             "formula": null
           },
           {
-            "id": "owner~rry8yr",
+            "id": "owner~g9y2wh",
             "name": "Owner",
             "sourceName": "Owner",
             "dataType": "string",
@@ -427,8 +427,8 @@
     ],
     "views": [
       {
-        "id": "1d00ed3d-2b89-468a-9635-fd3cb1c812fd",
-        "objectId": "5b26503b-8b58-4f5c-aa7e-bd69271fa44d",
+        "id": "08624ccd-dce9-41d6-8095-c288bdc444a0",
+        "objectId": "19ac585e-6756-404d-8435-a7816873259d",
         "x": 60.0,
         "y": 50.0,
         "width": 920.0,
@@ -436,8 +436,8 @@
         "collapsed": false
       },
       {
-        "id": "652fbba0-edff-4f17-a9bd-4e6f995693e0",
-        "objectId": "95531221-1cc5-481c-bfc1-f66ec4ab57c9",
+        "id": "aa261101-41a4-4309-9ef3-5717cc2e2dc3",
+        "objectId": "b5300b35-ca3c-4511-90a0-25463bc25549",
         "x": 60.0,
         "y": 880.0,
         "width": 648.0,
@@ -445,8 +445,8 @@
         "collapsed": false
       },
       {
-        "id": "17b16ed6-2f10-4675-9768-4c472d02d913",
-        "objectId": "42437743-5c8e-4183-a07f-c0a6089f8eac",
+        "id": "8101026b-0d45-4376-832c-cc5a014b30ae",
+        "objectId": "d9164fcc-badd-409c-a214-2b9daf8dd9ab",
         "x": 650.0,
         "y": 880.0,
         "width": 900.0,
@@ -454,8 +454,8 @@
         "collapsed": false
       },
       {
-        "id": "d06b68a0-0e51-4821-9c13-a7e39f70a1ee",
-        "objectId": "241c1a21-6ca4-4692-a156-50a0e473bf09",
+        "id": "d2d2c1a7-83bd-44b0-9893-407df07285b3",
+        "objectId": "3bdd9207-66da-46f1-aadf-0f5b342d8d24",
         "x": 1240.0,
         "y": 880.0,
         "width": 798.0,
@@ -463,8 +463,8 @@
         "collapsed": false
       },
       {
-        "id": "6b91a26f-62ce-43ff-a47b-09599841d671",
-        "objectId": "334c4ae5-3f2b-4db0-aba5-ee1640d45680",
+        "id": "2578916c-34d1-4451-9da4-9dda0a4b5d1e",
+        "objectId": "9dfc437e-9a1c-4c92-82ed-1e907b708173",
         "x": 60.0,
         "y": 1270.0,
         "width": 900.0,
@@ -472,8 +472,8 @@
         "collapsed": false
       },
       {
-        "id": "1d5b33c8-8e1d-4d18-aa8b-43a31c37b7df",
-        "objectId": "f4e2fe6b-c980-4516-b57b-b2225ffc7487",
+        "id": "fd960a00-f42b-4b72-9f0f-26108ee8be91",
+        "objectId": "8faf1d81-4065-4ad8-a7d3-d4d98653cc69",
         "x": 650.0,
         "y": 1270.0,
         "width": 648.0,
@@ -481,8 +481,8 @@
         "collapsed": false
       },
       {
-        "id": "93e2c2c8-6baf-49d3-8072-2323211e4289",
-        "objectId": "092c55a3-4183-4514-beed-8c7a8ca24267",
+        "id": "b2433ddf-bd01-46a8-b385-8762e9baeca2",
+        "objectId": "bbf1f1db-7b4b-4733-968b-076175a33d4c",
         "x": 1240.0,
         "y": 1270.0,
         "width": 648.0,
