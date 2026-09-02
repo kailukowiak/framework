@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.6
+
 - Wide frames keep their key columns in view. Right-click a column header and choose
   _Pin columns through here_ to freeze everything up to that column: the frozen columns
   and the row numbers stay put while the rest of the grid scrolls sideways, with a
