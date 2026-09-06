@@ -86,6 +86,7 @@ export function FrameInspector({
   objects,
   formulaFunctions,
   selection,
+  selectedColumnIds,
   computed,
   suggestedPosition,
   section,
@@ -116,6 +117,8 @@ export function FrameInspector({
   objects: DataObject[];
   formulaFunctions: FormulaFunction[];
   selection: Selection;
+  /** Columns under the grid selection, when it spans more than the active one. */
+  selectedColumnIds?: string[];
   computed: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   section: InspectorSection;
@@ -250,8 +253,20 @@ export function FrameInspector({
         })),
       ].filter((reference) => reference.token.length > 0);
   }, [formulaFunctions, formulaFrame, objects]);
+  // A range across several columns formats each of them. Only the columns
+  // that hold a number or a date can carry a number format, so the others
+  // in the range are left alone rather than refused.
+  const rangeColumns =
+    selectedColumnIds && selectedColumnIds.length > 1
+      ? frame.columns.filter(
+          (candidate) => selectedColumnIds.includes(candidate.id) && canFormatColumn(candidate)
+        )
+      : [];
+  const formatColumns = rangeColumns.length > 1 ? rangeColumns : column ? [column] : [];
   const selectionLabel =
-    selection.rowId && column
+    rangeColumns.length > 1
+      ? `${rangeColumns.length} columns`
+      : selection.rowId && column
       ? "Cell"
       : selection.rowId
       ? "Row"
@@ -578,13 +593,39 @@ export function FrameInspector({
 
       {section === "format" && (
         <div className="inspector-section-stack">
-          {/* The one strip that says what the controls below will change.
-              A rule stop is a formatting target like any other, so it is
-              said here rather than by a second panel saying it again. */}
+          {/* Two things live on this tab and they scope differently: a
+              number format belongs to a column, whatever cell was clicked,
+              while typeface, colour and alignment land on exactly the cell,
+              row, column or frame selected. Each gets its own strip so the
+              scope is read before the control is touched. */}
+          {column && canFormatColumn(column) && !styleRule && (
+            <>
+              <div className="selection-summary compact">
+                <span>Number format</span>
+                <strong>
+                  {rangeColumns.length > 1
+                    ? `${rangeColumns.length} columns`
+                    : `Column · ${column.name}`}
+                </strong>
+                <small>
+                  {rangeColumns.length > 1
+                    ? `${frame.name} / ${rangeColumns.map((candidate) => candidate.name).join(", ")}`
+                    : `${frame.name} · every row of the column`}
+                </small>
+              </div>
+              <ColumnFormatEditor
+                key={`format-${formatColumns.map((candidate) => candidate.id).join("+")}`}
+                frame={frame}
+                column={column}
+                columns={formatColumns}
+                onOperation={onOperation}
+              />
+            </>
+          )}
           <div
             className={`selection-summary compact${styleRule && activeStop ? " rule-target" : ""}`}
           >
-            <span>Formatting target</span>
+            <span>{styleRule && activeStop ? "Formatting target" : "Cell style"}</span>
             <strong>
               {styleRule && activeStop
                 ? `Rule · ${stopLabel(styleRule, activeStop)}`
@@ -597,19 +638,13 @@ export function FrameInspector({
                       ? ` · ${scalePropertyLabel(styleRule.output.scale)}`
                       : ""
                   }`
+                : rangeColumns.length > 1
+                ? `${frame.name} / ${rangeColumns.map((candidate) => candidate.name).join(", ")}`
                 : column
                 ? `${frame.name} / ${column.name}`
                 : frame.name}
             </small>
           </div>
-          {column && canFormatColumn(column) && !styleRule && (
-            <ColumnFormatEditor
-              key={`format-${column.id}`}
-              frame={frame}
-              column={column}
-              onOperation={onOperation}
-            />
-          )}
           <div className="format-preview-controls" aria-label="Formatting controls">
             <div>
               <span>Typeface</span>
@@ -738,7 +773,8 @@ export function FrameInspector({
               }
               onClick={() => setDirectStyle(null)}
             >
-              <X size={13} /> Clear formatting for this {selectionLabel.toLowerCase()}
+              <X size={13} /> Clear formatting for {rangeColumns.length > 1 ? "these" : "this"}{" "}
+              {selectionLabel.toLowerCase()}
             </button>
           )}
           <ConditionalFormattingRules

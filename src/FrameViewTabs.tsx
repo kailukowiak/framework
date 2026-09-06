@@ -418,7 +418,7 @@ export function FrameViewTabs({
                 >
                   <FrameIcon size={15} />
                   <span>
-                    <strong>Frame view</strong>
+                    <strong>Table view</strong>
                     <small>Same data, its own transformation chain</small>
                   </span>
                 </button>

@@ -38,6 +38,10 @@ export function CanvasStatus({
   onSave: () => void;
   onRefresh: () => void;
   onZoom: (zoom: number) => void;
+  /** The only always-present control in this corner: everything else here
+      is a statement about canvas state and is usually absent, but Quick
+      Commands needs one durable, discoverable entry point for people who
+      don't know the shortcut or find it in the menu. */
 }) {
   return (
     <div
@@ -87,6 +91,7 @@ export function CanvasStatus({
       {zoom !== DEFAULT_CANVAS_ZOOM && (
         <button
           className="canvas-zoom-readout"
+          data-shortcut="⌘0"
           title="Reset the canvas to 100% (⌘0)"
           onClick={() => onZoom(DEFAULT_CANVAS_ZOOM)}
         >

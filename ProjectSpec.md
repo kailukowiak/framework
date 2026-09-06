@@ -1285,13 +1285,48 @@ Three items the hands-on audit surfaced that are direction, not bugs — parked 
 
 - **Done 2026-09-02: pinned columns and Find.** Pinning is a *count* on `FrameDisplay` (`pinned_columns`, `SetFrameDisplayPinnedColumns`), not a set of column ids: freezing is positional in every spreadsheet, and a count survives renames and reorders; if columns are dropped the view clamps at render and the stored number waits for them to return. The row-number gutter freezes with the columns, offsets come from the same header measurement the Stats drawer already used, and the only control is the column context menu. Find (⌘F) is two searches under one palette: a client-side scan of names, formulas, Scratchwork lines and the cells of frames held in memory, plus `search_frame_rows` in the core for paged frames (every column cast to string, case-insensitive contains, hits carry the displayed row index and the page-consistent row id). Picking a hit selects the object and focuses the cell; formula and line hits select their owner, since no surface yet focuses one Wrangle step or block line.
 
-- **TODO: cover native-menu wiring in e2e.** The menu-less e2e shell means menu construction, enablement, and command routing have zero automated coverage — which is exactly where an enabled-but-inert Undo hid until a hands-on session caught it. Cheapest honest fix: a debug-only command that replays a menu id through `menu::forward`, so one spec can walk the Edit menu's ids against a live document and assert the document changed. Enablement state stays testable at the core tier (`can_undo`/`can_redo` on the view); it is the routing that needs the seam.
+- **TODO: cover native-menu wiring in e2e.** The menu-less e2e shell means menu construction, enablement, and command routing have zero automated coverage — which is exactly where an enabled-but-inert Undo hid until a hands-on session caught it. Cheapest honest fix: a debug-only command that replays a menu id through `menu::forward`, so one spec can walk the Edit menu's ids against a live document and assert the document changed. Enablement state stays testable at the core tier (`can_undo`/`can_redo` on the view); it is the routing that needs the seam. The Scratchwork window doubles the routing: one menu now dispatches to whichever window is focused, and the pop-out forwards most ids back to its owner, so the replay seam should take a window label and the spec should walk both.
+
+### TODOs from the Scratchwork window work (2026-09-05)
+
+The pop-out shipped as the narrowest honest version: one window per workbook, holding the one block ⌘J reaches, sharing the workbook's session. What it leaves open, parked so the next pass is on purpose:
+
+- **TODO: decide which of the three Scratchwork surfaces survive.** Scratchwork is now reachable as the canvas card, the in-window drawer, and the pop-out window. The drawer answered "beside my data without hunting the canvas"; the window answers the same need with a real second monitor and no canvas tax. Two surfaces for one need is a mode. Either the drawer becomes the laptop answer and the window the desk answer — in which case the drawer should be a dockable side panel (the "tab" reading) rather than a bottom sheet — or the drawer retires. Decide by use, not symmetry.
+
+- **TODO: window placement and reopening.** The pop-out always opens at 760×520 wherever the OS drops it, and forgets it existed. A scratch calculator beside a workbook is a habit, not an event: it should reopen where it was, and a document that had it open should open with it. Geometry is an app preference (the launch decision forbids persisting *which document*, not where a window sat); whether the window was open is view state and belongs in the document. Settle at the same time whether it can float above the workbook — an always-on-top toggle in the Window menu is the calculator posture and the reason most people will want the window at all.
+
+- **TODO: any block can pop out, or only Scratchwork.** `open_scratchwork_window` hardcodes the well-known block. An `Assumptions` block is exactly what you want beside you while editing a model. Generalizing is a label per block id and the same bridge; the cost is that ⌘J's "the one you drop into without looking" no longer identifies *the* pop-out. Likely answer: any block pops out, ⌘J still means Scratchwork, and the Window menu lists the open block windows.
+
+- **TODO: three hand-kept lists of the same actions.** `FORWARDED_COMMANDS` in `useScratchworkWindowMenu` enumerates the menu ids the pop-out hands back to its workbook; `COMMANDS` in `QuickCommands.tsx` enumerates the ids the palette offers; `menu.rs` builds the ids that exist. Nothing checks them against each other, so a new menu item is enabled-but-inert in the pop-out and absent from ⌘⇧P until someone remembers — the exact failure the 2026-08-25 audit found. Either derive both frontend lists from one exported menu definition, or add a test that walks every id `menu.rs` builds and asserts it is handled locally or forwarded, and appears in the palette or is deliberately excluded.
+
+- **TODO: pop-out e2e is one happy path.** The spec covers open, a shared edit, and one pointed cell. Not covered: pointing a *range* of cells without the pop-out stealing focus (the bridge's stated reason for never raising the window); undo and redo issued from the pop-out; a document rename retitling both windows; closing the workbook closing its pop-out; ⌘S in the pop-out of an untitled workbook running Save As; ⌘J with the window already open raising it instead of the drawer; and collaboration fan-out reaching both views (`grouped_sessions`). All are cheap now that the two-handle switching pattern exists in the spec.
+
+- **TODO: the pop-out has no formula bar and no result inspection.** The window is the block card alone, which is right for density, but the formula bar's dual representation and the series/frame result chips under [Formula block](#formula-block-scratchpad) are what keep a long scratch session readable. Both must arrive in the window when they arrive on the card. Today that is automatic because it is one component; it stops being automatic the moment the window grows chrome of its own, so keep it one component.
+
+- **TODO: Quick Commands is the menu, not yet the app.** ⌘⇧P indexes the native menu's actions with three enablement facts. It should grow to the selection's context-menu actions by name (rename, delete, freeze, pin columns, create frame from column), recent documents, and match on shortcut text so "⌘3" finds the Wrangle inspector. Jumping to an object is what Find already does, so the two palettes need a clear split — Find is *things*, Quick Commands is *verbs* — or one surface.
+
+- **Later: a dashboard view with widgets (2026-09-05).** Kai's sketch: pick objects to show, arranged in tabs, and add input widgets such as sliders. Parked, not ranked. When it is picked up: a container is already the one place a standalone value may live and the designated dashboard arrangement, so a dashboard is a container promoted to its own tab rather than a new object kind; a slider is an input surface over an existing named line or scenario parameter, never a value of its own, so moving it is an ordinary operation and undo, history, and the MCP surface get it for free. Presentation-only, values-only, same boundary as export.
+
+- **Untested outside macOS.** Under the menu-less shell the pop-out forwards shortcuts through its own keydown path (`hasNativeMenu()` false). The flatpak build wants one hands-on pass before the window ships in a release.
 
 ---
 
 ## 35. Decision log
 
 Direction decisions with their reasoning, so rejected alternatives are not re-litigated from scratch.
+
+### Scratchwork in its own window (2026-09-05)
+
+**The Scratchwork window is a second view over the same `DocumentSession` — not a second writer and not a copy of the block.** `scratchwork_window.rs` registers a `scratchwork-<owner>` window label that shares the owner's session Arc, so history, autosave, renames, live recalculation, and the collaboration scan remain workbook behaviour while the editor sits in an ordinary operating-system window. A command result updates the webview that issued it; sibling views over the same document hear the same `DocumentView` as an event, and the collaboration scan groups labels by document so the first view cannot consume a journal merge the second never hears.
+
+- **One logical cursor.** The two webviews are separate DOMs, so the active-editor registry cannot cross them. Only the pop-out's draft and selection cross, as a revisioned editor-state event; the workbook applies a canvas click optimistically to that copy and sends the token to the real editor, which remains the only owner of the draft. Pointing at a cell does not raise the pop-out, so a range of references can be authored without the window fighting for focus.
+- **The shared application menu stays shared.** Commands that belong to the editor — undo, redo, ⌘J — run in the pop-out; everything that belongs to the workbook is forwarded to the owner window, which is raised to show the result. ⌘S is the one shortcut the webview handles in every shell, because saved workbooks autosave and only an untitled one needs Save As.
+- **Closing the workbook closes its pop-out; closing the pop-out only informs the workbook.** The window is subordinate and has no document of its own to keep alive.
+
+Rejected along the way:
+
+- *A docked panel as the only answer.* It cannot leave the window, and leaving the window is the whole request the moment a second monitor exists. The drawer stays for now; whether it survives is a TODO above.
+- *A separate document session for the window.* That is a second writer on one file — precisely the incident class the launch decision below exists to prevent.
 
 ### What a launch opens (2026-08-12)
 

@@ -9,35 +9,54 @@ import type {
   FrameObject,
 } from "./lib/types";
 
+/**
+ * The columns a number-format change lands on. A date column has its own
+ * editor, and it does not gang: dates and numbers do not share a format, so
+ * a range mixing them formats the numbers and leaves the dates as they were.
+ */
+function numberFormatTargets(column: Column, columns: Column[] | undefined): Column[] {
+  return (columns?.length ? columns : [column]).filter(
+    (candidate) => candidate.dataType !== "date"
+  );
+}
+
 export function ColumnFormatEditor({
   frame,
   column,
+  columns,
   onOperation,
 }: {
   frame: FrameObject;
+  /** The column whose current format the controls show. */
   column: Column;
+  /** Every column a change lands on; defaults to `column` alone. */
+  columns?: Column[];
   onOperation: OperationHandler;
 }) {
-  if (column.dataType === "date") {
+  const targets = numberFormatTargets(column, columns);
+  if (column.dataType === "date" && targets.length === 0) {
     return (
       <ColumnDateFormatEditor frame={frame} column={column} onOperation={onOperation} />
     );
   }
-  const format = column.format ?? null;
-  const commit = (next: ColumnFormat | null) =>
-    void onOperation({
-      type: "setColumnFormat",
-      frameId: frame.id,
-      columnId: column.id,
-      format: next,
-    });
+  const shown = column.dataType === "date" ? targets[0] : column;
+  const format = shown.format ?? null;
+  const commit = (next: ColumnFormat | null) => {
+    for (const target of targets)
+      void onOperation({
+        type: "setColumnFormat",
+        frameId: frame.id,
+        columnId: target.id,
+        format: next,
+      });
+  };
   const patch = (changes: Partial<ColumnFormat>) =>
     commit({ style: "number", ...format, ...changes });
   const isCurrency = format?.style === "currency" || format?.style === "accounting";
   return (
     <div className="column-format-editor">
       <label className="inspector-field">
-        Number format
+        {targets.length > 1 ? `Style · ${targets.length} columns` : "Style · whole column"}
         <select
           value={format?.style ?? ""}
           onChange={(event) => {

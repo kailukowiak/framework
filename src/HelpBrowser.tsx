@@ -96,7 +96,7 @@ export function HelpBrowser({
       className="help-browser"
       role="dialog"
       aria-modal="false"
-      aria-label={scope === "formulas" ? "Formula search" : "FrameWork help"}
+      aria-label="FrameWork Reference"
     >
       <HelpSearchHeader
         scope={scope}
@@ -179,7 +179,6 @@ function HelpSearchHeader({
             onClick={() => onScopeChange("formulas")}
           >
             Formulas
-            <kbd>⇧⌘P</kbd>
           </button>
           <button
             className={scope === "guide" ? "active" : ""}
@@ -187,7 +186,6 @@ function HelpSearchHeader({
             onClick={() => onScopeChange("guide")}
           >
             How FrameWork works
-            <kbd>⇧⌘H</kbd>
           </button>
         </nav>
         <button className="icon-button" aria-label="Close help" onClick={onClose}>

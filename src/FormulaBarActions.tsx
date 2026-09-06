@@ -28,6 +28,8 @@ export function FormulaBarActions({
         className="scratchwork-formula-toggle"
         aria-expanded={expanded}
         aria-controls="scratchwork-drawer"
+        data-shortcut="⌘J"
+        title="Scratchwork (⌘J)"
         onPointerDown={(event) => event.preventDefault()}
         onClick={onToggle}
       >

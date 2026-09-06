@@ -1,5 +1,6 @@
 import { Info, X, PanelRightClose } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
+import { Field } from "./Field";
 import { FrameInspector } from "./FrameInspector";
 import type {
   AddCalculatedColumnEditorRequest,
@@ -44,6 +45,8 @@ type InspectorProps = {
   scenarios: Scenario[];
   formulaFunctions: FormulaFunction[];
   selection: Selection;
+  /** Columns under the grid selection, when it spans more than the active one. */
+  selectedColumnIds?: string[];
   computed?: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   onClose: () => void;
@@ -81,6 +84,7 @@ export function Inspector({
   scenarios,
   formulaFunctions,
   selection,
+  selectedColumnIds,
   computed,
   suggestedPosition,
   onClose,
@@ -119,6 +123,7 @@ export function Inspector({
         <button
           className="icon-button"
           aria-label="Hide inspector"
+          data-shortcut="⇧⌘I"
           title="Hide inspector (⌘⇧I)"
           onClick={onHide}
         >
@@ -138,6 +143,9 @@ export function Inspector({
                 aria-label={sectionLabels[candidate]}
                 aria-pressed={section === candidate}
                 onClick={() => onSectionChange(candidate)}
+                data-shortcut={`⌘${
+                  candidate === "selection" ? "1" : candidate === "format" ? "2" : "3"
+                }`}
                 title={`${sectionLabels[candidate]} (⌘${
                   candidate === "selection" ? "1" : candidate === "format" ? "2" : "3"
                 })`}
@@ -154,6 +162,23 @@ export function Inspector({
           scenarios={scenarios}
           onOperation={onOperation}
         />
+      )}
+      {object.kind === "container" && (
+        <section className="inspector-section">
+          <Field
+            label="Name"
+            initial={object.name}
+            help="Members are written as `Name`.`Member` in formulas."
+            onCommit={(name) =>
+              void onOperation({ type: "renameObject", objectId: object.id, name })
+            }
+          />
+          <p className="inspector-note">
+            {object.memberIds.length === 0
+              ? "Nothing in here yet. Use + Value, + Result, or + Vector on the card."
+              : `${object.memberIds.length} ${object.memberIds.length === 1 ? "member" : "members"}. Click one on the card to inspect it.`}
+          </p>
+        </section>
       )}
       {/* A vector is edited on its card, where the whole of it is visible. The
           inspector says the two things the card cannot: what it is called in
@@ -178,6 +203,7 @@ export function Inspector({
           objects={objects}
           formulaFunctions={formulaFunctions}
           selection={selection}
+          selectedColumnIds={selectedColumnIds}
           computed={computed!}
           suggestedPosition={suggestedPosition}
           section={section}
@@ -226,6 +252,7 @@ export function CollapsedInspector({ onShow }: { onShow: () => void }) {
       <button
         className="inspector-collapsed-toggle"
         aria-label="Show inspector"
+        data-shortcut="⇧⌘I"
         title="Show inspector (⌘⇧I)"
         onClick={onShow}
       >

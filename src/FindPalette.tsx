@@ -15,6 +15,12 @@ import type { GridFocus } from "./FrameGrid";
 
 export type FindPaletteProps = {
   document: DocumentView | null;
+  /**
+   * What to search for on open, when Find was reached from somewhere that
+   * already had a query — ⌘⇧P's last row, which hands over a phrase that
+   * named no command. Selected, so typing replaces it.
+   */
+  initialQuery?: string;
   onJumpToObject: (objectId: string) => void;
   onFocusCell: (hit: FindHit) => void;
   onFocusColumn: (hit: FindHit) => void;
@@ -23,12 +29,13 @@ export type FindPaletteProps = {
 
 export function FindPalette({
   document,
+  initialQuery,
   onJumpToObject,
   onFocusCell,
   onFocusColumn,
   onClose,
 }: FindPaletteProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { hits, groups, searching, error } = useDocumentSearch(document, query);
@@ -131,12 +138,14 @@ export function FindPalette({
  */
 export function FindPaletteHost({
   document,
+  initialQuery,
   jumpToObject,
   setSelection,
   setGridFocus,
   onClose,
 }: {
   document: DocumentView | null;
+  initialQuery?: string;
   jumpToObject: (objectId: string) => void;
   setSelection: (selection: Selection | null) => void;
   setGridFocus: (focus: GridFocus | null) => void;
@@ -172,6 +181,7 @@ export function FindPaletteHost({
   return (
     <FindPalette
       document={document}
+      initialQuery={initialQuery}
       onJumpToObject={jumpToObject}
       onFocusCell={focus}
       onFocusColumn={focus}

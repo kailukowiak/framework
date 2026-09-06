@@ -133,6 +133,56 @@ button:disabled { cursor: default; opacity: 0.35; }
 .icon-button:hover:not(:disabled) { background: light-dark(#eeece7, #1c1d17); }
 .icon-button.subtle { color: var(--muted); margin-left: 4px; }
 
+/* Hold ⌘ (or Ctrl) and every control that has a shortcut says which one.
+   `useModifierHints` puts `data-modifier-hints` on <html>; a control opts in
+   with `data-shortcut="⌥⌘B"` and nothing else. The badge is a ::before rather
+   than an ::after because `.inspector-nav button::after` is already the active
+   underline, and it is absolutely positioned so no control moves when the
+   hints arrive — a rail that shifted under the cursor would be worse than no
+   hint at all. `position: relative` is unconditional for the same reason: it
+   changes no layout, and applying it only while hints show would restack the
+   page on every ⌘ press. */
+[data-shortcut] { position: relative; }
+/* With Shift or Option also held, only the shortcuts that use it still
+   apply, so the others step out of the way. */
+:root[data-modifier-hints~="shift"] [data-shortcut]:not([data-shortcut*="⇧"])::before,
+:root[data-modifier-hints~="alt"] [data-shortcut]:not([data-shortcut*="⌥"])::before { display: none; }
+:root[data-modifier-hints] [data-shortcut]::before {
+  content: attr(data-shortcut);
+  position: absolute;
+  z-index: 6;
+  top: 1px;
+  right: 1px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: light-dark(rgba(32, 34, 31, 0.86), rgba(222, 224, 221, 0.9));
+  color: light-dark(#fbfaf7, #1c1d17);
+  font: 500 var(--text-xs) / 1.4 "DM Mono", monospace;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: modifier-hint-in 80ms ease-out;
+}
+/* An icon-only button has no room beside its icon, so the badge covers it.
+   The icon is the least useful thing on screen at the moment somebody is
+   asking what the key is. */
+:root[data-modifier-hints] .icon-button[data-shortcut]::before,
+:root[data-modifier-hints] .card-window-action[data-shortcut]::before,
+:root[data-modifier-hints] .inspector-collapsed-toggle[data-shortcut]::before {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: inherit;
+}
+@keyframes modifier-hint-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* The canvas's own corner. Both of these report on what is on the canvas and
    both are absent most of the time, which is what makes a permanent band
    across the window the wrong place for them. They shift with the inspector
@@ -152,12 +202,17 @@ button:disabled { cursor: default; opacity: 0.35; }
 .stale-refresh:hover:not(:disabled) { background: light-dark(#f4d6cb, #3a2019); }
 .canvas-zoom-readout { height: 30px; flex: 0 0 auto; padding: 0 11px; border-radius: 8px; background: light-dark(rgba(251, 250, 247, 0.94), rgba(38, 39, 32, 0.9)); color: light-dark(#5f635c, #9fa39c); font: 500 var(--text-sm) "DM Mono", monospace; font-variant-numeric: tabular-nums; box-shadow: 0 2px 10px light-dark(rgba(48, 45, 39, 0.14), rgba(48, 45, 39, 0.259)); backdrop-filter: blur(10px); }
 .canvas-zoom-readout:hover { background: light-dark(#e4ebe6, #223229); color: var(--accent); }
+/* The one durable control in this corner: same footprint as the readouts
+   beside it so it reads as part of the same row rather than a stray icon. */
 
 .left-rail { position: fixed; z-index: 40; left: 0; top: 0; bottom: 0; width: var(--rail-w); display: flex; flex-direction: column; align-items: center; padding: 12px 8px 14px; background: light-dark(#f7f5f0, #212219); border-right: 1px solid var(--line); overflow-y: auto; scrollbar-width: none; }
 .left-rail::-webkit-scrollbar { display: none; }
 /* The mark, in the corner the header used to hold it in. Decorative: the
    window's own title bar names the application beside it. */
-.rail-mark { display: block; flex: 0 0 auto; width: 28px; height: 28px; margin-bottom: 10px; }
+.rail-mark { display: block; flex: 0 0 auto; width: 28px; height: 28px; margin-bottom: 10px; padding: 0; border: 0; border-radius: 7px; background: transparent; cursor: pointer; }
+.rail-mark img { display: block; width: 28px; height: 28px; }
+.rail-mark:hover { background: light-dark(#e4ebe6, #223229); }
+.rail-mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .rail-group { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .rail-group-label { margin-bottom: 3px; color: light-dark(#a2a19a, #706e67); font: 500 var(--text-xs) "DM Mono", monospace; letter-spacing: 0.08em; text-transform: uppercase; }
 /* The line the two halves of the rail are split by: above it you choose what
@@ -517,7 +572,9 @@ button.block-gutter-row.stale::after { content: none; }
    -- starting mid-row, swallowing whole rows, ending mid-row -- which is not
    a rectangle and is not what the grid then acts on. Editors opt back in, so
    a caret still works inside a cell being edited. */
-.frame-scroll { min-height: 0; flex: 1; overflow: auto; margin: 0 12px; scrollbar-gutter: stable; user-select: none; -webkit-user-select: none; }
+/* A wheel over the grid scrolls the grid; reaching its edge must not hand
+   the remainder to the canvas, which slid the whole page under the card. */
+.frame-scroll { min-height: 0; flex: 1; overflow: auto; overscroll-behavior: contain; margin: 0 12px; scrollbar-gutter: stable; user-select: none; -webkit-user-select: none; }
 .frame-scroll input,
 .frame-scroll textarea { user-select: text; -webkit-user-select: text; }
 .frame-scroll::-webkit-scrollbar { width: 11px; height: 11px; }
@@ -824,6 +881,9 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .style-rule-add:hover { background: var(--accent-soft); }
 .style-rules-empty { margin: 0; color: var(--muted); font-size: var(--text-sm); line-height: 1.45; }
 .style-rules-empty code { font: 400 var(--text-sm) "DM Mono", monospace; }
+/* Formula examples in the help text are long unbreakable tokens; without
+   this they ran past the inspector's edge and clipped the Rule button. */
+.style-rules-empty { overflow-wrap: anywhere; }
 .style-rule { display: grid; gap: 3px; padding: 5px 6px; border: 1px solid var(--line); border-radius: 7px; background: light-dark(#fff, #2c2d24); }
 .style-rule.selected { border-color: light-dark(#8da293, #4a6354); background: light-dark(#f7faf8, #223229); }
 .selection-summary.rule-target { box-shadow: inset 3px 0 var(--accent); }
@@ -1438,12 +1498,19 @@ small.vector-dragging { cursor: grabbing; }
    by their own cards, so the container adds a frame and a name and nothing
    else that would make a value inside one behave differently. */
 .container-card { min-height: 0; flex: 1; display: flex; flex-direction: column; padding: 15px 15px 12px; }
-.container-members { min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
+/* The members are what a container is for, so they are the part that may
+   not collapse: at the card's default height the three add buttons and the
+   name used to take every pixel and the list rendered at zero height, which
+   read as "+ Value does nothing". */
+.container-members { min-height: 64px; flex: 1; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
 .container-member { border: 1px solid light-dark(#e4e3dc, #3a3c30); border-radius: 8px; background: light-dark(#fbfaf7, #262720); }
 .container-member .value-card { padding: 11px 12px 12px; }
 .container-empty { margin: 0; padding: 10px 2px; color: light-dark(#96968f, #707069); font-size: var(--text-sm); line-height: 1.5; }
 .container-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.container-actions button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: var(--text-sm); }
+/* Outranks `.secondary-action`, whose full-width 38px form with a 17px
+   bottom margin is sized for a sidebar, not for three buttons on one row
+   under a list. */
+.container-actions button { width: auto; height: auto; margin: 0; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: var(--text-sm); }
 
 /* Prose: comments in a chain, a frame's pinned remark, and text cards.
    Markdown rendered at the ordinary type sizes — prose is content, not

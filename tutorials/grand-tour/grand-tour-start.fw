@@ -1,0 +1,229 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 2,
+  "document": {
+    "id": "5cdff812-ebee-48ba-bcf2-d9f7639c6a97",
+    "name": "The FrameWork tour",
+    "revision": 8,
+    "objects": [
+      {
+        "kind": "frame",
+        "id": "3229ffc6-35a9-45a0-9d05-281205e5e2a2",
+        "name": "Monthly sales",
+        "columns": [
+          {
+            "id": "column_1~zhnk2j",
+            "name": "Column 1",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "column_2~7jrh8v",
+            "name": "Column 2",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "1bcc85e7-10e3-4f08-ad40-0df4ab4ca2e4",
+            "cells": {
+              "column_1~zhnk2j": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "column_2~7jrh8v": {
+                "raw": "",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "0fb025ef-f310-4e2c-bfe7-f5041cc5a627",
+            "cells": {
+              "column_1~zhnk2j": {
+                "raw": "",
+                "overrideFormula": null
+              },
+              "column_2~7jrh8v": {
+                "raw": "",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "frame",
+        "id": "fa764689-0052-4f1a-9594-2fd64371e481",
+        "name": "Budget",
+        "columns": [
+          {
+            "id": "month~aqmbyb",
+            "name": "Month",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "budget~gn7ffq",
+            "name": "Budget",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "0a335d79-f514-44be-85a1-49b513749186",
+            "cells": {
+              "budget~gn7ffq": {
+                "raw": "120000",
+                "overrideFormula": null
+              },
+              "month~aqmbyb": {
+                "raw": "2026-01",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "620d6af1-48f6-4589-935c-d660981c3f9b",
+            "cells": {
+              "budget~gn7ffq": {
+                "raw": "120000",
+                "overrideFormula": null
+              },
+              "month~aqmbyb": {
+                "raw": "2026-02",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "59d1d7ae-1583-45fe-91a9-bb65a6283ad9",
+            "cells": {
+              "budget~gn7ffq": {
+                "raw": "130000",
+                "overrideFormula": null
+              },
+              "month~aqmbyb": {
+                "raw": "2026-03",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "a593f05f-f44c-4313-a1f5-a2bee4940b58",
+            "cells": {
+              "budget~gn7ffq": {
+                "raw": "138000",
+                "overrideFormula": null
+              },
+              "month~aqmbyb": {
+                "raw": "2026-04",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "8c9b2d11-54c7-4914-99c1-2b9a9b7a73b8",
+            "cells": {
+              "budget~gn7ffq": {
+                "raw": "150000",
+                "overrideFormula": null
+              },
+              "month~aqmbyb": {
+                "raw": "2026-05",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "72ed5d6d-196f-4aa2-b679-b7cea170423b",
+            "cells": {
+              "budget~gn7ffq": {
+                "raw": "160000",
+                "overrideFormula": null
+              },
+              "month~aqmbyb": {
+                "raw": "2026-06",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "text",
+        "id": "eaebf838-faa8-4664-abd8-4ac87131328b",
+        "name": "Tutorial walkthrough",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "# The FrameWork tour\n\nStart here. This is one pass over the things FrameWork does that a spreadsheet\ndoes not, using six rows of monthly sales that the rest of the tutorials use\ntoo. In about 25 minutes you will paste a typed table, write one formula for a\nwhole column, declare an order, keep a scratchpad in its own window, join a\nbudget by dragging a header, summarize a branch, run the same model under three\nsets of assumptions, and chart the result.\n\nIt is a tour, not a reference. Each section shows one idea and moves on; the\nlesson that teaches it properly is named at the end of the section. Nothing\nhere is a preview or a demo mode—every gesture is the real one, and the\nworkbook you finish with is a real model.\n\nThis guide is rendered as the **Tutorial walkthrough** markdown card in both\nthe Start workbook and the Answer key.\n\n## Files\n\n- [`grand-tour-start.fw`](grand-tour-start.fw) — an empty `Monthly sales`\n  table and a `Budget` table.\n- [`grand-tour-finished.fw`](grand-tour-finished.fw) — the answer key.\n\n## Before you begin\n\nAllow about 25 minutes. No prior FrameWork experience is assumed, and no\nearlier lesson is required.\n\nIn the app, open **Data Library**, choose **Create tutorials** if the tutorial\nworkbooks are not present, and open **The FrameWork tour — Answer key** for a\nminute before opening the Start workbook. Make every change in the Start\nworkbook. Repository contributors can instead open the two linked `.fw` files\nwith **File → Open**.\n\nWork the sections in order. Later sections read the columns and tables the\nearlier ones create, so a checkpoint that disagrees is worth fixing before\ncontinuing rather than after.\n\nThe lessons are also manual smoke tests. If a named control is missing or a\ncheckpoint differs, record it with the template at the end rather than working\naround it.\n\n## 0. See the destination\n\nOpen the finished workbook. On the canvas you should find a `Monthly sales`\ntable with Profit and Forecast columns, a `Sales vs budget` table that carries\na Variance column and a chart on its tab strip, a `By region` summary, an\n`Assumptions` group holding one `Growth` value, and a `Scratchwork` block with\nthree live answers.\n\nIn the bottom-right corner of the canvas there is a **Scenario** menu reading\n`Base`. Choose `Upside`, then `Downside`, and watch the Forecast column and the\n`Forecast total` answer move together. Put it back to `Base`.\n\nThat is the whole tour in one gesture: nothing was copied to make those three\nanswers, and nothing has to be put back by hand.\n\nNow open the Start workbook.\n\n## 1. Paste a table\n\nSelect the first cell of the empty `Monthly sales` table and paste this whole\ntab-separated block:\n\n```text\nMonth\tRegion\tRevenue\tCost\n2026-04\tWest\t142000\t91000\n2026-01\tEast\t118000\t76000\n2026-06\tEast\t168000\t104000\n2026-03\tEast\t136000\t85000\n2026-02\tWest\t124000\t79000\n2026-05\tEast\t151000\t96000\n```\n\nCheckpoint: the table has four named columns and six rows. Revenue and Cost\narrive as numbers, not as text that looks like numbers.\n\nThere was no *convert to table* step, because a table is the only thing a\nFrameWork frame can be. Its columns have names and types from the moment they\nexist, which is what lets every later section refer to `Revenue` instead of to\na rectangle of cells. Pasting onto empty canvas, with nothing selected, makes a\nwhole new table the same way.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 2. Find anything, run anything\n\nThree keys are worth learning before anything else.\n\n1. Press **⌘F** and type `142000`. The Find palette searches the whole\n   workbook—card names, column names, formulas, Scratchwork lines, and the\n   values in your tables. Choose the result and FrameWork brings that card\n   forward and selects the cell.\n2. Press **⌘⇧P**. Quick Commands is a searchable list of everything FrameWork\n   can do to this document, canvas and view, each with its shortcut. Type\n   `scratch` and read the two entries there without running them; press\n   **Escape**.\n3. Press **⌘K**. The Reference covers every formula function and the rules\n   behind Variables, Scratchwork, Wrangle, ownership and row order. While a\n   formula editor is active it opens on formulas automatically. Press\n   **Escape**.\n\nCheckpoint: ⌘F selected the April Revenue cell, and both palettes closed on\nEscape leaving the workbook untouched.\n\nYou are never more than one key from the name of the thing you are looking for,\nwhich matters more here than in a spreadsheet: FrameWork's controls are\nattached to objects rather than spread across a ribbon.\n\n## 3. One formula, one column\n\nRight-click the `Cost` header and choose **Add calculated column**. Name it\n`Profit` and enter:\n\n```text\n`Revenue` - `Cost`\n```\n\nCommit with **Return**.\n\nCheckpoint: all six rows show a profit, and the values in chronological order\nare `42000`, `45000`, `51000`, `51000`, `55000`, and `64000`.\n\nThere is nothing to fill down, and no last row to remember to extend. The\nformula belongs to the column, so a row added tomorrow is already calculated.\nThat is also why the fill square at the corner of a selected column does not\ncopy cells here: drag it down and FrameWork opens the column's formula\ninstead, because writing the rule once is what filling a range was always\ntrying to approximate.\n\nSelect `Revenue`, `Cost` and `Profit` together—click the `Revenue` header,\nthen shift-click `Profit`—and use **Number format** on the **Format** tab to\nmake them Accounting, USD, no decimals. One change lands on all three columns.\nFormatting changes how the numbers read, never what they are.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 4. Declare the order\n\nClick the ascending sort control in the `Month` header.\n\nCheckpoint: rows run from `2026-01` to `2026-06`. Open **Wrangle** and find\n**Sort** as the last step in the transformation chain.\n\nThis is the difference worth carrying out of the tour: the sort is not a way of\nlooking at the table, it is part of what the table *is*. Every table derived\nfrom this one inherits it, and a row-relative calculation such as\n`` `Revenue`.shift(1) `` is only accepted once an order has been declared—\notherwise \"the previous row\" would mean whichever row happened to arrive first.\n\n*Taught properly in: [Month-over-month formulas by pointing](../formula-clicks/README.md).*\n\n## 5. Scratchwork, and Scratchwork in its own window\n\nPress **⌘J** anywhere. A `Scratchwork` block appears on the canvas with the\ncursor on its first line. This is where one-off arithmetic goes—the back of the\nenvelope, kept in the document.\n\nType the name and the equals sign:\n\n```text\nTotal revenue = \n```\n\nNow, without leaving the line, click the `Revenue` column header in\n`Monthly sales`. The reference is written for you. Add `.sum()` so the line\nreads:\n\n```text\nTotal revenue = `Monthly sales`.`Revenue`.sum()\n```\n\nCheckpoint: the gutter beside the line shows `839000`.\n\nNow choose **Window → Scratchwork Window**. The same block opens as an ordinary\nwindow of its own, on the same text, the same undo history and the same live\nanswers. Put it beside the canvas, click a column in the main window, and the\nreference still lands in the Scratchwork line you are editing. **⌘J** raises\nthe window when it is already open.\n\nCheckpoint: editing the line in either place changes it in both, and closing\nthe Scratchwork window leaves the block on the canvas with the line intact.\n\nThe answers are queries, not captured cells. Change a Revenue value in the\ntable and the total follows it; undo and it comes back.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 6. Bring the budget over by dragging a header\n\n`Budget` holds one budgeted revenue per month. Rather than writing a lookup,\nmatch the two tables on their key.\n\n1. In `Budget`, click the **Budget** header to select that column.\n2. Drag it onto the **Month** header in `Monthly sales`.\n\nThe compact prompt should read as an equation:\n\n```text\nMatch Monthly sales.Month to Budget.Month\n```\n\nWait for the diagnostics, which are computed over the full dataset rather than\nthe rows on screen. They should report 6 matched, 0 missing, 0 duplicate keys.\nClick **Mark Month as unique**, then **Bring columns over**. Rename the result\n`Sales vs budget`.\n\nIn **Wrangle** on `Sales vs budget`, add a calculated column:\n\n```text\nVariance = `Revenue` - `Budget`\n```\n\nFormat it as USD Accounting.\n\nCheckpoint: `Sales vs budget` has six rows, January shows a Variance of\n`-2000`, and June shows `8000`. Open Wrangle and read the first step: the key\nrelationship is a visible step, not a dialog that has disappeared.\n\nFrameWork refuses to build the join until the lookup side declares its key\nunique, because a duplicate key is how a lookup silently multiplies rows. If\nthe table has grown wider than the window, right-click a header and choose\n**Pin columns through here** to freeze everything up to it while the rest\nscrolls.\n\nAdd a second Scratchwork line:\n\n```text\nTotal variance = `Sales vs budget`.`Variance`.sum()\n```\n\nCheckpoint: the answer is `21000`.\n\n*Taught properly in: [Month-end close](../month-end-close/README.md) and\n[Vectors, dates, and visual joins](../vectors-and-joins/README.md).*\n\n## 7. Branch a tab and summarize\n\nUse the **+** beside the `Sales vs budget` table tabs and choose **Table view**.\nRename the new tab `By region`. In **Wrangle**, add **Summarize**:\n\n- Group by: Region\n- Total Revenue: `` `Revenue`.sum() ``\n- Total Budget: `` `Budget`.sum() ``\n- Total Variance: `` `Variance`.sum() ``\n\nCheckpoint:\n\n| Region | Total Revenue | Total Budget | Total Variance |\n|---|---:|---:|---:|\n| East | 573000 | 560000 | 13000 |\n| West | 266000 | 258000 | 8000 |\n\nSwitching back to the `Sales vs budget` tab still shows all six rows. A branch\nis a separate table with its own visible chain reading the same source—not a\ncopy of the rows, and not a hidden filter that can disagree with what is\ndownstream of it. The summary reconciles to the whole table because it is\nreading the whole table.\n\n*Taught properly in: [Month-end close](../month-end-close/README.md).*\n\n## 8. Ask \"what if\" without copying the model\n\nClick **Container** in the left rail and rename the new group `Assumptions`.\nInside it, click **+ Value**, rename the value `Growth`, and give it:\n\n```text\n1.08\n```\n\nBack on `Monthly sales`, add a calculated column named `Forecast`, and format\nit as USD Accounting like the others:\n\n```text\n(`Revenue` * `Growth`).round()\n```\n\nA column formula is an ordinary expression, so rounding to the dollar is a\nmethod on the arithmetic rather than a wrapper function around the whole thing.\n\nCheckpoint: the January Forecast is `127440`, and adding a third Scratchwork\nline\n\n```text\nForecast total = `Monthly sales`.`Forecast`.sum()\n```\n\nanswers `906120.00`.\n\nNow select the `Growth` value card. In **Selection** you will find a\n**Scenarios** grid below its number. Type `Upside` into the **New scenario**\nrow and press **Return**, give it the value `1.15`, then add `Downside` with\n`0.95`.\n\nUse the **Scenario** menu in the bottom-right corner of the canvas to switch\nbetween them. It appears only once a document has a scenario to switch to.\n\nCheckpoint: `Forecast total` reads `906120.00` on Base, `964850.00` on Upside,\nand `797050.00` on Downside. Leave it on **Base** before continuing.\n\nNothing was duplicated to get three answers. A scenario is a small set of\ndisagreements about named assumptions, and every column, result and Scratchwork\nline that reads one moves when you switch. A blank cell in the Scenarios grid\nmeans \"same as the base\", so a scenario stays as short as what actually differs.\n\n## 9. Chart the table beside the table\n\nSelect `Sales vs budget`, use the **+** beside its table tabs, and choose\n**Plot**. In the plot inspector choose:\n\n- chart type: Bar;\n- X: Month;\n- Y: Revenue;\n- Color: Region.\n\nRename it `Revenue by month`.\n\nCheckpoint: six bars, split between East and West, sharing a card with the\ntable they describe. Change a Revenue value upstream and the bar moves.\n\nThe plot reads the table by identity, and it reads all of it—not the first\nthousand rows, and not a copied range that has to be re-pointed when the data\ngrows.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## Finish line\n\nYour workbook should now agree with `grand-tour-finished.fw`:\n\n- 6 rows in `Monthly sales`, sorted January to June, with Profit and Forecast;\n- `Sales vs budget` with six rows and a Variance column;\n- `By region` with two rows reconciling to `21000` of variance;\n- `Growth` at `1.08`, with an Upside and a Downside;\n- Scratchwork answering `839000`, `21000`, and `906120.00` on Base;\n- a `Revenue by month` chart on the analysis tab strip.\n\nTwo last things worth knowing:\n\n- Undo travels with the model. Undo the join and the Variance column, the\n  summary and the chart go with it; redo brings them all back. Try it.\n- Open the **Project** panel in the left rail and choose **Export to Excel…**.\n  The workbook that comes out holds the results as values, and the checkbox\n  **Include a sheet explaining how each column was computed** adds one tab\n  saying which of them were formulas and what they read. People who need a\n  spreadsheet get a spreadsheet; you keep the model.\n\n## Where to go next\n\nThe tour showed each of these once. In order, the lessons that teach them:\n\n1. [Your first FrameWork workbook](../first-workbook/README.md) — the same\n   ground at walking pace, plus formatting, a live markdown narrative, and\n   plots. About 15 minutes.\n2. [Importing an Excel workbook](../excel-import/README.md) — bringing real\n   `.xlsx` sheets in. About 10 minutes.\n3. [Month-over-month formulas by pointing](../formula-clicks/README.md) —\n   `.shift(1)`, click-to-build, table-first autocomplete. About 15 minutes.\n4. [Excel concepts in FrameWork](../excel-to-framework/README.md) — a\n   translation table for the habits that do not carry over.\n5. [Month-end close](../month-end-close/README.md) — the full package: joins,\n   summaries, pivots, exceptions, control totals. About 30–45 minutes.\n6. [Vectors, dates, and visual joins](../vectors-and-joins/README.md) —\n   vectors, row-count-aware date series, and the Calculation Matrix. About 20\n   minutes.\n\n## Smoke-test notes\n\nThis lesson is the broadest manual smoke test in the set: it crosses paste,\nfind, calculated columns, declared order, Scratchwork and its window, joins,\nbranches, summaries, values, scenarios, plots and export. Capture the first\nbroken checkpoint with the template in the parent tutorial README, and say\nwhether the control could be found without the guide.\n\n## Rebuilding the files\n\nBoth workbooks are generated through `Store::apply(Operation::...)`, the same\nvalidation, history and persistence boundary the desktop and MCP use:\n\n```bash\ncargo run -p framework-core --example generate_tutorial_workbooks -- grand-tour\n```\n\nThe generator reloads the answer key and proves the joined variance, the\nregional summary, the three Scratchwork answers, and the forecast under each\nscenario.\n"
+          }
+        ]
+      }
+    ],
+    "views": [
+      {
+        "id": "7ace743c-5b8e-4706-8639-2158d66083c9",
+        "objectId": "3229ffc6-35a9-45a0-9d05-281205e5e2a2",
+        "x": 720.0,
+        "y": 70.0,
+        "width": 420.0,
+        "height": 300.0,
+        "collapsed": false
+      },
+      {
+        "id": "11467c9e-f5f3-4756-a993-b3658e4dad70",
+        "objectId": "fa764689-0052-4f1a-9594-2fd64371e481",
+        "x": 720.0,
+        "y": 500.0,
+        "width": 420.0,
+        "height": 388.0,
+        "collapsed": false
+      },
+      {
+        "id": "bdd0f074-636c-44fb-9e23-d6adcc0ad7c9",
+        "objectId": "eaebf838-faa8-4664-abd8-4ac87131328b",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 580.0,
+        "height": 820.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
+  },
+  "versionVector": {}
+}

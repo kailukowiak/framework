@@ -6,7 +6,9 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
-const BUNDLED_TUTORIALS: [[&str; 2]; 10] = [
+const BUNDLED_TUTORIALS: [[&str; 2]; 12] = [
+    ["grand-tour", "grand-tour-start.fw"],
+    ["grand-tour", "grand-tour-finished.fw"],
     ["first-workbook", "first-workbook-start.fw"],
     ["first-workbook", "first-workbook-finished.fw"],
     ["excel-import", "excel-import-start.fw"],
@@ -607,4 +609,110 @@ fn vectors_and_joins_tutorial_grows_dates_and_lookup_results_from_its_source() {
     assert_eq!(grown_join.rows[6][4], "Cedar");
     assert_eq!(grown_join.rows[6][7], "16000");
     assert_eq!(block_answers(&finished, "Checks"), ["7", "153600"]);
+}
+
+#[test]
+fn grand_tour_switches_assumptions_without_copying_the_model() {
+    let start = Store::load(&tutorial_path(&["grand-tour", "grand-tour-start.fw"])).unwrap();
+    let empty = frame_named(&start, "Monthly sales");
+    assert_eq!(empty.columns.len(), 2);
+    assert!(empty.rows.iter().all(|row| {
+        row.cells
+            .values()
+            .all(|cell| cell.raw.is_empty() && cell.override_formula.is_none())
+    }));
+    assert_eq!(frame_named(&start, "Budget").rows.len(), 6);
+    // Section 5 asks the reader to press ⌘J, which is the gesture that
+    // creates the block. Shipping one in the Start workbook would quietly
+    // replace the thing the section is teaching.
+    assert!(
+        !start
+            .document()
+            .objects
+            .iter()
+            .any(|object| matches!(object, DataObject::Block(_))),
+        "the tour's Start workbook leaves Scratchwork to ⌘J"
+    );
+
+    let mut finished =
+        Store::load(&tutorial_path(&["grand-tour", "grand-tour-finished.fw"])).unwrap();
+    let sales = frame_named(&finished, "Monthly sales");
+    let sales_page = finished.get_frame_page(&sales.id, 0, 20).unwrap();
+    assert_eq!(sales_page.total_rows, 6);
+    assert_eq!(
+        sales_page
+            .columns
+            .iter()
+            .map(|column| column.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Month", "Region", "Revenue", "Cost", "Profit", "Forecast"]
+    );
+    assert_eq!(
+        sales_page.rows[0],
+        vec!["2026-01", "East", "118000", "76000", "42000", "127440"]
+    );
+
+    let analysis = frame_named(&finished, "Sales vs budget");
+    let analysis_page = finished.get_frame_page(&analysis.id, 0, 20).unwrap();
+    assert_eq!(analysis_page.total_rows, 6);
+    assert_eq!(
+        analysis_page.rows[0],
+        vec![
+            "2026-01", "East", "118000", "76000", "42000", "120000", "-2000"
+        ]
+    );
+    assert_eq!(analysis_page.rows[5].last().unwrap(), "8000");
+    assert_eq!(frame_named(&finished, "Budget").unique_keys.len(), 1);
+
+    let summary = frame_named(&finished, "By region");
+    let summary_page = finished.get_frame_page(&summary.id, 0, 10).unwrap();
+    assert_eq!(
+        summary_page.rows,
+        vec![
+            vec!["East", "573000", "560000", "13000"],
+            vec!["West", "266000", "258000", "8000"],
+        ]
+    );
+
+    assert!(
+        finished.document().objects.iter().any(
+            |object| matches!(object, DataObject::Plot(plot) if plot.name == "Revenue by month")
+        )
+    );
+    assert!(finished.document().frozen_values.is_empty());
+    assert_eq!(
+        block_answers(&finished, "Scratchwork"),
+        ["839000", "21000", "906120.00"]
+    );
+
+    // The tour ends on the claim that one model answers three questions.
+    // Switching is therefore behavior to assert, not a stored formula: the
+    // same three lines are read under each set of assumptions and again
+    // after switching back.
+    for (name, forecast) in [("Upside", "964850.00"), ("Downside", "797050.00")] {
+        let scenario_id = finished
+            .document()
+            .scenarios
+            .iter()
+            .find(|scenario| scenario.name == name)
+            .unwrap_or_else(|| panic!("the answer key carries the {name} scenario"))
+            .id
+            .clone();
+        finished
+            .apply(Operation::ActivateScenario {
+                scenario_id: Some(scenario_id),
+            })
+            .unwrap();
+        assert_eq!(
+            block_answers(&finished, "Scratchwork"),
+            ["839000", "21000", forecast]
+        );
+    }
+    finished
+        .apply(Operation::ActivateScenario { scenario_id: None })
+        .unwrap();
+    assert_eq!(
+        block_answers(&finished, "Scratchwork"),
+        ["839000", "21000", "906120.00"]
+    );
 }

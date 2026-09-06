@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permissions required by FrameWork document windows.",
-  "windows": ["main", "document-*"],
+  "windows": ["main", "document-*", "scratchwork-*"],
   "permissions": [
     "core:default",
     "core:event:allow-listen",

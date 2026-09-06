@@ -11,6 +11,102 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Hold ⌘ and FrameWork shows you the keys. Every button that has a keyboard
+  shortcut, from the rail and the inspector tabs to a card's fit and collapse
+  controls, the zoom readout and the Scratchwork toggle, wears its shortcut in
+  a small badge for as long as the key is down, and nothing moves when they
+  appear. Let go, press anything else, or switch away and they are gone. The
+  Scratchwork window does the same.
+
+- The FrameWork mark at the top of the left rail opens Quick Commands, so the
+  command palette is reachable without knowing ⇧⌘P or opening the menu.
+
+- Cards arrive at the size of what is in them. A paste into an empty frame, a
+  paste onto bare canvas, an import and a join each open a card wide enough for
+  their columns and tall enough for about a dozen rows, and a new Scratchwork
+  block starts wide enough for a line and its answer. A join lands in free
+  space in the viewport, comes up selected, and is scrolled into view; jumping
+  to a card now only scrolls when the card is off screen, and then centres it.
+
+- Selection follows the gesture. Pressing a column header selects that column
+  rather than widening back out to the whole card, pressing a member of a
+  container selects the member, a container has a name field in the inspector,
+  and Quick Commands closes when you press outside it.
+
+- Committing a column formula hands the keyboard back to the grid, so the next
+  arrow key moves the selection instead of moving the caret. The Format tab now
+  says which scope each block of controls changes, and a number format applied
+  over a grid selection reaches every numeric column in the range rather than
+  one of them.
+
+- Turning the wheel over a grid stops at the grid's edge instead of continuing
+  into the canvas underneath.
+
+- Variable (⌥⌘V), Calculation Matrix (⌥⌘M) and Canvas Only (⇧⌘C) now have
+  shortcuts, in the menu, in Quick Commands and on the rail badges. Holding
+  Shift or Option together with ⌘ narrows the badges to the shortcuts that use
+  that modifier.
+
+- Fixes in the Scratchwork window: the pop-out no longer blanks with a React
+  error when the caret sits inside a backtick, ⌘J activates the session it
+  raises, and pointing at canvas values from the pop-out works on the first
+  click into a window instead of needing a click to activate it first. A
+  container card's add buttons no longer stretch to full width, so the values
+  you add are visible at the card's default size.
+
+- A new first tutorial, **The FrameWork tour**, opens the lesson list. In about
+  25 minutes it goes once over what FrameWork does that a spreadsheet does not:
+  paste a table that arrives typed, write one formula for a whole column,
+  declare the row order and see it in Wrangle, keep Scratchwork in its own
+  window, bring a budget over by dragging its header onto a key, branch a tab
+  and summarize it, switch the same model between Base, Upside and Downside
+  from the corner of the canvas, and chart the result beside the table. Every
+  section names the lesson that teaches it properly, so the tour is a map
+  rather than a replacement. **Create tutorials** now makes twelve workbooks.
+
+- Edits now reach the `.fw` file as one write after about two seconds of idle
+  time instead of a write per operation, which is what was producing
+  conflicted copies in Dropbox and Google Drive during active editing. A
+  pending write is still flushed at once before Save As, Open, New, Package or
+  Compact, and on window blur, window close, or quitting, so nothing is left
+  unsaved.
+
+- Quick Commands (⇧⌘P) now indexes more than the menu. Select a frame, a card
+  or a column and the palette offers that object's own actions under its name:
+  sort, pin, hide or delete a column, create a frame from a frame, rename, fit,
+  collapse, delete, running exactly what the right-click menu runs. A Recent
+  group lists the last eight documents and opens one on Enter. Shortcuts are
+  searchable as text, so "⌘3", "cmd 3" and "shift cmd p" all find the command
+  that holds the key. A query that names no command no longer dead-ends: the
+  last row hands the phrase to Find, which opens already searching for it.
+
+- The application's menu commands now have one definition. Every item in the
+  menu bar, every row in Quick Commands, and everything the Scratchwork window
+  hands back to its workbook are checked against that one list, so a command
+  can no longer appear in the menu while doing nothing, the way Undo once could
+  in the Scratchwork window. Commands the Scratchwork window forwards to its
+  workbook now arrive there in every build, not only in the installed app.
+
+- The Keyboard Shortcuts dialog now lists the grid navigation that already
+  worked but was undocumented: ⌘Arrow jumps to the edge of the data, ⇧⌘Arrow
+  extends the selection there, ⇧Space selects the row, and Home, End, ⌘Home
+  and ⌘End reach the ends of a row or of the frame.
+
+- Scratchwork can open in its own ordinary workbook window from the Window
+  menu or Quick Commands. It stays on the same autosaved block and undo
+  history as the canvas, ⌘J raises it when it is already open, and pointing at
+  canvas values or columns still inserts references into its active line.
+
+- ⌘⇧P now opens Quick Commands, a dense searchable list of document, canvas,
+  view and help actions—including Open, Save As, Scratchwork and inspector
+  commands. ⌘K opens the unified Formula and FrameWork Reference, choosing
+  formulas automatically while a formula editor is active; the former ⌘⇧H
+  help shortcut is no longer needed.
+
+- An update offered as FrameWork opens now appears in front of the Recent
+  documents and Projects library. The library returns after the update prompt
+  is dismissed instead of covering it or closing alongside it.
+
 ## 0.1.6
 
 - Wide frames keep their key columns in view. Right-click a column header and choose

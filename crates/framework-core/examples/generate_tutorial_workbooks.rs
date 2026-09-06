@@ -242,6 +242,401 @@ fn add_sales_narrative(store: &mut Store) -> Result<(), framework_core::CoreErro
     Ok(())
 }
 
+/// The tour's Start workbook: the empty table its first section pastes into,
+/// and the budget its join reads. Everything else in the lesson is something
+/// the reader makes, including the Scratchwork block — ⌘J writes that one, and
+/// shipping it pre-made would hide the gesture the section exists to teach.
+fn grand_tour_start(store: &mut Store) -> Result<(), framework_core::CoreError> {
+    store.apply(Operation::AddFrame {
+        name: "Monthly sales".into(),
+        grid: vec![
+            vec!["Column 1".into(), "Column 2".into()],
+            vec![String::new(), String::new()],
+            vec![String::new(), String::new()],
+        ],
+        x: 70.0,
+        y: 70.0,
+    })?;
+    store.apply(Operation::AddFrame {
+        name: "Budget".into(),
+        grid: vec![
+            vec!["Month", "Budget"],
+            vec!["2026-01", "120000"],
+            vec!["2026-02", "120000"],
+            vec!["2026-03", "130000"],
+            vec!["2026-04", "138000"],
+            vec!["2026-05", "150000"],
+            vec!["2026-06", "160000"],
+        ]
+        .into_iter()
+        .map(|row| row.into_iter().map(str::to_string).collect())
+        .collect(),
+        x: 70.0,
+        y: 500.0,
+    })?;
+    add_tutorial_walkthrough(
+        store,
+        include_str!("../../../tutorials/grand-tour/README.md"),
+    )
+}
+
+/// Sections 1, 3, 4 and 8: the pasted rows, the two calculated columns, and
+/// the declared order between them. Written as one pipeline because that is
+/// what the three gestures leave behind — `SetFrameDisplaySort` is the header
+/// control, and it appends the trailing Sort the lesson tells the reader to
+/// find in Wrangle.
+fn grand_tour_sales(store: &mut Store) -> Result<(), framework_core::CoreError> {
+    let sales_id = frame(store, "Monthly sales").id;
+    store.apply(Operation::SetFrameFromPastedText {
+        frame_id: sales_id.clone(),
+        text: "Month\tRegion\tRevenue\tCost\n2026-04\tWest\t142000\t91000\n2026-01\tEast\t118000\t76000\n2026-06\tEast\t168000\t104000\n2026-03\tEast\t136000\t85000\n2026-02\tWest\t124000\t79000\n2026-05\tEast\t151000\t96000\n".into(),
+    })?;
+    store.apply(Operation::SetFramePipeline {
+        frame_id: sales_id.clone(),
+        steps: vec![
+            FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: column_id("Profit"),
+                    name: "Profit".into(),
+                    formula: "`Revenue` - `Cost`".into(),
+                }],
+            },
+            FrameStepInput::Sort {
+                keys: vec![framework_core::SortInput {
+                    column_id: column_id_named(&frame(store, "Monthly sales"), "Month"),
+                    descending: false,
+                }],
+            },
+            FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: column_id("Forecast"),
+                    name: "Forecast".into(),
+                    formula: "(`Revenue` * `Growth`).round()".into(),
+                }],
+            },
+        ],
+    })?;
+    let sales = frame(store, "Monthly sales");
+    for name in ["Revenue", "Cost", "Profit", "Forecast"] {
+        store.apply(Operation::SetColumnFormat {
+            frame_id: sales.id.clone(),
+            column_id: column_id_named(&sales, name),
+            format: Some(money_format()),
+        })?;
+    }
+    Ok(())
+}
+
+/// Section 8's assumption: one value in a group, and the two scenarios that
+/// disagree with it. The answer key is saved on the base so its checkpoints
+/// are the numbers a reader sees on opening it.
+fn grand_tour_assumptions(store: &mut Store) -> Result<(), framework_core::CoreError> {
+    store.apply(Operation::AddContainer {
+        name: "Assumptions".into(),
+        x: 1990.0,
+        y: 500.0,
+        container_id: None,
+    })?;
+    let container_id = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Container(container) if container.name == "Assumptions" => {
+                Some(container.id.clone())
+            }
+            _ => None,
+        })
+        .expect("the tour's assumptions group exists");
+    store.apply(Operation::AddValue {
+        name: "Growth".into(),
+        raw: "1.08".into(),
+        x: 0.0,
+        y: 0.0,
+        container_id: Some(container_id),
+    })?;
+    let growth_id = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Value(value) if value.name == "Growth" => Some(value.id.clone()),
+            _ => None,
+        })
+        .expect("the tour's growth assumption exists");
+    for (name, raw) in [("Upside", "1.15"), ("Downside", "0.95")] {
+        store.apply(Operation::AddScenario {
+            scenario_id: None,
+            name: name.into(),
+            copy_from: None,
+        })?;
+        let scenario_id = store
+            .document()
+            .scenarios
+            .iter()
+            .find(|scenario| scenario.name == name)
+            .expect("the scenario just added exists")
+            .id
+            .clone();
+        store.apply(Operation::SetScenarioValue {
+            scenario_id,
+            value_id: growth_id.clone(),
+            raw: Some(raw.into()),
+        })?;
+    }
+    Ok(())
+}
+
+/// Section 6 and 7: the dragged join, the variance beside it, and the branch
+/// that summarizes the whole thing by region.
+fn grand_tour_analysis(store: &mut Store) -> Result<(), framework_core::CoreError> {
+    let sales = frame(store, "Monthly sales");
+    let budget = frame(store, "Budget");
+    let budget_month = column_id_named(&budget, "Month");
+    store.apply(Operation::SetUniqueKey {
+        frame_id: budget.id.clone(),
+        column_ids: vec![budget_month.clone()],
+        enabled: true,
+    })?;
+    store.apply(Operation::AddJoinFrame {
+        primary_frame_id: sales.id.clone(),
+        lookup_frame_id: budget.id.clone(),
+        primary_key_column_ids: vec![column_id_named(&sales, "Month")],
+        lookup_key_column_ids: vec![budget_month],
+        join_type: FrameJoinType::Left,
+        columns: ["Month", "Region", "Revenue", "Cost", "Profit"]
+            .into_iter()
+            .map(|name| JoinColumnInput {
+                source_frame_id: sales.id.clone(),
+                source_column_id: column_id_named(&sales, name),
+                name: name.into(),
+            })
+            .chain(std::iter::once(JoinColumnInput {
+                source_frame_id: budget.id.clone(),
+                source_column_id: column_id_named(&budget, "Budget"),
+                name: "Budget".into(),
+            }))
+            .collect(),
+        name: "Sales vs budget".into(),
+        x: 1290.0,
+        y: 70.0,
+    })?;
+    let analysis = frame(store, "Sales vs budget");
+    store.apply(Operation::SetFramePipeline {
+        frame_id: analysis.id.clone(),
+        steps: vec![FrameStepInput::WithColumns {
+            columns: vec![ExistingFormulaInput {
+                output_column_id: column_id("Variance"),
+                name: "Variance".into(),
+                formula: "`Revenue` - `Budget`".into(),
+            }],
+        }],
+    })?;
+    let analysis = frame(store, "Sales vs budget");
+    for name in ["Revenue", "Cost", "Profit", "Budget", "Variance"] {
+        store.apply(Operation::SetColumnFormat {
+            frame_id: analysis.id.clone(),
+            column_id: column_id_named(&analysis, name),
+            format: Some(money_format()),
+        })?;
+    }
+
+    let summary = branch_frame_mut(store, "Sales vs budget", "By region")?;
+    let mut summary_steps = pass_through_steps(&summary);
+    summary_steps.push(FrameStepInput::Summarize {
+        group_keys: vec![ExistingFormulaInput {
+            output_column_id: column_id("Region"),
+            name: "Region".into(),
+            formula: "`Region`".into(),
+        }],
+        aggregates: ["Revenue", "Budget", "Variance"]
+            .into_iter()
+            .map(|name| ExistingFormulaInput {
+                output_column_id: column_id(&format!("Total {name}")),
+                name: format!("Total {name}"),
+                formula: format!("`{name}`.sum()"),
+            })
+            .collect(),
+        maintain_order: true,
+    });
+    store.apply(Operation::SetFramePipeline {
+        frame_id: summary.id,
+        steps: summary_steps,
+    })?;
+    Ok(())
+}
+
+/// Section 9, plus the layout the answer key opens on. The chart shares the
+/// analysis card's tab strip because the lesson's claim is that a plot lives
+/// beside the table it explains rather than in a chart sheet of its own.
+fn grand_tour_layout(store: &mut Store) -> Result<(), framework_core::CoreError> {
+    let analysis = frame(store, "Sales vs budget");
+    let analysis_view = view_id(store, &analysis.id);
+    store.apply(Operation::ResizeView {
+        view_id: analysis_view.clone(),
+        width: 1080.0,
+        height: 430.0,
+    })?;
+    store.apply(Operation::AddPlot {
+        name: "Revenue by month".into(),
+        source_frame_id: analysis.id.clone(),
+        spec: serde_json::json!({
+            "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+            "mark": {"type": "bar", "tooltip": true},
+            "encoding": {
+                "x": {
+                    "field": column_id_named(&analysis, "Month"),
+                    "type": "nominal",
+                    "title": "Month",
+                    "sort": null
+                },
+                "y": {
+                    "field": column_id_named(&analysis, "Revenue"),
+                    "type": "quantitative",
+                    "title": "Revenue"
+                },
+                "color": {
+                    "field": column_id_named(&analysis, "Region"),
+                    "type": "nominal",
+                    "title": "Region"
+                }
+            },
+            "title": "Revenue by month"
+        }),
+        x: 0.0,
+        y: 0.0,
+        view_id: Some(analysis_view.clone()),
+    })?;
+    store.apply(Operation::SetActiveTab {
+        view_id: analysis_view.clone(),
+        object_id: analysis.id.clone(),
+    })?;
+    // One column of work beside the walkthrough, in the order the tour builds
+    // it: the source table, then the analysis card — which carries the join,
+    // the regional summary and the chart as tabs, because a branch is a tab
+    // rather than a card of its own — then the answers. The inputs the reader
+    // does not edit again sit to the right of that column.
+    store.apply(Operation::MoveView {
+        view_id: analysis_view,
+        x: 720.0,
+        y: 490.0,
+    })?;
+    for (object_id, x, y, width, height) in [
+        (frame(store, "Monthly sales").id, 720.0, 70.0, 1080.0, 380.0),
+        (block_id(store, "Scratchwork"), 720.0, 960.0, 620.0, 220.0),
+        (frame(store, "Budget").id, 1840.0, 70.0, 380.0, 330.0),
+    ] {
+        let view = view_id(store, &object_id);
+        store.apply(Operation::MoveView {
+            view_id: view.clone(),
+            x,
+            y,
+        })?;
+        store.apply(Operation::ResizeView {
+            view_id: view,
+            width,
+            height,
+        })?;
+    }
+    let assumptions = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Container(container) if container.name == "Assumptions" => {
+                Some(container.id.clone())
+            }
+            _ => None,
+        })
+        .expect("the tour's assumptions group exists");
+    store.apply(Operation::MoveView {
+        view_id: view_id(store, &assumptions),
+        x: 1840.0,
+        y: 440.0,
+    })?;
+    Ok(())
+}
+
+fn generate_grand_tour(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::create_dir_all(output)?;
+    let mut store = Store::new_tutorial(Document::blank("The FrameWork tour"));
+    grand_tour_start(&mut store)?;
+    let start = output.join("grand-tour-start.fw");
+    store.save(&start)?;
+
+    // Order matters here the way it matters in the lesson: the assumption
+    // exists before the Forecast column that reads it, and the join copies
+    // the source columns that exist when it is made.
+    grand_tour_assumptions(&mut store)?;
+    grand_tour_sales(&mut store)?;
+    grand_tour_analysis(&mut store)?;
+    store.apply(Operation::AddBlock {
+        name: "Scratchwork".into(),
+        x: 720.0,
+        y: 500.0,
+    })?;
+    store.apply(Operation::SetBlockSource {
+        block_id: block_id(&store, "Scratchwork"),
+        source: "Total revenue = `Monthly sales`.`Revenue`.sum()\nTotal variance = `Sales vs budget`.`Variance`.sum()\nForecast total = `Monthly sales`.`Forecast`.sum()".into(),
+        editing: None,
+    })?;
+    grand_tour_layout(&mut store)?;
+
+    let finished = output.join("grand-tour-finished.fw");
+    store.save(&finished)?;
+
+    let mut reloaded = Store::load(&finished)?;
+    let sales_id = frame(&reloaded, "Monthly sales").id;
+    let sales_page = reloaded.get_frame_page(&sales_id, 0, 20)?;
+    assert_eq!(sales_page.total_rows, 6);
+    assert_eq!(
+        sales_page.rows[0],
+        vec!["2026-01", "East", "118000", "76000", "42000", "127440"]
+    );
+    let analysis_id = frame(&reloaded, "Sales vs budget").id;
+    let analysis_page = reloaded.get_frame_page(&analysis_id, 0, 20)?;
+    assert_eq!(analysis_page.total_rows, 6);
+    assert_eq!(
+        analysis_page.rows[0],
+        vec![
+            "2026-01", "East", "118000", "76000", "42000", "120000", "-2000"
+        ]
+    );
+    let summary_page = reloaded.get_frame_page(&frame(&reloaded, "By region").id, 0, 10)?;
+    assert_eq!(
+        summary_page.rows,
+        vec![
+            vec!["East", "573000", "560000", "13000"],
+            vec!["West", "266000", "258000", "8000"],
+        ]
+    );
+    assert_block_answers(&reloaded, "Scratchwork", &["839000", "21000", "906120.00"]);
+
+    // The tour's closing claim is that switching assumptions moves the model
+    // rather than a copy of it, so the generator proves it the way the reader
+    // does: switch, read the same three answers, switch back.
+    for (name, forecast) in [("Upside", "964850.00"), ("Downside", "797050.00")] {
+        let scenario_id = reloaded
+            .document()
+            .scenarios
+            .iter()
+            .find(|scenario| scenario.name == name)
+            .unwrap_or_else(|| panic!("the answer key carries the {name} scenario"))
+            .id
+            .clone();
+        reloaded.apply(Operation::ActivateScenario {
+            scenario_id: Some(scenario_id),
+        })?;
+        assert_block_answers(&reloaded, "Scratchwork", &["839000", "21000", forecast]);
+    }
+    reloaded.apply(Operation::ActivateScenario { scenario_id: None })?;
+    assert_block_answers(&reloaded, "Scratchwork", &["839000", "21000", "906120.00"]);
+
+    println!("wrote {}", start.display());
+    println!("wrote {}", finished.display());
+    Ok(())
+}
+
 fn generate_basic(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(output)?;
     let mut store = Store::new_tutorial(Document::blank("Your first FrameWork workbook"));
@@ -1006,10 +1401,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()?;
-    if std::env::args().nth(1).as_deref() == Some("vectors-and-joins") {
-        generate_vectors_and_joins(&workspace.join("tutorials/vectors-and-joins"))?;
-        return Ok(());
+    match std::env::args().nth(1).as_deref() {
+        Some("vectors-and-joins") => {
+            generate_vectors_and_joins(&workspace.join("tutorials/vectors-and-joins"))?;
+            return Ok(());
+        }
+        Some("grand-tour") => {
+            generate_grand_tour(&workspace.join("tutorials/grand-tour"))?;
+            return Ok(());
+        }
+        _ => {}
     }
+    generate_grand_tour(&workspace.join("tutorials/grand-tour"))?;
     generate_basic(&workspace.join("tutorials/first-workbook"))?;
     generate_advanced(&workspace.join("tutorials/month-end-close"))?;
     generate_vectors_and_joins(&workspace.join("tutorials/vectors-and-joins"))?;

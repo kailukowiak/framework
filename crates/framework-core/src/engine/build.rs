@@ -71,6 +71,7 @@ impl Document {
             .map(|column_name| column_name.to_string())
             .collect();
         let frame_id = id();
+        let row_count = frame.height();
         let columns: Vec<Column> = headers
             .iter()
             .enumerate()
@@ -119,7 +120,7 @@ impl Document {
             x,
             y,
             width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
-            height: 300.0,
+            height: (184.0 + row_count.min(12) as f64 * 34.0).clamp(300.0, 600.0),
             collapsed: false,
             tab_object_ids: Vec::new(),
         };
@@ -325,6 +326,7 @@ impl Document {
         y: f64,
     ) -> (FrameObject, CanvasView) {
         let width = columns.len().max(1);
+        let row_count = rows.len();
         let frame_id = id();
         let frame = FrameObject {
             comment: None,
@@ -351,7 +353,10 @@ impl Document {
             x,
             y,
             width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
-            height: 300.0,
+            // Tall enough to show what arrived, up to a dozen rows: a card
+            // that clips the third row of a six-row paste is the first thing
+            // a person has to fix.
+            height: (184.0 + row_count.min(12) as f64 * 34.0).clamp(300.0, 600.0),
             collapsed: false,
             tab_object_ids: Vec::new(),
         };

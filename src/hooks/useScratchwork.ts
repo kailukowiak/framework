@@ -12,6 +12,7 @@ import { appendScratchworkLine, sameName, SCRATCHWORK } from "../lib/scratchwork
 import type { BlockObject, DocumentView, Operation, Selection } from "../lib/types";
 import { scalarFormulaReferences } from "../ScalarCards";
 import type { ScratchworkFormulaFeedback } from "../ScratchworkFormulaBar";
+import { useScratchworkPopout } from "./useScratchworkPopout";
 
 type ScratchFocus = { blockId: string | null; token: number } | null;
 type ScratchReturn = { left: number; top: number; selection: Selection | null } | null;
@@ -38,6 +39,8 @@ export function useScratchwork({
   jumpToObject,
   getActiveFormulaEditor,
   commitActiveFormulaEditor,
+  clearActiveFormulaEditor,
+  setError,
 }: {
   document: DocumentView | null;
   setDocument: Dispatch<SetStateAction<DocumentView | null>>;
@@ -57,6 +60,8 @@ export function useScratchwork({
   jumpToObject: (objectId: string) => void;
   getActiveFormulaEditor: ReturnType<typeof useActiveFormulaEditorCommands>["getActive"];
   commitActiveFormulaEditor: ReturnType<typeof useActiveFormulaEditorCommands>["commit"];
+  clearActiveFormulaEditor: ReturnType<typeof useActiveFormulaEditorCommands>["clear"];
+  setError: (value: string | null) => void;
 }) {
   const scratchTargetId = document
     ? (scratchFocus
@@ -95,7 +100,7 @@ export function useScratchwork({
       ]
     : [];
 
-  const summonScratchpad = useCallback(async () => {
+  const summonCanvasScratchpad = useCallback(async () => {
     if (!document) return;
     // The drawer and the card are the same editor in two places, never two
     // drafts. Finish the drawer's current text before moving that editor back
@@ -185,6 +190,29 @@ export function useScratchwork({
     canvasRef,
   ]);
 
+  const closeScratchworkDrawer = useCallback(
+    () => setScratchworkDrawerOpen(false),
+    [setScratchworkDrawerOpen]
+  );
+  const {
+    open: scratchworkWindowOpen,
+    show: openScratchworkPopout,
+    focusIfOpen: focusScratchworkPopout,
+  } = useScratchworkPopout({
+    document,
+    run,
+    insertPosition,
+    getActive: getActiveFormulaEditor,
+    commitActive: commitActiveFormulaEditor,
+    clearActive: clearActiveFormulaEditor,
+    closeDrawer: closeScratchworkDrawer,
+    setError,
+  });
+  const summonScratchpad = useCallback(async () => {
+    if (await focusScratchworkPopout()) return;
+    await summonCanvasScratchpad();
+  }, [focusScratchworkPopout, summonCanvasScratchpad]);
+
   /**
    * With no editor active, the top bar writes an ordinary final line into the
    * ordinary Scratchwork block. It owns no result tier of its own: the little
@@ -270,6 +298,10 @@ export function useScratchwork({
    */
   const toggleScratchworkDrawer = useCallback(async () => {
     if (!document) return;
+    if (scratchworkWindowOpen) {
+      await focusScratchworkPopout();
+      return;
+    }
     if (getActiveFormulaEditor()?.kind === "scratchwork")
       await commitActiveFormulaEditor();
     if (scratchworkDrawerOpen) {
@@ -295,6 +327,8 @@ export function useScratchwork({
     insertPosition,
     run,
     scratchworkDrawerOpen,
+    focusScratchworkPopout,
+    scratchworkWindowOpen,
     setScratchworkDrawerOpen,
   ]);
 
@@ -313,7 +347,9 @@ export function useScratchwork({
     scratchTargetId,
     scratchworkBlock,
     scratchworkBarReferences,
+    scratchworkWindowOpen,
     summonScratchpad,
+    openScratchworkPopout,
     appendScratchworkFromBar,
     toggleScratchworkDrawer,
   };

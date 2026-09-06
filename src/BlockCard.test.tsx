@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ActiveFormulaEditorProvider } from "./ActiveFormulaEditor";
+import { ActiveFormulaEditorProvider, useActiveFormulaEditor } from "./ActiveFormulaEditor";
 import { BlockCard, BlockCardPreview } from "./BlockCard";
 import { NumberDisplayContext } from "./FrameGrid";
 import type { OperationHandler } from "./lib/handlers";
@@ -165,6 +165,91 @@ describe("BlockCard", () => {
       expect(setSource.length).toBeGreaterThan(0);
       expect(setSource.at(-1)?.source).toBe("x = 1");
     });
+  });
+
+  it("survives a parent that re-renders on every editor snapshot", async () => {
+    // The Scratchwork window subscribes to the whole editor snapshot. Each
+    // render of this card rebinds it with its completion list, and a fresh
+    // list per render made rebind publish, the parent render, the card
+    // rebind -- React #185. The list is memoized now; this pins that.
+    const view = fixtures.salesBeforeFormula;
+    const checks = objectNamed(view, "block", "Checks");
+    function Watching() {
+      const { active } = useActiveFormulaEditor();
+      return (
+        <>
+          <output data-testid="draft">{active?.draft ?? ""}</output>
+          <BlockCard
+            block={checks}
+            computed={view.computedBlocks[checks.id]}
+            objects={view.objects}
+            computedFrames={view.computedFrames}
+            formulaFunctions={view.formulaFunctions}
+            onOperation={vi.fn(async () => null)}
+            onFreeze={vi.fn(async () => undefined)}
+          />
+        </>
+      );
+    }
+    render(
+      <ActiveFormulaEditorProvider>
+        <Watching />
+      </ActiveFormulaEditorProvider>
+    );
+    const editor = screen.getByLabelText("Checks lines");
+    // Inside an unclosed backtick the offered list is a filtered copy, which
+    // is where the identity churn lived.
+    await userEvent.type(editor, "total = `Mo");
+    expect(screen.getByTestId("draft").textContent).toBe("total = `Mo");
+  });
+
+  it("reopens a session when ⌘J lands on a textarea that never lost focus", async () => {
+    // The workbook can end the pop-out's session from across the window
+    // boundary while the textarea stays the pop-out's active element. The
+    // next ⌘J must start a session again, or typing publishes nothing.
+    const view = fixtures.salesBeforeFormula;
+    const checks = objectNamed(view, "block", "Checks");
+    let clearSession: (() => void) | null = null;
+    function Watching({ focusToken }: { focusToken: number }) {
+      const { active, clear } = useActiveFormulaEditor();
+      clearSession = clear;
+      return (
+        <>
+          <output data-testid="session">{active?.id ?? "none"}</output>
+          <BlockCard
+            block={checks}
+            computed={view.computedBlocks[checks.id]}
+            focusToken={focusToken}
+            objects={view.objects}
+            computedFrames={view.computedFrames}
+            formulaFunctions={view.formulaFunctions}
+            onOperation={vi.fn(async () => null)}
+            onFreeze={vi.fn(async () => undefined)}
+          />
+        </>
+      );
+    }
+    const { rerender } = render(
+      <ActiveFormulaEditorProvider>
+        <Watching focusToken={1} />
+      </ActiveFormulaEditorProvider>
+    );
+    const editor = screen.getByLabelText("Checks lines");
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    expect(screen.getByTestId("session").textContent).toBe(`scratchwork:${checks.id}`);
+
+    act(() => clearSession?.());
+    expect(screen.getByTestId("session").textContent).toBe("none");
+    expect(document.activeElement).toBe(editor);
+
+    rerender(
+      <ActiveFormulaEditorProvider>
+        <Watching focusToken={2} />
+      </ActiveFormulaEditorProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("session").textContent).toBe(`scratchwork:${checks.id}`)
+    );
   });
 
   it("replaces a partial qualified column without repeating its frame", async () => {

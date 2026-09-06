@@ -47,7 +47,7 @@ export interface Point {
  * less precise, it does not make it wrong.
  */
 export const CARD_SIZES = {
-  block: { width: 340, height: 220 },
+  block: { width: 520, height: 220 },
   calculationMatrix: { width: 440, height: 240 },
   container: { width: 260, height: 240 },
   text: { width: 480, height: 280 },
@@ -135,4 +135,29 @@ export function placeNewCard(
   // reach) — hand back the sweep's furthest, still-deterministic point
   // rather than leave the card exactly where it started.
   return nearestFree ?? candidates[candidates.length - 1];
+}
+
+/**
+ * A frame card sized to what it holds, for the moments the content arrives
+ * all at once -- a paste into an empty table, a join. The card used to keep
+ * the size of the empty stub it replaced and clip the result both ways, so
+ * the first thing after "paste" was reaching for the resize handle. Capped,
+ * because a thousand-row frame is a thing to scroll, not a card to unroll.
+ */
+export function frameCardSize(columnCount: number, rowCount: number): CardSize {
+  // The same numbers the engine's frame builders and `resolveGridContext`
+  // use: 150 per column over a 48px gutter, 34 per row under 184px of card
+  // chrome (tabs, title, header, type row, scrollbar).
+  const ROW_NUMBER_GUTTER = 48;
+  const COLUMN_WIDTH = 150;
+  const CHROME_HEIGHT = 184;
+  const ROW_HEIGHT = 34;
+  const MAX_ROWS = 12;
+  return {
+    width: Math.max(420, Math.min(900, ROW_NUMBER_GUTTER + columnCount * COLUMN_WIDTH)),
+    height: Math.max(
+      300,
+      Math.min(600, CHROME_HEIGHT + Math.min(rowCount, MAX_ROWS) * ROW_HEIGHT)
+    ),
+  };
 }

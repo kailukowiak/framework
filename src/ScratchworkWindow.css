@@ -1,0 +1,8 @@
+/* A separate window is one editable sheet. Its title bar already says what it
+   is, so the block name and every piece of canvas chrome would only repeat it. */
+body.scratchwork-window-body { min-width: 0; background: var(--paper); }
+.scratchwork-window { width: 100vw; height: 100vh; display: flex; padding: 10px; background: var(--paper); }
+.scratchwork-window > .block-card { width: 100%; height: 100%; padding: 0; }
+.scratchwork-window .object-name-input { display: none; }
+.scratchwork-window .block-sheet { max-width: none; margin-top: 0; border-radius: 0; }
+.scratchwork-window-error { position: fixed; right: 12px; bottom: 8px; left: 12px; margin: 0; color: light-dark(#9a452b, #e2775a); font-size: var(--text-sm); }

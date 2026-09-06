@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FrameWork Dev",
+  "identifier": "com.framework.canvas.dev",
+  "app": {
+    "windows": [
+      {
+        "title": "FrameWork Dev",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 980,
+        "minHeight": 640,
+        "decorations": true,
+        "transparent": false,
+        "acceptFirstMouse": true
+      }
+    ]
+  }
+}

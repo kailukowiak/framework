@@ -25,6 +25,7 @@ export function LeftRail({
   setLeftPanel,
   toggleLeftPanel,
   onOpenLibrary,
+  onOpenQuickCommands,
   addBlock,
   addVariable,
   addText,
@@ -38,6 +39,7 @@ export function LeftRail({
   setLeftPanel: (panel: LeftPanel) => void;
   toggleLeftPanel: (panel: Exclude<LeftPanel, null>) => void;
   onOpenLibrary: () => void;
+  onOpenQuickCommands: () => void;
   addBlock: (position?: { x: number; y: number }) => unknown;
   addVariable: (position?: { x: number; y: number }) => unknown;
   addText: (position?: { x: number; y: number }) => unknown;
@@ -49,15 +51,26 @@ export function LeftRail({
 }) {
   return (
     <aside className="left-rail">
-      {/* Decorative: the window's title bar already names the application,
-          and every button below says what it is. */}
-      <img className="rail-mark" src="/icon.svg" alt="" />
+      {/* The mark is the door to everything the application can do: one
+          searchable list, in the corner where a person looks for the app
+          itself, rather than a stray glyph in the canvas's status bar. */}
+      <button
+        type="button"
+        className="rail-mark"
+        aria-label="Quick Commands"
+        title="Quick Commands (⇧⌘P)"
+        data-shortcut="⇧⌘P"
+        onClick={onOpenQuickCommands}
+      >
+        <img src="/icon.svg" alt="" />
+      </button>
       <div className="rail-group">
         <span className="rail-group-label">View</span>
         <button
           className={`rail-button ${leftPanel === null ? "active" : ""}`}
           onClick={() => setLeftPanel(null)}
-          title="The canvas on its own, with no panel beside it"
+          data-shortcut="⇧⌘C"
+          title="The canvas on its own, with no panel beside it (⇧⌘C)"
         >
           <Frame size={19} />
           <span>Canvas</span>
@@ -65,6 +78,7 @@ export function LeftRail({
         <button
           className={`rail-button ${leftPanel === "data" ? "active" : ""}`}
           onClick={() => toggleLeftPanel("data")}
+          data-shortcut="⇧⌘D"
           title="Every frame in this document, and where each one reads from (⇧⌘D)"
         >
           <Database size={19} />
@@ -73,6 +87,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={onOpenLibrary}
+          data-shortcut="⇧⌘L"
           title="Open a document, a sample workspace, or a data file (⇧⌘L)"
         >
           <Library size={19} />
@@ -93,7 +108,8 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addVariable()}
-          title="One named formula on the canvas; it may answer with one value or a vector"
+          data-shortcut="⌥⌘V"
+          title="One named formula on the canvas; it may answer with one value or a vector (⌥⌘V)"
         >
           <Variable size={19} />
           <span>Variable</span>
@@ -101,6 +117,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addBlock()}
+          data-shortcut="⌥⌘B"
           title="A page of formula lines: constants, calculations, and their answers (⌥⌘B)"
         >
           <SquareFunction size={19} />
@@ -109,6 +126,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addText()}
+          data-shortcut="⌥⌘T"
           title="A card of prose: markdown, with {{formula}} holes that print live values (⌥⌘T)"
         >
           <Type size={19} />
@@ -117,7 +135,8 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addCalculationMatrix()}
-          title="Two vector axes and one shared formula evaluated across every combination"
+          data-shortcut="⌥⌘M"
+          title="Two vector axes and one shared formula evaluated across every combination (⌥⌘M)"
         >
           <Grid3X3 size={19} />
           <span>Matrix</span>
@@ -125,6 +144,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addEmptyFrame()}
+          data-shortcut="⌥⌘F"
           title="An empty frame to paste or type rows into (⌥⌘F)"
         >
           <FrameIcon size={19} />
@@ -133,6 +153,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addContainer()}
+          data-shortcut="⌥⌘G"
           title="A resizable group for values, results, and vectors (⌥⌘G)"
         >
           <FolderPlus size={19} />
@@ -146,6 +167,7 @@ export function LeftRail({
         className="rail-button"
         disabled={viewCount < 2}
         onClick={() => void onOperation({ type: "tidyLayout" })}
+        data-shortcut="⇧⌘A"
         title="Arrange cards left to right by dependency, with each source before what it feeds (⇧⌘A)"
       >
         <Network size={19} />

@@ -1,3 +1,4 @@
+import { frameCardSize } from "../lib/cardPlacement";
 import { useCallback, useState, type RefObject } from "react";
 import {
   COPY_CONFIRM_CELLS,
@@ -238,10 +239,18 @@ export function useGridClipboard({
       // decide it — headers, column count, and types all come from the
       // core's Polars reader, exactly as a file import would.
       if (isEmptyLiteralFrame(context.frame)) {
+        const viewId = gridFocus.viewId;
         void run({
           type: "setFrameFromPastedText",
           frameId: context.frame.id,
           text: source,
+        }).then((failure) => {
+          if (failure) return;
+          // The stub the paste replaced was two columns by two rows; the
+          // card keeping that size clipped the result both ways.
+          const grid = parseGrid(source);
+          const size = frameCardSize(grid[0]?.length ?? 1, Math.max(0, grid.length - 1));
+          return run({ type: "resizeView", viewId, ...size });
         });
         return;
       }

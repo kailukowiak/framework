@@ -14,6 +14,12 @@ import { PreferencesDialog } from "./PreferencesDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 import { FindPaletteHost } from "./FindPalette";
 import { HelpBrowser } from "./HelpBrowser";
+import {
+  QuickCommands,
+  quickCommandItems,
+  type SelectionActions,
+  type SelectionTarget,
+} from "./QuickCommands";
 import { UpdateDialog } from "./UpdateDialog";
 import { useApplicationMenu } from "./useApplicationMenu";
 import { useFitViewToWindow } from "./useFitViewToWindow";
@@ -21,11 +27,8 @@ import { useCanvasNavigation } from "./useCanvasNavigation";
 import { useThousandsSeparatorsPreference } from "./hooks/useThousandsSeparatorsPreference";
 import { useInterfaceScalePreference } from "./hooks/useInterfaceScalePreference";
 import { useMcpSettings } from "./hooks/useMcpSettings";
-import {
-  useCanvasObjectCreation,
-  nextContainerName,
-  nextObjectName,
-} from "./hooks/useCanvasObjectCreation";
+import { useModifierHints } from "./hooks/useModifierHints";
+import { useCanvasObjectCreation } from "./hooks/useCanvasObjectCreation";
 import {
   usePipelineColumnRequests,
   scopedPipelineRequest,
@@ -33,6 +36,7 @@ import {
 import { useContextMenu } from "./hooks/useContextMenu";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useScratchwork } from "./hooks/useScratchwork";
+import { useScratchworkWindowBridge } from "./hooks/useScratchworkWindowBridge";
 import { useImportFlow } from "./hooks/useImportFlow";
 import { useCanvasClipboard } from "./hooks/useCanvasClipboard";
 import { useGridClipboard } from "./hooks/useGridClipboard";
@@ -48,6 +52,7 @@ import { DataSidebar } from "./DataSidebar";
 import { LeftRail } from "./LeftRail";
 import {
   CARD_SIZES,
+  frameCardSize,
   placeNewCard,
   type CardSize,
   type Rect,
@@ -55,7 +60,6 @@ import {
 import {
   inspectorAvailable,
   inspectorPanelReducer,
-  inspectorShortcutAction,
   inspectorShown,
 } from "./lib/inspectorPanel";
 import {
@@ -80,15 +84,19 @@ import {
   chainFilterCount,
   gridBoundsFor,
   gridCellAt,
+  gridRangeForFocus,
   isTextEntryTarget,
+  pipelineSortKeys,
   resolveGridContext,
   tabObjects,
   visualGridPosition,
   type ContextMenuState,
+  type GridContext,
   type GridFocus,
   type RenderedGrid,
 } from "./FrameGrid";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
+import { revealScroll } from "./lib/canvasReveal";
 import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
 import { combineVectorWithFrame } from "./lib/vectorCombine";
 import {
@@ -104,18 +112,27 @@ import {
   importDatabaseSource,
   importExcelRange,
   inspectExcelWorkbook,
+  listRecentDocuments,
   newWindow,
+  openDocument,
   pickDataFile,
   saveDocumentAsDialog,
   setHistoryMenuState,
   type ExcelWorkbookInfo,
+  type RecentDocument,
 } from "./lib/api";
 import { reconcileSelection } from "./lib/reconcileSelection";
 import { formulaToken } from "./lib/formulaReferences";
 import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNavigation";
-import { applicationShortcut, hasNativeMenu } from "./lib/applicationShortcuts";
+import {
+  applicationShortcut,
+  hasNativeMenu,
+  receivesMenuCommands,
+  shortcutCommandId,
+} from "./lib/applicationShortcuts";
 import { reportIgnoredFailure } from "./lib/errorReporting";
 import { selectedCanvasView, withCanvasView } from "./lib/canvasNavigation";
+import { pinnedThrough } from "./lib/pinnedColumns";
 import { outlineFrame, frameNames } from "./lib/dataSources";
 import {
   CANVAS_OUTLINE_ZOOM,
@@ -155,17 +172,70 @@ function importPosition(
   return placeNewCard(existingViews, anchor, CARD_SIZES.frame);
 }
 
+/**
+ * The selected object as Quick Commands names it: the card, the column when
+ * one is picked, and the few facts its verbs need to read correctly — whether
+ * the card is collapsed, how the column sorts today, how far a pin would
+ * reach, and whether the frame owns its rows (which decides whether a column
+ * is deleted or hidden). A plain description rather than the objects
+ * themselves, so `quickCommandItems` stays testable without a document.
+ */
+function quickCommandSelection(
+  document: DocumentView | null,
+  selection: Selection | null
+): SelectionTarget | null {
+  if (!document || !selection) return null;
+  const object = document.objects.find(
+    (candidate) => candidate.id === selection.objectId
+  );
+  if (!object) return null;
+  const frame = object.kind === "frame" ? object : null;
+  const column =
+    frame?.columns.find((candidate) => candidate.id === selection.columnId) ?? null;
+  const sortKey =
+    frame && column
+      ? pipelineSortKeys(document.computedFrames[frame.id]).find(
+          (key) => key.columnId === column.id
+        )
+      : undefined;
+  return {
+    name: column ? `${object.name} · ${column.name}` : object.name,
+    objectId: object.id,
+    kind: object.kind,
+    collapsed: selectedCanvasView(document, selection)?.collapsed ?? false,
+    frameId: frame?.id,
+    column:
+      frame && column
+        ? {
+            id: column.id,
+            name: column.name,
+            descending: sortKey ? sortKey.descending : null,
+            pinThrough: pinnedThrough(frame, column),
+            ownsRows: Boolean(document.computedFrames[frame.id]?.editing.rows),
+          }
+        : undefined,
+  };
+}
+
+/** Ids of every column the grid selection covers, in frame order. */
+function selectedGridColumnIds(context: GridContext, focus: GridFocus): string[] {
+  const range = gridRangeForFocus(context, focus);
+  if (!range) return [];
+  const [from, to] =
+    context.orientation === "fieldsAsRows"
+      ? [range.top, range.bottom]
+      : [range.left, range.right];
+  return context.frame.columns.slice(from, to + 1).map((column) => column.id);
+}
+
 export default function App() {
-  const formulaEditorActive = useActiveFormulaEditorPresence();
+  const localFormulaEditorActive = useActiveFormulaEditorPresence();
+  const formulaCommands = useActiveFormulaEditorCommands();
   const {
     commit: commitActiveFormulaEditor,
-    disengage: disengageActiveFormulaEditor,
     getActive: getActiveFormulaEditor,
-    insertReference: insertActiveFormulaReference,
-    replaceSelection: replaceActiveFormulaSelection,
-    cancel: cancelActiveFormulaEditor,
     clear: clearActiveFormulaEditor,
-  } = useActiveFormulaEditorCommands();
+  } = formulaCommands;
   const [document, setDocument] = useState<DocumentView | null>(null);
   const [documentPath, setDocumentPath] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -195,6 +265,11 @@ export default function App() {
     selection: Selection | null;
   } | null>(null);
   const [join, setJoin] = useState<JoinState>(null);
+  // The ids that existed before a join was created. The joined frame is the
+  // one not among them once the document comes back, and it is what the
+  // person just made, so it is what gets selected, sized to its columns, and
+  // scrolled to -- not the source frame the inspector was showing.
+  const [pendingJoinSelect, setPendingJoinSelect] = useState<Set<string> | null>(null);
   const [datasetLibrary, setDatasetLibrary] = useState(false);
   const [excelImport, setExcelImport] = useState<{
     workbook: ExcelWorkbookInfo;
@@ -207,7 +282,13 @@ export default function App() {
     "settings"
   );
   const [helpScope, setHelpScope] = useState<"formulas" | "guide" | null>(null);
+  const [lastHelpScope, setLastHelpScope] = useState<"formulas" | "guide">("guide");
+  const [quickCommandsOpen, setQuickCommandsOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
+  /** What Find opens on, when something handed it a query. */
+  const [findQuery, setFindQuery] = useState("");
+  /** The device's recents, read when the palette first needs to list them. */
+  const [recents, setRecents] = useState<RecentDocument[]>([]);
   const [sequenceFill, setSequenceFill] = useState<SequenceFillState | null>(null);
   const [runningCalculation, setRunningCalculation] =
     useState<RunningCalculationState | null>(null);
@@ -240,6 +321,8 @@ export default function App() {
   const { interfaceScale, setInterfaceScale, interfaceScaleError } =
     useInterfaceScalePreference();
   const { mcpSettings, mcpSettingsError, changeMcpEnabled } = useMcpSettings();
+  // Hold ⌘ and every control that has a shortcut wears it.
+  useModifierHints();
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const { canvasZoom, canvasZoomRef, zoomCanvas, viewportSize } = useCanvasViewport({
@@ -407,22 +490,28 @@ export default function App() {
     [document, requestPairVector, vectorCombine]
   );
 
-  const deleteContextColumn = () => {
-    if (!document || !contextFrame || !contextColumn) return;
-    const computed = document.computedFrames[contextFrame.id];
+  /**
+   * Dropping a column by whichever gesture its frame allows. Named by frame
+   * and column rather than read off the context menu, so the right-click item
+   * and Quick Commands reach the same decision rather than each making it.
+   */
+  const removeColumn = (frameId: string, columnId: string, viewId?: string) => {
+    if (!document) return;
+    const computed = document.computedFrames[frameId];
     if (computed?.editing.rows) {
-      deleteFromContext({
-        type: "deleteColumn",
-        frameId: contextFrame.id,
-        columnId: contextColumn.id,
-      });
+      deleteFromContext({ type: "deleteColumn", frameId, columnId });
       return;
     }
     // A computed or source-backed grid cannot delete its input data. Its
     // equivalent gesture is the same one the chain already exposes: leave
     // this column out of the final Select. Put that request through the open
     // editor so its local draft and the saved pipeline change together.
-    requestHidePipelineColumn(contextFrame.id, contextColumn.id, contextMenu?.viewId);
+    requestHidePipelineColumn(frameId, columnId, viewId);
+  };
+
+  const deleteContextColumn = () => {
+    if (!contextFrame || !contextColumn) return;
+    removeColumn(contextFrame.id, contextColumn.id, contextMenu?.viewId);
   };
 
   const {
@@ -457,6 +546,28 @@ export default function App() {
   // is an index, and an index takes you to the thing. A frame sitting on a
   // background tab is brought forward, since scrolling to a card that is
   // showing something else is not arriving anywhere.
+  useEffect(() => {
+    if (!pendingJoinSelect || !document) return;
+    const created = document.objects.find(
+      (object): object is FrameObject =>
+        object.kind === "frame" && !pendingJoinSelect.has(object.id)
+    );
+    if (!created) return;
+    setPendingJoinSelect(null);
+    const view = document.views.find((candidate) => candidate.objectId === created.id);
+    if (view) {
+      const size = frameCardSize(created.columns.length, created.rows.length || 6);
+      void run({ type: "resizeView", viewId: view.id, ...size });
+    }
+    setSelection({ objectId: created.id, viewId: view?.id });
+    setInspectorSection("wrangle");
+    const canvas = canvasRef.current;
+    if (view && canvas) {
+      const scroll = revealScroll(canvas, view, canvasZoomRef.current);
+      if (scroll) canvas.scrollTo({ ...scroll, behavior: "smooth" });
+    }
+  }, [canvasZoomRef, document, pendingJoinSelect, run]);
+
   const jumpToObject = useCallback(
     (objectId: string) => {
       if (!document) return;
@@ -469,14 +580,13 @@ export default function App() {
       if (view.objectId !== objectId) {
         void run({ type: "setActiveTab", viewId: view.id, objectId });
       }
-      // The card's position is in canvas units and the scroll is in screen
-      // pixels, so the jump is only right at 100% unless it is scaled.
-      const zoom = canvasZoomRef.current;
-      canvasRef.current?.scrollTo({
-        left: Math.max(0, view.x * zoom - 120),
-        top: Math.max(0, view.y * zoom - 80),
-        behavior: "smooth",
-      });
+      // Only if it is not already in view, and then centred: a card in plain
+      // sight stays put, and one that has to be fetched arrives in the
+      // middle rather than in a corner of an otherwise empty screen.
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const scroll = revealScroll(canvas, view, canvasZoomRef.current);
+      if (scroll) canvas.scrollTo({ ...scroll, behavior: "smooth" });
     },
     [canvasZoomRef, document, run]
   );
@@ -511,7 +621,9 @@ export default function App() {
     scratchTargetId,
     scratchworkBlock,
     scratchworkBarReferences,
+    scratchworkWindowOpen,
     summonScratchpad,
+    openScratchworkPopout,
     appendScratchworkFromBar,
     toggleScratchworkDrawer,
   } = useScratchwork({
@@ -530,6 +642,22 @@ export default function App() {
     jumpToObject,
     getActiveFormulaEditor,
     commitActiveFormulaEditor,
+    clearActiveFormulaEditor,
+    setError,
+  });
+  const {
+    active: formulaEditorActive,
+    getActive: getFormulaEditor,
+    insertReference: insertFormulaReference,
+    replaceSelection: replaceFormulaSelection,
+    cancel: cancelFormulaEditor,
+    clear: clearFormulaEditor,
+    disengage: disengageFormulaEditor,
+  } = useScratchworkWindowBridge({
+    local: formulaCommands,
+    localFocused: localFormulaEditorActive,
+    block: scratchworkBlock,
+    references: scratchworkBarReferences,
   });
 
   // Counted from the view rather than asked of the backend: every computed
@@ -652,6 +780,155 @@ export default function App() {
     insertPosition,
   });
 
+  // These are application actions, not menu actions: the native menu, the
+  // menu-less shell, and Quick Commands all enter through the same table.
+  // The update check still runs once on open; its offer owns the modal layer.
+  const updates = useUpdateCheck();
+  const selectedCommandView = selectedCanvasView(document, selection);
+  const menuHandlers: Record<string, () => void> = {
+    "new-window": () => void newWindow().catch((reason) => setError(String(reason))),
+    "new-document": () => setNewDocumentOpen(true),
+    "open-document": () => void handleOpenDocument(),
+    "save-document-as": () => void handleSaveAsDocument(),
+    "package-document": () => void packageThisDocument(),
+    "compact-data": () => void compactData(),
+    preferences: () => {
+      setPreferencesPage("settings");
+      setPreferencesOpen(true);
+    },
+    "keyboard-shortcuts": () => {
+      setPreferencesPage("shortcuts");
+      setPreferencesOpen(true);
+    },
+    find: () => {
+      setFindQuery("");
+      setFindOpen(true);
+    },
+    "quick-commands": () => {
+      setHelpScope(null);
+      setFindOpen(false);
+      setQuickCommandsOpen(true);
+    },
+    reference: () => {
+      setQuickCommandsOpen(false);
+      setHelpScope(getFormulaEditor() ? "formulas" : lastHelpScope);
+    },
+    "check-for-updates": () => updates.check(),
+    undo: () => void navigateHistory("undo"),
+    redo: () => void navigateHistory("redo"),
+    "data-library": () => setDatasetLibrary(true),
+    "toggle-sources": () =>
+      setLeftPanel((panel) => (panel === "data" ? null : "data")),
+    "tidy-layout": () => void run({ type: "tidyLayout" }),
+    "fit-view": () => withCanvasView(selectedCommandView, fitViewToWindow),
+    "collapse-view": () =>
+      withCanvasView(selectedCommandView, (view) =>
+        void run({
+          type: "setViewCollapsed",
+          viewId: view.id,
+          collapsed: !view.collapsed,
+        })
+      ),
+    "inspector-toggle": () => setInspectorSection({ panel: "toggle" }),
+    "inspector-selection": () => setInspectorSection("selection"),
+    "inspector-format": () => setInspectorSection("format"),
+    "inspector-wrangle": () => setInspectorSection("wrangle"),
+    "add-variable": () => void addVariable(),
+    "add-block": () => void addBlock(),
+    "add-text": () => void addText(),
+    "add-matrix": () => void addCalculationMatrix(),
+    "canvas-only": () => setLeftPanel(null),
+    "add-frame": () => void addEmptyFrame(),
+    "add-container": () => void addContainer(),
+    scratchpad: () => void summonScratchpad(),
+    "open-scratchwork-window": () => void openScratchworkPopout(),
+    "zoom-in": () => zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, 1)),
+    "zoom-out": () => zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, -1)),
+    "zoom-reset": () => zoomCanvas(DEFAULT_CANVAS_ZOOM),
+  };
+  // What ⌘⇧P offers about the selection. Every handler is the one the
+  // right-click menu, the column header or the menu itself already calls —
+  // the palette is another way in, not a second implementation.
+  const selectionActions: SelectionActions = {
+    rename: (objectId) => {
+      jumpToObject(objectId);
+      // Renaming happens in the card's own name field, the way it does from
+      // the canvas; the palette only puts the cursor in it.
+      requestAnimationFrame(() => {
+        const card = `[data-object-id="${CSS.escape(objectId)}"]`;
+        window.document
+          .querySelector<HTMLInputElement>(
+            `${card} input.frame-name, ${card} input.object-name-input`
+          )
+          ?.select();
+      });
+    },
+    remove: (objectId) => deleteFromContext({ type: "deleteObject", objectId }),
+    fitToWindow: () => menuHandlers["fit-view"](),
+    toggleCollapsed: () => menuHandlers["collapse-view"](),
+    createFrameFrom: (frameId) => {
+      const frame = document?.objects.find((object) => object.id === frameId);
+      const view = document?.views.find((candidate) => candidate.objectId === frameId);
+      void run({
+        type: "addLinkedFrame",
+        sourceFrameId: frameId,
+        name: `${frame?.name ?? "Frame"} frame`,
+        x: (view?.x ?? 0) + 28,
+        y: (view?.y ?? 0) + 28,
+      });
+    },
+    sortColumn: (frameId, columnId, descending) =>
+      void run({
+        type: "setFrameDisplaySort",
+        frameId,
+        keys: [{ columnId, descending }],
+      }),
+    clearColumnSort: (frameId, columnId) =>
+      void run({
+        type: "setFrameDisplaySort",
+        frameId,
+        keys: pipelineSortKeys(document?.computedFrames[frameId]).filter(
+          (key) => key.columnId !== columnId
+        ),
+      }),
+    pinColumns: (frameId, pinnedColumns) =>
+      void run({ type: "setFrameDisplayPinnedColumns", frameId, pinnedColumns }),
+    removeColumn: (frameId, columnId) =>
+      removeColumn(frameId, columnId, selection?.viewId),
+  };
+
+  /** Opening a recent from the palette lands the same way the library does. */
+  const openRecentDocument = (path: string) => {
+    void openDocument(path)
+      .then((opened) => {
+        setDocument(opened.document);
+        setDocumentPath(opened.path);
+        setSelection(null);
+        setContextMenu(null);
+        setError(null);
+      })
+      .catch((reason) => setError(String(reason).replace(/^Error:\s*/, "")));
+  };
+
+  // The recents are a device-level list, read when the palette opens rather
+  // than kept in step with a document nothing here is waiting on.
+  useEffect(() => {
+    if (!quickCommandsOpen) return;
+    let disposed = false;
+    void listRecentDocuments()
+      .then((items) => {
+        if (!disposed) setRecents(items);
+      })
+      .catch(reportIgnoredFailure("recent documents for Quick Commands"));
+    return () => {
+      disposed = true;
+    };
+  }, [quickCommandsOpen]);
+
+  const menuHandlersRef = useRef(menuHandlers);
+  menuHandlersRef.current = menuHandlers;
+  useApplicationMenu(receivesMenuCommands(), menuHandlers, setError);
+
   // One visual step from the active cell after an editor commit (Enter/Tab family).
   const stepGridFocus = useCallback(
     (direction: GridDirection) => {
@@ -712,74 +989,8 @@ export default function App() {
       // browser dev server, which has no menu bar to inherit them from.
       if (!hasNativeMenu() && shortcut) {
         event.preventDefault();
-        if (shortcut === "scratchpad") void summonScratchpad();
-        else if (shortcut === "add-block")
-          void run({
-            type: "addBlock",
-            name: nextObjectName(document?.objects ?? [], "Block"),
-            ...insertPosition(CARD_SIZES.block),
-          });
-        else if (shortcut === "add-text")
-          void run({ type: "addText", ...insertPosition(CARD_SIZES.text) });
-        else if (shortcut === "add-frame")
-          void run({
-            type: "addFrame",
-            name: "Frame 1",
-            grid: [
-              ["Column 1", "Column 2"],
-              ["", ""],
-              ["", ""],
-            ],
-            ...insertPosition(CARD_SIZES.frame),
-          });
-        else if (shortcut === "add-container")
-          void run({
-            type: "addContainer",
-            name: nextContainerName(document?.objects ?? []),
-            ...insertPosition(CARD_SIZES.container),
-          });
-        else if (shortcut.startsWith("inspector-"))
-          setInspectorSection(inspectorShortcutAction(shortcut));
-        else if (shortcut === "arrange") {
-          void run({ type: "tidyLayout" });
-        } else if (shortcut === "fit" || shortcut === "collapse") {
-          const selectedView = selectedCanvasView(document, selection);
-          if (selectedView) {
-            if (shortcut === "fit") void fitViewToWindow(selectedView);
-            else
-              void run({
-                type: "setViewCollapsed",
-                viewId: selectedView.id,
-                collapsed: !selectedView.collapsed,
-              });
-          }
-        } else if (shortcut === "find") {
-          setFindOpen(true);
-        } else if (shortcut === "library") {
-          setDatasetLibrary(true);
-        } else if (shortcut === "shortcuts") {
-          setPreferencesPage("shortcuts");
-          setPreferencesOpen(true);
-        } else if (shortcut === "formula-help") {
-          setHelpScope("formulas");
-        } else if (shortcut === "framework-help") {
-          setHelpScope("guide");
-        } else if (shortcut === "settings") {
-          setPreferencesPage("settings");
-          setPreferencesOpen(true);
-        } else if (shortcut === "zoom-in") {
-          zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, 1));
-        } else if (shortcut === "zoom-out") {
-          zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, -1));
-        } else if (shortcut === "zoom-reset") {
-          zoomCanvas(DEFAULT_CANVAS_ZOOM);
-        } else if (shortcut === "new") {
-          setNewDocumentOpen(true);
-        } else if (shortcut === "new-window") {
-          void newWindow().catch((reason) => setError(String(reason)));
-        } else if (shortcut === "open") void handleOpenDocument();
-        else if (shortcut === "save-as") void handleSaveAsDocument();
-        else void navigateHistory(shortcut === "redo" ? "redo" : "undo");
+        const command = shortcutCommandId(shortcut);
+        if (command) menuHandlersRef.current[command]?.();
         return;
       }
       if (isTextEntryTarget(event.target)) return;
@@ -788,8 +999,8 @@ export default function App() {
       // handle their own Escape while they hold the keyboard; this is the
       // fallback for a session whose surface lost focus — without it, Escape
       // pressed over the canvas ended nothing and the session had no exit.
-      if (event.key === "Escape" && getActiveFormulaEditor()) {
-        cancelActiveFormulaEditor();
+      if (event.key === "Escape" && getFormulaEditor()) {
+        cancelFormulaEditor();
         return;
       }
       if (gridFocus?.mode === "navigate") {
@@ -820,13 +1031,13 @@ export default function App() {
       window.removeEventListener("paste", handleCanvasPaste);
     };
   }, [
-    cancelActiveFormulaEditor,
+    cancelFormulaEditor,
     canvasZoomRef,
     contextMenu,
     document,
     documentPath,
     fitViewToWindow,
-    getActiveFormulaEditor,
+    getFormulaEditor,
     gridFocus,
     handleCanvasPaste,
     handleGridCopy,
@@ -844,65 +1055,6 @@ export default function App() {
     summonScratchpad,
     zoomCanvas,
   ]);
-
-  // Checks once when this window opens, throttled across windows and
-  // launches; the menu item asks outright and bypasses that.
-  const updates = useUpdateCheck();
-
-  const selectedCommandView = selectedCanvasView(document, selection);
-  useApplicationMenu(
-    hasNativeMenu(),
-    {
-      "new-window": () => void newWindow().catch((reason) => setError(String(reason))),
-      "new-document": () => setNewDocumentOpen(true),
-      "open-document": () => void handleOpenDocument(),
-      "save-document-as": () => void handleSaveAsDocument(),
-      "package-document": () => void packageThisDocument(),
-      "compact-data": () => void compactData(),
-      preferences: () => {
-        setPreferencesPage("settings");
-        setPreferencesOpen(true);
-      },
-      "keyboard-shortcuts": () => {
-        setPreferencesPage("shortcuts");
-        setPreferencesOpen(true);
-      },
-      find: () => setFindOpen(true),
-      "formula-help": () => setHelpScope("formulas"),
-      "framework-help": () => setHelpScope("guide"),
-      "check-for-updates": () => updates.check(),
-      undo: () => void navigateHistory("undo"),
-      redo: () => void navigateHistory("redo"),
-      "data-library": () => setDatasetLibrary(true),
-      "toggle-sources": () =>
-        setLeftPanel((panel) => (panel === "data" ? null : "data")),
-      "tidy-layout": () => void run({ type: "tidyLayout" }),
-      "fit-view": () => withCanvasView(selectedCommandView, fitViewToWindow),
-      "collapse-view": () =>
-        withCanvasView(
-          selectedCommandView,
-          (view) =>
-            void run({
-              type: "setViewCollapsed",
-              viewId: view.id,
-              collapsed: !view.collapsed,
-            })
-        ),
-      "inspector-toggle": () => setInspectorSection({ panel: "toggle" }),
-      "inspector-selection": () => setInspectorSection("selection"),
-      "inspector-format": () => setInspectorSection("format"),
-      "inspector-wrangle": () => setInspectorSection("wrangle"),
-      "add-block": () => void addBlock(),
-      "add-text": () => void addText(),
-      "add-frame": () => void addEmptyFrame(),
-      "add-container": () => void addContainer(),
-      scratchpad: () => void summonScratchpad(),
-      "zoom-in": () => zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, 1)),
-      "zoom-out": () => zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, -1)),
-      "zoom-reset": () => zoomCanvas(DEFAULT_CANVAS_ZOOM),
-    },
-    setError
-  );
 
   // Undo and Redo grey out with the document's history. Nothing else tells the
   // menu, so every view that arrives pushes it — including the first, which is
@@ -1034,6 +1186,12 @@ export default function App() {
   const selectedGridContext = gridFocus
     ? resolveGridContext(document, gridFocus, renderedRows.current)
     : null;
+  // Every column the grid selection covers, in frame order, so the inspector
+  // can format a range of columns as one gesture rather than the active one.
+  const selectedColumnIds =
+    selectedGridContext && gridFocus
+      ? selectedGridColumnIds(selectedGridContext, gridFocus)
+      : [];
   const selectedCellFormulaReferences = selectedGridContext
     ? [
         ...selectedGridContext.frame.columns
@@ -1058,10 +1216,10 @@ export default function App() {
     : [];
   const handleFormulaPointerDown = canvasFormulaPointerHandler({
     document,
-    getActive: getActiveFormulaEditor,
-    insertReference: insertActiveFormulaReference,
-    clear: clearActiveFormulaEditor,
-    disengage: disengageActiveFormulaEditor,
+    getActive: getFormulaEditor,
+    insertReference: insertFormulaReference,
+    clear: clearFormulaEditor,
+    disengage: disengageFormulaEditor,
     onNotice: setNotice,
     onRecurrence: setRecurrence,
   });
@@ -1124,6 +1282,7 @@ export default function App() {
           setLeftPanel={setLeftPanel}
           toggleLeftPanel={toggleLeftPanel}
           onOpenLibrary={() => setDatasetLibrary(true)}
+          onOpenQuickCommands={menuHandlers["quick-commands"]}
           addBlock={addBlock}
           addVariable={addVariable}
           addText={addText}
@@ -1363,8 +1522,9 @@ export default function App() {
                   scratchFocusToken={
                     object.id === scratchTargetId ? scratchFocus?.token : undefined
                   }
-                  scratchworkInDrawer={
-                    scratchworkDrawerOpen && object.id === scratchworkBlock?.id
+                  scratchworkElsewhere={
+                    (scratchworkDrawerOpen || scratchworkWindowOpen) &&
+                    object.id === scratchworkBlock?.id
                   }
                   formulaFunctions={document.formulaFunctions}
                   sourceFrame={cardFrame}
@@ -1428,15 +1588,15 @@ export default function App() {
                     const primaryView = document.views.find(
                       (candidate) => candidate.objectId === primaryFrameId
                     );
+                    // Where a new card lands: in free space inside the
+                    // viewport, not past the primary frame's right edge,
+                    // which was off screen and behind the inspector.
                     setJoin({
                       primaryFrameId,
                       lookupFrameId,
                       primaryKeyId: primaryColumnId,
                       lookupOutputColumnIds,
-                      x: primaryView
-                        ? primaryView.x + primaryView.width + 100
-                        : view.x + view.width + 100,
-                      y: primaryView?.y ?? view.y,
+                      ...insertPosition(CARD_SIZES.frame),
                     });
                   }}
                   onFilterColumn={(frame, column) =>
@@ -1489,6 +1649,7 @@ export default function App() {
             scenarios={document.scenarios ?? []}
             formulaFunctions={document.formulaFunctions}
             selection={selection}
+            selectedColumnIds={selectedColumnIds}
             computed={
               selectedObject.kind === "frame"
                 ? document.computedFrames[selectedObject.id]
@@ -1613,6 +1774,7 @@ export default function App() {
             onClose={() => setJoin(null)}
             onOperation={run}
             onCreated={() => {
+              setPendingJoinSelect(new Set(document.objects.map((object) => object.id)));
               setJoin(null);
             }}
           />
@@ -1687,6 +1849,7 @@ export default function App() {
         {findOpen && (
           <FindPaletteHost
             document={document}
+            initialQuery={findQuery}
             jumpToObject={jumpToObject}
             setSelection={setSelection}
             setGridFocus={setGridFocus}
@@ -1694,14 +1857,37 @@ export default function App() {
           />
         )}
 
+        <QuickCommands
+          open={quickCommandsOpen}
+          commands={quickCommandItems(
+            menuHandlers,
+            {
+              canUndo: document.canUndo,
+              canRedo: document.canRedo,
+              hasSelectedView: Boolean(selectedCommandView),
+              selection: quickCommandSelection(document, selection),
+              recents: recents.map(({ path, title }) => ({ path, title })),
+            },
+            { selection: selectionActions, openRecent: openRecentDocument }
+          )}
+          onSearchDocument={(query) => {
+            setFindQuery(query);
+            setFindOpen(true);
+          }}
+          onClose={() => setQuickCommandsOpen(false)}
+        />
+
         {helpScope && (
           <HelpBrowser
             scope={helpScope}
             formulaFunctions={document.formulaFunctions}
-            canInsert={Boolean(getActiveFormulaEditor())}
-            onScopeChange={setHelpScope}
+            canInsert={Boolean(getFormulaEditor())}
+            onScopeChange={(scope) => {
+              setLastHelpScope(scope);
+              setHelpScope(scope);
+            }}
             onInsert={(formula) => {
-              replaceActiveFormulaSelection(formula);
+              replaceFormulaSelection(formula);
               setHelpScope(null);
             }}
             onClose={() => setHelpScope(null)}
@@ -1733,7 +1919,7 @@ export default function App() {
           />
         )}
 
-        {datasetLibrary && (
+        {datasetLibrary && updates.status.kind === "idle" && (
           <DatasetDialog
             document={document}
             onSourceChanged={changeFrameSource}
