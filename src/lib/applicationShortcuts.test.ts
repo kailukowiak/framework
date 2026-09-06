@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicationShortcut } from "./applicationShortcuts";
+import { applicationShortcut, shortcutCommandId } from "./applicationShortcuts";
 
 const shortcut = (key: string, init: KeyboardEventInit = {}) =>
   applicationShortcut({
@@ -23,6 +23,12 @@ describe("applicationShortcut", () => {
     expect(shortcut("f", { shiftKey: true })).toBe("fit");
   });
 
+  it("routes shortcuts onto the same command ids as the application menu", () => {
+    expect(shortcutCommandId("quick-commands")).toBe("quick-commands");
+    expect(shortcutCommandId("reference")).toBe("reference");
+    expect(shortcutCommandId("save")).toBeNull();
+  });
+
   it("keeps plain save distinct from save as", () => {
     expect(shortcut("s")).toBe("save");
     expect(shortcut("s", { shiftKey: true })).toBe("save-as");
@@ -39,8 +45,8 @@ describe("applicationShortcut", () => {
     expect(shortcut("f", { altKey: true })).toBe("add-frame");
   });
 
-  it("opens formula search and the product guide independently", () => {
-    expect(shortcut("p", { shiftKey: true })).toBe("formula-help");
-    expect(shortcut("h", { shiftKey: true })).toBe("framework-help");
+  it("gives commands and the unified reference their own shortcuts", () => {
+    expect(shortcut("p", { shiftKey: true })).toBe("quick-commands");
+    expect(shortcut("k")).toBe("reference");
   });
 });

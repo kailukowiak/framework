@@ -258,7 +258,7 @@ export function CanvasObject({
   computedTexts,
   computedCalculationMatrices,
   scratchFocusToken,
-  scratchworkInDrawer,
+  scratchworkElsewhere,
   formulaFunctions,
   sourceFrame,
   sourceComputed,
@@ -299,8 +299,8 @@ export function CanvasObject({
   computedCalculationMatrices: Record<string, ComputedCalculationMatrix>;
   /** Set on the block ⌘J is pointing at, and bumped on every press. */
   scratchFocusToken?: number;
-  /** The canonical editor is mounted under the formula bar for this block. */
-  scratchworkInDrawer?: boolean;
+  /** The canonical editor is mounted in the drawer or its own window. */
+  scratchworkElsewhere?: boolean;
   formulaFunctions: FormulaFunction[];
   sourceFrame?: FrameObject;
   sourceComputed?: ComputedFrame;
@@ -607,7 +607,7 @@ export function CanvasObject({
         />
       )}
       {!isCollapsed && object.kind === "block" && (
-        scratchworkInDrawer ? (
+        scratchworkElsewhere ? (
           <BlockCardPreview block={object} computed={computedBlocks[object.id]} />
         ) : (
           <BlockCard

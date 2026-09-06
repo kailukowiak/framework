@@ -52,8 +52,8 @@ const GROUPS = [
   {
     name: "Help",
     shortcuts: [
-      ["Search formulas", "⇧⌘P"],
-      ["Search how FrameWork works", "⇧⌘H"],
+      ["Quick Commands", "⇧⌘P"],
+      ["Reference", "⌘K"],
       ["Keyboard shortcuts", "⌘/"],
     ],
   },

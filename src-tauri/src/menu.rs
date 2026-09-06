@@ -34,6 +34,7 @@ impl<R: Runtime> HistoryMenuItems<R> {
 }
 
 struct CanvasMenuItems<R: Runtime> {
+    quick_commands: MenuItem<R>,
     scratchpad: MenuItem<R>,
     add_block: MenuItem<R>,
     add_text: MenuItem<R>,
@@ -48,8 +49,7 @@ struct CanvasMenuItems<R: Runtime> {
     tidy_layout: MenuItem<R>,
     fit_view: MenuItem<R>,
     collapse_view: MenuItem<R>,
-    formula_help: MenuItem<R>,
-    framework_help: MenuItem<R>,
+    reference: MenuItem<R>,
     keyboard_shortcuts: MenuItem<R>,
     zoom_in: MenuItem<R>,
     zoom_out: MenuItem<R>,
@@ -71,6 +71,8 @@ impl<R: Runtime> CanvasMenuItems<R> {
 
     fn view_menu(&self, app: &AppHandle<R>) -> tauri::Result<Submenu<R>> {
         let view = SubmenuBuilder::new(app, "View")
+            .item(&self.quick_commands)
+            .separator()
             .item(&self.toggle_sources)
             .item(&self.data_library)
             .separator()
@@ -93,8 +95,7 @@ impl<R: Runtime> CanvasMenuItems<R> {
 
     fn help_menu(&self, app: &AppHandle<R>) -> tauri::Result<Submenu<R>> {
         let help = SubmenuBuilder::new(app, "Help")
-            .item(&self.formula_help)
-            .item(&self.framework_help)
+            .item(&self.reference)
             .separator()
             .item(&self.keyboard_shortcuts);
         // macOS keeps Check for Updates in the application menu next to About,
@@ -113,7 +114,8 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
             .build(app)
     };
     Ok(CanvasMenuItems {
-        scratchpad: item("scratchpad", "Scratchpad", "CmdOrCtrl+J")?,
+        quick_commands: item("quick-commands", "Quick Commands…", "CmdOrCtrl+Shift+P")?,
+        scratchpad: item("scratchpad", "Scratchwork", "CmdOrCtrl+J")?,
         add_block: item("add-block", "Formula Block", "CmdOrCtrl+Alt+B")?,
         add_text: item("add-text", "Text", "CmdOrCtrl+Alt+T")?,
         add_frame: item("add-frame", "Frame", "CmdOrCtrl+Alt+F")?,
@@ -139,12 +141,7 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
             "Collapse or Expand Selected Card",
             "CmdOrCtrl+Shift+M",
         )?,
-        formula_help: item("formula-help", "Search Formulas…", "CmdOrCtrl+Shift+P")?,
-        framework_help: item(
-            "framework-help",
-            "Search FrameWork Help…",
-            "CmdOrCtrl+Shift+H",
-        )?,
+        reference: item("reference", "Reference…", "CmdOrCtrl+K")?,
         keyboard_shortcuts: item(
             "keyboard-shortcuts",
             "Keyboard Shortcuts…",
@@ -258,7 +255,11 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let insert = canvas.insert_menu(app)?;
     let view = canvas.view_menu(app)?;
 
+    let scratchwork_window =
+        MenuItemBuilder::with_id("open-scratchwork-window", "Scratchwork Window").build(app)?;
     let window = SubmenuBuilder::new(app, "Window")
+        .item(&scratchwork_window)
+        .separator()
         .minimize()
         .maximize()
         .separator()

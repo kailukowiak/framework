@@ -113,6 +113,53 @@ export async function newWindow(): Promise<void> {
   return invoke("new_window");
 }
 
+/** Opens the one ordinary Scratchwork window owned by this workbook. */
+export async function openScratchworkWindow(): Promise<void> {
+  return invoke("open_scratchwork_window");
+}
+
+/** Raises the workbook's Scratchwork window without creating one. */
+export async function focusScratchworkWindow(): Promise<boolean> {
+  return invoke("focus_scratchwork_window");
+}
+
+export type ScratchworkEditorState = {
+  revision: number;
+  active: boolean;
+  draft: string;
+  selectionStart: number;
+  selectionEnd: number;
+};
+
+export type ScratchworkWindowEdit = {
+  text: string;
+  replaceSelection: boolean;
+  refocus: boolean;
+};
+
+/** Publishes the pop-out's logical cursor to its workbook canvas. */
+export async function publishScratchworkEditorState(
+  editor: ScratchworkEditorState
+): Promise<void> {
+  return invoke("publish_scratchwork_editor_state", { editor });
+}
+
+/** Sends a canvas/reference-browser insertion back to the pop-out editor. */
+export async function editScratchworkWindow(
+  edit: ScratchworkWindowEdit
+): Promise<boolean> {
+  return invoke("edit_scratchwork_window", { edit });
+}
+
+export async function clearScratchworkWindowEditor(): Promise<boolean> {
+  return invoke("clear_scratchwork_window_editor");
+}
+
+/** Gives a workbook-level menu command received by the pop-out to its owner. */
+export async function forwardScratchworkCommand(command: string): Promise<void> {
+  return invoke("forward_scratchwork_command", { command });
+}
+
 export async function openDocument(
   path: string,
   safeMode = false

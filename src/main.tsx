@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import ScratchworkWindow from "./ScratchworkWindow";
 import { ActiveFormulaEditorProvider } from "./ActiveFormulaEditor";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { installGlobalErrorReporting } from "./lib/errorReporting";
@@ -19,11 +20,17 @@ if (import.meta.env.VITE_FRAMEWORK_E2E === "true") {
 // nothing recorded anywhere.
 installGlobalErrorReporting();
 
+const scratchworkWindow = new URLSearchParams(window.location.search).has(
+  "scratchwork"
+);
+if (scratchworkWindow) document.body.classList.add("scratchwork-window-body");
+const Root = scratchworkWindow ? ScratchworkWindow : App;
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>
       <ActiveFormulaEditorProvider>
-        <App />
+        <Root />
       </ActiveFormulaEditorProvider>
     </ErrorBoundary>
   </StrictMode>

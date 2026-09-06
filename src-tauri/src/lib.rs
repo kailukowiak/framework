@@ -18,6 +18,7 @@ use uuid::Uuid;
 mod cli_connectors;
 mod database_connections;
 mod menu;
+mod scratchwork_window;
 
 const SCRATCH_DOCUMENT_NAME: &str = "untitled.fw";
 const BLANK_DOCUMENT_TITLE: &str = "Untitled";
@@ -38,6 +39,11 @@ const RECENT_DOCUMENTS_NAME: &str = "recent-documents.json";
 const MCP_ENABLED_NAME: &str = "mcp-enabled";
 const MAX_RECENT_DOCUMENTS: usize = 10;
 const TUTORIAL_DIRECTORY_NAME: &str = "FrameWork Tutorials";
+#[cfg(all(feature = "e2e", not(debug_assertions)))]
+compile_error!(
+    "The `e2e` feature embeds an unauthenticated WebDriver server and MUST NOT be compiled into release builds."
+);
+
 #[cfg(feature = "e2e")]
 const E2E_TUTORIAL_DIRECTORY_ENVIRONMENT: &str = "FRAMEWORK_E2E_TUTORIAL_DIRECTORY";
 
@@ -787,8 +793,7 @@ fn save_document_as_dialog_inner(
     };
     drop(session);
 
-    let title = format!("{} — FrameWork", payload.document.document.name);
-    let _ = window.set_title(&title);
+    scratchwork_window::set_workbook_titles(&app, window.label(), &payload.document.document.name);
     let _ = remember_recent_document(&app, &payload);
     Ok(Some(payload))
 }
@@ -1173,8 +1178,9 @@ fn reset_tutorial_documents(
         if let Some(warning) = warning {
             let _ = app.emit_to(window.label(), COLLABORATION_FAILED_EVENT, warning);
         }
-        app.emit_to(window.label(), DOCUMENT_CHANGED_EVENT, document)
+        app.emit_to(window.label(), DOCUMENT_CHANGED_EVENT, &document)
             .map_err(|error| error.to_string())?;
+        scratchwork_window::emit_document_to_peers_from(&app, &state, window.label(), &document);
     }
     Ok(library)
 }
@@ -2372,6 +2378,7 @@ fn apply_session_operation(
 ) -> Result<DocumentView, String> {
     let view = apply_session_operation_inner(session, writer_id, operation)?;
     sync_history_menu(window, view.can_undo, view.can_redo);
+    scratchwork_window::emit_document_to_peers(window, &view);
     Ok(view)
 }
 
@@ -2382,6 +2389,7 @@ fn undo(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Result<Docu
     let view = session.store.undo();
     persist_session(&mut session)?;
     sync_history_menu(&window, view.can_undo, view.can_redo);
+    scratchwork_window::emit_document_to_peers(&window, &view);
     Ok(view)
 }
 
@@ -2392,6 +2400,7 @@ fn redo(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Result<Docu
     let view = session.store.redo();
     persist_session(&mut session)?;
     sync_history_menu(&window, view.can_undo, view.can_redo);
+    scratchwork_window::emit_document_to_peers(&window, &view);
     Ok(view)
 }
 
@@ -2512,7 +2521,10 @@ fn focus_window_for_path(
         let sessions = state.sessions.lock().map_err(|error| error.to_string())?;
         sessions
             .iter()
-            .filter(|(label, _)| Some(label.as_str()) != except_label)
+            .filter(|(label, _)| {
+                Some(label.as_str()) != except_label
+                    && !scratchwork_window::is_scratchwork_label(label)
+            })
             .map(|(label, session)| (label.clone(), Arc::clone(&session.document)))
             .collect::<Vec<_>>()
     };
@@ -2581,8 +2593,6 @@ fn open_document_at_inner(
         document: store.view(),
         path: path.display().to_string(),
     };
-    let title = format!("{} — FrameWork", payload.document.document.name);
-
     let state = app.state::<AppState>();
     state.replace_document(
         window_label,
@@ -2594,9 +2604,10 @@ fn open_document_at_inner(
             scratch: false,
         },
     )?;
+    scratchwork_window::emit_document_to_peers_from(app, &state, window_label, &payload.document);
 
     if let Some(window) = app.get_webview_window(window_label) {
-        let _ = window.set_title(&title);
+        scratchwork_window::set_workbook_titles(app, window_label, &payload.document.document.name);
         let _ = window.show();
         let _ = window.set_focus();
         // A freshly loaded store never has undo/redo history — it is not
@@ -2790,17 +2801,13 @@ fn watch_collaboration(app: AppHandle) {
         let mut last_errors = HashMap::<String, String>::new();
         loop {
             thread::sleep(Duration::from_millis(750));
-            let sessions = match app.state::<AppState>().sessions.lock() {
-                Ok(sessions) => sessions
-                    .iter()
-                    .map(|(label, session)| (label.clone(), Arc::clone(&session.document)))
-                    .collect::<Vec<_>>(),
-                Err(_) => continue,
-            };
-            for (label, session) in sessions {
+            let groups = scratchwork_window::grouped_sessions(&app.state::<AppState>());
+            for (session, labels) in groups {
                 match rescan_collaboration(&session) {
                     Ok(Some(document)) => {
-                        last_errors.remove(&label);
+                        for label in &labels {
+                            last_errors.remove(label);
+                        }
                         // A merged remote edit can change `can_redo` even
                         // though it never touches this replica's own undo
                         // stack (see `Store::apply_replicated_with_history`:
@@ -2809,19 +2816,27 @@ fn watch_collaboration(app: AppHandle) {
                         // rather than a command return, so it is the one
                         // legitimate case `apply_session_operation`'s push
                         // cannot cover — push it here instead.
-                        if let Some(window) = app.get_webview_window(&label) {
-                            sync_history_menu(&window, document.can_undo, document.can_redo);
+                        for label in labels {
+                            if let Some(window) = app.get_webview_window(&label) {
+                                sync_history_menu(&window, document.can_undo, document.can_redo);
+                            }
+                            let _ = app.emit_to(&label, DOCUMENT_CHANGED_EVENT, &document);
                         }
-                        let _ = app.emit_to(&label, DOCUMENT_CHANGED_EVENT, document);
                     }
                     Ok(None) => {
-                        last_errors.remove(&label);
+                        for label in labels {
+                            last_errors.remove(&label);
+                        }
                     }
-                    Err(error) if last_errors.get(&label) != Some(&error) => {
-                        let _ = app.emit_to(&label, COLLABORATION_FAILED_EVENT, &error);
-                        last_errors.insert(label, error);
+                    Err(error) => {
+                        for label in labels {
+                            if last_errors.get(&label) == Some(&error) {
+                                continue;
+                            }
+                            let _ = app.emit_to(&label, COLLABORATION_FAILED_EVENT, &error);
+                            last_errors.insert(label, error.clone());
+                        }
                     }
-                    Err(_) => {}
                 }
             }
         }
@@ -2834,9 +2849,7 @@ fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
     };
     match event {
         tauri::WindowEvent::Destroyed => {
-            if let Ok(mut sessions) = state.sessions.lock() {
-                sessions.remove(window.label());
-            }
+            scratchwork_window::handle_destroyed(window, &state);
         }
         tauri::WindowEvent::Focused(true) => {
             if let Ok(session) = state.document_for(window.label())
@@ -2859,7 +2872,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         r#"{
           "identifier": "e2e-wdio",
           "description": "WebDriver harness access to the wdio plugin's commands.",
-          "windows": ["main", "document-*"],
+          "windows": ["main", "document-*", "scratchwork-*"],
           "permissions": ["wdio:default"]
         }"#,
     )?;
@@ -2913,6 +2926,78 @@ fn install_logging_and_panic_hook() {
     }));
 }
 
+/// Keeps the public command surface out of `run`: this is an inventory, not
+/// application startup logic, and adding one command should not make the
+/// already delicate platform setup harder to read.
+fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
+    builder.invoke_handler(tauri::generate_handler![
+        get_document,
+        get_document_path,
+        get_mcp_settings,
+        set_mcp_enabled,
+        should_open_library,
+        new_window,
+        scratchwork_window::open_scratchwork_window,
+        scratchwork_window::focus_scratchwork_window,
+        scratchwork_window::publish_scratchwork_editor_state,
+        scratchwork_window::edit_scratchwork_window,
+        scratchwork_window::clear_scratchwork_window_editor,
+        scratchwork_window::forward_scratchwork_command,
+        get_frame_page,
+        search_frame_rows,
+        get_frame_summary,
+        get_join_diagnostics,
+        get_block_line_page,
+        get_frame_query_plan,
+        preview_frame_pipeline,
+        sample_frame_step,
+        frame_formula_values,
+        dependency_graph,
+        complete_formula,
+        open_document,
+        open_document_dialog,
+        new_document_dialog,
+        save_document_as_dialog,
+        list_recent_documents,
+        list_cli_connector_profiles,
+        save_cli_connector_profile,
+        list_database_connections,
+        save_database_connection,
+        list_sample_documents,
+        open_sample_document,
+        list_tutorial_documents,
+        create_tutorial_documents,
+        reset_tutorial_documents,
+        apply_operation,
+        exit_safe_mode,
+        import_dataset_file,
+        import_cli_source,
+        import_database_source,
+        inspect_excel_workbook,
+        preview_excel_range,
+        import_excel_range,
+        import_and_append_dataset_file,
+        pick_data_file,
+        refresh_frame_connector,
+        set_frame_source,
+        materialize_frame,
+        freeze_value,
+        thaw_value,
+        adopt_frame_rows,
+        freeze_frame_copy,
+        package_document,
+        compact_document_data,
+        refresh_stale_snapshots,
+        clear_frame_materialization,
+        export_frame_csv,
+        export_document_excel,
+        undo,
+        redo,
+        set_history_menu_state,
+        log_frontend_event
+    ])
+}
+
 pub fn run() {
     install_logging_and_panic_hook();
     // The app_id a Wayland compositor sees is GLib's program name, which
@@ -2932,12 +3017,13 @@ pub fn run() {
 
     // The e2e harness talks W3C WebDriver to a server the first plugin runs
     // inside the app, because macOS has no external driver for WKWebView. It
-    // is an HTTP server on 127.0.0.1, listening only when the harness sets
-    // TAURI_WEBDRIVER_PORT. The second plugin is the harness's command
-    // surface (window states, script eval); its permission is granted at
-    // runtime in setup() below, so capabilities/ never names a plugin that
-    // non-e2e builds do not compile. The `e2e` cargo feature keeps both out
-    // of every build the harness itself did not ask for.
+    // is an HTTP server on 127.0.0.1 (defaulting to port 4445, or
+    // TAURI_WEBDRIVER_PORT when set by the harness). The second plugin is
+    // the harness's command surface (window states, script eval); its
+    // permission is granted at runtime in setup() below, so capabilities/
+    // never names a plugin that non-e2e builds do not compile. The `e2e`
+    // cargo feature keeps both out of every build the harness itself did
+    // not ask for.
     #[cfg(feature = "e2e")]
     let builder = builder
         .plugin(tauri_plugin_wdio_webdriver::init())
@@ -2990,68 +3076,7 @@ pub fn run() {
 
     let builder = builder.on_window_event(handle_window_event);
 
-    let app = builder
-        .setup(setup_app)
-        .invoke_handler(tauri::generate_handler![
-            get_document,
-            get_document_path,
-            get_mcp_settings,
-            set_mcp_enabled,
-            should_open_library,
-            new_window,
-            get_frame_page,
-            search_frame_rows,
-            get_frame_summary,
-            get_join_diagnostics,
-            get_block_line_page,
-            get_frame_query_plan,
-            preview_frame_pipeline,
-            sample_frame_step,
-            frame_formula_values,
-            dependency_graph,
-            complete_formula,
-            open_document,
-            open_document_dialog,
-            new_document_dialog,
-            save_document_as_dialog,
-            list_recent_documents,
-            list_cli_connector_profiles,
-            save_cli_connector_profile,
-            list_database_connections,
-            save_database_connection,
-            list_sample_documents,
-            open_sample_document,
-            list_tutorial_documents,
-            create_tutorial_documents,
-            reset_tutorial_documents,
-            apply_operation,
-            exit_safe_mode,
-            import_dataset_file,
-            import_cli_source,
-            import_database_source,
-            inspect_excel_workbook,
-            preview_excel_range,
-            import_excel_range,
-            import_and_append_dataset_file,
-            pick_data_file,
-            refresh_frame_connector,
-            set_frame_source,
-            materialize_frame,
-            freeze_value,
-            thaw_value,
-            adopt_frame_rows,
-            freeze_frame_copy,
-            package_document,
-            compact_document_data,
-            refresh_stale_snapshots,
-            clear_frame_materialization,
-            export_frame_csv,
-            export_document_excel,
-            undo,
-            redo,
-            set_history_menu_state,
-            log_frontend_event
-        ])
+    let app = register_commands(builder.setup(setup_app))
         .build(tauri::generate_context!())
         .expect("error while building FrameWork");
 

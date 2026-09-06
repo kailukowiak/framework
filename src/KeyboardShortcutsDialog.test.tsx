@@ -15,6 +15,8 @@ describe("KeyboardShortcutsDialog", () => {
     expect(screen.getByText("Cycle cards forward or backward")).toBeTruthy();
     expect(screen.getByText("Wrangle")).toBeTruthy();
     expect(screen.getByText("Formula block")).toBeTruthy();
+    expect(screen.getByText("Quick Commands")).toBeTruthy();
+    expect(screen.getByText("Reference")).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(close).toHaveBeenCalledOnce();

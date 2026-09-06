@@ -11,6 +11,21 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Scratchwork can open in its own ordinary workbook window from the Window
+  menu or Quick Commands. It stays on the same autosaved block and undo
+  history as the canvas, ⌘J raises it when it is already open, and pointing at
+  canvas values or columns still inserts references into its active line.
+
+- ⌘⇧P now opens Quick Commands, a dense searchable list of document, canvas,
+  view and help actions—including Open, Save As, Scratchwork and inspector
+  commands. ⌘K opens the unified Formula and FrameWork Reference, choosing
+  formulas automatically while a formula editor is active; the former ⌘⇧H
+  help shortcut is no longer needed.
+
+- An update offered as FrameWork opens now appears in front of the Recent
+  documents and Projects library. The library returns after the update prompt
+  is dismissed instead of covering it or closing alongside it.
+
 ## 0.1.6
 
 - Wide frames keep their key columns in view. Right-click a column header and choose
