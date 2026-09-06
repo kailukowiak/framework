@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
+  type ActiveFormulaEditor,
   ActiveFormulaEditorRegistry,
   type FormulaEditorBinding,
   type FormulaSelection,
@@ -55,6 +56,25 @@ export function useActiveFormulaEditor() {
     cancel: registry.cancel.bind(registry),
     clear: registry.clear.bind(registry),
   };
+}
+
+/**
+ * Watch the snapshot without rendering on it. For a surface that only
+ * forwards the draft somewhere else -- the Scratchwork window publishes it
+ * to its owner -- a re-render per keystroke is wasted, and a re-render that
+ * reaches the editor being watched can feed back into the registry.
+ */
+export function useActiveFormulaEditorWatcher(
+  onChange: (active: ActiveFormulaEditor | null) => void
+) {
+  const registry = useRegistry();
+  const latest = useRef(onChange);
+  latest.current = onChange;
+  useEffect(() => {
+    const publish = () => latest.current(registry.getSnapshot());
+    publish();
+    return registry.subscribe(publish);
+  }, [registry]);
 }
 
 /** Presence without subscribing a large parent to every draft keystroke. */

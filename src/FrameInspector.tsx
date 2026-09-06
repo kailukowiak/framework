@@ -86,6 +86,7 @@ export function FrameInspector({
   objects,
   formulaFunctions,
   selection,
+  selectedColumnIds,
   computed,
   suggestedPosition,
   section,
@@ -116,6 +117,8 @@ export function FrameInspector({
   objects: DataObject[];
   formulaFunctions: FormulaFunction[];
   selection: Selection;
+  /** Columns under the grid selection, when it spans more than the active one. */
+  selectedColumnIds?: string[];
   computed: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   section: InspectorSection;
@@ -250,8 +253,20 @@ export function FrameInspector({
         })),
       ].filter((reference) => reference.token.length > 0);
   }, [formulaFunctions, formulaFrame, objects]);
+  // A range across several columns formats each of them. Only the columns
+  // that hold a number or a date can carry a number format, so the others
+  // in the range are left alone rather than refused.
+  const rangeColumns =
+    selectedColumnIds && selectedColumnIds.length > 1
+      ? frame.columns.filter(
+          (candidate) => selectedColumnIds.includes(candidate.id) && canFormatColumn(candidate)
+        )
+      : [];
+  const formatColumns = rangeColumns.length > 1 ? rangeColumns : column ? [column] : [];
   const selectionLabel =
-    selection.rowId && column
+    rangeColumns.length > 1
+      ? `${rangeColumns.length} columns`
+      : selection.rowId && column
       ? "Cell"
       : selection.rowId
       ? "Row"
@@ -597,6 +612,8 @@ export function FrameInspector({
                       ? ` · ${scalePropertyLabel(styleRule.output.scale)}`
                       : ""
                   }`
+                : rangeColumns.length > 1
+                ? `${frame.name} / ${rangeColumns.map((candidate) => candidate.name).join(", ")}`
                 : column
                 ? `${frame.name} / ${column.name}`
                 : frame.name}
@@ -604,9 +621,10 @@ export function FrameInspector({
           </div>
           {column && canFormatColumn(column) && !styleRule && (
             <ColumnFormatEditor
-              key={`format-${column.id}`}
+              key={`format-${formatColumns.map((candidate) => candidate.id).join("+")}`}
               frame={frame}
               column={column}
+              columns={formatColumns}
               onOperation={onOperation}
             />
           )}

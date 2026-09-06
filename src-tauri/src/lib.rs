@@ -2509,6 +2509,11 @@ fn build_document_window(
             .title(title)
             .inner_size(1440.0, 900.0)
             .min_inner_size(980.0, 640.0)
+            // The click that brings a document window forward is also a
+            // click on something in it -- a cell being pointed at from the
+            // Scratchwork window, most of all. WebKit otherwise swallows
+            // that first click as activation and the page never sees it.
+            .accept_first_mouse(true)
             .build();
     if built.is_err()
         && let Ok(mut sessions) = app.state::<AppState>().sessions.lock()

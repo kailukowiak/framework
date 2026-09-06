@@ -44,6 +44,8 @@ type InspectorProps = {
   scenarios: Scenario[];
   formulaFunctions: FormulaFunction[];
   selection: Selection;
+  /** Columns under the grid selection, when it spans more than the active one. */
+  selectedColumnIds?: string[];
   computed?: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   onClose: () => void;
@@ -81,6 +83,7 @@ export function Inspector({
   scenarios,
   formulaFunctions,
   selection,
+  selectedColumnIds,
   computed,
   suggestedPosition,
   onClose,
@@ -182,6 +185,7 @@ export function Inspector({
           objects={objects}
           formulaFunctions={formulaFunctions}
           selection={selection}
+          selectedColumnIds={selectedColumnIds}
           computed={computed!}
           suggestedPosition={suggestedPosition}
           section={section}

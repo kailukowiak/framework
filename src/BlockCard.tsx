@@ -233,14 +233,6 @@ export function BlockCard({
     setCursor(at);
   }, [draft]);
 
-  useEffect(() => {
-    if (focusToken === undefined) return;
-    const node = textarea.current;
-    if (!node) return;
-    node.focus();
-    node.setSelectionRange(node.value.length, node.value.length);
-  }, [focusToken]);
-
   // Leaving the line is what finishes naming it. Said once, when the cursor
   // goes somewhere else, so the lines that read this one are rewritten to the
   // name that was meant rather than to each prefix of it on the way past.
@@ -308,9 +300,17 @@ export function BlockCard({
   // `.list.arg_max` to somebody who has typed `` `List `` answers a
   // question they did not ask — and buries the list they are reaching for.
   const naming = query.startsWith("`");
-  const offered = naming
-    ? available.filter((reference) => reference.kind !== "function")
-    : available;
+  // Memoized because it is handed to the editor registry as the binding's
+  // completion list on every render. Rebinding publishes a fresh snapshot
+  // whenever that list's identity changes, and a parent that subscribes to
+  // the snapshot (the Scratchwork window does) re-renders this card on each
+  // publish -- a new array per render was an infinite loop, and React
+  // reported it as error #185 the moment the cursor sat inside a backtick.
+  const offered = useMemo(
+    () =>
+      naming ? available.filter((reference) => reference.kind !== "function") : available,
+    [available, naming]
+  );
   const contextualCompletion = contextualFormulaReferenceCompletion(
     offered, draft, cursor, query
   );
@@ -337,6 +337,22 @@ export function BlockCard({
       });
     },
   });
+  // ⌘J asks for the cursor. Focusing the textarea is not enough on its own:
+  // in the pop-out the textarea can still be the document's active element
+  // after the workbook ended the last session, so no focus event fires and
+  // the registry would be left without a session -- typing then publishes
+  // nothing and the canvas cannot be pointed at. Activate explicitly.
+  useEffect(() => {
+    if (focusToken === undefined) return;
+    const node = textarea.current;
+    if (!node) return;
+    node.focus();
+    node.setSelectionRange(node.value.length, node.value.length);
+    registration.activateAt({ start: node.value.length, end: node.value.length });
+    // `registration` is rebuilt every render; the token is the trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusToken]);
+
   const suggestions = !focused
     ? []
     : contextualCompletion.suggestions.slice(0, 6);

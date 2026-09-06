@@ -129,8 +129,20 @@ export function useScratchworkWindowBridge({
     };
   }, [externalEngaged]);
 
-  const getActive = useCallback(
-    () => local.getActive() ?? externalActive(),
+  // The editor somebody is typing in wins. A local session outlives its
+  // focus on purpose (see ActiveFormulaEditorRegistry), so the canvas block
+  // that was edited a minute ago is still "active" here while the pop-out
+  // holds the caret -- and the canvas pointer handler only picks for a
+  // *focused* editor. Consulting the local session first therefore handed
+  // every click to a blurred editor that could not take it, and the pop-out
+  // never saw the reference.
+  const getActive = useCallback(() => {
+    const own = local.getActive();
+    if (own?.focused) return own;
+    return externalActive() ?? own;
+  }, [externalActive, local]);
+  const externalTakesInput = useCallback(
+    () => !local.getActive()?.focused && Boolean(externalActive()),
     [externalActive, local]
   );
 
@@ -152,20 +164,20 @@ export function useScratchworkWindowBridge({
 
   const insertReference = useCallback(
     (token: string) => {
-      if (local.getActive()) local.insertReference(token);
       // Keep the canvas in front while pointing. The pop-out still receives
       // the caret update; raising it after every cell would make a range of
       // references impossible to author naturally.
-      else if (externalActive()) editExternal(token, false, false);
+      if (externalTakesInput()) editExternal(token, false, false);
+      else if (local.getActive()) local.insertReference(token);
     },
-    [editExternal, externalActive, local]
+    [editExternal, externalTakesInput, local]
   );
   const replaceSelection = useCallback(
     (text: string) => {
-      if (local.getActive()) local.replaceSelection(text);
-      else if (externalActive()) editExternal(text, true, true);
+      if (externalTakesInput()) editExternal(text, true, true);
+      else if (local.getActive()) local.replaceSelection(text);
     },
-    [editExternal, externalActive, local]
+    [editExternal, externalTakesInput, local]
   );
   const clear = useCallback(() => {
     if (local.getActive()) local.clear();

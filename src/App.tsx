@@ -83,12 +83,14 @@ import {
   chainFilterCount,
   gridBoundsFor,
   gridCellAt,
+  gridRangeForFocus,
   isTextEntryTarget,
   pipelineSortKeys,
   resolveGridContext,
   tabObjects,
   visualGridPosition,
   type ContextMenuState,
+  type GridContext,
   type GridFocus,
   type RenderedGrid,
 } from "./FrameGrid";
@@ -211,6 +213,17 @@ function quickCommandSelection(
           }
         : undefined,
   };
+}
+
+/** Ids of every column the grid selection covers, in frame order. */
+function selectedGridColumnIds(context: GridContext, focus: GridFocus): string[] {
+  const range = gridRangeForFocus(context, focus);
+  if (!range) return [];
+  const [from, to] =
+    context.orientation === "fieldsAsRows"
+      ? [range.top, range.bottom]
+      : [range.left, range.right];
+  return context.frame.columns.slice(from, to + 1).map((column) => column.id);
 }
 
 export default function App() {
@@ -1142,6 +1155,12 @@ export default function App() {
   const selectedGridContext = gridFocus
     ? resolveGridContext(document, gridFocus, renderedRows.current)
     : null;
+  // Every column the grid selection covers, in frame order, so the inspector
+  // can format a range of columns as one gesture rather than the active one.
+  const selectedColumnIds =
+    selectedGridContext && gridFocus
+      ? selectedGridColumnIds(selectedGridContext, gridFocus)
+      : [];
   const selectedCellFormulaReferences = selectedGridContext
     ? [
         ...selectedGridContext.frame.columns
@@ -1599,6 +1618,7 @@ export default function App() {
             scenarios={document.scenarios ?? []}
             formulaFunctions={document.formulaFunctions}
             selection={selection}
+            selectedColumnIds={selectedColumnIds}
             computed={
               selectedObject.kind === "frame"
                 ? document.computedFrames[selectedObject.id]

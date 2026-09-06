@@ -160,6 +160,9 @@ pub fn open_scratchwork_window(
     .title(format!("Scratchwork — {document_name} — FrameWork"))
     .inner_size(760.0, 520.0)
     .min_inner_size(420.0, 280.0)
+    // Same as the document windows: a click back into the editor is a
+    // click on a line, not merely a request to come forward.
+    .accept_first_mouse(true)
     .build();
     if built.is_err()
         && let Ok(mut sessions) = state.sessions.lock()

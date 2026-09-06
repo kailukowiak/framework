@@ -1488,12 +1488,19 @@ small.vector-dragging { cursor: grabbing; }
    by their own cards, so the container adds a frame and a name and nothing
    else that would make a value inside one behave differently. */
 .container-card { min-height: 0; flex: 1; display: flex; flex-direction: column; padding: 15px 15px 12px; }
-.container-members { min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
+/* The members are what a container is for, so they are the part that may
+   not collapse: at the card's default height the three add buttons and the
+   name used to take every pixel and the list rendered at zero height, which
+   read as "+ Value does nothing". */
+.container-members { min-height: 64px; flex: 1; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
 .container-member { border: 1px solid light-dark(#e4e3dc, #3a3c30); border-radius: 8px; background: light-dark(#fbfaf7, #262720); }
 .container-member .value-card { padding: 11px 12px 12px; }
 .container-empty { margin: 0; padding: 10px 2px; color: light-dark(#96968f, #707069); font-size: var(--text-sm); line-height: 1.5; }
 .container-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.container-actions button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: var(--text-sm); }
+/* Outranks `.secondary-action`, whose full-width 38px form with a 17px
+   bottom margin is sized for a sidebar, not for three buttons on one row
+   under a list. */
+.container-actions button { width: auto; height: auto; margin: 0; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: var(--text-sm); }
 
 /* Prose: comments in a chain, a frame's pinned remark, and text cards.
    Markdown rendered at the ordinary type sizes — prose is content, not

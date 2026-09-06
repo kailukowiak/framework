@@ -1,8 +1,8 @@
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  useActiveFormulaEditor,
   useActiveFormulaEditorCommands,
+  useActiveFormulaEditorWatcher,
 } from "./ActiveFormulaEditor";
 import { BlockCard } from "./BlockCard";
 import { NumberDisplayContext } from "./FrameGrid";
@@ -32,7 +32,6 @@ export default function ScratchworkWindow() {
   const [document, setDocument] = useState<DocumentView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [focusToken, setFocusToken] = useState(1);
-  const { active } = useActiveFormulaEditor();
   const activeCommands = useActiveFormulaEditorCommands();
   const [useThousandsSeparators] = useThousandsSeparatorsPreference();
   useModifierHints();
@@ -76,7 +75,11 @@ export default function ScratchworkWindow() {
     };
   }, [activeCommands]);
 
-  useEffect(() => {
+  // Watched, not rendered: this window's only interest in the draft is
+  // handing it to the workbook, and rendering the whole window per keystroke
+  // re-rendered the editor being watched, which rebound itself and published
+  // again.
+  useActiveFormulaEditorWatcher((active) => {
     revision.current += 1;
     void publishScratchworkEditorState({
       revision: revision.current,
@@ -85,7 +88,7 @@ export default function ScratchworkWindow() {
       selectionStart: active?.selection.start ?? 0,
       selectionEnd: active?.selection.end ?? 0,
     }).catch(reportIgnoredFailure("publish Scratchwork editor state"));
-  }, [active]);
+  });
 
   const run = useCallback(
     async (operation: Operation, options?: { inlineError?: boolean }) => {
