@@ -6,6 +6,7 @@ import {
 } from "./ActiveFormulaEditor";
 import { BlockCard } from "./BlockCard";
 import { NumberDisplayContext } from "./FrameGrid";
+import { useModifierHints } from "./hooks/useModifierHints";
 import { useThousandsSeparatorsPreference } from "./hooks/useThousandsSeparatorsPreference";
 import { useScratchworkWindowMenu } from "./hooks/useScratchworkWindowMenu";
 import {
@@ -34,6 +35,7 @@ export default function ScratchworkWindow() {
   const { active } = useActiveFormulaEditor();
   const activeCommands = useActiveFormulaEditorCommands();
   const [useThousandsSeparators] = useThousandsSeparatorsPreference();
+  useModifierHints();
   const revision = useRef(0);
 
   useEffect(() => {

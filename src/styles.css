@@ -133,6 +133,52 @@ button:disabled { cursor: default; opacity: 0.35; }
 .icon-button:hover:not(:disabled) { background: light-dark(#eeece7, #1c1d17); }
 .icon-button.subtle { color: var(--muted); margin-left: 4px; }
 
+/* Hold ⌘ (or Ctrl) and every control that has a shortcut says which one.
+   `useModifierHints` puts `data-modifier-hints` on <html>; a control opts in
+   with `data-shortcut="⌥⌘B"` and nothing else. The badge is a ::before rather
+   than an ::after because `.inspector-nav button::after` is already the active
+   underline, and it is absolutely positioned so no control moves when the
+   hints arrive — a rail that shifted under the cursor would be worse than no
+   hint at all. `position: relative` is unconditional for the same reason: it
+   changes no layout, and applying it only while hints show would restack the
+   page on every ⌘ press. */
+[data-shortcut] { position: relative; }
+:root[data-modifier-hints] [data-shortcut]::before {
+  content: attr(data-shortcut);
+  position: absolute;
+  z-index: 6;
+  top: 1px;
+  right: 1px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: light-dark(rgba(32, 34, 31, 0.86), rgba(222, 224, 221, 0.9));
+  color: light-dark(#fbfaf7, #1c1d17);
+  font: 500 var(--text-xs) / 1.4 "DM Mono", monospace;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: modifier-hint-in 80ms ease-out;
+}
+/* An icon-only button has no room beside its icon, so the badge covers it.
+   The icon is the least useful thing on screen at the moment somebody is
+   asking what the key is. */
+:root[data-modifier-hints] .icon-button[data-shortcut]::before,
+:root[data-modifier-hints] .card-window-action[data-shortcut]::before,
+:root[data-modifier-hints] .inspector-collapsed-toggle[data-shortcut]::before {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: inherit;
+}
+@keyframes modifier-hint-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* The canvas's own corner. Both of these report on what is on the canvas and
    both are absent most of the time, which is what makes a permanent band
    across the window the wrong place for them. They shift with the inspector
@@ -152,6 +198,10 @@ button:disabled { cursor: default; opacity: 0.35; }
 .stale-refresh:hover:not(:disabled) { background: light-dark(#f4d6cb, #3a2019); }
 .canvas-zoom-readout { height: 30px; flex: 0 0 auto; padding: 0 11px; border-radius: 8px; background: light-dark(rgba(251, 250, 247, 0.94), rgba(38, 39, 32, 0.9)); color: light-dark(#5f635c, #9fa39c); font: 500 var(--text-sm) "DM Mono", monospace; font-variant-numeric: tabular-nums; box-shadow: 0 2px 10px light-dark(rgba(48, 45, 39, 0.14), rgba(48, 45, 39, 0.259)); backdrop-filter: blur(10px); }
 .canvas-zoom-readout:hover { background: light-dark(#e4ebe6, #223229); color: var(--accent); }
+/* The one durable control in this corner: same footprint as the readouts
+   beside it so it reads as part of the same row rather than a stray icon. */
+.quick-commands-launcher { width: 30px; height: 30px; border-radius: 8px; background: light-dark(rgba(251, 250, 247, 0.94), rgba(38, 39, 32, 0.9)); color: light-dark(#5f635c, #9fa39c); box-shadow: 0 2px 10px light-dark(rgba(48, 45, 39, 0.14), rgba(48, 45, 39, 0.259)); backdrop-filter: blur(10px); }
+.quick-commands-launcher:hover { background: light-dark(#e4ebe6, #223229); color: var(--accent); }
 
 .left-rail { position: fixed; z-index: 40; left: 0; top: 0; bottom: 0; width: var(--rail-w); display: flex; flex-direction: column; align-items: center; padding: 12px 8px 14px; background: light-dark(#f7f5f0, #212219); border-right: 1px solid var(--line); overflow-y: auto; scrollbar-width: none; }
 .left-rail::-webkit-scrollbar { display: none; }

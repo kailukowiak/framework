@@ -119,6 +119,7 @@ export function Inspector({
         <button
           className="icon-button"
           aria-label="Hide inspector"
+          data-shortcut="⇧⌘I"
           title="Hide inspector (⌘⇧I)"
           onClick={onHide}
         >
@@ -138,6 +139,9 @@ export function Inspector({
                 aria-label={sectionLabels[candidate]}
                 aria-pressed={section === candidate}
                 onClick={() => onSectionChange(candidate)}
+                data-shortcut={`⌘${
+                  candidate === "selection" ? "1" : candidate === "format" ? "2" : "3"
+                }`}
                 title={`${sectionLabels[candidate]} (⌘${
                   candidate === "selection" ? "1" : candidate === "format" ? "2" : "3"
                 })`}
@@ -226,6 +230,7 @@ export function CollapsedInspector({ onShow }: { onShow: () => void }) {
       <button
         className="inspector-collapsed-toggle"
         aria-label="Show inspector"
+        data-shortcut="⇧⌘I"
         title="Show inspector (⌘⇧I)"
         onClick={onShow}
       >

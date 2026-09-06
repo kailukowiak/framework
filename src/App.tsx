@@ -27,6 +27,7 @@ import { useCanvasNavigation } from "./useCanvasNavigation";
 import { useThousandsSeparatorsPreference } from "./hooks/useThousandsSeparatorsPreference";
 import { useInterfaceScalePreference } from "./hooks/useInterfaceScalePreference";
 import { useMcpSettings } from "./hooks/useMcpSettings";
+import { useModifierHints } from "./hooks/useModifierHints";
 import { useCanvasObjectCreation } from "./hooks/useCanvasObjectCreation";
 import {
   usePipelineColumnRequests,
@@ -300,6 +301,8 @@ export default function App() {
   const { interfaceScale, setInterfaceScale, interfaceScaleError } =
     useInterfaceScalePreference();
   const { mcpSettings, mcpSettingsError, changeMcpEnabled } = useMcpSettings();
+  // Hold ⌘ and every control that has a shortcut wears it.
+  useModifierHints();
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const { canvasZoom, canvasZoomRef, zoomCanvas, viewportSize } = useCanvasViewport({
@@ -1582,6 +1585,7 @@ export default function App() {
           onSave={() => void handleSaveAsDocument()}
           onRefresh={() => void refreshStale()}
           onZoom={zoomCanvas}
+          onOpenQuickCommands={menuHandlers["quick-commands"]}
         />
 
         {/* Not for a block. A block is edited entirely on its own card, so the

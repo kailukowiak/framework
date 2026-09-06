@@ -15,6 +15,7 @@ export function CanvasCardWindowControls({
   return <>
     <button
       className="card-window-action"
+      data-shortcut="⇧⌘F"
       title="Fit card to window (⇧⌘F)"
       aria-label={`Fit ${name} to window`}
       onClick={(event) => { event.stopPropagation(); onFit(view); }}
@@ -23,6 +24,7 @@ export function CanvasCardWindowControls({
     </button>
     <button
       className="card-window-action"
+      data-shortcut="⇧⌘M"
       title={`${view.collapsed ? "Expand" : "Collapse"} card (⇧⌘M)`}
       aria-label={view.collapsed ? `Expand ${name}` : `Collapse ${name}`}
       onClick={(event) => {

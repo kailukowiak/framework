@@ -11,6 +11,16 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Hold ⌘ and FrameWork shows you the keys. Every button that has a keyboard
+  shortcut, from the rail and the inspector tabs to a card's fit and collapse
+  controls, the zoom readout and the Scratchwork toggle, wears its shortcut in
+  a small badge for as long as the key is down, and nothing moves when they
+  appear. Let go, press anything else, or switch away and they are gone. The
+  Scratchwork window does the same.
+
+- A Quick Commands button sits in the canvas's bottom-right corner, so the
+  command palette is reachable without knowing ⇧⌘P or opening the menu.
+
 - A new first tutorial, **The FrameWork tour**, opens the lesson list. In about
   25 minutes it goes once over what FrameWork does that a spreadsheet does not:
   paste a table that arrives typed, write one formula for a whole column,

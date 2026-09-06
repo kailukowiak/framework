@@ -65,6 +65,7 @@ export function LeftRail({
         <button
           className={`rail-button ${leftPanel === "data" ? "active" : ""}`}
           onClick={() => toggleLeftPanel("data")}
+          data-shortcut="⇧⌘D"
           title="Every frame in this document, and where each one reads from (⇧⌘D)"
         >
           <Database size={19} />
@@ -73,6 +74,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={onOpenLibrary}
+          data-shortcut="⇧⌘L"
           title="Open a document, a sample workspace, or a data file (⇧⌘L)"
         >
           <Library size={19} />
@@ -101,6 +103,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addBlock()}
+          data-shortcut="⌥⌘B"
           title="A page of formula lines: constants, calculations, and their answers (⌥⌘B)"
         >
           <SquareFunction size={19} />
@@ -109,6 +112,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addText()}
+          data-shortcut="⌥⌘T"
           title="A card of prose: markdown, with {{formula}} holes that print live values (⌥⌘T)"
         >
           <Type size={19} />
@@ -125,6 +129,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addEmptyFrame()}
+          data-shortcut="⌥⌘F"
           title="An empty frame to paste or type rows into (⌥⌘F)"
         >
           <FrameIcon size={19} />
@@ -133,6 +138,7 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addContainer()}
+          data-shortcut="⌥⌘G"
           title="A resizable group for values, results, and vectors (⌥⌘G)"
         >
           <FolderPlus size={19} />
@@ -146,6 +152,7 @@ export function LeftRail({
         className="rail-button"
         disabled={viewCount < 2}
         onClick={() => void onOperation({ type: "tidyLayout" })}
+        data-shortcut="⇧⌘A"
         title="Arrange cards left to right by dependency, with each source before what it feeds (⇧⌘A)"
       >
         <Network size={19} />
