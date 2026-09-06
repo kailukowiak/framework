@@ -17,6 +17,11 @@ describe("KeyboardShortcutsDialog", () => {
     expect(screen.getByText("Formula block")).toBeTruthy();
     expect(screen.getByText("Quick Commands")).toBeTruthy();
     expect(screen.getByText("Reference")).toBeTruthy();
+    expect(screen.getByText("Jump to edge of data")).toBeTruthy();
+    expect(screen.getByText("Extend selection to edge of data")).toBeTruthy();
+    expect(screen.getByText("Select row")).toBeTruthy();
+    expect(screen.getByText("First / last column of row")).toBeTruthy();
+    expect(screen.getByText("First / last cell of frame")).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(close).toHaveBeenCalledOnce();

@@ -67,6 +67,11 @@ const GROUPS = [
       ["Copy", "⌘C"],
       ["Cut", "⌘X"],
       ["Paste", "⌘V"],
+      ["Jump to edge of data", "⌘← → ↑ ↓"],
+      ["Extend selection to edge of data", "⇧⌘← → ↑ ↓"],
+      ["Select row", "⇧Space"],
+      ["First / last column of row", "Home / End"],
+      ["First / last cell of frame", "⌘Home / ⌘End"],
     ],
   },
 ] as const;

@@ -3,7 +3,7 @@ import type { TutorialLibrary } from "./lib/api";
 import { libraryEntryState } from "./lib/datasetLibraryEntries";
 
 /**
- * The eight tutorial start/answer-key workbooks, copied into a visible
+ * The twelve tutorial start/answer-key workbooks, copied into a visible
  * Documents folder on request. A workbook that exists but that FrameWork
  * cannot open — most often a stored macOS TCC deny under `tauri dev` — stays
  * in the list rather than vanishing, disabled and labelled instead.
@@ -34,7 +34,7 @@ export function TutorialWorkbookLibrary({
       </div>
       <div className="tutorial-library">
         <p className="tutorial-library-note">
-          Create the eight start and answer-key workbooks in{" "}
+          Create the twelve start and answer-key workbooks in{" "}
           <code>{tutorials?.directory ?? "your Documents folder"}</code>.
         </p>
         <div className="tutorial-library-actions">
@@ -66,7 +66,7 @@ export function TutorialWorkbookLibrary({
         </div>
         {confirmReset && (
           <p className="tutorial-reset-note">
-            Replaces only these eight workbooks and their histories. Notes or other
+            Replaces only these twelve workbooks and their histories. Notes or other
             files in this folder stay untouched.
           </p>
         )}

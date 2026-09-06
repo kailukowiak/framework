@@ -13,7 +13,7 @@ For a release-sized pass, use the **[human release review](HUMAN-REVIEW.md)**.
 It is a short, repeatable script for the native menu, multi-window, clipboard,
 focus, and visual checks that the automated desktop driver cannot reproduce
 faithfully. It samples the tutorials rather than asking someone to rebuild all
-five every time.
+six every time.
 
 ## How the practical lessons work
 
@@ -40,6 +40,11 @@ Every Start workbook and Answer key also renders its complete guide in a
 
 ## Learning path
 
+0. **[The FrameWork tour](grand-tour/README.md)** — start here: one pass over
+   the things FrameWork does that a spreadsheet does not. Paste a typed table,
+   write one column formula, declare an order, pop Scratchwork into its own
+   window, join by dragging a header, summarize a branch, switch the model
+   between three scenarios, and chart the result. About 25 minutes.
 1. **[Your first FrameWork workbook](first-workbook/README.md)** — paste a
    typed table, add one calculated column, format it, declare a sort, branch a
    filtered tab, write block calculations, and make a plot. About 15 minutes.
@@ -76,9 +81,13 @@ cargo run -p framework-core --example generate_excel_import_tutorial
 cargo run -p framework-core --example generate_formula_click_tutorial
 ```
 
+The first command rebuilds the tour, the first-workbook lesson, month-end
+close, and vectors-and-joins; pass a lesson directory name to rebuild only
+that one.
+
 ## In the desktop app
 
-Open **Data Library** and choose **Create tutorials**. FrameWork creates ten
+Open **Data Library** and choose **Create tutorials**. FrameWork creates twelve
 editable workbooks in `Documents/FrameWork Tutorials`: a starting workbook and
 an answer key for each practical lesson. Open a starting workbook, work through
 the guide, and use its answer key only to compare the result.
@@ -86,7 +95,7 @@ the guide, and use its answer key only to compare the result.
 If you are working directly from this repository instead, open the `.fw` files
 linked under **Files** in each lesson with **File → Open**.
 
-**Reset tutorials** is deliberately explicit: it replaces those ten known
+**Reset tutorials** is deliberately explicit: it replaces those twelve known
 working copies, their histories, and the tiny Excel lesson sources with the
 bundled canonical files. It does not remove notes, exports, or any other files
 in the tutorial folder.

@@ -1,0 +1,194 @@
+[
+  {
+    "id": "new-window",
+    "label": "New Window",
+    "accelerator": "CmdOrCtrl+Shift+N",
+    "group": "file"
+  },
+  {
+    "id": "new-document",
+    "label": "New Document…",
+    "accelerator": "CmdOrCtrl+N",
+    "group": "file"
+  },
+  {
+    "id": "open-document",
+    "label": "Open…",
+    "accelerator": "CmdOrCtrl+O",
+    "group": "file"
+  },
+  {
+    "id": "save-document-as",
+    "label": "Save As…",
+    "accelerator": "CmdOrCtrl+Shift+S",
+    "group": "file"
+  },
+  {
+    "id": "package-document",
+    "label": "Package This Document",
+    "accelerator": null,
+    "group": "file"
+  },
+  {
+    "id": "compact-data",
+    "label": "Reclaim Unused Data Files",
+    "accelerator": null,
+    "group": "file"
+  },
+  {
+    "id": "preferences",
+    "label": "Settings…",
+    "accelerator": "CmdOrCtrl+Comma",
+    "group": "file"
+  },
+  {
+    "id": "undo",
+    "label": "Undo",
+    "accelerator": "CmdOrCtrl+Z",
+    "group": "edit"
+  },
+  {
+    "id": "redo",
+    "label": "Redo",
+    "accelerator": "CmdOrCtrl+Shift+Z",
+    "group": "edit"
+  },
+  {
+    "id": "find",
+    "label": "Find…",
+    "accelerator": "CmdOrCtrl+F",
+    "group": "edit"
+  },
+  {
+    "id": "scratchpad",
+    "label": "Scratchwork",
+    "accelerator": "CmdOrCtrl+J",
+    "group": "insert"
+  },
+  {
+    "id": "add-block",
+    "label": "Formula Block",
+    "accelerator": "CmdOrCtrl+Alt+B",
+    "group": "insert"
+  },
+  {
+    "id": "add-text",
+    "label": "Text",
+    "accelerator": "CmdOrCtrl+Alt+T",
+    "group": "insert"
+  },
+  {
+    "id": "add-frame",
+    "label": "Frame",
+    "accelerator": "CmdOrCtrl+Alt+F",
+    "group": "insert"
+  },
+  {
+    "id": "add-container",
+    "label": "Container",
+    "accelerator": "CmdOrCtrl+Alt+G",
+    "group": "insert"
+  },
+  {
+    "id": "quick-commands",
+    "label": "Quick Commands…",
+    "accelerator": "CmdOrCtrl+Shift+P",
+    "group": "view"
+  },
+  {
+    "id": "toggle-sources",
+    "label": "Data Panel",
+    "accelerator": "CmdOrCtrl+Shift+D",
+    "group": "view"
+  },
+  {
+    "id": "data-library",
+    "label": "Data Library…",
+    "accelerator": "CmdOrCtrl+Shift+L",
+    "group": "view"
+  },
+  {
+    "id": "inspector-toggle",
+    "label": "Inspector",
+    "accelerator": "CmdOrCtrl+Shift+I",
+    "group": "view"
+  },
+  {
+    "id": "inspector-selection",
+    "label": "Selection Inspector",
+    "accelerator": "CmdOrCtrl+Digit1",
+    "group": "view"
+  },
+  {
+    "id": "inspector-format",
+    "label": "Format Inspector",
+    "accelerator": "CmdOrCtrl+Digit2",
+    "group": "view"
+  },
+  {
+    "id": "inspector-wrangle",
+    "label": "Wrangle Inspector",
+    "accelerator": "CmdOrCtrl+Digit3",
+    "group": "view"
+  },
+  {
+    "id": "tidy-layout",
+    "label": "Arrange Left to Right",
+    "accelerator": "CmdOrCtrl+Shift+A",
+    "group": "view"
+  },
+  {
+    "id": "fit-view",
+    "label": "Fit Selected Card to Window",
+    "accelerator": "CmdOrCtrl+Shift+F",
+    "group": "view"
+  },
+  {
+    "id": "collapse-view",
+    "label": "Collapse or Expand Selected Card",
+    "accelerator": "CmdOrCtrl+Shift+M",
+    "group": "view"
+  },
+  {
+    "id": "zoom-in",
+    "label": "Zoom In",
+    "accelerator": "CmdOrCtrl+Equal",
+    "group": "view"
+  },
+  {
+    "id": "zoom-out",
+    "label": "Zoom Out",
+    "accelerator": "CmdOrCtrl+Minus",
+    "group": "view"
+  },
+  {
+    "id": "zoom-reset",
+    "label": "Actual Size",
+    "accelerator": "CmdOrCtrl+Digit0",
+    "group": "view"
+  },
+  {
+    "id": "open-scratchwork-window",
+    "label": "Scratchwork Window",
+    "accelerator": null,
+    "group": "window"
+  },
+  {
+    "id": "reference",
+    "label": "Reference…",
+    "accelerator": "CmdOrCtrl+K",
+    "group": "help"
+  },
+  {
+    "id": "keyboard-shortcuts",
+    "label": "Keyboard Shortcuts…",
+    "accelerator": "CmdOrCtrl+Slash",
+    "group": "help"
+  },
+  {
+    "id": "check-for-updates",
+    "label": "Check for Updates…",
+    "accelerator": null,
+    "group": "help"
+  }
+]

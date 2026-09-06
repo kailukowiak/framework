@@ -18,7 +18,10 @@ use uuid::Uuid;
 mod cli_connectors;
 mod database_connections;
 mod menu;
+mod persist;
 mod scratchwork_window;
+
+use persist::{PendingWrite, SNAPSHOT_WRITE_DEBOUNCE, SystemClock};
 
 const SCRATCH_DOCUMENT_NAME: &str = "untitled.fw";
 const BLANK_DOCUMENT_TITLE: &str = "Untitled";
@@ -51,7 +54,11 @@ struct DocumentSession {
     store: Store,
     path: PathBuf,
     journal: EventJournal,
-    snapshot_dirty: bool,
+    /// Whether an operation has landed since the last successful write of
+    /// `store` to `path`, and -- if so -- when the debounce window says it
+    /// is time to perform that write. See `persist.rs` for why the write is
+    /// deferred at all rather than happening inline with every operation.
+    pending_write: PendingWrite,
     /// Whether `path` is the throwaway scratch this launch created rather
     /// than a document the user has anywhere they can find again. The window
     /// reports no path at all for one, because "saved locally" pointing at a
@@ -247,6 +254,23 @@ const EXCEL_FINISHED_ASSETS: &[BundledTutorialAsset] = &[
 ];
 
 const BUNDLED_TUTORIALS: &[BundledTutorial] = &[
+    // The order here is the order the library lists them in, and the tour is
+    // lesson zero: it is the one a person who has never opened FrameWork
+    // should reach first.
+    BundledTutorial {
+        lesson: "The FrameWork tour",
+        kind: "Start",
+        relative_path: "The FrameWork tour/Start/Workbook.fw",
+        contents: include_bytes!("../../tutorials/grand-tour/grand-tour-start.fw"),
+        assets: &[],
+    },
+    BundledTutorial {
+        lesson: "The FrameWork tour",
+        kind: "Answer key",
+        relative_path: "The FrameWork tour/Answer key/Workbook.fw",
+        contents: include_bytes!("../../tutorials/grand-tour/grand-tour-finished.fw"),
+        assets: &[],
+    },
     BundledTutorial {
         lesson: "Your first FrameWork workbook",
         kind: "Start",
@@ -783,7 +807,11 @@ fn save_document_as_dialog_inner(
         .map_err(|error| error.to_string())?;
     session.path = path.clone();
     session.journal = journal;
-    session.snapshot_dirty = false;
+    // `save_as` above already wrote the full current in-memory store -- the
+    // latest state, including anything a debounced write on the old path
+    // had not yet reached disk with -- so there is nothing left pending
+    // against the new path either.
+    session.pending_write.clear();
     // Save As is how a scratch canvas becomes a document: it now has a home
     // the user chose and can find again.
     session.scratch = false;
@@ -2115,6 +2143,12 @@ fn package_document(
 ) -> Result<DocumentView, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
+    // Packaging adopts data from the file system based on what the document
+    // currently reads; the disk snapshot itself is not read here, but it
+    // must not fall further behind while this runs, since `PackageDocument`
+    // is about to record adoptions against whatever the snapshot says a
+    // frame's provenance is.
+    flush_session(&mut session)?;
     ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
@@ -2163,7 +2197,12 @@ fn compact_document_data(
     state: State<'_, AppState>,
 ) -> Result<ArtifactSweep, String> {
     let session = state.document_for(window.label())?;
-    let session = session.lock().map_err(|error| error.to_string())?;
+    let mut session = session.lock().map_err(|error| error.to_string())?;
+    // A file this sweep is about to delete could still be the only copy the
+    // on-disk snapshot references, if that snapshot has not caught up with
+    // an in-memory edit yet. Flush first so "unreferenced" is judged against
+    // the same state that is actually sitting on disk.
+    flush_session(&mut session)?;
     ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
@@ -2319,7 +2358,7 @@ fn export_document_excel(
 }
 
 /// The mutation itself, with no opinion about a menu: prepares, journals,
-/// applies, and persists one operation. Kept separate from
+/// applies, and schedules a debounced persist of one operation. Kept separate from
 /// [`apply_session_operation`] so the operation/history unit tests below
 /// (which run with no window and no menu at all) can drive the store
 /// directly rather than needing a live Tauri window to satisfy a parameter
@@ -2341,7 +2380,7 @@ fn apply_session_operation_inner(
         .store
         .apply_event(&event)
         .map_err(|error| error.to_string())?;
-    persist_session(session)?;
+    schedule_persist(session);
     Ok(view)
 }
 
@@ -2387,7 +2426,7 @@ fn undo(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Result<Docu
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     let view = session.store.undo();
-    persist_session(&mut session)?;
+    schedule_persist(&mut session);
     sync_history_menu(&window, view.can_undo, view.can_redo);
     scratchwork_window::emit_document_to_peers(&window, &view);
     Ok(view)
@@ -2398,7 +2437,7 @@ fn redo(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Result<Docu
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
     let view = session.store.redo();
-    persist_session(&mut session)?;
+    schedule_persist(&mut session);
     sync_history_menu(&window, view.can_undo, view.can_redo);
     scratchwork_window::emit_document_to_peers(&window, &view);
     Ok(view)
@@ -2576,6 +2615,17 @@ fn open_document_at_inner(
     if focus_window_for_path(app, &path, Some(window_label))? {
         return Err("That document is already open in another window".into());
     }
+    // This window's current document (Open, New, and reopening a recent
+    // document all land here) is about to be replaced outright -- its
+    // `DocumentSession` is dropped, not kept around -- so a debounced write
+    // still waiting out its idle window would otherwise be lost rather than
+    // merely delayed. Flush it first. A brand-new window has no prior
+    // session for this label, which `document_for` reports as an error we
+    // simply ignore.
+    if let Ok(previous) = app.state::<AppState>().document_for(window_label) {
+        let mut previous = previous.lock().map_err(|error| error.to_string())?;
+        flush_session(&mut previous)?;
+    }
     let mut store = Store::load(&path).map_err(|error| error.to_string())?;
     let journal =
         EventJournal::open(&path, store.document_id()).map_err(|error| error.to_string())?;
@@ -2600,7 +2650,7 @@ fn open_document_at_inner(
             store,
             path,
             journal,
-            snapshot_dirty: false,
+            pending_write: PendingWrite::default(),
             scratch: false,
         },
     )?;
@@ -2714,7 +2764,7 @@ fn blank_session(path: PathBuf, scratch: bool) -> Result<DocumentSession, String
         store,
         path,
         journal,
-        snapshot_dirty: false,
+        pending_write: PendingWrite::default(),
         scratch,
     })
 }
@@ -2746,15 +2796,43 @@ fn load_session(path: PathBuf) -> Result<(DocumentSession, Option<String>), Stri
             store,
             path,
             journal,
-            snapshot_dirty: false,
+            pending_write: PendingWrite::default(),
             scratch: false,
         },
         warning,
     ))
 }
 
-fn persist_session(session: &mut DocumentSession) -> Result<(), String> {
-    session.snapshot_dirty = true;
+/// Records that an operation landed and (re)starts the debounce window,
+/// without touching disk. Every `#[tauri::command]` that mutates the
+/// document through an `Operation` -- and `undo`/`redo`, which change the
+/// document exactly as any other operation does -- calls this instead of
+/// writing synchronously.
+///
+/// The write itself happens later, off this call stack entirely: either
+/// `watch_collaboration`'s periodic scan performs it once the debounce
+/// window elapses with no further edit resetting it (see `rescan_collaboration`),
+/// or one of the explicit flush points below (Save As, Open, Package,
+/// Compact, window blur/close, app quit, ...) forces it early because
+/// something is about to read the file from disk or replace the document
+/// path. This is what turns "one write per operation" -- the thing that was
+/// producing Dropbox and Google Drive conflicted copies, since every write
+/// is a distinct file version to a sync client watching the path -- into
+/// "one write per idle pause".
+fn schedule_persist(session: &mut DocumentSession) {
+    session
+        .pending_write
+        .schedule(&SystemClock, SNAPSHOT_WRITE_DEBOUNCE);
+}
+
+/// The actual disk write, performed unconditionally -- callers decide
+/// whether one is owed. Failure is logged and returned exactly as the
+/// synchronous write this replaces used to: the message just now reaches
+/// whoever called the flush (a command's rejected promise, or
+/// `watch_collaboration`'s `COLLABORATION_FAILED_EVENT`) rather than the
+/// command that happened to be the one to apply the operation, since that
+/// command may have returned long before this write was due.
+fn flush_session_now(session: &mut DocumentSession) -> Result<(), String> {
     if let Err(error) = session.store.save(&session.path) {
         log::error!(
             "failed to persist document at {}: {error}",
@@ -2762,7 +2840,19 @@ fn persist_session(session: &mut DocumentSession) -> Result<(), String> {
         );
         return Err(error.to_string());
     }
-    session.snapshot_dirty = false;
+    session.pending_write.clear();
+    Ok(())
+}
+
+/// Flushes a pending write immediately if there is one; a no-op otherwise.
+/// This is what every explicit flush point calls -- Save As, Open, New,
+/// Package, Compact, window blur/close, and app quit -- so that a session
+/// with nothing outstanding does not perform a needless write merely
+/// because something read-adjacent happened to it.
+fn flush_session(session: &mut DocumentSession) -> Result<(), String> {
+    if session.pending_write.is_pending() {
+        flush_session_now(session)?;
+    }
     Ok(())
 }
 
@@ -2780,6 +2870,10 @@ fn load_or_create_writer_id(app_data_directory: &Path) -> Result<String, String>
     Ok(writer_id)
 }
 
+/// Merges any remote edits into this document, and -- since this runs on
+/// `watch_collaboration`'s 750ms timer, the same cadence any debounced local
+/// write is waiting on -- doubles as the tick that performs a local write
+/// whose debounce window has elapsed.
 fn rescan_collaboration(
     session: &Arc<Mutex<DocumentSession>>,
 ) -> Result<Option<DocumentView>, String> {
@@ -2788,12 +2882,23 @@ fn rescan_collaboration(
     let merge = journal
         .merge_into(&mut session.store)
         .map_err(|error| error.to_string())?;
-    let should_emit = merge.applied > 0 || session.snapshot_dirty;
-    if !should_emit {
-        return Ok(None);
+    if merge.applied > 0 {
+        // A remote writer's edits just landed in memory. Persist right away
+        // rather than folding this into the local debounce window -- that
+        // window exists only to coalesce this replica's own edits, and a
+        // merge is not one of those.
+        flush_session_now(&mut session)?;
+        return Ok(Some(session.store.view()));
     }
-    persist_session(&mut session)?;
-    Ok(Some(session.store.view()))
+    // No remote edits this tick. If a local operation's debounced write has
+    // become due -- or a previous write attempt failed, which leaves it due
+    // immediately -- this is what actually performs it. Nothing about the
+    // document changed as a result (the in-memory view a caller already has
+    // is unaffected by when it reaches disk), so there is no view to emit.
+    if session.pending_write.is_due(&SystemClock) {
+        flush_session_now(&mut session)?;
+    }
+    Ok(None)
 }
 
 fn watch_collaboration(app: AppHandle) {
@@ -2843,13 +2948,50 @@ fn watch_collaboration(app: AppHandle) {
     });
 }
 
+/// Flushes whichever document `window` is showing, if it has a debounced
+/// write waiting. Any window over a shared `DocumentSession` -- the
+/// Scratchwork pop-out included -- reaches the same session through
+/// `document_for`, so it does not matter which window's blur or close
+/// triggered this.
+///
+/// A failure here has no command return to reject: it is surfaced the same
+/// way `watch_collaboration`'s own background flush surfaces one, over
+/// `COLLABORATION_FAILED_EVENT`, rather than being logged and dropped.
+fn flush_window_document(window: &tauri::Window, state: &AppState) {
+    let Ok(session) = state.document_for(window.label()) else {
+        return;
+    };
+    let Ok(mut session) = session.lock() else {
+        return;
+    };
+    if let Err(error) = flush_session(&mut session) {
+        let _ = window
+            .app_handle()
+            .emit_to(window.label(), COLLABORATION_FAILED_EVENT, &error);
+    }
+}
+
 fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
     let Some(state) = window.try_state::<AppState>() else {
         return;
     };
     match event {
+        // `CloseRequested` fires while the window (and this document's
+        // path) is still known; flushing here, ahead of `Destroyed`, is what
+        // keeps a debounced write from being silently dropped when a window
+        // closes before its two-second idle window elapses on its own.
+        tauri::WindowEvent::CloseRequested { .. } => {
+            flush_window_document(window, &state);
+        }
         tauri::WindowEvent::Destroyed => {
             scratchwork_window::handle_destroyed(window, &state);
+        }
+        // Losing focus is exactly the moment a person is likely to switch to
+        // a file browser, a sync client's UI, or another app entirely --
+        // any of which may read the file next. A pending write should not
+        // still be sitting in memory when that happens.
+        tauri::WindowEvent::Focused(false) => {
+            flush_window_document(window, &state);
         }
         tauri::WindowEvent::Focused(true) => {
             if let Ok(session) = state.document_for(window.label())
@@ -2994,7 +3136,14 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         undo,
         redo,
         set_history_menu_state,
-        log_frontend_event
+        log_frontend_event,
+        // The menu-routing seam, drivable only from a harness build: the e2e
+        // shell carries no native menu, so replaying a command id is the only
+        // way a spec can prove the ids the menu declares still reach a
+        // handler. `generate_handler!` keeps the attribute on the match arm,
+        // so the name does not exist in any other build.
+        #[cfg(feature = "e2e")]
+        menu::replay_menu_command
     ])
 }
 
@@ -3082,18 +3231,46 @@ pub fn run() {
 
     app.run(|app, event| {
         #[cfg(target_os = "macos")]
-        if let tauri::RunEvent::Opened { urls } = event {
+        if let tauri::RunEvent::Opened { ref urls } = event {
             let arguments = urls
-                .into_iter()
+                .iter()
                 .filter_map(|url| url.to_file_path().ok())
-                .map(PathBuf::into_os_string);
+                .map(PathBuf::into_os_string)
+                .collect::<Vec<_>>();
             let working_directory = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
             let app = app.clone();
             thread::spawn(move || {
                 try_open_from_arguments(&app, arguments, &working_directory);
             });
         }
+        // The window-level flushes in `handle_window_event` already cover an
+        // ordinary quit, which closes every window first. This is the
+        // backstop for the paths that do not: macOS "Quit" reaching an app
+        // with no open windows (the process can still be resident, e.g. after
+        // every document window was closed without quitting), and any
+        // platform detail that lets `ExitRequested` arrive without a prior
+        // per-window close. Flushing an already-clean session is a no-op.
+        if let tauri::RunEvent::ExitRequested { .. } = &event {
+            flush_all_sessions(app);
+        }
     });
+}
+
+/// The last chance to write out debounced edits before the process exits.
+/// Walks every open document once -- `grouped_sessions` already collapses a
+/// Scratchwork pop-out onto the workbook session it shares, so a document
+/// with both open is not flushed twice -- and logs on failure: there is no
+/// window left to hand a rejected promise to, and exiting is not something
+/// this can refuse just because a write failed.
+fn flush_all_sessions(app: &AppHandle) {
+    for (session, _labels) in scratchwork_window::grouped_sessions(&app.state::<AppState>()) {
+        let Ok(mut session) = session.lock() else {
+            continue;
+        };
+        if let Err(error) = flush_session(&mut session) {
+            log::error!("failed to flush document on exit: {error}");
+        }
+    }
 }
 
 #[cfg(test)]

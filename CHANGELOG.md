@@ -11,6 +11,44 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- A new first tutorial, **The FrameWork tour**, opens the lesson list. In about
+  25 minutes it goes once over what FrameWork does that a spreadsheet does not:
+  paste a table that arrives typed, write one formula for a whole column,
+  declare the row order and see it in Wrangle, keep Scratchwork in its own
+  window, bring a budget over by dragging its header onto a key, branch a tab
+  and summarize it, switch the same model between Base, Upside and Downside
+  from the corner of the canvas, and chart the result beside the table. Every
+  section names the lesson that teaches it properly, so the tour is a map
+  rather than a replacement. **Create tutorials** now makes twelve workbooks.
+
+- Edits now reach the `.fw` file as one write after about two seconds of idle
+  time instead of a write per operation, which is what was producing
+  conflicted copies in Dropbox and Google Drive during active editing. A
+  pending write is still flushed at once before Save As, Open, New, Package or
+  Compact, and on window blur, window close, or quitting, so nothing is left
+  unsaved.
+
+- Quick Commands (⇧⌘P) now indexes more than the menu. Select a frame, a card
+  or a column and the palette offers that object's own actions under its name:
+  sort, pin, hide or delete a column, create a frame from a frame, rename, fit,
+  collapse, delete, running exactly what the right-click menu runs. A Recent
+  group lists the last eight documents and opens one on Enter. Shortcuts are
+  searchable as text, so "⌘3", "cmd 3" and "shift cmd p" all find the command
+  that holds the key. A query that names no command no longer dead-ends: the
+  last row hands the phrase to Find, which opens already searching for it.
+
+- The application's menu commands now have one definition. Every item in the
+  menu bar, every row in Quick Commands, and everything the Scratchwork window
+  hands back to its workbook are checked against that one list, so a command
+  can no longer appear in the menu while doing nothing, the way Undo once could
+  in the Scratchwork window. Commands the Scratchwork window forwards to its
+  workbook now arrive there in every build, not only in the installed app.
+
+- The Keyboard Shortcuts dialog now lists the grid navigation that already
+  worked but was undocumented: ⌘Arrow jumps to the edge of the data, ⇧⌘Arrow
+  extends the selection there, ⇧Space selects the row, and Home, End, ⌘Home
+  and ⌘End reach the ends of a row or of the frame.
+
 - Scratchwork can open in its own ordinary workbook window from the Window
   menu or Quick Commands. It stays on the same autosaved block and undo
   history as the canvas, ⌘J raises it when it is already open, and pointing at

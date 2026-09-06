@@ -2,25 +2,104 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./QuickCommands.css";
 
+/**
+ * Where a row came from. Only `"menu"` rows are the menu's own commands, and
+ * only those are held against `menuCommands.json`: a row about the current
+ * selection or a recent document names something this document happens to
+ * hold, which the menu could not have declared.
+ */
+export type QuickCommandKind = "menu" | "selection" | "recent";
+
 export type QuickCommand = {
   id: string;
   label: string;
-  group: "Document" | "Canvas" | "View" | "Help";
+  /** The menu's own group, the selected object's name, or "Recent". */
+  group: string;
+  kind?: QuickCommandKind;
   shortcut?: string;
   keywords?: string;
   disabled?: boolean;
   run: () => void;
 };
 
-type CommandState = {
+/** The three facts that decide whether a menu row is offered or greyed out. */
+type CommandAvailability = "canUndo" | "canRedo" | "hasSelectedView";
+
+/**
+ * What the selected object is, in the terms the palette needs to name its
+ * verbs — not a `DataObject`, so this stays a plain description a test can
+ * write out by hand. App derives it; `selectionCommands` reads it.
+ */
+export type SelectionTarget = {
+  /** The group heading: the card, and the column after it when one is picked. */
+  name: string;
+  objectId: string;
+  /** The object's kind, as the context menu's Delete says it ("frame"). */
+  kind: string;
+  /** True when the card is collapsed, so the verb can say Expand instead. */
+  collapsed?: boolean;
+  /** Set when the selected object is a frame. */
+  frameId?: string;
+  /** Set when a column of that frame is selected. */
+  column?: {
+    id: string;
+    name: string;
+    /** How it sorts today; null when it is not one of the frame's sort keys. */
+    descending: boolean | null;
+    /** Leading columns a pin through here would freeze; 0 unpins. */
+    pinThrough: number;
+    /** A frame that owns its rows deletes a column; a computed one hides it. */
+    ownsRows: boolean;
+  };
+};
+
+/**
+ * The handlers behind the selection verbs. Each one is the same handler the
+ * right-click menu (or the column header, for sorting) already calls — the
+ * palette is another way to reach them, not a second implementation.
+ */
+export type SelectionActions = {
+  rename: (objectId: string) => void;
+  remove: (objectId: string) => void;
+  fitToWindow: () => void;
+  toggleCollapsed: () => void;
+  createFrameFrom: (frameId: string) => void;
+  sortColumn: (frameId: string, columnId: string, descending: boolean) => void;
+  clearColumnSort: (frameId: string, columnId: string) => void;
+  pinColumns: (frameId: string, pinnedColumns: number) => void;
+  removeColumn: (frameId: string, columnId: string) => void;
+};
+
+/** A document the application has open before, as the recents list holds it. */
+export type RecentEntry = { path: string; title: string };
+
+/** How many recents are worth a row. Past this it is the Data Library's job. */
+const RECENT_LIMIT = 8;
+
+export type CommandState = {
   canUndo: boolean;
   canRedo: boolean;
   hasSelectedView: boolean;
+  selection?: SelectionTarget | null;
+  recents?: RecentEntry[];
 };
 
-const COMMANDS: Array<Omit<QuickCommand, "run" | "disabled"> & {
+export type CommandHandlers = {
+  selection?: SelectionActions;
+  openRecent?: (path: string) => void;
+};
+
+/**
+ * The palette's index over the application's menu commands, keyed by the same
+ * `action` id `src-tauri/src/menu.rs` declares. Exported so
+ * `src/lib/menuCommands.test.ts` can hold it against the menu's own
+ * definition: an item added to the menu and not to this list is missing from
+ * ⇧⌘P, and a `shortcut` printed here that the menu does not bind is a promise
+ * the keyboard will not keep.
+ */
+export const COMMANDS: Array<Omit<QuickCommand, "run" | "disabled" | "kind"> & {
   action: string;
-  available?: keyof CommandState;
+  available?: CommandAvailability;
 }> = [
   { id: "new", action: "new-document", label: "New Document", group: "Document", shortcut: "⌘N" },
   { id: "new-window", action: "new-window", label: "New Window", group: "Document", shortcut: "⇧⌘N" },
@@ -52,19 +131,144 @@ const COMMANDS: Array<Omit<QuickCommand, "run" | "disabled"> & {
   { id: "updates", action: "check-for-updates", label: "Check for Updates…", group: "Help" },
 ];
 
-/** The palette is an index over the same actions the native menu dispatches. */
+/**
+ * The verbs the selected object's own menus offer, named after it.
+ *
+ * Column verbs come first when a column is selected, because that is what the
+ * group heading says was picked. Each row calls the handler the right-click
+ * menu calls; nothing here knows what an operation is.
+ */
+export function selectionCommands(
+  target: SelectionTarget,
+  actions: SelectionActions
+): QuickCommand[] {
+  const commands: QuickCommand[] = [];
+  const add = (id: string, label: string, run: () => void, keywords?: string) =>
+    commands.push({
+      id: `selection:${id}`,
+      kind: "selection",
+      group: target.name,
+      label,
+      keywords,
+      run,
+    });
+  const { frameId, column } = target;
+  if (frameId && column) {
+    add("sort-ascending", "Sort ascending", () =>
+      actions.sortColumn(frameId, column.id, false)
+    );
+    add("sort-descending", "Sort descending", () =>
+      actions.sortColumn(frameId, column.id, true)
+    );
+    if (column.descending !== null)
+      add("clear-sort", "Clear sort", () =>
+        actions.clearColumnSort(frameId, column.id)
+      );
+    add(
+      "pin-columns",
+      column.pinThrough === 0 ? "Unpin columns" : "Pin columns through here",
+      () => actions.pinColumns(frameId, column.pinThrough),
+      "freeze"
+    );
+    add(
+      "remove-column",
+      column.ownsRows ? "Delete column" : "Hide column",
+      () => actions.removeColumn(frameId, column.id),
+      "drop"
+    );
+  }
+  if (frameId)
+    add("create-frame", "Create frame from this", () =>
+      actions.createFrameFrom(frameId)
+    );
+  add("rename", "Rename", () => actions.rename(target.objectId));
+  add("fit", "Fit to window", actions.fitToWindow, "zoom");
+  add(
+    "collapse",
+    target.collapsed ? "Expand" : "Collapse",
+    actions.toggleCollapsed
+  );
+  add("delete", `Delete ${target.kind}`, () => actions.remove(target.objectId));
+  return commands;
+}
+
+/**
+ * Every row the palette can show: the menu's commands, then the verbs for
+ * whatever is selected, then the documents this one was opened after.
+ *
+ * Pure, and given plain descriptions rather than a document, so a test can
+ * state a selection and read back the rows it produces.
+ */
 export function quickCommandItems(
   actions: Record<string, () => void>,
-  state: CommandState
+  state: CommandState,
+  handlers: CommandHandlers = {}
 ): QuickCommand[] {
-  return COMMANDS.flatMap(({ action, available, ...command }) => {
+  const menu = COMMANDS.flatMap<QuickCommand>(({ action, available, ...command }) => {
     const run = actions[action];
     if (!run) return [];
-    return [{ ...command, disabled: available ? !state[available] : false, run }];
+    return [
+      {
+        ...command,
+        kind: "menu",
+        disabled: available ? !state[available] : false,
+        run,
+      },
+    ];
   });
+  const selection =
+    state.selection && handlers.selection
+      ? selectionCommands(state.selection, handlers.selection)
+      : [];
+  const openRecent = handlers.openRecent;
+  const recent: QuickCommand[] = openRecent
+    ? (state.recents ?? []).slice(0, RECENT_LIMIT).map((entry) => ({
+        id: `recent:${entry.path}`,
+        kind: "recent",
+        group: "Recent",
+        label: entry.title,
+        keywords: entry.path,
+        run: () => openRecent(entry.path),
+      }))
+    : [];
+  return [...menu, ...selection, ...recent];
 }
 
 const normalize = (value: string) => value.trim().toLocaleLowerCase();
+
+const MODIFIER_SPELLINGS: Array<[RegExp, string]> = [
+  // Canonical order, the one a Mac menu prints and `acceleratorSymbols`
+  // produces: ⌃⌥⇧⌘. Building the query in the same order is what lets the
+  // two be compared as plain strings.
+  [/⌃|\bctrl\b|\bcontrol\b/g, "⌃"],
+  [/⌥|\balt\b|\bopt\b|\boption\b/g, "⌥"],
+  [/⇧|\bshift\b/g, "⇧"],
+  [/⌘|\bcmd\b|\bcommand\b|\bmeta\b|\bsuper\b/g, "⌘"],
+];
+
+/**
+ * A shortcut written any of the ways a person types it — `⌘3`, `cmd 3`,
+ * `shift cmd p` — reduced to the symbols the palette prints. Returns "" for
+ * text that names no modifier, which is how the search knows an ordinary word
+ * is not a half-typed key.
+ */
+export function normalizeShortcut(value: string): string {
+  let rest = normalize(value);
+  const held: string[] = [];
+  for (const [spelling, symbol] of MODIFIER_SPELLINGS) {
+    const stripped = rest.replace(spelling, " ");
+    if (stripped === rest) continue;
+    held.push(symbol);
+    rest = stripped;
+  }
+  if (!held.length) return "";
+  const key = rest.replace(/[\s+]/g, "");
+  // Every key this application binds is one character long, so anything
+  // longer is a sentence that happened to contain the word "command" rather
+  // than someone reaching for a key.
+  if (key.length > 1) return "";
+  return held.join("") + key.toLocaleUpperCase();
+}
 
 /**
  * A keyboard-sized index over actions the application already owns. It does
@@ -74,10 +278,16 @@ const normalize = (value: string) => value.trim().toLocaleLowerCase();
 export function QuickCommands({
   open = true,
   commands,
+  onSearchDocument,
   onClose,
 }: {
   open?: boolean;
   commands: QuickCommand[];
+  /**
+   * ⌘⇧P is verbs and ⌘F is things, so a query that names no verb is handed
+   * over rather than answered here: the last row opens Find on it.
+   */
+  onSearchDocument?: (query: string) => void;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
@@ -85,14 +295,31 @@ export function QuickCommands({
   const inputRef = useRef<HTMLInputElement>(null);
   const results = useMemo(() => {
     const needle = normalize(query);
-    return commands.filter((command) => {
+    const keys = normalizeShortcut(query);
+    const matches = commands.filter((command) => {
       if (command.disabled) return false;
       if (!needle) return true;
-      return normalize(`${command.label} ${command.group} ${command.keywords ?? ""}`).includes(
-        needle
+      if (
+        normalize(`${command.label} ${command.group} ${command.keywords ?? ""}`).includes(
+          needle
+        )
+      )
+        return true;
+      return Boolean(
+        keys && command.shortcut && normalizeShortcut(command.shortcut).includes(keys)
       );
     });
-  }, [commands, query]);
+    const trimmed = query.trim();
+    if (matches.length || !trimmed || !onSearchDocument) return matches;
+    return [
+      {
+        id: "search-document",
+        group: "Find",
+        label: `Search document for “${trimmed}”`,
+        run: () => onSearchDocument(trimmed),
+      },
+    ];
+  }, [commands, onSearchDocument, query]);
   const selected =
     results.find((command) => command.id === selectedId) ?? results[0] ?? null;
 
@@ -165,7 +392,7 @@ export function QuickCommands({
             onClick={() => run(command)}
             onMouseEnter={() => setSelectedId(command.id)}
           >
-            <small>{command.group}</small>
+            <small title={command.group}>{command.group}</small>
             <span>{command.label}</span>
             {command.shortcut && <kbd>{command.shortcut}</kbd>}
           </button>

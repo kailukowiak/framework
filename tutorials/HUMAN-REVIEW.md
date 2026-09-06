@@ -1,6 +1,6 @@
 # Human release review
 
-This is the 20-minute human pass for the parts of FrameWork that automated
+This is the 25-minute human pass for the parts of FrameWork that automated
 tests cannot honestly prove: native macOS menus and dialogs, operating-system
 focus, the system clipboard, multi-window isolation, and whether a dense model
 still reads like a spreadsheet.
@@ -28,7 +28,7 @@ If a check fails, stop only that section. Capture the exact menu or gesture,
 active workbook, expected and observed result, whether undo recovered it, and
 a screenshot. Continue with an independent section when possible.
 
-## 1. Native menu and window isolation — 4 minutes
+## 1. Native menu and window isolation — 6 minutes
 
 This section must use the real macOS menu. The e2e app is deliberately
 menu-less and cannot replace it.
@@ -53,8 +53,19 @@ menu-less and cannot replace it.
 - [ ] **1.6** Close the second window with **⌘W**. Confirm the remaining
 
       workbook stays open and usable.
+- [ ] **1.7** Open **The FrameWork tour — Answer key**. Choose **Window →
 
-Pass when menu and shortcut commands each affect exactly the focused window.
+      Scratchwork Window** and confirm it opens on the same three lines the
+      canvas block shows. Edit one line in the pop-out and confirm the canvas
+      block follows; press **⌘Z** in either window and confirm both return.
+- [ ] **1.8** With the Scratchwork window still open, press **⌘J** from the
+
+      main window and confirm it raises that window rather than opening a
+      second one. Close it and confirm the block and its answers survive on the
+      canvas.
+
+Pass when menu and shortcut commands each affect exactly the focused window,
+and the Scratchwork window is the same block rather than a copy of it.
 
 ## 2. Copy, cut, paste, right-click, and undo — 5 minutes
 
@@ -84,7 +95,7 @@ do not paste through a remote-control text helper.
 Pass when every entry point uses the visible selection, edits once, and undo
 restores the prior grid.
 
-## 3. Tutorial semantics and live recomputation — 4 minutes
+## 3. Tutorial semantics and live recomputation — 5 minutes
 
 - [ ] **3.1** Reset and open **Month-over-month formulas by pointing — Start**.
 
@@ -105,7 +116,14 @@ restores the prior grid.
       and the **Scenario × Quarter** matrix shows `100.00` in its upper-left
       result cell.
 
-- [ ] **3.5** Scan every visible scratchwork gutter and card for **Formula
+- [ ] **3.5** Open **The FrameWork tour — Answer key**. Confirm
+
+      **Scratchwork** shows `839000`, `21000`, and `906120.00`. Use the
+      **Scenario** menu in the bottom-right canvas corner to choose `Upside`, and confirm
+      the third answer becomes `964850.00` and the Forecast column moves with
+      it; `Downside` gives `797050.00`, and `Base` puts both back.
+
+- [ ] **3.6** Scan every visible scratchwork gutter and card for **Formula
 
       error**. There should be none.
 

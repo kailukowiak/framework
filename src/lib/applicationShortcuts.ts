@@ -36,8 +36,19 @@ export type ApplicationShortcut =
  * than for the first caller that needed it.
  */
 export const isDesktopShell = () =>
-  "__TAURI_INTERNALS__" in window &&
-  import.meta.env.VITE_FRAMEWORK_E2E !== "true";
+  receivesMenuCommands() && import.meta.env.VITE_FRAMEWORK_E2E !== "true";
+
+/**
+ * Whether a menu command can arrive as an event in this shell.
+ *
+ * Not the same question as `hasNativeMenu`, and the difference is where a
+ * bug lived: the menu-less e2e build draws no menu, but the desktop side
+ * still emits `framework-menu-command` — the Scratchwork pop-out forwards
+ * every workbook command to its owner that way, and the e2e replay command
+ * drives the same path. A window that only subscribed when it had a menu
+ * dropped both. The browser dev server, where nothing can emit, stays out.
+ */
+export const receivesMenuCommands = () => "__TAURI_INTERNALS__" in window;
 
 /**
  * Whether the platform menu owns application shortcuts in this build.

@@ -14,7 +14,12 @@ import { PreferencesDialog } from "./PreferencesDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 import { FindPaletteHost } from "./FindPalette";
 import { HelpBrowser } from "./HelpBrowser";
-import { QuickCommands, quickCommandItems } from "./QuickCommands";
+import {
+  QuickCommands,
+  quickCommandItems,
+  type SelectionActions,
+  type SelectionTarget,
+} from "./QuickCommands";
 import { UpdateDialog } from "./UpdateDialog";
 import { useApplicationMenu } from "./useApplicationMenu";
 import { useFitViewToWindow } from "./useFitViewToWindow";
@@ -78,6 +83,7 @@ import {
   gridBoundsFor,
   gridCellAt,
   isTextEntryTarget,
+  pipelineSortKeys,
   resolveGridContext,
   tabObjects,
   visualGridPosition,
@@ -101,11 +107,14 @@ import {
   importDatabaseSource,
   importExcelRange,
   inspectExcelWorkbook,
+  listRecentDocuments,
   newWindow,
+  openDocument,
   pickDataFile,
   saveDocumentAsDialog,
   setHistoryMenuState,
   type ExcelWorkbookInfo,
+  type RecentDocument,
 } from "./lib/api";
 import { reconcileSelection } from "./lib/reconcileSelection";
 import { formulaToken } from "./lib/formulaReferences";
@@ -113,10 +122,12 @@ import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNaviga
 import {
   applicationShortcut,
   hasNativeMenu,
+  receivesMenuCommands,
   shortcutCommandId,
 } from "./lib/applicationShortcuts";
 import { reportIgnoredFailure } from "./lib/errorReporting";
 import { selectedCanvasView, withCanvasView } from "./lib/canvasNavigation";
+import { pinnedThrough } from "./lib/pinnedColumns";
 import { outlineFrame, frameNames } from "./lib/dataSources";
 import {
   CANVAS_OUTLINE_ZOOM,
@@ -154,6 +165,51 @@ function importPosition(
     y: (viewport?.scrollTop ?? 0) + 100,
   };
   return placeNewCard(existingViews, anchor, CARD_SIZES.frame);
+}
+
+/**
+ * The selected object as Quick Commands names it: the card, the column when
+ * one is picked, and the few facts its verbs need to read correctly — whether
+ * the card is collapsed, how the column sorts today, how far a pin would
+ * reach, and whether the frame owns its rows (which decides whether a column
+ * is deleted or hidden). A plain description rather than the objects
+ * themselves, so `quickCommandItems` stays testable without a document.
+ */
+function quickCommandSelection(
+  document: DocumentView | null,
+  selection: Selection | null
+): SelectionTarget | null {
+  if (!document || !selection) return null;
+  const object = document.objects.find(
+    (candidate) => candidate.id === selection.objectId
+  );
+  if (!object) return null;
+  const frame = object.kind === "frame" ? object : null;
+  const column =
+    frame?.columns.find((candidate) => candidate.id === selection.columnId) ?? null;
+  const sortKey =
+    frame && column
+      ? pipelineSortKeys(document.computedFrames[frame.id]).find(
+          (key) => key.columnId === column.id
+        )
+      : undefined;
+  return {
+    name: column ? `${object.name} · ${column.name}` : object.name,
+    objectId: object.id,
+    kind: object.kind,
+    collapsed: selectedCanvasView(document, selection)?.collapsed ?? false,
+    frameId: frame?.id,
+    column:
+      frame && column
+        ? {
+            id: column.id,
+            name: column.name,
+            descending: sortKey ? sortKey.descending : null,
+            pinThrough: pinnedThrough(frame, column),
+            ownsRows: Boolean(document.computedFrames[frame.id]?.editing.rows),
+          }
+        : undefined,
+  };
 }
 
 export default function App() {
@@ -208,6 +264,10 @@ export default function App() {
   const [lastHelpScope, setLastHelpScope] = useState<"formulas" | "guide">("guide");
   const [quickCommandsOpen, setQuickCommandsOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
+  /** What Find opens on, when something handed it a query. */
+  const [findQuery, setFindQuery] = useState("");
+  /** The device's recents, read when the palette first needs to list them. */
+  const [recents, setRecents] = useState<RecentDocument[]>([]);
   const [sequenceFill, setSequenceFill] = useState<SequenceFillState | null>(null);
   const [runningCalculation, setRunningCalculation] =
     useState<RunningCalculationState | null>(null);
@@ -407,22 +467,28 @@ export default function App() {
     [document, requestPairVector, vectorCombine]
   );
 
-  const deleteContextColumn = () => {
-    if (!document || !contextFrame || !contextColumn) return;
-    const computed = document.computedFrames[contextFrame.id];
+  /**
+   * Dropping a column by whichever gesture its frame allows. Named by frame
+   * and column rather than read off the context menu, so the right-click item
+   * and Quick Commands reach the same decision rather than each making it.
+   */
+  const removeColumn = (frameId: string, columnId: string, viewId?: string) => {
+    if (!document) return;
+    const computed = document.computedFrames[frameId];
     if (computed?.editing.rows) {
-      deleteFromContext({
-        type: "deleteColumn",
-        frameId: contextFrame.id,
-        columnId: contextColumn.id,
-      });
+      deleteFromContext({ type: "deleteColumn", frameId, columnId });
       return;
     }
     // A computed or source-backed grid cannot delete its input data. Its
     // equivalent gesture is the same one the chain already exposes: leave
     // this column out of the final Select. Put that request through the open
     // editor so its local draft and the saved pipeline change together.
-    requestHidePipelineColumn(contextFrame.id, contextColumn.id, contextMenu?.viewId);
+    requestHidePipelineColumn(frameId, columnId, viewId);
+  };
+
+  const deleteContextColumn = () => {
+    if (!contextFrame || !contextColumn) return;
+    removeColumn(contextFrame.id, contextColumn.id, contextMenu?.viewId);
   };
 
   const {
@@ -690,7 +756,10 @@ export default function App() {
       setPreferencesPage("shortcuts");
       setPreferencesOpen(true);
     },
-    find: () => setFindOpen(true),
+    find: () => {
+      setFindQuery("");
+      setFindOpen(true);
+    },
     "quick-commands": () => {
       setHelpScope(null);
       setFindOpen(false);
@@ -730,9 +799,88 @@ export default function App() {
     "zoom-out": () => zoomCanvas(nudgeCanvasZoom(canvasZoomRef.current, -1)),
     "zoom-reset": () => zoomCanvas(DEFAULT_CANVAS_ZOOM),
   };
+  // What ⌘⇧P offers about the selection. Every handler is the one the
+  // right-click menu, the column header or the menu itself already calls —
+  // the palette is another way in, not a second implementation.
+  const selectionActions: SelectionActions = {
+    rename: (objectId) => {
+      jumpToObject(objectId);
+      // Renaming happens in the card's own name field, the way it does from
+      // the canvas; the palette only puts the cursor in it.
+      requestAnimationFrame(() => {
+        const card = `[data-object-id="${CSS.escape(objectId)}"]`;
+        window.document
+          .querySelector<HTMLInputElement>(
+            `${card} input.frame-name, ${card} input.object-name-input`
+          )
+          ?.select();
+      });
+    },
+    remove: (objectId) => deleteFromContext({ type: "deleteObject", objectId }),
+    fitToWindow: () => menuHandlers["fit-view"](),
+    toggleCollapsed: () => menuHandlers["collapse-view"](),
+    createFrameFrom: (frameId) => {
+      const frame = document?.objects.find((object) => object.id === frameId);
+      const view = document?.views.find((candidate) => candidate.objectId === frameId);
+      void run({
+        type: "addLinkedFrame",
+        sourceFrameId: frameId,
+        name: `${frame?.name ?? "Frame"} frame`,
+        x: (view?.x ?? 0) + 28,
+        y: (view?.y ?? 0) + 28,
+      });
+    },
+    sortColumn: (frameId, columnId, descending) =>
+      void run({
+        type: "setFrameDisplaySort",
+        frameId,
+        keys: [{ columnId, descending }],
+      }),
+    clearColumnSort: (frameId, columnId) =>
+      void run({
+        type: "setFrameDisplaySort",
+        frameId,
+        keys: pipelineSortKeys(document?.computedFrames[frameId]).filter(
+          (key) => key.columnId !== columnId
+        ),
+      }),
+    pinColumns: (frameId, pinnedColumns) =>
+      void run({ type: "setFrameDisplayPinnedColumns", frameId, pinnedColumns }),
+    removeColumn: (frameId, columnId) =>
+      removeColumn(frameId, columnId, selection?.viewId),
+  };
+
+  /** Opening a recent from the palette lands the same way the library does. */
+  const openRecentDocument = (path: string) => {
+    void openDocument(path)
+      .then((opened) => {
+        setDocument(opened.document);
+        setDocumentPath(opened.path);
+        setSelection(null);
+        setContextMenu(null);
+        setError(null);
+      })
+      .catch((reason) => setError(String(reason).replace(/^Error:\s*/, "")));
+  };
+
+  // The recents are a device-level list, read when the palette opens rather
+  // than kept in step with a document nothing here is waiting on.
+  useEffect(() => {
+    if (!quickCommandsOpen) return;
+    let disposed = false;
+    void listRecentDocuments()
+      .then((items) => {
+        if (!disposed) setRecents(items);
+      })
+      .catch(reportIgnoredFailure("recent documents for Quick Commands"));
+    return () => {
+      disposed = true;
+    };
+  }, [quickCommandsOpen]);
+
   const menuHandlersRef = useRef(menuHandlers);
   menuHandlersRef.current = menuHandlers;
-  useApplicationMenu(hasNativeMenu(), menuHandlers, setError);
+  useApplicationMenu(receivesMenuCommands(), menuHandlers, setError);
 
   // One visual step from the active cell after an editor commit (Enter/Tab family).
   const stepGridFocus = useCallback(
@@ -1645,6 +1793,7 @@ export default function App() {
         {findOpen && (
           <FindPaletteHost
             document={document}
+            initialQuery={findQuery}
             jumpToObject={jumpToObject}
             setSelection={setSelection}
             setGridFocus={setGridFocus}
@@ -1654,11 +1803,21 @@ export default function App() {
 
         <QuickCommands
           open={quickCommandsOpen}
-          commands={quickCommandItems(menuHandlers, {
-            canUndo: document.canUndo,
-            canRedo: document.canRedo,
-            hasSelectedView: Boolean(selectedCommandView),
-          })}
+          commands={quickCommandItems(
+            menuHandlers,
+            {
+              canUndo: document.canUndo,
+              canRedo: document.canRedo,
+              hasSelectedView: Boolean(selectedCommandView),
+              selection: quickCommandSelection(document, selection),
+              recents: recents.map(({ path, title }) => ({ path, title })),
+            },
+            { selection: selectionActions, openRecent: openRecentDocument }
+          )}
+          onSearchDocument={(query) => {
+            setFindQuery(query);
+            setFindOpen(true);
+          }}
           onClose={() => setQuickCommandsOpen(false)}
         />
 

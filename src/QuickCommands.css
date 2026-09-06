@@ -3,8 +3,8 @@
 .quick-commands-search input { min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: var(--text-base); }
 .quick-commands kbd { color: var(--muted); font: 500 var(--text-xs) "DM Mono", monospace; }
 .quick-commands-results { min-height: 0; overflow-y: auto; padding: 4px 0; }
-.quick-commands-results > button { width: 100%; height: 27px; display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 0 11px; background: transparent; text-align: left; }
+.quick-commands-results > button { width: 100%; height: 27px; display: grid; grid-template-columns: minmax(60px, max-content) minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 0 11px; background: transparent; text-align: left; }
 .quick-commands-results > button.selected { background: light-dark(#eaf0ec, #223229); }
-.quick-commands-results small { color: var(--muted); font-size: var(--text-xs); }
+.quick-commands-results small { max-width: 132px; overflow: hidden; color: var(--muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .quick-commands-results span { min-width: 0; overflow: hidden; color: var(--ink); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
 .quick-commands-results > p { margin: 0; padding: 7px 11px; color: var(--muted); font-size: var(--text-sm); }

@@ -160,6 +160,25 @@ export async function forwardScratchworkCommand(command: string): Promise<void> 
   return invoke("forward_scratchwork_command", { command });
 }
 
+/**
+ * Replays a native menu command, for e2e specs only.
+ *
+ * The harness build runs menu-less — WebDriver's synthesized keys never
+ * reach an NSMenu — so nothing automated ever exercised the routing between
+ * a menu id and the handler that answers it. This asks the desktop side to
+ * emit the command exactly as choosing the item does, at `windowLabel` or at
+ * the calling window. The Rust command is compiled only under the `e2e`
+ * cargo feature; the guard here means the same call in a real build is a
+ * no-op rather than a rejected invoke a person could see reported.
+ */
+export async function replayMenuCommand(
+  id: string,
+  windowLabel?: string
+): Promise<void> {
+  if (import.meta.env.VITE_FRAMEWORK_E2E !== "true") return;
+  return invoke("replay_menu_command", { id, windowLabel });
+}
+
 export async function openDocument(
   path: string,
   safeMode = false
