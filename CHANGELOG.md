@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.7
+
 - Hold ⌘ and FrameWork shows you the keys. Every button that has a keyboard
   shortcut, from the rail and the inspector tabs to a card's fit and collapse
   controls, the zoom readout and the Scratchwork toggle, wears its shortcut in
