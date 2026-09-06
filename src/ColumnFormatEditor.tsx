@@ -56,9 +56,7 @@ export function ColumnFormatEditor({
   return (
     <div className="column-format-editor">
       <label className="inspector-field">
-        {targets.length > 1
-          ? `Number format · ${targets.length} columns`
-          : "Number format · whole column"}
+        {targets.length > 1 ? `Style · ${targets.length} columns` : "Style · whole column"}
         <select
           value={format?.style ?? ""}
           onChange={(event) => {

@@ -593,13 +593,39 @@ export function FrameInspector({
 
       {section === "format" && (
         <div className="inspector-section-stack">
-          {/* The one strip that says what the controls below will change.
-              A rule stop is a formatting target like any other, so it is
-              said here rather than by a second panel saying it again. */}
+          {/* Two things live on this tab and they scope differently: a
+              number format belongs to a column, whatever cell was clicked,
+              while typeface, colour and alignment land on exactly the cell,
+              row, column or frame selected. Each gets its own strip so the
+              scope is read before the control is touched. */}
+          {column && canFormatColumn(column) && !styleRule && (
+            <>
+              <div className="selection-summary compact">
+                <span>Number format</span>
+                <strong>
+                  {rangeColumns.length > 1
+                    ? `${rangeColumns.length} columns`
+                    : `Column · ${column.name}`}
+                </strong>
+                <small>
+                  {rangeColumns.length > 1
+                    ? `${frame.name} / ${rangeColumns.map((candidate) => candidate.name).join(", ")}`
+                    : `${frame.name} · every row of the column`}
+                </small>
+              </div>
+              <ColumnFormatEditor
+                key={`format-${formatColumns.map((candidate) => candidate.id).join("+")}`}
+                frame={frame}
+                column={column}
+                columns={formatColumns}
+                onOperation={onOperation}
+              />
+            </>
+          )}
           <div
             className={`selection-summary compact${styleRule && activeStop ? " rule-target" : ""}`}
           >
-            <span>Formatting target</span>
+            <span>{styleRule && activeStop ? "Formatting target" : "Cell style"}</span>
             <strong>
               {styleRule && activeStop
                 ? `Rule · ${stopLabel(styleRule, activeStop)}`
@@ -619,15 +645,6 @@ export function FrameInspector({
                 : frame.name}
             </small>
           </div>
-          {column && canFormatColumn(column) && !styleRule && (
-            <ColumnFormatEditor
-              key={`format-${formatColumns.map((candidate) => candidate.id).join("+")}`}
-              frame={frame}
-              column={column}
-              columns={formatColumns}
-              onOperation={onOperation}
-            />
-          )}
           <div className="format-preview-controls" aria-label="Formatting controls">
             <div>
               <span>Typeface</span>
@@ -756,7 +773,8 @@ export function FrameInspector({
               }
               onClick={() => setDirectStyle(null)}
             >
-              <X size={13} /> Clear formatting for this {selectionLabel.toLowerCase()}
+              <X size={13} /> Clear formatting for {rangeColumns.length > 1 ? "these" : "this"}{" "}
+              {selectionLabel.toLowerCase()}
             </button>
           )}
           <ConditionalFormattingRules

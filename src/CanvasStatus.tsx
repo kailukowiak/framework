@@ -1,4 +1,4 @@
-import { CircleAlert, Command, RefreshCw } from "lucide-react";
+import { CircleAlert, RefreshCw } from "lucide-react";
 import { ScenarioSwitcher } from "./ScenarioSwitcher";
 import { SelectionStatisticsStatus } from "./SelectionStatisticsStatus";
 import { displayedSummaryRows } from "./FrameSummaryFooter";
@@ -22,7 +22,6 @@ export function CanvasStatus({
   onSave,
   onRefresh,
   onZoom,
-  onOpenQuickCommands,
 }: {
   withInspector: boolean;
   withCollapsedInspector: boolean;
@@ -43,7 +42,6 @@ export function CanvasStatus({
       is a statement about canvas state and is usually absent, but Quick
       Commands needs one durable, discoverable entry point for people who
       don't know the shortcut or find it in the menu. */
-  onOpenQuickCommands: () => void;
 }) {
   return (
     <div
@@ -51,16 +49,6 @@ export function CanvasStatus({
         withCollapsedInspector ? "with-inspector-collapsed" : ""
       }`}
     >
-      <button
-        type="button"
-        className="icon-button quick-commands-launcher"
-        aria-label="Quick Commands"
-        title="Quick Commands (⇧⌘P)"
-        data-shortcut="⇧⌘P"
-        onClick={onOpenQuickCommands}
-      >
-        <Command size={15} />
-      </button>
       <SelectionStatisticsStatus
         context={context}
         focus={focus}

@@ -25,7 +25,8 @@ export const FORWARDED_COMMANDS = [
   "find", "quick-commands", "reference", "check-for-updates", "data-library",
   "toggle-sources", "tidy-layout", "fit-view", "collapse-view",
   "inspector-toggle", "inspector-selection", "inspector-format",
-  "inspector-wrangle", "add-block", "add-text", "add-frame", "add-container",
+  "inspector-wrangle", "add-variable", "add-block", "add-text", "add-matrix",
+  "add-frame", "add-container", "canvas-only",
   "zoom-in", "zoom-out", "zoom-reset",
 ] as const;
 

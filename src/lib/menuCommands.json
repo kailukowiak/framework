@@ -66,6 +66,12 @@
     "group": "insert"
   },
   {
+    "id": "add-variable",
+    "label": "Variable",
+    "accelerator": "CmdOrCtrl+Alt+V",
+    "group": "insert"
+  },
+  {
     "id": "add-block",
     "label": "Formula Block",
     "accelerator": "CmdOrCtrl+Alt+B",
@@ -75,6 +81,12 @@
     "id": "add-text",
     "label": "Text",
     "accelerator": "CmdOrCtrl+Alt+T",
+    "group": "insert"
+  },
+  {
+    "id": "add-matrix",
+    "label": "Calculation Matrix",
+    "accelerator": "CmdOrCtrl+Alt+M",
     "group": "insert"
   },
   {
@@ -93,6 +105,12 @@
     "id": "quick-commands",
     "label": "Quick Commands…",
     "accelerator": "CmdOrCtrl+Shift+P",
+    "group": "view"
+  },
+  {
+    "id": "canvas-only",
+    "label": "Canvas Only",
+    "accelerator": "CmdOrCtrl+Shift+C",
     "group": "view"
   },
   {

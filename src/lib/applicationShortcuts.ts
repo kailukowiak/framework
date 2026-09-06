@@ -20,10 +20,13 @@ export type ApplicationShortcut =
   | "inspector-selection"
   | "inspector-format"
   | "inspector-wrangle"
+  | "add-variable"
   | "add-block"
   | "add-text"
+  | "add-matrix"
   | "add-frame"
   | "add-container"
+  | "canvas-only"
   | "zoom-in"
   | "zoom-out"
   | "zoom-reset";
@@ -64,10 +67,11 @@ const PLAIN: Record<string, ApplicationShortcut> = {
 };
 const SHIFTED: Record<string, ApplicationShortcut> = {
   z: "redo", n: "new-window", s: "save-as", l: "library", a: "arrange", f: "fit",
-  m: "collapse", p: "quick-commands", i: "inspector-toggle",
+  m: "collapse", p: "quick-commands", i: "inspector-toggle", c: "canvas-only",
 };
 const INSERT: Record<string, ApplicationShortcut> = {
-  b: "add-block", t: "add-text", f: "add-frame", g: "add-container",
+  v: "add-variable", b: "add-block", t: "add-text", m: "add-matrix",
+  f: "add-frame", g: "add-container",
 };
 
 /** The one canonical map shared by the menu-less dev and e2e shells. */
@@ -95,6 +99,7 @@ const COMMAND_IDS: Partial<Record<ApplicationShortcut, string>> = {
   "inspector-selection": "inspector-selection", "inspector-format": "inspector-format",
   "inspector-wrangle": "inspector-wrangle", "add-block": "add-block",
   "add-text": "add-text", "add-frame": "add-frame", "add-container": "add-container",
+  "add-variable": "add-variable", "add-matrix": "add-matrix", "canvas-only": "canvas-only",
   "zoom-in": "zoom-in", "zoom-out": "zoom-out", "zoom-reset": "zoom-reset",
 };
 

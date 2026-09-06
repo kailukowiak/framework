@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CARD_SIZES, placeNewCard, type Rect } from "./cardPlacement";
+import { CARD_SIZES, frameCardSize, placeNewCard, type Rect } from "./cardPlacement";
 
 const SIZE = CARD_SIZES.block;
 const ANCHOR = { x: 110, y: 100 };
@@ -91,3 +91,16 @@ function rectsOverlap(a: Rect, b: Rect): boolean {
     a.y + a.height > b.y
   );
 }
+
+describe("frameCardSize", () => {
+  it("grows with columns and rows, within a cap", () => {
+    const small = frameCardSize(2, 2);
+    const wide = frameCardSize(6, 6);
+    expect(wide.width).toBeGreaterThan(small.width);
+    expect(wide.height).toBeGreaterThan(small.height);
+    const capped = frameCardSize(40, 5000);
+    expect(capped.width).toBe(900);
+    expect(capped.height).toBeLessThanOrEqual(600);
+    expect(capped.height).toBe(frameCardSize(40, 12).height);
+  });
+});

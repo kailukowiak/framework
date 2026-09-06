@@ -25,6 +25,7 @@ export function LeftRail({
   setLeftPanel,
   toggleLeftPanel,
   onOpenLibrary,
+  onOpenQuickCommands,
   addBlock,
   addVariable,
   addText,
@@ -38,6 +39,7 @@ export function LeftRail({
   setLeftPanel: (panel: LeftPanel) => void;
   toggleLeftPanel: (panel: Exclude<LeftPanel, null>) => void;
   onOpenLibrary: () => void;
+  onOpenQuickCommands: () => void;
   addBlock: (position?: { x: number; y: number }) => unknown;
   addVariable: (position?: { x: number; y: number }) => unknown;
   addText: (position?: { x: number; y: number }) => unknown;
@@ -49,15 +51,26 @@ export function LeftRail({
 }) {
   return (
     <aside className="left-rail">
-      {/* Decorative: the window's title bar already names the application,
-          and every button below says what it is. */}
-      <img className="rail-mark" src="/icon.svg" alt="" />
+      {/* The mark is the door to everything the application can do: one
+          searchable list, in the corner where a person looks for the app
+          itself, rather than a stray glyph in the canvas's status bar. */}
+      <button
+        type="button"
+        className="rail-mark"
+        aria-label="Quick Commands"
+        title="Quick Commands (⇧⌘P)"
+        data-shortcut="⇧⌘P"
+        onClick={onOpenQuickCommands}
+      >
+        <img src="/icon.svg" alt="" />
+      </button>
       <div className="rail-group">
         <span className="rail-group-label">View</span>
         <button
           className={`rail-button ${leftPanel === null ? "active" : ""}`}
           onClick={() => setLeftPanel(null)}
-          title="The canvas on its own, with no panel beside it"
+          data-shortcut="⇧⌘C"
+          title="The canvas on its own, with no panel beside it (⇧⌘C)"
         >
           <Frame size={19} />
           <span>Canvas</span>
@@ -95,7 +108,8 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addVariable()}
-          title="One named formula on the canvas; it may answer with one value or a vector"
+          data-shortcut="⌥⌘V"
+          title="One named formula on the canvas; it may answer with one value or a vector (⌥⌘V)"
         >
           <Variable size={19} />
           <span>Variable</span>
@@ -121,7 +135,8 @@ export function LeftRail({
         <button
           className="rail-button"
           onClick={() => void addCalculationMatrix()}
-          title="Two vector axes and one shared formula evaluated across every combination"
+          data-shortcut="⌥⌘M"
+          title="Two vector axes and one shared formula evaluated across every combination (⌥⌘M)"
         >
           <Grid3X3 size={19} />
           <span>Matrix</span>

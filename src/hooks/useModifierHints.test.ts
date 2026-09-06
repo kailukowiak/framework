@@ -52,6 +52,21 @@ describe("useModifierHints", () => {
     expect(hinting()).toBe(false);
   });
 
+  it("narrows to the shifted shortcuts while Shift joins Meta, and widens when it lifts", () => {
+    renderHook(() => useModifierHints());
+    press("Meta");
+    press("Shift", { metaKey: true, shiftKey: true });
+    expect(document.documentElement.getAttribute(MODIFIER_HINTS_ATTRIBUTE)).toBe("shift");
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keyup", { key: "Shift", metaKey: true }));
+    });
+    expect(document.documentElement.getAttribute(MODIFIER_HINTS_ATTRIBUTE)).toBe("");
+    press("Alt", { metaKey: true, altKey: true });
+    expect(document.documentElement.getAttribute(MODIFIER_HINTS_ATTRIBUTE)).toBe("alt");
+    release("Meta");
+    expect(hinting()).toBe(false);
+  });
+
   it("drops hints when the window loses focus", () => {
     renderHook(() => useModifierHints());
     press("Meta");

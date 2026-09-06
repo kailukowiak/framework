@@ -11,17 +11,21 @@ import { acceleratorSymbols, menuCommand } from "./lib/menuCommands";
 
 /** Rail button, by its visible name, and the menu command it stands for. */
 const railCommands: Array<[string, string]> = [
+  ["Quick Commands", "quick-commands"],
+  ["Canvas", "canvas-only"],
   ["Data", "toggle-sources"],
   ["Library", "data-library"],
+  ["Variable", "add-variable"],
   ["Block", "add-block"],
   ["Text", "add-text"],
+  ["Matrix", "add-matrix"],
   ["Frame", "add-frame"],
   ["Container", "add-container"],
   ["Arrange", "tidy-layout"],
 ];
 
 /** Rail buttons the menu gives no accelerator, which must claim none. */
-const unbound = ["Canvas", "Project", "Variable", "Matrix"];
+const unbound = ["Project"];
 
 afterEach(cleanup);
 
@@ -32,6 +36,7 @@ const renderRail = () =>
       setLeftPanel={() => {}}
       toggleLeftPanel={() => {}}
       onOpenLibrary={() => {}}
+      onOpenQuickCommands={() => {}}
       addBlock={() => undefined}
       addVariable={() => undefined}
       addText={() => undefined}

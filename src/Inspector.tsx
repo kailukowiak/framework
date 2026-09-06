@@ -1,5 +1,6 @@
 import { Info, X, PanelRightClose } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
+import { Field } from "./Field";
 import { FrameInspector } from "./FrameInspector";
 import type {
   AddCalculatedColumnEditorRequest,
@@ -161,6 +162,23 @@ export function Inspector({
           scenarios={scenarios}
           onOperation={onOperation}
         />
+      )}
+      {object.kind === "container" && (
+        <section className="inspector-section">
+          <Field
+            label="Name"
+            initial={object.name}
+            help="Members are written as `Name`.`Member` in formulas."
+            onCommit={(name) =>
+              void onOperation({ type: "renameObject", objectId: object.id, name })
+            }
+          />
+          <p className="inspector-note">
+            {object.memberIds.length === 0
+              ? "Nothing in here yet. Use + Value, + Result, or + Vector on the card."
+              : `${object.memberIds.length} ${object.memberIds.length === 1 ? "member" : "members"}. Click one on the card to inspect it.`}
+          </p>
+        </section>
       )}
       {/* A vector is edited on its card, where the whole of it is visible. The
           inspector says the two things the card cannot: what it is called in

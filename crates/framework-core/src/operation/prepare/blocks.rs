@@ -35,7 +35,7 @@ impl Document {
                 object_id,
                 x,
                 y,
-                width: 340.0,
+                width: 520.0,
                 height: 220.0,
                 collapsed: false,
                 tab_object_ids: Vec::new(),

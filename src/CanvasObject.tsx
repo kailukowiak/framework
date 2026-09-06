@@ -519,7 +519,13 @@ export function CanvasObject({
       // it back to the whole card here would drop the cell — and with it
       // the range anchor a shift-click had just set.
       onPointerDown={(event) => {
-        if ((event.target as HTMLElement).closest("td[data-column-id], td[data-row-id]"))
+        // A column header selects its column the same way a cell selects
+        // itself; widening either back to the card dropped the column.
+        if (
+          (event.target as HTMLElement).closest(
+            "td[data-column-id], td[data-row-id], th[data-column-id]"
+          )
+        )
           return;
         onSelect({ objectId: object.id, viewId: view.id });
       }}
@@ -644,6 +650,7 @@ export function CanvasObject({
           formulaFunctions={formulaFunctions}
           onOperation={onOperation}
           onAddList={onAddList}
+          onSelectMember={(memberId) => onSelect({ objectId: memberId, viewId: view.id })}
         />
       )}
       {!showOutline && !isCollapsed && object.kind === "frame" && computed && (
@@ -823,6 +830,7 @@ function ContainerCard({
   onOperation,
   onFreeze,
   onAddList,
+  onSelectMember,
 }: {
   container: ContainerObject;
   objects: DataObject[];
@@ -833,6 +841,8 @@ function ContainerCard({
   onOperation: OperationHandler;
   onFreeze: (objectId: string) => Promise<void>;
   onAddList: (containerId: string) => void;
+  /** A press on a member selects that member, not the container around it. */
+  onSelectMember: (memberId: string) => void;
 }) {
   const members = container.memberIds
     .map((memberId) => objects.find((object) => object.id === memberId))
@@ -860,7 +870,19 @@ function ContainerCard({
           </p>
         )}
         {members.map((member) => (
-          <div className="container-member" data-object-id={member.id} key={member.id}>
+          <div
+            className="container-member"
+            data-object-id={member.id}
+            key={member.id}
+            // Before the card's own handler, which would widen the selection
+            // back to the container; a right-click already reached the member
+            // through the context menu, and a left-click should not do less.
+            onPointerDown={(event) => {
+              if (event.button !== 0) return;
+              event.stopPropagation();
+              onSelectMember(member.id);
+            }}
+          >
             {member.kind === "value" && (
               <ValueCard
                 value={member}
@@ -901,6 +923,7 @@ function ContainerCard({
                 onOperation={onOperation}
                 onFreeze={onFreeze}
                 onAddList={onAddList}
+                onSelectMember={onSelectMember}
               />
             )}
           </div>

@@ -22,6 +22,8 @@ import { useEffect } from "react";
  * catch that. The fourth — any other key going down — is what stops ⌘Z from
  * leaving the hints stuck, and it is also the literal reading of the rule:
  * hints are for a modifier held on its own, before a shortcut is chosen.
+ * Shift and Option are the exception: they narrow the hints rather than end
+ * them, since ⌘⇧ is still the start of a shortcut.
  */
 export const MODIFIER_HINTS_ATTRIBUTE = "data-modifier-hints";
 
@@ -30,15 +32,28 @@ const isHintModifier = (key: string) => key === "Meta" || key === "Control";
 export function useModifierHints() {
   useEffect(() => {
     const root = window.document.documentElement;
-    const show = () => root.setAttribute(MODIFIER_HINTS_ATTRIBUTE, "");
+    // The attribute's value names the extra modifiers held alongside the
+    // shortcut modifier, so the stylesheet can keep only the badges that
+    // still apply: ⌘ alone shows every shortcut, ⌘⇧ only the shifted ones,
+    // ⌘⌥ only the option ones.
+    const extras = (event: KeyboardEvent) =>
+      [event.shiftKey ? "shift" : "", event.altKey ? "alt" : ""]
+        .filter(Boolean)
+        .join(" ");
+    const show = (event: KeyboardEvent) =>
+      root.setAttribute(MODIFIER_HINTS_ATTRIBUTE, extras(event));
     const clear = () => root.removeAttribute(MODIFIER_HINTS_ATTRIBUTE);
+    const hinting = () => root.hasAttribute(MODIFIER_HINTS_ATTRIBUTE);
+    const isExtraModifier = (key: string) => key === "Shift" || key === "Alt";
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isHintModifier(event.key)) show();
+      if (isHintModifier(event.key)) show(event);
+      else if (isExtraModifier(event.key) && hinting()) show(event);
       else clear();
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (isHintModifier(event.key)) clear();
+      else if (isExtraModifier(event.key) && hinting()) show(event);
     };
 
     // Capture, so an editor that stops a keydown from bubbling cannot leave

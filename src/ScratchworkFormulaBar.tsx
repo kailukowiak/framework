@@ -170,6 +170,17 @@ export function ScratchworkFormulaBar({
     : freshCursor;
   const formulaMode = Boolean(active || !selectedCell);
   const formulaReferences = active?.completion.references ?? references;
+  // Committing a column formula ends formula mode while the bar still holds
+  // the keyboard, so the next keystroke went into the scratch line instead
+  // of the grid the person was looking at. Leaving formula mode gives the
+  // keyboard back; only the transition does, so editing a cell's value here
+  // -- which begins outside formula mode -- is untouched.
+  const wasFormulaMode = useRef(formulaMode);
+  useEffect(() => {
+    const left = wasFormulaMode.current && !formulaMode;
+    wasFormulaMode.current = formulaMode;
+    if (left && window.document.activeElement === input.current) input.current?.blur();
+  }, [formulaMode]);
 
   useEffect(() => setFeedback(null), [active?.id]);
   useEffect(() => {

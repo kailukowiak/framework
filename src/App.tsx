@@ -52,6 +52,7 @@ import { DataSidebar } from "./DataSidebar";
 import { LeftRail } from "./LeftRail";
 import {
   CARD_SIZES,
+  frameCardSize,
   placeNewCard,
   type CardSize,
   type Rect,
@@ -95,6 +96,7 @@ import {
   type RenderedGrid,
 } from "./FrameGrid";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
+import { revealScroll } from "./lib/canvasReveal";
 import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
 import { combineVectorWithFrame } from "./lib/vectorCombine";
 import {
@@ -263,6 +265,11 @@ export default function App() {
     selection: Selection | null;
   } | null>(null);
   const [join, setJoin] = useState<JoinState>(null);
+  // The ids that existed before a join was created. The joined frame is the
+  // one not among them once the document comes back, and it is what the
+  // person just made, so it is what gets selected, sized to its columns, and
+  // scrolled to -- not the source frame the inspector was showing.
+  const [pendingJoinSelect, setPendingJoinSelect] = useState<Set<string> | null>(null);
   const [datasetLibrary, setDatasetLibrary] = useState(false);
   const [excelImport, setExcelImport] = useState<{
     workbook: ExcelWorkbookInfo;
@@ -539,6 +546,28 @@ export default function App() {
   // is an index, and an index takes you to the thing. A frame sitting on a
   // background tab is brought forward, since scrolling to a card that is
   // showing something else is not arriving anywhere.
+  useEffect(() => {
+    if (!pendingJoinSelect || !document) return;
+    const created = document.objects.find(
+      (object): object is FrameObject =>
+        object.kind === "frame" && !pendingJoinSelect.has(object.id)
+    );
+    if (!created) return;
+    setPendingJoinSelect(null);
+    const view = document.views.find((candidate) => candidate.objectId === created.id);
+    if (view) {
+      const size = frameCardSize(created.columns.length, created.rows.length || 6);
+      void run({ type: "resizeView", viewId: view.id, ...size });
+    }
+    setSelection({ objectId: created.id, viewId: view?.id });
+    setInspectorSection("wrangle");
+    const canvas = canvasRef.current;
+    if (view && canvas) {
+      const scroll = revealScroll(canvas, view, canvasZoomRef.current);
+      if (scroll) canvas.scrollTo({ ...scroll, behavior: "smooth" });
+    }
+  }, [canvasZoomRef, document, pendingJoinSelect, run]);
+
   const jumpToObject = useCallback(
     (objectId: string) => {
       if (!document) return;
@@ -551,14 +580,13 @@ export default function App() {
       if (view.objectId !== objectId) {
         void run({ type: "setActiveTab", viewId: view.id, objectId });
       }
-      // The card's position is in canvas units and the scroll is in screen
-      // pixels, so the jump is only right at 100% unless it is scaled.
-      const zoom = canvasZoomRef.current;
-      canvasRef.current?.scrollTo({
-        left: Math.max(0, view.x * zoom - 120),
-        top: Math.max(0, view.y * zoom - 80),
-        behavior: "smooth",
-      });
+      // Only if it is not already in view, and then centred: a card in plain
+      // sight stays put, and one that has to be fetched arrives in the
+      // middle rather than in a corner of an otherwise empty screen.
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const scroll = revealScroll(canvas, view, canvasZoomRef.current);
+      if (scroll) canvas.scrollTo({ ...scroll, behavior: "smooth" });
     },
     [canvasZoomRef, document, run]
   );
@@ -805,8 +833,11 @@ export default function App() {
     "inspector-selection": () => setInspectorSection("selection"),
     "inspector-format": () => setInspectorSection("format"),
     "inspector-wrangle": () => setInspectorSection("wrangle"),
+    "add-variable": () => void addVariable(),
     "add-block": () => void addBlock(),
     "add-text": () => void addText(),
+    "add-matrix": () => void addCalculationMatrix(),
+    "canvas-only": () => setLeftPanel(null),
     "add-frame": () => void addEmptyFrame(),
     "add-container": () => void addContainer(),
     scratchpad: () => void summonScratchpad(),
@@ -1251,6 +1282,7 @@ export default function App() {
           setLeftPanel={setLeftPanel}
           toggleLeftPanel={toggleLeftPanel}
           onOpenLibrary={() => setDatasetLibrary(true)}
+          onOpenQuickCommands={menuHandlers["quick-commands"]}
           addBlock={addBlock}
           addVariable={addVariable}
           addText={addText}
@@ -1556,15 +1588,15 @@ export default function App() {
                     const primaryView = document.views.find(
                       (candidate) => candidate.objectId === primaryFrameId
                     );
+                    // Where a new card lands: in free space inside the
+                    // viewport, not past the primary frame's right edge,
+                    // which was off screen and behind the inspector.
                     setJoin({
                       primaryFrameId,
                       lookupFrameId,
                       primaryKeyId: primaryColumnId,
                       lookupOutputColumnIds,
-                      x: primaryView
-                        ? primaryView.x + primaryView.width + 100
-                        : view.x + view.width + 100,
-                      y: primaryView?.y ?? view.y,
+                      ...insertPosition(CARD_SIZES.frame),
                     });
                   }}
                   onFilterColumn={(frame, column) =>
@@ -1604,7 +1636,6 @@ export default function App() {
           onSave={() => void handleSaveAsDocument()}
           onRefresh={() => void refreshStale()}
           onZoom={zoomCanvas}
-          onOpenQuickCommands={menuHandlers["quick-commands"]}
         />
 
         {/* Not for a block. A block is edited entirely on its own card, so the
@@ -1743,6 +1774,7 @@ export default function App() {
             onClose={() => setJoin(null)}
             onOperation={run}
             onCreated={() => {
+              setPendingJoinSelect(new Set(document.objects.map((object) => object.id)));
               setJoin(null);
             }}
           />

@@ -28,7 +28,7 @@ describe("ColumnFormatEditor", () => {
         onOperation={onOperation}
       />
     );
-    fireEvent.change(screen.getByLabelText(/Number format/), {
+    fireEvent.change(screen.getByLabelText(/Style/), {
       target: { value: "accounting" },
     });
     const targets = onOperation.mock.calls

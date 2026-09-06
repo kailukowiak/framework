@@ -113,10 +113,13 @@ export const COMMANDS: Array<Omit<QuickCommand, "run" | "disabled" | "kind"> & {
   { id: "scratchwork-window", action: "open-scratchwork-window", label: "Open Scratchwork Window", group: "View", keywords: "scratchpad pop out separate window" },
   { id: "find", action: "find", label: "Find in Document", group: "Document", shortcut: "⌘F", keywords: "search" },
   { id: "library", action: "data-library", label: "Open Data Library…", group: "Document", shortcut: "⇧⌘L", keywords: "recent projects import" },
+  { id: "add-variable", action: "add-variable", label: "Add Variable", group: "Canvas", shortcut: "⌥⌘V" },
   { id: "add-block", action: "add-block", label: "Add Formula Block", group: "Canvas", shortcut: "⌥⌘B" },
   { id: "add-text", action: "add-text", label: "Add Text", group: "Canvas", shortcut: "⌥⌘T" },
+  { id: "add-matrix", action: "add-matrix", label: "Add Calculation Matrix", group: "Canvas", shortcut: "⌥⌘M" },
   { id: "add-frame", action: "add-frame", label: "Add Frame", group: "Canvas", shortcut: "⌥⌘F" },
   { id: "add-container", action: "add-container", label: "Add Container", group: "Canvas", shortcut: "⌥⌘G" },
+  { id: "canvas-only", action: "canvas-only", label: "Canvas Only", group: "View", shortcut: "⇧⌘C", keywords: "close panel hide sidebar" },
   { id: "data-panel", action: "toggle-sources", label: "Show or Hide Data Panel", group: "View", shortcut: "⇧⌘D" },
   { id: "inspector", action: "inspector-toggle", label: "Show or Hide Inspector", group: "View", shortcut: "⇧⌘I" },
   { id: "selection", action: "inspector-selection", label: "Show Selection Inspector", group: "View", shortcut: "⌘1" },
@@ -351,6 +354,10 @@ export function QuickCommands({
   if (!open) return null;
 
   return (
+    <>
+      {/* A press anywhere else is a decision to do something else; the
+          palette used to stay up over it and the click landed underneath. */}
+      <div className="quick-commands-backdrop" onPointerDown={onClose} />
     <section
       className="quick-commands"
       role="dialog"
@@ -400,5 +407,6 @@ export function QuickCommands({
         {!results.length && <p>No commands found</p>}
       </div>
     </section>
+    </>
   );
 }

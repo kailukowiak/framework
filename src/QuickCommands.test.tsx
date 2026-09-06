@@ -54,6 +54,13 @@ describe("QuickCommands", () => {
     expect(run).toHaveBeenCalledOnce();
   });
 
+  it("closes when the press lands outside it", () => {
+    const close = vi.fn();
+    const { container } = render(<QuickCommands commands={commands()} onClose={close} />);
+    fireEvent.pointerDown(container.querySelector(".quick-commands-backdrop")!);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it("moves through the visible commands and closes with Escape", () => {
     const close = vi.fn();
     render(<QuickCommands commands={commands()} onClose={close} />);

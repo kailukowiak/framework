@@ -1,3 +1,4 @@
+.quick-commands-backdrop { position: fixed; inset: 0; z-index: 119; }
 .quick-commands { position: fixed; z-index: 120; top: calc(var(--formula-bar-h) + 40px); left: 50%; width: min(520px, calc(100vw - 80px)); max-height: min(430px, calc(100vh - var(--formula-bar-h) - 90px)); display: grid; grid-template-rows: auto minmax(0, 1fr); transform: translateX(-50%); overflow: hidden; border: 1px solid light-dark(#cfccc3, #3a3c30); border-radius: 10px; background: light-dark(#faf9f5, #212219); box-shadow: 0 22px 60px light-dark(rgba(32, 31, 27, 0.24), rgba(0, 0, 0, 0.46)); }
 .quick-commands-search { height: 38px; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 0 10px; border-bottom: 1px solid var(--line); color: var(--muted); }
 .quick-commands-search input { min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: var(--text-base); }

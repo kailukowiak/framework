@@ -128,9 +128,10 @@ copy cells here: drag it down and FrameWork opens the column's formula
 instead, because writing the rule once is what filling a range was always
 trying to approximate.
 
-Select `Revenue`, `Cost` and `Profit` together and use the format controls in
-**Selection** to make them Accounting, USD, no decimals. Formatting changes how
-the numbers read, never what they are.
+Select `Revenue`, `Cost` and `Profit` together—click the `Revenue` header,
+then shift-click `Profit`—and use **Number format** on the **Format** tab to
+make them Accounting, USD, no decimals. One change lands on all three columns.
+Formatting changes how the numbers read, never what they are.
 
 *Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*
 

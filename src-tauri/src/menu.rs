@@ -140,6 +140,12 @@ const COMMANDS: &[MenuCommandSpec] = &[
         group: MenuGroup::Insert,
     },
     MenuCommandSpec {
+        id: "add-variable",
+        label: "Variable",
+        accelerator: Some("CmdOrCtrl+Alt+V"),
+        group: MenuGroup::Insert,
+    },
+    MenuCommandSpec {
         id: "add-block",
         label: "Formula Block",
         accelerator: Some("CmdOrCtrl+Alt+B"),
@@ -149,6 +155,12 @@ const COMMANDS: &[MenuCommandSpec] = &[
         id: "add-text",
         label: "Text",
         accelerator: Some("CmdOrCtrl+Alt+T"),
+        group: MenuGroup::Insert,
+    },
+    MenuCommandSpec {
+        id: "add-matrix",
+        label: "Calculation Matrix",
+        accelerator: Some("CmdOrCtrl+Alt+M"),
         group: MenuGroup::Insert,
     },
     MenuCommandSpec {
@@ -167,6 +179,12 @@ const COMMANDS: &[MenuCommandSpec] = &[
         id: "quick-commands",
         label: "Quick Commands…",
         accelerator: Some("CmdOrCtrl+Shift+P"),
+        group: MenuGroup::View,
+    },
+    MenuCommandSpec {
+        id: "canvas-only",
+        label: "Canvas Only",
+        accelerator: Some("CmdOrCtrl+Shift+C"),
         group: MenuGroup::View,
     },
     MenuCommandSpec {
@@ -324,11 +342,14 @@ impl<R: Runtime> HistoryMenuItems<R> {
 struct CanvasMenuItems<R: Runtime> {
     quick_commands: MenuItem<R>,
     scratchpad: MenuItem<R>,
+    add_variable: MenuItem<R>,
     add_block: MenuItem<R>,
     add_text: MenuItem<R>,
+    add_matrix: MenuItem<R>,
     add_frame: MenuItem<R>,
     add_container: MenuItem<R>,
     data_library: MenuItem<R>,
+    canvas_only: MenuItem<R>,
     toggle_sources: MenuItem<R>,
     inspector_toggle: MenuItem<R>,
     inspector_selection: MenuItem<R>,
@@ -350,8 +371,10 @@ impl<R: Runtime> CanvasMenuItems<R> {
         SubmenuBuilder::new(app, "Insert")
             .item(&self.scratchpad)
             .separator()
+            .item(&self.add_variable)
             .item(&self.add_block)
             .item(&self.add_text)
+            .item(&self.add_matrix)
             .item(&self.add_frame)
             .item(&self.add_container)
             .build()
@@ -361,6 +384,7 @@ impl<R: Runtime> CanvasMenuItems<R> {
         let view = SubmenuBuilder::new(app, "View")
             .item(&self.quick_commands)
             .separator()
+            .item(&self.canvas_only)
             .item(&self.toggle_sources)
             .item(&self.data_library)
             .separator()
@@ -399,11 +423,14 @@ fn canvas_menu_items<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CanvasMenu
     Ok(CanvasMenuItems {
         quick_commands: item(app, "quick-commands")?,
         scratchpad: item(app, "scratchpad")?,
+        add_variable: item(app, "add-variable")?,
         add_block: item(app, "add-block")?,
         add_text: item(app, "add-text")?,
+        add_matrix: item(app, "add-matrix")?,
         add_frame: item(app, "add-frame")?,
         add_container: item(app, "add-container")?,
         data_library: item(app, "data-library")?,
+        canvas_only: item(app, "canvas-only")?,
         toggle_sources: item(app, "toggle-sources")?,
         inspector_toggle: item(app, "inspector-toggle")?,
         inspector_selection: item(app, "inspector-selection")?,
