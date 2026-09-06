@@ -18,8 +18,41 @@ tagged and opens a fresh `## Unreleased` above it.
   appear. Let go, press anything else, or switch away and they are gone. The
   Scratchwork window does the same.
 
-- A Quick Commands button sits in the canvas's bottom-right corner, so the
+- The FrameWork mark at the top of the left rail opens Quick Commands, so the
   command palette is reachable without knowing ⇧⌘P or opening the menu.
+
+- Cards arrive at the size of what is in them. A paste into an empty frame, a
+  paste onto bare canvas, an import and a join each open a card wide enough for
+  their columns and tall enough for about a dozen rows, and a new Scratchwork
+  block starts wide enough for a line and its answer. A join lands in free
+  space in the viewport, comes up selected, and is scrolled into view; jumping
+  to a card now only scrolls when the card is off screen, and then centres it.
+
+- Selection follows the gesture. Pressing a column header selects that column
+  rather than widening back out to the whole card, pressing a member of a
+  container selects the member, a container has a name field in the inspector,
+  and Quick Commands closes when you press outside it.
+
+- Committing a column formula hands the keyboard back to the grid, so the next
+  arrow key moves the selection instead of moving the caret. The Format tab now
+  says which scope each block of controls changes, and a number format applied
+  over a grid selection reaches every numeric column in the range rather than
+  one of them.
+
+- Turning the wheel over a grid stops at the grid's edge instead of continuing
+  into the canvas underneath.
+
+- Variable (⌥⌘V), Calculation Matrix (⌥⌘M) and Canvas Only (⇧⌘C) now have
+  shortcuts, in the menu, in Quick Commands and on the rail badges. Holding
+  Shift or Option together with ⌘ narrows the badges to the shortcuts that use
+  that modifier.
+
+- Fixes in the Scratchwork window: the pop-out no longer blanks with a React
+  error when the caret sits inside a backtick, ⌘J activates the session it
+  raises, and pointing at canvas values from the pop-out works on the first
+  click into a window instead of needing a click to activate it first. A
+  container card's add buttons no longer stretch to full width, so the values
+  you add are visible at the card's default size.
 
 - A new first tutorial, **The FrameWork tour**, opens the lesson list. In about
   25 minutes it goes once over what FrameWork does that a spreadsheet does not:
