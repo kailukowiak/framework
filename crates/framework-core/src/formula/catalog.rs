@@ -1,4 +1,7 @@
+#[path = "catalog_types.rs"]
+mod catalog_types;
 use crate::formula::ast::{FormulaArgument, FormulaFunction};
+use catalog_types::{formula_function_null_behavior, formula_function_return_type};
 
 macro_rules! formula_function {
     ($id:literal, $name:literal, [$($alias:literal),* $(,)?], $category:literal, $signature:literal, $description:literal, $minimum:literal, $maximum:literal) => {
@@ -1183,39 +1186,6 @@ fn argument_guidance(id: &str, name: &str) -> (&'static str, Option<&'static str
             ("A decimal proportion between 0 and 1.", Some("0.5"))
         }
         _ => ("The value for this parameter.", None),
-    }
-}
-
-fn formula_function_return_type(id: &str) -> &'static str {
-    match id {
-        "root.coalesce" | "root.when" | "root.sequence" | "root.recur" | "root.previous"
-        | "expr.fill_null" | "expr.shift" | "expr.filter" | "expr.over" => "dynamic",
-        "expr.is_null" | "expr.is_not_null" | "expr.is_between" | "expr.is_in"
-        | "dt.is_leap_year" | "str.contains" => "boolean",
-        "root.frame_len" => "integer",
-        "root.date" | "root.today" | "root.now" | "dt.date" | "dt.month_start" | "dt.month_end"
-        | "dt.offset_by" | "str.to_date" => "date",
-        "str.to_uppercase" | "str.to_lowercase" | "root.format" | "expr.format" => "string",
-        // Whatever it was asked to become — the one function whose answer is
-        // named by its own argument.
-        "expr.cast" => "dynamic",
-        // Still a number, whichever way it is written.
-        "expr.show" => "number",
-        _ => "number",
-    }
-}
-
-fn formula_function_null_behavior(id: &str) -> &'static str {
-    match id {
-        "root.today" | "root.now" => "never null",
-        "root.coalesce" => "returns first non-null",
-        "expr.is_null" | "expr.is_not_null" => "inspects null",
-        "expr.fill_null" => "replaces nulls",
-        "root.sum_horizontal"
-        | "root.mean_horizontal"
-        | "root.min_horizontal"
-        | "root.max_horizontal" => "configurable Polars behavior",
-        _ => "propagates null",
     }
 }
 

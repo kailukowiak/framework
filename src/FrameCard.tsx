@@ -1,3 +1,4 @@
+import { frameFilters, frameTransformationLabels } from "./lib/frameTransformationLabels";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FrameCardProps } from "./FrameCardProps";
 import { commitFrameCellEdit, commitDraftRowEdit } from "./lib/commitFrameCellEdit";
@@ -14,8 +15,6 @@ import {
 import { useFillHandleDrag } from "./hooks/useFillHandleDrag";
 import { focusGridClipboardTarget } from "./lib/gridClipboardTarget";
 import {
-  chainFilterCount,
-  chainSteps,
   filterWeight,
   isEditableGridColumn,
   isTextEntryTarget,
@@ -64,9 +63,7 @@ type PagedRows = {
 };
 import type {
   Column,
-  ComputedFrame,
   FrameStyleMatch,
-  RenderedFrameStep,
   Row,
 } from "./lib/types";
 
@@ -75,28 +72,6 @@ function gridFocusForFrame(
   focus: FrameCardProps["gridFocus"]
 ) {
   return focus?.objectId === frameId ? focus : null;
-}
-
-/** What a frame's authored chain does to its source, in three words or fewer. */
-function frameTransformationLabels(computed: ComputedFrame): Array<string | null> {
-  if (!computed.derivation) return [];
-  const steps = chainSteps(computed);
-  const filterCount = chainFilterCount(computed);
-  const summarize = steps.find(
-    (step): step is Extract<RenderedFrameStep, { kind: "summarize" }> =>
-      step.kind === "summarize"
-  );
-  return [
-    filterCount ? `${filterCount} filter${filterCount === 1 ? "" : "s"}` : null,
-    steps.some((step) => step.kind === "join")
-      ? "joined"
-      : summarize?.aggregates.length
-        ? summarize.groupKeys.length
-          ? "grouped"
-          : "total"
-        : "linked",
-    steps.some((step) => step.kind === "sort") ? "sorted" : null,
-  ].filter(Boolean);
 }
 
 export function FrameCard({
@@ -175,12 +150,7 @@ export function FrameCard({
   // returned count shrinks the content and the browser clamps the scroll.
   // Sorting and upstream refreshes keep their position: they reorder or
   // revalue the same rows, so where you are still means something.
-  const filter = {
-    predicates: chainSteps(computed).flatMap((step) =>
-      step.kind === "filter" ? step.predicates : []
-    ),
-    matchAll: true,
-  };
+  const filter = frameFilters(computed);
   const filterMark = filterWeight(computed);
   const sortKeys = pipelineSortKeys(computed);
   const filterSignature = useMemo(

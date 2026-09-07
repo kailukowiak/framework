@@ -430,22 +430,6 @@ pub(crate) fn type_name(data_type: DataType) -> &'static str {
     }
 }
 
-fn polars_call_declared_type(
-    name: &str,
-    arguments: &[Expr],
-    document: &Document,
-    scope: &[Column],
-) -> Option<DataType> {
-    match name {
-        "recur" => arguments
-            .first()
-            .and_then(|seed| seed.declared_type_among(document, scope)),
-        "format" => Some(DataType::String),
-        "today" => Some(DataType::Date),
-        _ => None,
-    }
-}
-
 impl Expr {
     pub(crate) fn is_explicit_null(&self) -> bool {
         matches!(self, Expr::Null)
@@ -625,7 +609,9 @@ impl Expr {
             },
             Expr::PolarsCall {
                 name, arguments, ..
-            } => polars_call_declared_type(name, arguments, document, scope),
+            } => crate::formula::compile::polars_call_declared_type(
+                name, arguments, document, scope,
+            ),
         }
     }
 

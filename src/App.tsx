@@ -1,3 +1,4 @@
+import { useHistoryMenuState } from "./hooks/useHistoryMenuState";
 import { CircleAlert, Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useReducer, useState } from "react";
 import { CanvasContextMenu } from "./CanvasContextMenu";
@@ -117,7 +118,6 @@ import {
   openDocument,
   pickDataFile,
   saveDocumentAsDialog,
-  setHistoryMenuState,
   type ExcelWorkbookInfo,
   type RecentDocument,
 } from "./lib/api";
@@ -1056,16 +1056,7 @@ export default function App() {
     zoomCanvas,
   ]);
 
-  // Undo and Redo grey out with the document's history. Nothing else tells the
-  // menu, so every view that arrives pushes it — including the first, which is
-  // what leaves both disabled on a document opened fresh. A menu that will not
-  // take the news is not worth an error banner over.
-  useEffect(() => {
-    if (!hasNativeMenu() || !document) return;
-    void setHistoryMenuState(document.canUndo, document.canRedo).catch(
-      reportIgnoredFailure("history menu state")
-    );
-  }, [document?.canUndo, document?.canRedo]);
+  useHistoryMenuState(document?.canUndo, document?.canRedo);
 
   /** Pressing the rail button for the panel already open closes it. */
   const toggleLeftPanel = (panel: Exclude<LeftPanel, null>) =>

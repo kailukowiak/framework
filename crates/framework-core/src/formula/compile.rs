@@ -1,3 +1,6 @@
+#[path = "root_call.rs"]
+mod root_call;
+pub(crate) use root_call::polars_call_declared_type;
 use crate::formula::ast::{BinaryOperator, Expr, Shape};
 use crate::model::document::{DataObject, Document};
 use crate::model::frame::FrameObject;
@@ -165,7 +168,7 @@ impl Expr {
                 name,
                 arguments,
                 keyword_arguments,
-            } => compile_polars_root_call(name, arguments, keyword_arguments, document),
+            } => root_call::compile_polars_root_call(name, arguments, keyword_arguments, document),
             Expr::Method {
                 input,
                 path,
@@ -1304,111 +1307,6 @@ fn numeric_sequence_bounds(start: Option<&Expr>, stop: &Expr) -> Option<(f64, f6
         None => 0.0,
     };
     Some((start, stop))
-}
-
-fn compile_polars_root_call(
-    name: &str,
-    arguments: &[Expr],
-    keyword_arguments: &[(String, Expr)],
-    document: &Document,
-) -> Result<pl::Expr, String> {
-    if name == "previous" {
-        if !arguments.is_empty() || !keyword_arguments.is_empty() {
-            return Err("previous() takes no arguments".into());
-        }
-        return Ok(pl::col(crate::formula::ast::PREVIOUS_RESULT_COLUMN_ID));
-    }
-    if name == "recur" {
-        return Err(
-            "recur is a Calculate down rows transformation, not an ordinary row formula".into(),
-        );
-    }
-    if !keyword_arguments.is_empty()
-        && !matches!(name, "sum_horizontal" | "mean_horizontal" | "sequence")
-    {
-        return Err(format!("{name} does not accept these keyword arguments"));
-    }
-    if matches!(name, "sum_horizontal" | "mean_horizontal")
-        && keyword_arguments
-            .iter()
-            .any(|(keyword, _)| keyword != "ignore_nulls")
-    {
-        return Err(format!(
-            "{name} only accepts the keyword argument ignore_nulls"
-        ));
-    }
-    // Before the arguments are flattened: a pattern and its values are a
-    // run of operands, and spreading a list across them would fill one hole
-    // with three things.
-    if name == "format" {
-        return compile_format(arguments, keyword_arguments, document);
-    }
-    if name == "sequence" {
-        return compile_sequence(arguments, keyword_arguments, document);
-    }
-    let args = flatten_polars_arguments(arguments, document)?;
-    match name {
-        "sum_horizontal" => {
-            let ignore_nulls = horizontal_ignore_nulls(keyword_arguments)?;
-            polars::lazy::dsl::sum_horizontal(&args, ignore_nulls)
-                .map_err(|error| error.to_string())
-        }
-        "min_horizontal" => {
-            polars::lazy::dsl::min_horizontal(&args).map_err(|error| error.to_string())
-        }
-        "max_horizontal" => {
-            polars::lazy::dsl::max_horizontal(&args).map_err(|error| error.to_string())
-        }
-        "mean_horizontal" => {
-            polars::lazy::dsl::mean_horizontal(&args, horizontal_ignore_nulls(keyword_arguments)?)
-                .map_err(|error| error.to_string())
-        }
-        "coalesce" => Ok(pl::coalesce(&args)),
-        "date" => {
-            if args.len() != 3 {
-                return Err("date(...) expects year, month, and day".into());
-            }
-            Ok(pl::datetime(pl::DatetimeArgs::new(
-                args[0].clone(),
-                args[1].clone(),
-                args[2].clone(),
-            ))
-            .dt()
-            .date())
-        }
-        // Read here rather than baked into the stored formula, so a saved
-        // filter keeps meaning what it says. `to_polars` runs each time the
-        // plan is built, so "the last 30 days" is the last 30 days from
-        // whenever the frame is read — not from the afternoon it was
-        // written. A frozen frame is the exception, and is meant to be:
-        // holding still is what freezing one is for.
-        "today" => {
-            if !args.is_empty() {
-                return Err("today() takes no arguments".into());
-            }
-            Ok(pl::lit(chrono::Local::now().date_naive()))
-        }
-        "now" => {
-            if !args.is_empty() {
-                return Err("now() takes no arguments".into());
-            }
-            Ok(pl::lit(chrono::Local::now().naive_local()))
-        }
-        "frame_len" => {
-            if !args.is_empty() {
-                return Err("frame.len() takes no arguments".into());
-            }
-            Ok(pl::len())
-        }
-        "when" => Err("when(...) must be followed by .then(...).otherwise(...)".into()),
-        _ => crate::formula::generated_bindings::compile_generated_root_call(
-            name,
-            arguments,
-            keyword_arguments,
-            document,
-        )
-        .unwrap_or_else(|| Err(format!("Unsupported Polars function ‘{name}’"))),
-    }
 }
 
 fn horizontal_ignore_nulls(keyword_arguments: &[(String, Expr)]) -> Result<bool, String> {
