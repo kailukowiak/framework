@@ -648,9 +648,10 @@ export async function exportFrameCsv(frameId: string): Promise<string | null> {
 
 export async function exportDocumentExcel(
   frameIds: string[],
-  includeLineage: boolean
+  includeLineage: boolean,
+  currentView = false
 ): Promise<string | null> {
-  return invoke("export_document_excel", { frameIds, includeLineage });
+  return invoke("export_document_excel", { frameIds, includeLineage, currentView });
 }
 
 export async function listSampleDocuments(): Promise<SampleDocument[]> {

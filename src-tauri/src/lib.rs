@@ -17,6 +17,7 @@ use uuid::Uuid;
 
 mod cli_connectors;
 mod database_connections;
+mod export;
 mod menu;
 mod persist;
 mod scratchwork_window;
@@ -2319,44 +2320,6 @@ fn export_frame_csv(
     Ok(Some(path.display().to_string()))
 }
 
-#[tauri::command]
-fn export_document_excel(
-    window: tauri::WebviewWindow,
-    frame_ids: Vec<String>,
-    path: Option<String>,
-    include_lineage: bool,
-    state: State<'_, AppState>,
-) -> Result<Option<String>, String> {
-    let path = match path {
-        Some(path) => PathBuf::from(path),
-        None => {
-            let suggested = {
-                let session = state.document_for(window.label())?;
-                let session = session.lock().map_err(|error| error.to_string())?;
-                format!("{}.xlsx", session.store.document().name)
-            };
-            let Some(mut path) = rfd::FileDialog::new()
-                .add_filter("Excel workbook", &["xlsx"])
-                .set_file_name(suggested)
-                .save_file()
-            else {
-                return Ok(None);
-            };
-            if path.extension().is_none() {
-                path.set_extension("xlsx");
-            }
-            path
-        }
-    };
-    let session = state.document_for(window.label())?;
-    let session = session.lock().map_err(|error| error.to_string())?;
-    session
-        .store
-        .export_excel(&frame_ids, &path, include_lineage)
-        .map_err(|error| error.to_string())?;
-    Ok(Some(path.display().to_string()))
-}
-
 /// The mutation itself, with no opinion about a menu: prepares, journals,
 /// applies, and schedules a debounced persist of one operation. Kept separate from
 /// [`apply_session_operation`] so the operation/history unit tests below
@@ -3137,7 +3100,8 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         refresh_stale_snapshots,
         clear_frame_materialization,
         export_frame_csv,
-        export_document_excel,
+        export::export_document_excel,
+        export::export_row_counts,
         undo,
         redo,
         set_history_menu_state,

@@ -22,6 +22,7 @@ mod validate;
 mod collaboration;
 mod persist;
 mod store;
+mod store_export;
 
 pub use collaboration::*;
 pub use data::*;

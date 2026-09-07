@@ -36,6 +36,19 @@ struct ScalarRecord {
     reads: String,
 }
 
+fn scalar_lineage_rows(records: &[ScalarRecord]) -> Vec<lineage::LineageRow> {
+    records
+        .iter()
+        .map(|record| lineage::LineageRow {
+            frame: "Values".into(),
+            column: record.name.clone(),
+            type_name: record.type_name.clone(),
+            computed_as: record.computed_as.clone(),
+            reads: record.reads.clone(),
+        })
+        .collect()
+}
+
 impl Document {
     /// Write `frame_id`'s materialized values to `path` as CSV with one
     /// header row of column names. Values stay raw: ISO `YYYY-MM-DD` dates
@@ -85,6 +98,21 @@ impl Document {
         path: &Path,
         include_lineage: bool,
     ) -> Result<(), CoreError> {
+        self.export_excel_scoped(frame_ids, path, include_lineage, false)
+    }
+
+    pub(crate) fn export_excel_scoped(
+        &self,
+        frame_ids: &[Id],
+        path: &Path,
+        include_lineage: bool,
+        current_view: bool,
+    ) -> Result<(), CoreError> {
+        let layer = if current_view {
+            Layer::Display
+        } else {
+            Layer::Data
+        };
         let mut sheets = Vec::new();
         let scalar_records = self.excel_scalar_records();
         let mut lineage_rows: Vec<lineage::LineageRow> = Vec::new();
@@ -93,16 +121,7 @@ impl Document {
         // Values sheet's account last, so this waits until the frame loop
         // below has had its turn.
         let value_lineage_rows: Vec<lineage::LineageRow> = if include_lineage {
-            scalar_records
-                .iter()
-                .map(|record| lineage::LineageRow {
-                    frame: "Values".into(),
-                    column: record.name.clone(),
-                    type_name: record.type_name.clone(),
-                    computed_as: record.computed_as.clone(),
-                    reads: record.reads.clone(),
-                })
-                .collect()
+            scalar_lineage_rows(&scalar_records)
         } else {
             Vec::new()
         };
@@ -125,7 +144,7 @@ impl Document {
         for frame_id in frame_ids {
             let frame = self.frame(frame_id)?;
             let data_frame = self
-                .materialize_frame_frame(frame_id, Layer::Data, &mut HashSet::new())
+                .materialize_frame_frame(frame_id, layer, &mut HashSet::new())
                 .map_err(CoreError::Export)?;
             let mut rows = vec![
                 frame

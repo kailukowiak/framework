@@ -1,5 +1,6 @@
 import { CircleAlert, FileSpreadsheet, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useExportRowCounts } from "./hooks/useExportRowCounts";
 import { createPortal } from "react-dom";
 import type { DocumentView, FrameObject } from "./lib/types";
 
@@ -20,7 +21,7 @@ export function ExcelExportDialog({
 }: {
   document: DocumentView;
   onClose: () => void;
-  onExport: (frameIds: string[], includeLineage: boolean) => Promise<boolean>;
+  onExport: (frameIds: string[], includeLineage: boolean, currentView: boolean) => Promise<boolean>;
 }) {
   const frames = document.objects.filter(
     (object): object is FrameObject => object.kind === "frame"
@@ -28,6 +29,8 @@ export function ExcelExportDialog({
   const namedValues = hasNamedValues(document);
   const [selected, setSelected] = useState(() => new Set(frames.map((frame) => frame.id)));
   const [includeLineage, setIncludeLineage] = useState(true);
+  const [currentView, setCurrentView] = useState(true);
+  const counts = useExportRowCounts(document, currentView);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const allSelected = frames.length > 0 && selected.size === frames.length;
@@ -49,7 +52,8 @@ export function ExcelExportDialog({
       if (
         await onExport(
           frames.filter((frame) => selected.has(frame.id)).map((frame) => frame.id),
-          includeLineage
+          includeLineage,
+          currentView
         )
       ) {
         onClose();
@@ -76,6 +80,15 @@ export function ExcelExportDialog({
           </button>
         </div>
 
+        <label className="excel-export-row">
+          <span>Rows to export</span>
+          <select aria-label="Rows to export" value={currentView ? "view" : "all"} onChange={(event) => setCurrentView(event.target.value === "view")}>
+            <option value="view">Current view — filtered and sorted rows</option>
+            <option value="all">Entire table — ignore display filters and sorting</option>
+          </select>
+        </label>
+        <p>Tables export as rows and columns; canvas layout and formatting are not included. Named answers keep their formula’s scope.</p>
+        {counts?.error && <p role="status">Could not count export rows: {counts.error}</p>}
         {frames.length > 0 && (
           <div className="excel-export-list">
             <label className="excel-export-row excel-export-all">
@@ -104,7 +117,7 @@ export function ExcelExportDialog({
                   }}
                 />
                 <span>{frame.name}</span>
-                <small>{document.computedFrames[frame.id]?.totalRows ?? "—"} rows</small>
+                <small>{counts?.counts[frame.id]?.toLocaleString() ?? "…"} rows</small>
               </label>
             ))}
           </div>

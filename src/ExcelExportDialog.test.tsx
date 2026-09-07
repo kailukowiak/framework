@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ExcelExportDialog } from "./ExcelExportDialog";
-import { fixtures, objectNamed } from "./test/support";
+import { clearMocks, fixtures, objectNamed, serveInvoke } from "./test/support";
 
 describe("ExcelExportDialog", () => {
-  afterEach(cleanup);
+  beforeEach(() => serveInvoke({ export_row_counts: () => ({}) }));
+  afterEach(() => { cleanup(); clearMocks(); });
 
   it("selects every table initially and exports only tables left checked", async () => {
     const frame = objectNamed(fixtures.salesWithFormula, "frame", "Monthly sales");
@@ -24,12 +25,12 @@ describe("ExcelExportDialog", () => {
     expect(screen.getByText(/named constants and current formula results/)).toBeTruthy();
 
     await userEvent.click(screen.getByRole("button", { name: "Export .xlsx…" }));
-    expect(onExport).toHaveBeenLastCalledWith([frame.id], true);
+    expect(onExport).toHaveBeenLastCalledWith([frame.id], true, true);
 
     await userEvent.click(table);
     await userEvent.click(screen.getByRole("button", { name: "Export .xlsx…" }));
 
-    expect(onExport).toHaveBeenLastCalledWith([], true);
+    expect(onExport).toHaveBeenLastCalledWith([], true, true);
   });
 
   it("includes the lineage sheet by default, and omits it once unchecked", async () => {
@@ -49,10 +50,11 @@ describe("ExcelExportDialog", () => {
     expect((lineage as HTMLInputElement).checked).toBe(true);
 
     await userEvent.click(screen.getByRole("button", { name: "Export .xlsx…" }));
-    expect(onExport).toHaveBeenLastCalledWith([frame.id], true);
+    expect(onExport).toHaveBeenLastCalledWith([frame.id], true, true);
 
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Rows to export" }), "all");
     await userEvent.click(lineage);
     await userEvent.click(screen.getByRole("button", { name: "Export .xlsx…" }));
-    expect(onExport).toHaveBeenLastCalledWith([frame.id], false);
+    expect(onExport).toHaveBeenLastCalledWith([frame.id], false, false);
   });
 });

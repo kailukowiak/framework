@@ -12,6 +12,7 @@ mod cross_frame;
 mod derived_frames;
 mod edit_cost_probe;
 mod entry_columns;
+mod export_scope;
 mod formulas;
 mod frame_names;
 mod frame_views;
@@ -35,3 +36,5 @@ mod typed_cells;
 mod undo;
 mod variables;
 mod view_filter_sort;
+
+mod dictionaries;

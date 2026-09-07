@@ -494,27 +494,6 @@ impl Store {
         Ok(())
     }
 
-    /// Write a frame's materialized values to `path` as CSV.
-    ///
-    /// Derived frames evaluate through the same recursive Polars plan the
-    /// canvas uses, and values stay raw — ISO dates and plain numbers rather
-    /// than display formatting.
-    pub fn export_frame_csv(&self, frame_id: &str, path: &Path) -> Result<(), CoreError> {
-        self.document.export_frame_csv(frame_id, path)
-    }
-
-    /// Write selected frames and every named scalar answer to an Excel
-    /// workbook. This is a values-only handoff: FrameWork remains the place
-    /// where formulas live, while the workbook receives their current answers.
-    pub fn export_excel(
-        &self,
-        frame_ids: &[Id],
-        path: &Path,
-        include_lineage: bool,
-    ) -> Result<(), CoreError> {
-        self.document.export_excel(frame_ids, path, include_lineage)
-    }
-
     pub fn get_frame_page(
         &self,
         frame_id: &str,

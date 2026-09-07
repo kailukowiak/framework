@@ -202,7 +202,7 @@ export function ContextMenuFramePlotItems({
         }}
       >
         <ArrowDownToLine size={14} />
-        <span>Export CSV</span>
+        <span>Export CSV — entire table</span>
       </button>
     </>
   );
