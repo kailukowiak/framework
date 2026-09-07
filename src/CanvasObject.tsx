@@ -280,6 +280,7 @@ export function CanvasObject({
   onFilterColumn,
   onTransformColumn,
   onEditCalculatedColumn,
+  onTakeOwnership,
   onFreeze,
   onAddList,
   dataRefreshRevision,
@@ -344,6 +345,7 @@ export function CanvasObject({
     rowIndex: number
   ) => void;
   /** Writes a value's answer down, or refreshes the one written. */
+  onTakeOwnership?: TakeOwnershipHandler;
   onFreeze: (objectId: string) => Promise<void>;
   /** Opens the stored-vector dialog for a container. */
   onAddList: (containerId: string) => void;
@@ -667,6 +669,7 @@ export function CanvasObject({
           onTransformColumn={onTransformColumn}
           onEditCalculatedColumn={onEditCalculatedColumn}
           dataRefreshRevision={dataRefreshRevision}
+          onTakeOwnership={onTakeOwnership}
         />
       )}
       {!isCollapsed && object.kind === "text" && (
@@ -692,10 +695,10 @@ export function CanvasObject({
           plot={object}
           frame={sourceFrame}
           computed={sourceComputed}
+          dataRefreshRevision={dataRefreshRevision}
           onOperation={onOperation}
         />
       )}
-          dataRefreshRevision={dataRefreshRevision}
       {/* Resizing works the way a window's does: the edges are invisible
           strips just inside the border, each moving the one dimension it
           owns, and the corners move both. The south-east corner is the only

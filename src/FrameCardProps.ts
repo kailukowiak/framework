@@ -6,6 +6,7 @@ import type {
   SetStateAction,
 } from "react";
 import type {
+  TakeOwnershipHandler,
   CellPointerHandler,
   FrameStyleMatches,
   GridFocus,
@@ -35,6 +36,7 @@ export type FrameCardProps = {
   onGridFocus: Dispatch<SetStateAction<GridFocus | null>>;
   onGridStep: (direction: GridDirection) => void;
   onRenderedRows: (frameId: string, grid: RenderedGrid | null) => void;
+  onTakeOwnership?: TakeOwnershipHandler;
   onOperation: OperationHandler;
   onRearrangeColumns: (frameId: string, columnIds: string[]) => void;
   onApplyVector: (

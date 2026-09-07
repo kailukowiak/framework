@@ -1599,6 +1599,7 @@ export default function App() {
                   onEditCalculatedColumn={(frame, column, rowIndex) =>
                     requestCalculatedColumnEdit(frame, column, rowIndex, view.id)
                   }
+                  onTakeOwnership={takeOwnership}
                   onFreeze={freeze}
                   onAddList={(containerId) => setInsertList({ containerId })}
                   dataRefreshRevision={dataRefreshRevision}

@@ -84,6 +84,7 @@ export function FrameCard({
   onGridFocus,
   onGridStep,
   onRenderedRows,
+  onTakeOwnership,
   onOperation,
   onRearrangeColumns,
   onApplyVector,
@@ -451,7 +452,7 @@ export function FrameCard({
   ]);
 
   const gridFocusHere = gridFocusForFrame(frame.id, gridFocus);
-  const editRefusalLine = frameEditRefusalStatus(frame, computed, gridFocusHere);
+  const editRefusalLine = frameEditRefusalStatus(frame, computed, gridFocusHere, { rows: displayedRows, rowOffset: isFileBacked && !isTransposed ? virtualRange.start : 0, onTakeOwnership, onTransformColumn, onEditCalculatedColumn });
 
   // `extend` is shift-click and drag-select: the focus moves to this cell
   // while the anchor stays put, so the two corners describe a rectangle. The
@@ -651,7 +652,7 @@ export function FrameCard({
     frame, totalRows, selectionRange, onRearrangeColumns, onJoinColumns
   );
   const fillHandle = useFillHandleDrag(
-    frame, selectionRange, rangeFocus, gridFocusHere, onTransformColumn
+    frame, selectionRange, rangeFocus, gridFocusHere, { computed, rows: displayedRows, rowOffset: rowIndexBase, onOperation }
   );
 
   // For the records-as-rows paged path, displayedRows *is* the visible
