@@ -180,7 +180,7 @@ describe("canvas formula pointing", () => {
     expect(clickAfterPress(target)).toBe(true);
   });
 
-  it("explains a column added in the same step instead of selecting it", () => {
+  it("inserts a column added in the same step instead of selecting it", () => {
     document.body.innerHTML = `
       <div data-frame-id="sales"><table><tbody>
         <tr data-row-index="0"><td data-column-id="previous">118000</td></tr>
@@ -216,11 +216,12 @@ describe("canvas formula pointing", () => {
     const configured = { ...options(), getActive: () => writingChange };
     canvasFormulaPointerHandler(configured)(pointerDown(cell));
 
+    // The step it belongs to is the wrong arrangement, not a wrong
+    // sentence: the reference goes in, and Return on the line is what moves
+    // this calculation into a step of its own below its sibling.
     expect(configured.clear).not.toHaveBeenCalled();
-    expect(configured.insertReference).not.toHaveBeenCalled();
-    expect(configured.onNotice).toHaveBeenCalledWith(
-      "Previous revenue is added in this same step, so Change cannot read it yet. Add Change as a new step to read it."
-    );
+    expect(configured.insertReference).toHaveBeenCalledWith("`Previous revenue`");
+    expect(configured.onNotice).toHaveBeenCalledWith(null);
   });
 
   it("ends the session when a primary click lands on nothing pickable", () => {

@@ -42,9 +42,22 @@ tagged and opens a fresh `## Unreleased` above it.
   calculated column drops into the formula instead of replacing the column's
   name, and calculated columns can be pointed at by their cells as well as
   their headers.
-- When a calculation cannot read a column written beside it in the same "Add
-  or replace columns" step, FrameWork says so where you clicked and again on
-  Return, instead of quietly abandoning the draft or answering "Unknown name".
+- A calculation can now read a column written beside it in the same "Add or
+  replace columns" step. Clicking that column inserts the reference like any
+  other, and Return moves the calculation into a step of its own directly
+  below, where the column it reads already exists — Wrangle shows the two
+  numbered steps. Anything else in the step that reads the moved calculation
+  travels with it. A name that also arrives from above still means the
+  column from above, so replacing a column while another formula in the same
+  step reads it is unchanged.
+- A formula started from a cell of an existing column now remembers which
+  cell it started from, so pointing at the row above writes `.shift(1)` the
+  way it does for a brand-new calculated column, instead of a plain
+  reference to the whole column.
+- The formula bar no longer changes height when a formula opens in it, so
+  the canvas stays put between choosing "Formula here" and clicking the cell
+  you meant. A click aimed at the first row used to land a row too high once
+  the bar had grown, quietly costing the reference its `.shift(…)`.
 - Calculated columns are easier to write: the backticks on the name are
   optional (`Profit = `Revenue` - `Cost`` works, and the Wrangle line reads
   it back as `` `Profit` `` once saved), both ways of adding a column open the

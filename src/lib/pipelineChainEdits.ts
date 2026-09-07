@@ -7,6 +7,7 @@ import {
 import { formattedFormula, recurrenceDraft } from "../PipelineFormulaFormatting";
 import { vectorDraftFromRendered } from "../PipelineVectorSteps";
 import { parseRecurrenceFormula } from "../RecurrenceDialog";
+import { siblingReferenceInFormula } from "./formulaPicking";
 import { formulaToken } from "./formulaReferences";
 import {
   columnsBeforeStep,
@@ -135,9 +136,9 @@ export function appendInPlaceColumnTransformation(
   steps: StepDraft[],
   column: { id: string; name: string },
   formula: string,
-  focusToken?: number,
-  focusAtEnd = true
+  opening: ColumnOpening = {}
 ): StepDraft[] {
+  const { focusToken, focusAtEnd = true, anchorRowIndex } = opening;
   return [
     ...steps,
     {
@@ -149,11 +150,25 @@ export function appendInPlaceColumnTransformation(
           outputColumnId: column.id,
           focusToken,
           focusAtEnd: focusToken === undefined ? undefined : focusAtEnd,
+          anchorRowIndex,
         },
       ],
     },
   ];
 }
+
+/**
+ * How the formula this appends opens for editing: which session focuses it,
+ * where the caret lands, and the row the gesture started on. The anchor is
+ * the part that is easy to lose — without it, every reference pointed at
+ * while the formula is open comes out as the whole column, silently dropping
+ * the `.shift(n)` the clicked row was asking for.
+ */
+export type ColumnOpening = {
+  focusToken?: number;
+  focusAtEnd?: boolean;
+  anchorRowIndex?: number;
+};
 
 /** Add a declared order immediately before a row-position formula needs it. */
 export function appendOrderedColumnTransformation(
@@ -161,8 +176,7 @@ export function appendOrderedColumnTransformation(
   column: { id: string; name: string },
   formula: string,
   orderByColumnId?: string,
-  focusToken?: number,
-  focusAtEnd = true
+  opening: ColumnOpening = {}
 ): StepDraft[] {
   const ordered =
     !orderByColumnId || steps.some((step) => step.kind === "sort")
@@ -181,11 +195,10 @@ export function appendOrderedColumnTransformation(
             ],
           },
         ];
+  const { focusToken, focusAtEnd = true, anchorRowIndex } = opening;
   const recurrence = parseRecurrenceFormula(formula);
   if (!recurrence)
-    return appendInPlaceColumnTransformation(
-      ordered, column, formula, focusToken, focusAtEnd
-    );
+    return appendInPlaceColumnTransformation(ordered, column, formula, opening);
   return [
     ...ordered,
     {
@@ -198,7 +211,88 @@ export function appendOrderedColumnTransformation(
       partitionName: recurrence.partitionName,
       focusToken,
       focusAtEnd: focusToken === undefined ? undefined : focusAtEnd,
+      anchorRowIndex,
     },
+  ];
+}
+
+/**
+ * Give a calculation that reads its own step's sibling a step of its own.
+ *
+ * `with_columns` evaluates every formula in the block against the frame as
+ * it stood before the step, so a name written beside this one is not there
+ * yet. The person's sentence is right and the arrangement is wrong, so the
+ * commit fixes the arrangement: the committing column moves into a new
+ * "Add or replace columns" step inserted directly after this one, where the
+ * sibling it reads has already been produced. Wrangle then shows the two
+ * numbered steps, which is the explanation.
+ *
+ * Anything else in the step that reads the moved column travels with it, in
+ * order. Leaving such a reader behind would be worse than the situation it
+ * came from: its reference would point at a column produced *below* it, an
+ * unknown name rather than a sibling. A reader carried along may still have
+ * a sibling problem of its own inside the new step — that is the same
+ * refusal it already had, and the same Return fixes it.
+ *
+ * `visibleNames` are the columns arriving from above, and a name among them
+ * is deliberately not a sibling reference at all: a step that replaces
+ * `Amount` while another of its calculations reads `Amount` is reading the
+ * upstream value, which is ordinary and must not be split apart.
+ *
+ * Returns null when nothing needs to move, so the caller can save the
+ * chain it already has.
+ */
+export function splitSiblingReferenceStep(
+  steps: StepDraft[],
+  stepId: string,
+  columnId: string,
+  visibleNames: string[]
+): StepDraft[] | null {
+  const index = steps.findIndex((step) => step.id === stepId);
+  const step = steps[index];
+  if (!step || step.kind !== "withColumns") return null;
+  const committing = step.columns.find((column) => column.id === columnId);
+  if (!committing) return null;
+  const moving = new Set([columnId]);
+  const namesOf = (predicate: (columnId: string) => boolean) =>
+    step.columns
+      .filter((column) => predicate(column.id))
+      .map((column) => ({ name: draftName(column) }));
+  if (
+    !siblingReferenceInFormula(
+      committing.formula,
+      namesOf((candidate) => candidate !== columnId),
+      visibleNames
+    )
+  )
+    return null;
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const candidate of step.columns) {
+      if (moving.has(candidate.id)) continue;
+      if (
+        !siblingReferenceInFormula(
+          candidate.formula,
+          namesOf((id) => moving.has(id)),
+          visibleNames
+        )
+      )
+        continue;
+      moving.add(candidate.id);
+      grew = true;
+    }
+  }
+  const staying = step.columns.filter((column) => !moving.has(column.id));
+  if (!staying.length) return null;
+  return [
+    ...steps.slice(0, index),
+    { ...step, columns: staying },
+    {
+      id: crypto.randomUUID(),
+      kind: "withColumns",
+      columns: step.columns.filter((column) => moving.has(column.id)),
+    },
+    ...steps.slice(index + 1),
   ];
 }
 

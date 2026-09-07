@@ -10,6 +10,7 @@ import {
   appendOrderedColumnTransformation,
   focusExistingCalculatedColumn,
   hidePipelineColumn,
+  splitSiblingReferenceStep,
   normalizeCalculatedColumnNames,
   rearrangePipelineColumns,
   stepsFromRendered,
@@ -153,13 +154,28 @@ describe("pipeline chain edits", () => {
     });
   });
 
+  it("carries the cell a formula was started from as the anchor row", () => {
+    const [step] = appendOrderedColumnTransformation(
+      [],
+      { id: "amount", name: "Amount" },
+      "`Amount`",
+      undefined,
+      { focusToken: 12, anchorRowIndex: 4 }
+    );
+    // Without this the next reference pointed at comes out as the whole
+    // column: there is no anchor to measure the clicked row against.
+    expect(step).toMatchObject({
+      kind: "withColumns",
+      columns: [{ anchorRowIndex: 4 }],
+    });
+  });
+
   it("can select a new transformation's formula for header equals editing", () => {
     const [step] = appendInPlaceColumnTransformation(
       [],
       { id: "amount", name: "Amount" },
       "`Amount`",
-      12,
-      false
+      { focusToken: 12, focusAtEnd: false }
     );
     expect(step).toMatchObject({
       kind: "withColumns",
@@ -249,7 +265,7 @@ describe("pipeline chain edits", () => {
       [],
       { id: "memo", name: "Memo" },
       "`Memo`.str.to_uppercase()",
-      12
+      { focusToken: 12 }
     );
     expect(steps).toMatchObject([
       {
@@ -289,7 +305,7 @@ describe("pipeline chain edits", () => {
       { id: "balance", name: "Balance" },
       "recur(`Change`, previous() + `Change`, restart_by=[`Account`])",
       "date",
-      14
+      { focusToken: 14 }
     );
     expect(steps).toMatchObject([
       { kind: "sort", keys: [{ columnId: "date", descending: false }] },
@@ -608,5 +624,80 @@ describe("pipeline chain edits", () => {
   it("will not hide an absent column or the frame's last visible column", () => {
     expect(hidePipelineColumn([], "missing", ["amount"])).toBeNull();
     expect(hidePipelineColumn([], "amount", ["amount"])).toBeNull();
+  });
+});
+
+describe("splitting a step that reads its own sibling", () => {
+  const draft = (id: string, name: string, formula: string) => ({
+    id,
+    outputColumnId: id,
+    name,
+    formula,
+    fallbackName: name,
+  });
+  const stepOf = (...columns: ReturnType<typeof draft>[]) =>
+    ({ id: "step", kind: "withColumns" as const, columns });
+  const later = { id: "after", kind: "sort" as const, keys: [] };
+
+  it("moves the committing column below the sibling it reads", () => {
+    const steps = [
+      stepOf(
+        draft("a", "Previous revenue", "`Revenue`.shift(1)"),
+        draft("b", "Change", "`Revenue` - `Previous revenue`")
+      ),
+    ];
+    expect(splitSiblingReferenceStep(steps, "step", "b", ["Revenue"])).toMatchObject([
+      { kind: "withColumns", columns: [{ name: "Previous revenue" }] },
+      { kind: "withColumns", columns: [{ name: "Change" }] },
+    ]);
+  });
+
+  it("takes whatever else in the step reads the moved column with it, in order", () => {
+    const steps = [
+      stepOf(
+        draft("a", "A", "`Revenue`.shift(1)"),
+        draft("b", "B", "`A` + 1"),
+        draft("c", "C", "`B` + 1")
+      ),
+    ];
+    // C stays with B rather than being left above the column it reads,
+    // which would turn a sibling reference into an unknown name.
+    expect(splitSiblingReferenceStep(steps, "step", "b", ["Revenue"])).toMatchObject([
+      { columns: [{ name: "A" }] },
+      { columns: [{ name: "B" }, { name: "C" }] },
+    ]);
+  });
+
+  it("leaves a name that also arrives from above alone", () => {
+    const steps = [
+      stepOf(
+        draft("a", "Amount", '`Amount`.cast("number")'),
+        draft("b", "Doubled", "`Amount` * 2")
+      ),
+    ];
+    // `Amount` here is the upstream column, which is what the step reads:
+    // an ordinary chain, and splitting it would change its meaning.
+    expect(splitSiblingReferenceStep(steps, "step", "b", ["Amount"])).toBeNull();
+  });
+
+  it("inserts the new step directly after this one, above the steps that follow", () => {
+    const steps = [
+      stepOf(draft("a", "A", "1"), draft("b", "B", "`A` + 1")),
+      later,
+    ];
+    const split = splitSiblingReferenceStep(steps, "step", "b", []);
+    expect(split?.map((step) => step.kind)).toEqual([
+      "withColumns",
+      "withColumns",
+      "sort",
+    ]);
+    expect(split?.[2]).toBe(later);
+  });
+
+  it("is the last step's split too, and leaves a step nothing needs alone", () => {
+    const steps = [stepOf(draft("a", "A", "1"), draft("b", "B", "`A` + 1"))];
+    expect(splitSiblingReferenceStep(steps, "step", "b", [])).toHaveLength(2);
+    // The column that stays put has nothing to split away from.
+    expect(splitSiblingReferenceStep(steps, "step", "a", [])).toBeNull();
   });
 });

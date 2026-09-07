@@ -3,6 +3,7 @@ import type { ActiveFormulaEditor } from "./activeFormulaEditor";
 import {
   formulaCellRangePick,
   formulaColumnPick,
+  formulaSiblingPick,
   formulaSummaryPick,
   siblingColumnExplanation,
   siblingColumnInStep,
@@ -201,10 +202,28 @@ describe("a calculation written beside another", () => {
     expect(siblingColumnInStep(writingChange, "revenue")).toBeNull();
   });
 
-  it("says which step to add instead of leaving the refusal bare", () => {
+  // Pointing at it is an ordinary insertion now — the commit is what moves
+  // the reader into its own step — so the sentence is only for a chain that
+  // arrived already broken, and it names the key that repairs it.
+  it("says which key finishes the repair on a chain that arrived broken", () => {
     expect(siblingColumnExplanation("Previous revenue", "Change")).toBe(
-      "Previous revenue is added in this same step, so Change cannot read it yet. Add Change as a new step to read it."
+      "Previous revenue is added in this same step, so Change cannot read it yet. Press Return on Change to move it into its own step."
     );
+  });
+
+  it("inserts a pointed sibling the same way as any other column", () => {
+    // The anchor is row 4, so row 3 is one period back: a sibling is not a
+    // lesser kind of reference, it is the same reference in the wrong step.
+    expect(formulaSiblingPick(writingChange, "previous", "sales", 3)).toEqual({
+      kind: "insert",
+      token: "`Previous revenue`.shift(1)",
+    });
+    // The header, which carries no row, is the whole column.
+    expect(formulaSiblingPick(writingChange, "previous", "sales", undefined)).toEqual({
+      kind: "insert",
+      token: "`Previous revenue`",
+    });
+    expect(formulaSiblingPick(writingChange, "revenue", "sales", 3)).toBeNull();
   });
 
   it("catches the typed spelling of the same mistake", () => {

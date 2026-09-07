@@ -4,9 +4,8 @@ import type { RecurrenceState } from "./ColumnAuthoringDialogs";
 import {
   formulaCellRangePick,
   formulaColumnPick,
+  formulaSiblingPick,
   formulaSummaryPick,
-  siblingColumnExplanation,
-  siblingColumnInStep,
 } from "./lib/formulaPicking";
 import { formulaReferenceDecorations } from "./lib/formulaReferenceDecorations";
 import type { DocumentView, SummaryOperation, FrameObject } from "./lib/types";
@@ -193,9 +192,9 @@ function sessionFrameId(active: ActiveFormulaEditor): string | undefined {
  *
  * Asking `sessionFrameId` rather than `completion.frameId` alone is what
  * keeps a wrangle session over a chained source frame from treating its own
- * grid as foreign: clicking a column it cannot read — a sibling written in
- * the same step, most often — used to abandon the draft and select the
- * column instead of saying why.
+ * grid as foreign: clicking a column it cannot read used to abandon the
+ * draft and select the column instead of answering the gesture — including
+ * the sibling case, which is now a plain insertion.
  */
 function foreignUnaddressablePick(
   pick: ReturnType<typeof formulaColumnPick>,
@@ -207,6 +206,23 @@ function foreignUnaddressablePick(
     pick.message === null &&
     sessionFrameId(active) !== frameId
   );
+}
+
+/**
+ * A column the session holds no reference for may still be one of its own
+ * step's siblings, which the person can perfectly well point at: the
+ * reference goes in as any other would, and the commit is what splits the
+ * step so it can be read.
+ */
+function orSiblingPick(
+  pick: ReturnType<typeof formulaColumnPick>,
+  active: ActiveFormulaEditor,
+  columnId: string,
+  frameId: string,
+  pickedRow: number | undefined
+): ReturnType<typeof formulaColumnPick> {
+  if (pick.kind !== "refuse" || pick.message !== null) return pick;
+  return formulaSiblingPick(active, columnId, frameId, pickedRow) ?? pick;
 }
 
 function tryColumnPick(
@@ -227,7 +243,7 @@ function tryColumnPick(
   if (event.button !== 0 || !columnId || !frameId || (hitControl && !columnItself))
     return false;
   const pickedRow = rowIndex(target);
-  const pick = formulaColumnPick(
+  const attempted = formulaColumnPick(
     active,
     columnId,
     frameId,
@@ -236,7 +252,8 @@ function tryColumnPick(
       pickedRow === undefined ||
       hasStableCellAddresses(options.document, frameId)
   );
-  if (foreignUnaddressablePick(pick, active, frameId)) return false;
+  if (foreignUnaddressablePick(attempted, active, frameId)) return false;
+  const pick = orSiblingPick(attempted, active, columnId, frameId, pickedRow);
   event.preventDefault();
   event.stopPropagation();
   if (pick.kind === "insert") {
@@ -269,12 +286,9 @@ function tryColumnPick(
     (object): object is FrameObject => object.kind === "frame" && object.id === frameId
   );
   const column = frame?.columns.find((candidate) => candidate.id === columnId);
-  const sibling = siblingColumnInStep(active, columnId);
   options.onNotice(
     pick.message ??
-      (sibling
-        ? siblingColumnExplanation(sibling.name, active.label)
-        : `${column?.name ?? "That column"} is not available to ${active.label}.`)
+      `${column?.name ?? "That column"} is not available to ${active.label}.`
   );
   return true;
 }

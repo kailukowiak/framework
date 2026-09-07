@@ -201,6 +201,122 @@ function useAddCalculatedColumnRequest({
 }
 
 /**
+ * Every doorway into an existing column's formula: the context menu's
+ * transform, a formula begun in one of its cells, and the edit that reopens
+ * the calculation a column already has. They all mint the same request and
+ * differ only in what they know about the gesture that opened it.
+ */
+function useColumnTransformationRequests({
+  setContextMenu,
+  setSelection,
+  setInspectorSection,
+}: {
+  setContextMenu: (value: null) => void;
+  setSelection: (value: Selection) => void;
+  setInspectorSection: (value: "wrangle") => void;
+}) {
+  const [transformColumnRequest, setTransformColumnRequest] =
+    useState<TransformColumnRequest>(null);
+  const transformColumnToken = useRef(0);
+  const openColumnTransformation = useCallback(
+    (
+      frame: FrameObject,
+      viewId: string | undefined,
+      request: Omit<NonNullable<TransformColumnRequest>, "frameId" | "token">
+    ) => {
+      setContextMenu(null);
+      setSelection({ objectId: frame.id, viewId, columnId: request.columnId });
+      setInspectorSection("wrangle");
+      transformColumnToken.current += 1;
+      setTransformColumnRequest({
+        ...request,
+        frameId: frame.id,
+        token: transformColumnToken.current,
+      });
+    },
+    [setContextMenu, setSelection, setInspectorSection]
+  );
+
+  const requestColumnTransformation = useCallback(
+    (
+      frame: FrameObject,
+      column: Column,
+      formula: string,
+      focus = false,
+      viewId?: string,
+      orderByColumnId?: string
+    ) =>
+      openColumnTransformation(frame, viewId, {
+        columnId: column.id,
+        formula,
+        focus,
+        orderByColumnId,
+      }),
+    [openColumnTransformation]
+  );
+
+  const requestColumnFill = useCallback(
+    (
+      frame: FrameObject,
+      column: Column,
+      formula: string,
+      rowIndex?: number,
+      viewId?: string
+    ) =>
+      openColumnTransformation(frame, viewId, {
+        columnId: column.id,
+        // An empty formula is the doorway from a cell: the editor opens on
+        // the column's own name, the way the header gesture does, with the
+        // whole column visibly the subject before anything is typed.
+        formula: formula || formulaToken(column.name),
+        focus: true,
+        orderByColumnId: needsDeclaredOrder(formula) ? column.id : undefined,
+        // The cell this started from is the formula's anchor, exactly as it
+        // is for "Formula here" on a column that does not exist yet. It was
+        // dropped here, so a formula begun in an existing column's cell had
+        // no anchor at all, and every reference pointed at afterwards lost
+        // the `.shift(n)` the clicked row meant.
+        anchorRowIndex: rowIndex,
+      }),
+    [openColumnTransformation]
+  );
+
+  // Deliberately does not close a context menu: this is also reached
+  // straight from the formula bar, where there is none open to close.
+  const requestCalculatedColumnEdit = useCallback(
+    (frame: FrameObject, column: Column, rowIndex?: number, viewId?: string) => {
+      setSelection({ objectId: frame.id, viewId, columnId: column.id });
+      setInspectorSection("wrangle");
+      transformColumnToken.current += 1;
+      setTransformColumnRequest({
+        frameId: frame.id,
+        columnId: column.id,
+        formula: "",
+        focus: true,
+        editExisting: true,
+        anchorRowIndex: rowIndex,
+        token: transformColumnToken.current,
+      });
+    },
+    [setSelection, setInspectorSection]
+  );
+
+  return {
+    transformColumnRequest,
+    requestColumnTransformation,
+    requestColumnFill,
+    requestCalculatedColumnEdit,
+    clearTransformColumnRequest: () => setTransformColumnRequest(null),
+    // Exposed raw, in addition to the triggers above, because the keyboard
+    // formula gesture (handleGridFormulaKey in GridFormulaKeyboard.ts) mints
+    // its own differently-shaped request and needs to manage the token
+    // itself rather than go through requestColumnTransformation's signature.
+    transformColumnToken,
+    setTransformColumnRequest,
+  };
+}
+
+/**
  * The pipeline-column-editing gestures — add a calculated column,
  * transform or fill one, filter one, hide one, rearrange them — all funnel
  * through the same shape: close whatever context menu was open, select the
@@ -224,9 +340,6 @@ export function usePipelineColumnRequests({
     setSelection,
     setInspectorSection,
   });
-  const [transformColumnRequest, setTransformColumnRequest] =
-    useState<TransformColumnRequest>(null);
-  const transformColumnToken = useRef(0);
   const [filterColumnRequest, setFilterColumnRequest] =
     useState<FilterColumnRequest>(null);
   const filterColumnToken = useRef(0);
@@ -238,53 +351,11 @@ export function usePipelineColumnRequests({
     setSelection,
     setInspectorSection,
   });
-
-  const requestColumnTransformation = useCallback(
-    (
-      frame: FrameObject,
-      column: Column,
-      formula: string,
-      focus = false,
-      viewId?: string,
-      orderByColumnId?: string
-    ) => {
-      setContextMenu(null);
-      setSelection({ objectId: frame.id, viewId, columnId: column.id });
-      setInspectorSection("wrangle");
-      transformColumnToken.current += 1;
-      setTransformColumnRequest({
-        frameId: frame.id,
-        columnId: column.id,
-        formula,
-        focus,
-        orderByColumnId,
-        token: transformColumnToken.current,
-      });
-    },
-    [setContextMenu, setSelection, setInspectorSection]
-  );
-
-  const requestColumnFill = useCallback(
-    (
-      frame: FrameObject,
-      column: Column,
-      formula: string,
-      _rowIndex?: number,
-      viewId?: string
-    ) =>
-      requestColumnTransformation(
-        frame,
-        column,
-        // An empty formula is the doorway from a cell: the editor opens on
-        // the column's own name, the way the header gesture does, with the
-        // whole column visibly the subject before anything is typed.
-        formula || formulaToken(column.name),
-        true,
-        viewId,
-        needsDeclaredOrder(formula) ? column.id : undefined
-      ),
-    [requestColumnTransformation]
-  );
+  const transformRequests = useColumnTransformationRequests({
+    setContextMenu,
+    setSelection,
+    setInspectorSection,
+  });
 
   const requestColumnFilter = useCallback(
     (frame: FrameObject, column: Column, viewId?: string) => {
@@ -299,26 +370,6 @@ export function usePipelineColumnRequests({
       });
     },
     [setContextMenu, setSelection, setInspectorSection]
-  );
-
-  // Deliberately does not close a context menu: this is also reached
-  // straight from the formula bar, where there is none open to close.
-  const requestCalculatedColumnEdit = useCallback(
-    (frame: FrameObject, column: Column, rowIndex?: number, viewId?: string) => {
-      setSelection({ objectId: frame.id, viewId, columnId: column.id });
-      setInspectorSection("wrangle");
-      transformColumnToken.current += 1;
-      setTransformColumnRequest({
-        frameId: frame.id,
-        columnId: column.id,
-        formula: "",
-        focus: true,
-        editExisting: true,
-        anchorRowIndex: rowIndex,
-        token: transformColumnToken.current,
-      });
-    },
-    [setSelection, setInspectorSection]
   );
 
   const requestHidePipelineColumn = useCallback(
@@ -336,10 +387,6 @@ export function usePipelineColumnRequests({
     [setContextMenu, setSelection, setInspectorSection]
   );
 
-  const clearTransformColumnRequest = useCallback(
-    () => setTransformColumnRequest(null),
-    []
-  );
   const clearFilterColumnRequest = useCallback(() => setFilterColumnRequest(null), []);
   const clearHidePipelineColumnRequest = useCallback(
     () => setHidePipelineColumnRequest(null),
@@ -348,24 +395,14 @@ export function usePipelineColumnRequests({
 
   return {
     ...addRequest,
-    transformColumnRequest,
+    ...transformRequests,
+    ...multiColumnRequests,
     filterColumnRequest,
     hidePipelineColumnRequest,
-    ...multiColumnRequests,
-    clearTransformColumnRequest,
     clearFilterColumnRequest,
     clearHidePipelineColumnRequest,
-    requestColumnTransformation,
-    requestColumnFill,
     requestColumnFilter,
-    requestCalculatedColumnEdit,
     requestHidePipelineColumn,
-    // Exposed raw, in addition to the triggers above, because the keyboard
-    // formula gesture (handleGridFormulaKey in GridFormulaKeyboard.ts) mints
-    // its own differently-shaped request and needs to manage the token
-    // itself rather than go through requestColumnTransformation's signature.
-    transformColumnToken,
-    setTransformColumnRequest,
   };
 }
 

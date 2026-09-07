@@ -72,13 +72,15 @@ import type {
 } from "./lib/types";
 
 /**
- * A persisted step can still carry a sibling reference the commit-time check
- * never saw: a chain written by MCP, an older document, or a step edited
- * elsewhere. The engine reports it as "Unknown name ‘X’", which is true and
- * useless when X is the line just above. Translate it into the same sentence
- * the commit refusal uses, so the two paths agree; only when X is produced by
- * this very step and does not also arrive from above (in which case the
- * engine's complaint is about something else and stays as it is).
+ * A persisted step can still carry a sibling reference nobody wrote here: a
+ * chain from MCP, an older document, or a step edited elsewhere. Writing one
+ * in this editor no longer produces it — Return moves the reader into its own
+ * step — but a chain that arrives already broken has to say why the engine
+ * refuses it, and "Unknown name ‘X’" is true and useless when X is the line
+ * just above. The sentence names the key that performs the same split on
+ * demand; only when X is produced by this very step and does not also arrive
+ * from above (in which case the engine's complaint is about something else
+ * and stays as it is).
  */
 function explainSiblingFailure(
   failure: string,
@@ -353,8 +355,13 @@ export function DerivedFrameCreator({
         column,
         transformColumnRequest.formula,
         transformColumnRequest.orderByColumnId,
-        transformColumnRequest.focus ? transformColumnRequest.token : undefined,
-        transformColumnRequest.focusAtEnd
+        {
+          focusToken: transformColumnRequest.focus
+            ? transformColumnRequest.token
+            : undefined,
+          focusAtEnd: transformColumnRequest.focusAtEnd,
+          anchorRowIndex: transformColumnRequest.anchorRowIndex,
+        }
       )
     );
   }, [
@@ -522,6 +529,16 @@ export function DerivedFrameCreator({
     const failure = await savePatch(stepId, update);
     if (failure) throw new Error(failure);
   };
+  /**
+   * commitPatch for an edit that rearranges the chain rather than one step —
+   * today only the sibling split, which has to insert a step as it saves.
+   * It throws on refusal for the same reason commitPatch does: the session
+   * committing it may be hosted by the bar with this panel closed.
+   */
+  const commitChain = async (update: (current: StepDraft[]) => StepDraft[]) => {
+    const failure = await persist(update(steps));
+    if (failure) throw new Error(failure);
+  };
 
   const commandId = (step: StepDraft, itemId?: string) =>
     `pipeline:${editingFrame.id}:${step.id}:${itemId ?? step.kind}`;
@@ -673,6 +690,7 @@ export function DerivedFrameCreator({
                 commandFocus={commandFocus}
                 patch={patch}
                 commitPatch={commitPatch}
+                commitChain={commitChain}
                 savePatch={savePatch}
                 rejectCommand={rejectCommand}
                 setPendingEditor={setPendingEditor}

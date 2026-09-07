@@ -7,17 +7,50 @@ import {
   parseNamedTransformation,
 } from "./PipelineColumnNames";
 import type { FormulaReference } from "./lib/formulaReferences";
+import { siblingReferenceInFormula } from "./lib/formulaPicking";
 import {
-  siblingColumnExplanation,
-  siblingReferenceInFormula,
-} from "./lib/formulaPicking";
-import { BLANK_CALCULATION } from "./lib/pipelineChainEdits";
+  BLANK_CALCULATION,
+  splitSiblingReferenceStep,
+} from "./lib/pipelineChainEdits";
 import {
   namedCommand,
   outputColumnIdForName,
 } from "./lib/pipelineStepCommands";
 import { namedDraft, type StepDraft, type VisibleColumn } from "./lib/pipelineSteps";
 import type { Column, FrameObject, FrameStepInput } from "./lib/types";
+
+/**
+ * The step with one calculation's committed name and expression written in.
+ *
+ * Naming an output exactly like a column visible above this step is an
+ * overwrite, not a request for "Name_2": identity is what makes Polars
+ * replace it in place, so the output id follows the name.
+ */
+function rewrittenColumn(
+  current: StepDraft,
+  columnId: string,
+  parsed: { name: string; formula: string },
+  visible: VisibleColumn[]
+): StepDraft {
+  if (current.kind !== "withColumns") return current;
+  return {
+    ...current,
+    columns: current.columns.map((item) =>
+      item.id === columnId
+        ? {
+            ...item,
+            outputColumnId: outputColumnIdForName(
+              visible,
+              item.outputColumnId,
+              parsed.name
+            ),
+            name: parsed.name,
+            formula: parsed.formula,
+          }
+        : item
+    ),
+  };
+}
 
 /** The calculations of one Add or replace columns step. */
 export function PipelineWithColumnsStep({
@@ -31,6 +64,7 @@ export function PipelineWithColumnsStep({
   commandFocus,
   patch,
   commitPatch,
+  commitChain,
   savePatch,
   rejectCommand,
   setPendingEditor,
@@ -48,6 +82,7 @@ export function PipelineWithColumnsStep({
     stepId: string,
     update: (step: StepDraft) => StepDraft
   ) => Promise<void>;
+  commitChain: (update: (current: StepDraft[]) => StepDraft[]) => Promise<void>;
   savePatch: (
     stepId: string,
     update: (step: StepDraft) => StepDraft
@@ -73,9 +108,12 @@ export function PipelineWithColumnsStep({
             rejectCommand("Write a column name, =, and a formula");
             return;
           }
-          // Answered here rather than by the engine: see
-          // siblingReferenceInFormula for why "Unknown name" is the wrong
-          // sentence for a name that is one line further up this step.
+          // A name written one line further up this step is a reference the
+          // engine cannot serve — every formula in a `with_columns` reads
+          // the frame as it stood before the step — but the sentence is not
+          // wrong, only the arrangement is. So the commit rearranges: this
+          // calculation moves into a step of its own, directly below, where
+          // the sibling it reads exists. See splitSiblingReferenceStep.
           const sibling = siblingReferenceInFormula(
             parsed.formula,
             step.columns
@@ -83,35 +121,22 @@ export function PipelineWithColumnsStep({
               .map((item) => ({ name: draftName(item) })),
             visible.map((item) => item.name)
           );
-          if (sibling) {
-            rejectCommand(siblingColumnExplanation(sibling, parsed.name));
-            return;
-          }
           const change = (current: StepDraft): StepDraft =>
-            current.kind === "withColumns"
-              ? {
-                  ...current,
-                  columns: current.columns.map((item) =>
-                    item.id === column.id
-                      ? {
-                          ...item,
-                          // Naming an output exactly like a column
-                          // visible above this step is an overwrite,
-                          // not a request for "Name_2". Identity is
-                          // what makes Polars replace it in place.
-                          outputColumnId: outputColumnIdForName(
-                            visible,
-                            item.outputColumnId,
-                            parsed.name
-                          ),
-                          name: parsed.name,
-                          formula: parsed.formula,
-                        }
-                      : item
-                  ),
-                }
-              : current;
-          return commitPatch(step.id, change);
+            rewrittenColumn(current, column.id, parsed, visible);
+          if (!sibling) return commitPatch(step.id, change);
+          return commitChain((current) => {
+            const edited = current.map((item) =>
+              item.id === step.id ? change(item) : item
+            );
+            return (
+              splitSiblingReferenceStep(
+                edited,
+                step.id,
+                column.id,
+                visible.map((item) => item.name)
+              ) ?? edited
+            );
+          });
         };
         return (
           <div className="pipeline-command-row" key={column.id}>

@@ -56,11 +56,22 @@
   --inspector-w: 360px;
   --inspector-collapsed-w: 36px;
   --panel-w: 288px;
-  /* The expression owns the first line and its context owns the second. Long
-     formulas are the work surface here; making references compete with them
-     horizontally leaves neither readable. Every fixed surface begins below
-     both lines, while the tool rail keeps using the full height. */
-  --formula-bar-h: 55px;
+  /* The expression owns the first two lines and its context owns the third.
+     Long formulas are the work surface here; making references compete with
+     them horizontally leaves neither readable. Every fixed surface begins
+     below all of it, while the tool rail keeps using the full height.
+
+     Two expression lines are *reserved* rather than grown into, because the
+     canvas hangs off this height: a formula gesture opens with the chain's
+     saved spelling, and the formatter puts every method on its own line, so
+     `Column 1` = None.cast("number") arrives two lines tall the moment the
+     menu item is clicked. Growing the bar there slid the whole canvas down
+     between that click and the person's next one — the click meant for row 1
+     landed on the type row, and the reference came out without the
+     `.shift(n)` the row was asking for. The second line is the common case
+     anyway; the bar is only allowed to grow past what a one-method chain
+     needs. */
+  --formula-bar-h: 88px;
   --canvas-top: var(--formula-bar-h);
 }
 
@@ -83,7 +94,7 @@ button:disabled { cursor: default; opacity: 0.35; }
 
 .app-shell { width: 100vw; height: 100vh; background: light-dark(#eeece5, #1c1d17); position: relative; }
 .eyebrow { display: block; color: light-dark(#83847d, #81827b); font: 500 var(--text-xs) / 1.2 "DM Mono", monospace; letter-spacing: 0.12em; }
-.scratchwork-formula-bar { position: fixed; z-index: 45; top: 0; right: 0; left: var(--rail-w); min-height: 55px; display: grid; grid-template-columns: auto minmax(180px, 1fr) auto auto; grid-template-rows: minmax(27px, auto) 27px; align-items: start; column-gap: 7px; padding: 0 7px 0 10px; border-bottom: 1px solid var(--line); background: light-dark(#f9f8f4, #212219); }
+.scratchwork-formula-bar { position: fixed; z-index: 45; top: 0; right: 0; left: var(--rail-w); min-height: 88px; display: grid; grid-template-columns: auto minmax(180px, 1fr) auto auto; grid-template-rows: minmax(60px, auto) 27px; align-items: start; column-gap: 7px; padding: 0 7px 0 10px; border-bottom: 1px solid var(--line); background: light-dark(#f9f8f4, #212219); }
 .scratchwork-formula-prefix { grid-column: 1; grid-row: 1; color: var(--accent); font: 650 var(--text-base) / 27px "DM Mono", monospace; }
 .scratchwork-formula-bar > .formula-textarea-layer { grid-column: 2; grid-row: 1; }
 .scratchwork-formula-bar textarea { min-width: 0; max-height: 135px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 500 var(--text-base) / 27px "DM Mono", monospace; resize: none; overflow: auto; white-space: pre; scrollbar-width: thin; }

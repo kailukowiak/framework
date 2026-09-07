@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -34,6 +41,8 @@ function Probe() {
 }
 
 let notices: Array<string | null> = [];
+/** Every chain this board saved, newest last — what the commit really wrote. */
+let saved: FrameStepInput[][] = [];
 
 function Shell({ view, children }: { view: DocumentView; children: ReactNode }) {
   const local = useActiveFormulaEditorCommands();
@@ -130,8 +139,10 @@ function Board({
     if (!asked) setAsked(true);
   }, [asked]);
   const onOperation: OperationHandler = async (operation) => {
-    if (operation.type === "setFramePipeline")
+    if (operation.type === "setFramePipeline") {
+      saved.push(operation.steps);
       setChain((current) => echoed(current.frame, operation.steps));
+    }
     return null;
   };
   return (
@@ -183,6 +194,7 @@ function workbook(
   }: { sorted?: boolean; bare?: boolean; deferRequest?: boolean } = {}
 ) {
   notices = [];
+  saved = [];
   // `bare` is the tutorial's own shape: a document-owned frame with no chain
   // at all, sorted for display only. The first calculation written on it is
   // therefore also the moment the frame grows a chain.
@@ -216,6 +228,16 @@ function workbook(
             column's is a button. */}
         <div data-frame-id={frame.id}>
           <table>
+            <thead>
+              <tr>
+                <th data-column-id={revenue.id}>
+                  <button className="column-select">Revenue</button>
+                </th>
+                <th data-column-id={margin.id}>
+                  <button className="column-select">Margin</button>
+                </th>
+              </tr>
+            </thead>
             <tbody>
               {[0, 1].map((index) => (
                 <tr data-row-index={index} key={index}>
@@ -297,19 +319,61 @@ describe("pointing at the grid from a wrangle formula", () => {
     expect(commands.getActive()?.draft).toBe("`Column 1` = `Revenue`.shift(1)");
   });
 
-  it("says why a calculation beside this one cannot be read yet", async () => {
+  // The header is the one thing above row 1 that is still the column, and it
+  // sits directly over row 1's cell. Pointing at it is the documented way to
+  // ask for the whole column, so it yields a bare reference where the cell
+  // one pixel below yields the anchor's shift. Pinned here because the two
+  // are told apart by nothing more than a `data-row-index` ancestor, and a
+  // pick that quietly lost its `.shift(…)` looks exactly like this.
+  it("reads a header as the whole column, and appends the picks after it", async () => {
     const { container } = workbook(1);
     await waitFor(() => expect(commands.getActive()?.label).toBe("Column 1"));
 
-    // Margin is written in the same Add or replace columns step, so it does
-    // not exist when Column 1 runs. The click must say so and leave the
-    // session alone instead of quietly selecting the column and abandoning
-    // the draft.
-    press(container.querySelectorAll(".computed-cell")[0]);
+    press(container.querySelector("th button.column-select")!);
+    expect(commands.getActive()?.draft).toBe("`Column 1` = `Revenue`");
 
-    expect(commands.getActive()?.label).toBe("Column 1");
-    expect(notices.at(-1)).toBe(
-      "Margin is added in this same step, so Column 1 cannot read it yet. Add Column 1 as a new step to read it."
+    // And the pick after it appends rather than replacing — the first pick
+    // consumed the whole-line selection the gesture opened with, so from
+    // here on a click adds a term to the expression being built.
+    press(container.querySelectorAll(".cell-display")[0]);
+    expect(commands.getActive()?.draft).toBe(
+      "`Column 1` = `Revenue``Revenue`.shift(1)"
+    );
+  });
+
+  // Margin is written in the same Add or replace columns step, so it does not
+  // exist when Column 1 runs — but that is an arrangement the commit can fix,
+  // and the person pointing at a column on screen means the obvious thing.
+  it("points at a calculation beside this one and splits the step to keep it", async () => {
+    const { container } = workbook(1);
+    await waitFor(() => expect(commands.getActive()?.label).toBe("Column 1"));
+
+    press(container.querySelectorAll("th button.column-select")[1]);
+
+    // Inserted, not refused, and nothing said about it.
+    expect(commands.getActive()?.draft).toBe("`Column 1` = `Margin`");
+    expect(notices.filter(Boolean)).toEqual([]);
+
+    const editing = screen.getByLabelText("Edit Column 1") as HTMLTextAreaElement;
+    fireEvent.change(editing, { target: { value: "`Doubled` = `Margin` * 2" } });
+    fireEvent.keyDown(editing, { key: "Enter" });
+
+    // The save is two calculations in two numbered steps: Margin where it
+    // was, and the column that reads it in a step of its own below.
+    await waitFor(() => {
+      const steps = saved.at(-1)!.filter((step) => step.kind === "withColumns");
+      expect(
+        steps.map((step) =>
+          step.kind === "withColumns"
+            ? step.columns.map((column) => column.name)
+            : []
+        )
+      ).toEqual([["Margin"], ["Doubled"]]);
+    });
+    // And both compute: the reader's formula survived the move intact.
+    const moved = saved.at(-1)!.at(-1);
+    expect(moved?.kind === "withColumns" && moved.columns[0].formula).toBe(
+      "`Margin` * 2"
     );
   });
 });

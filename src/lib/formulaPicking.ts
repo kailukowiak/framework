@@ -109,22 +109,24 @@ export function formulaColumnPick(
 }
 
 /**
- * Why one calculation cannot read another written beside it.
+ * Why one calculation cannot read another written beside it — and what the
+ * app does about it.
  *
  * An "Add or replace columns" step is one `with_columns`, and every formula
  * in it is evaluated against the frame as it stood *before* the step. So a
- * sibling written in the same block is genuinely not there yet — this is the
- * engine's semantics, not a missing feature, and the way through is a second
- * step rather than a different spelling. The sentence is shared by the two
- * surfaces that have to say it, the refused click and the refused save, so
- * pointing and typing get the same explanation instead of one of them
- * getting "Unknown name".
+ * sibling written in the same block is genuinely not there yet. That is the
+ * engine's semantics rather than a missing feature, and the way through is a
+ * second step — which the commit now performs itself: pressing Return on the
+ * reader moves it into its own step (see `splitSiblingReferenceStep`). The
+ * sentence therefore survives only for a chain that arrives already broken,
+ * from MCP or an older file, where nobody is mid-gesture to split anything;
+ * it says which key finishes the repair rather than describing a chore.
  */
 export function siblingColumnExplanation(
   siblingName: string,
   targetName: string
 ): string {
-  return `${siblingName} is added in this same step, so ${targetName} cannot read it yet. Add ${targetName} as a new step to read it.`;
+  return `${siblingName} is added in this same step, so ${targetName} cannot read it yet. Press Return on ${targetName} to move it into its own step.`;
 }
 
 /** The clicked column, if this session's own step is what produces it. */
@@ -141,6 +143,36 @@ export function siblingColumnInStep(
       column.outputColumnId !== active.completion.targetColumnId
   );
   return sibling ? { name: sibling.name } : null;
+}
+
+/**
+ * Pointing at a sibling written in the same step.
+ *
+ * The session holds no reference for it — the step's references are the
+ * columns visible *before* the step, which is what the engine will read —
+ * so the ordinary pick has nothing to insert. It is still a column on
+ * screen with a name, and the person pointing at it means the obvious
+ * thing, so the reference goes in exactly as it would for any other column,
+ * anchor shift included. What makes it legal is the commit: Return splits
+ * the step so the reader runs after the column it reads.
+ */
+export function formulaSiblingPick(
+  active: ActiveFormulaEditor,
+  columnId: string,
+  frameId: string,
+  rowIndex: number | undefined
+): FormulaColumnPick | null {
+  const sibling = siblingColumnInStep(active, columnId);
+  if (!sibling) return null;
+  const anchored = active.completion.anchorFrameId === frameId;
+  return {
+    kind: "insert",
+    token: columnTokenForCellPick(
+      formulaToken(sibling.name),
+      anchored ? active.completion.anchorRowIndex : undefined,
+      anchored && Number.isFinite(rowIndex) ? rowIndex : undefined
+    ),
+  };
 }
 
 /**

@@ -216,6 +216,15 @@ describe("formula by pointing", () => {
       { timeoutMsg: "the Month sort never put January first" }
     );
 
+    // The bar reserves its two expression lines, so opening a formula in it
+    // must not move the canvas: a click aimed at row 1 used to land on the
+    // type row once the bar had grown a line, and lose its .shift(1).
+    const viewportTop = () =>
+      browser.execute(
+        () => document.querySelector(".canvas-viewport")?.getBoundingClientRect().top ?? null
+      );
+    const topBefore = await viewportTop();
+
     await cellGesture("Revenue", 1, "context");
     await clickMenuItem("Formula here");
 
@@ -243,6 +252,8 @@ describe("formula by pointing", () => {
         )} instead of the placeholder, selected whole`
       );
     }
+
+    expect(await viewportTop()).toBe(topBefore);
 
     await cellGesture("Revenue", 0, "click");
 
@@ -286,15 +297,23 @@ describe("formula by pointing", () => {
     );
   });
 
-  it("says a calculation written beside this one cannot be read yet", async () => {
+  // A calculation written beside another in the same "Add or replace
+  // columns" step used to be refused when it read its neighbour. Now the
+  // click inserts the reference like any other, and Return moves the reader
+  // into a step of its own directly below, where the column it reads
+  // already exists. Wrangle shows the two numbered steps — that is the
+  // lesson, and this is the seam that proves it.
+  it("moves a calculation that reads its neighbour into its own step", async () => {
     await browser.execute(() => (document.activeElement as HTMLElement | null)?.blur());
     await selectCard(".frame-object");
     await browser.keys([Key.Command, "3"]);
     const step = $(".pipeline-command-list");
     await step.waitForExist();
 
-    // A second line inside the *same* Add or replace columns step — which is
-    // exactly the arrangement where one calculation cannot read the other.
+    const stepsBefore = await browser.execute(
+      () => document.querySelectorAll(".pipeline-step").length
+    );
+
     await step.$("button*=Add or replace column").click();
     await browser.waitUntil(
       async () => (await barState())?.value.includes('None.cast("number")') === true,
@@ -302,14 +321,26 @@ describe("formula by pointing", () => {
     );
 
     await clickColumnHeader("Previous revenue");
-
-    const notice = $(".notice-toast");
-    await notice.waitForExist();
-    await expect(notice).toHaveText(
-      expect.stringContaining("is added in this same step")
+    await browser.waitUntil(
+      async () => (await barState())?.value.includes("`Previous revenue`") === true,
+      { timeoutMsg: "clicking the neighbouring column did not insert its reference" }
     );
-    // The refusal left the session alone: the bar is still writing the new
-    // column rather than having quietly become the one that was clicked.
-    expect((await barState())?.value).not.toContain("`Revenue`.shift(1)");
+    expect(await $(".notice-toast").isExisting()).toBe(false);
+
+    const bar = formulaBar();
+    await bar.setValue("Change = `Revenue` - `Previous revenue`");
+    await browser.keys(Key.Enter);
+
+    await browser.waitUntil(
+      async () =>
+        (await browser.execute(
+          () => document.querySelectorAll(".pipeline-step").length
+        )) === stepsBefore + 1,
+      { timeoutMsg: "Return did not move the reader into a step of its own" }
+    );
+    await browser.waitUntil(
+      async () => Number(digits((await columnCellTexts("Change"))[1])) === 6000,
+      { timeoutMsg: "Change never computed February's 6000 in its new step" }
+    );
   });
 });
