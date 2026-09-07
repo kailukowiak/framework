@@ -1056,6 +1056,55 @@ Product-boundary work such as XLSX interchange, connectors, complete-data
 plots, reporting, checkpoints, and the Databoard is tracked by the replacement
 threshold above rather than disguised as an engine primitive.
 
+### Dictionaries — implemented 2026-09-06
+
+A dictionary is a two-column frame with an enforced single-column unique key,
+shown in the ordinary dense editable grid. It stores no second copy of its
+entries and needs no new document object kind. Add dictionary on the canvas
+creates Key and Value columns; Use as dictionary marks the selected column of
+an existing two-column frame as its key. The existing column type controls
+apply to keys and values. Duplicate keys are refused atomically.
+
+``lookup("East", `Rates`.`Key`, `Rates`.`Value`)`` returns one mapped value;
+a fourth argument supplies a missing-key fallback. Without it, missing keys
+are formula errors. ``map_values(`Region`, `Fixes`.`Key`, `Fixes`.`Value`)``
+works down a column, keeping unmatched values unless a fourth argument supplies
+another fallback. A mapped null is a real replacement, distinct from no match.
+The column menu's Map values action writes this formula into the existing
+Wrangle editor. Both expressions reference stable column ids, read the mapping
+table's data layer, and recompute when either input changes. Down a column
+the mapping is a left join against the dictionary inside the frame's own
+lazy plan, so the dictionary is never collected and pasted into the plan as
+a literal; only a scalar lookup in Scratchwork reads it directly, filtered
+to its one key. Display filtering
+of the dictionary never silently removes mappings. Live and imported inputs
+remain transformations, with no requirement to adopt their source rows.
+
+Exact matching has no rule priority. Regex conditions remain ordinary formulas;
+ordered regex mapping tables and dictionaries nested in cells are not part of
+this implementation. A blank dictionary has one editable row; pasted entries
+preserve its Key/Value schema and unique-key constraint.
+
+### Guarded source corrections — proposed 2026-09-06
+
+A source-backed correction should be a small document-owned overlay, joined
+by an enforced unique key (including composite keys), never a displayed row
+index. Store the target column, key tuple, original typed value, and replacement.
+Apply it only while the key identifies one source record and its source value
+still equals the recorded original. A changed source value, missing key, or
+ambiguous key is a visible conflict requiring review; it must not silently
+receive the old correction. Reordered rows and newly appended unrelated rows
+leave surviving corrections intact. If upstream already contains the intended
+replacement, report it as resolved upstream. Nulls compare as typed values.
+
+The original snapshot stays immutable, the overlay participates in undo and
+lineage, and conflicts must reach downstream results and exports so a warning
+cannot disappear merely because the source card is closed. Entry columns have
+the keyed-storage precedent, but do not currently retain an expected source
+value or a correction-conflict state. This proposal is not implemented by
+ordinary exact-match replacement: that existing Wrangle rule intentionally
+changes every matching value, including matches added by a later refresh.
+
 ### Scale and undo (one package)
 
 Target: tens of millions of rows on moderate hardware.
@@ -1279,7 +1328,7 @@ The long tail — anything not in the native list — arrives later through the 
 
 Three items the hands-on audit surfaced that are direction, not bugs — parked here so they survive the bug-fix churn:
 
-- **TODO: grow drag/drop outward from the matrix wells.** The Calculation Matrix wells already accept a dropped vector, so a drop protocol exists; column headers — the richest objects in the app — are not draggable. Every target already has an operation behind a context-menu item today, so this is frontend wiring, not new semantics: header → canvas is "Create frame from this," header → plot card sets an encoding, header → another frame's header opens the join flow, file → canvas imports at the drop point (the import path already takes a position). Two of that family are done: selection aggregates (Count · Sum · Average) already sat in the canvas status bar when this entry was written, and the fill handle landed 2026-09-02 — but as a doorway, not a fill. Dragging the square on a single-column selection opens that column's formula, the same door as `=`, because a filled range in FrameWork is a column rule, not N copied cells; ⌘D/⌘R remain the literal fill. Header drag/drop is what remains. This is the visible half of "feels like Excel"; the operations are done.
+- **TODO: grow drag/drop outward from the matrix wells.** The Calculation Matrix wells already accept a dropped vector, so a drop protocol exists; column headers — the richest objects in the app — are not draggable. Every target already has an operation behind a context-menu item today, so this is frontend wiring, not new semantics: header → canvas is "Create frame from this," header → plot card sets an encoding, header → another frame's header opens the join flow, file → canvas imports at the drop point (the import path already takes a position). Two of that family are done: selection aggregates (Count · Sum · Average) already sat in the canvas status bar when this entry was written, and the fill handle now fills literal values in the dragged range (2026-09-06). A single number copies; two or more evenly spaced numeric seeds extend their series; dates extend by days or calendar months, and other selections repeat. The operation addresses the displayed rows by their stable stored IDs and is undone as one edit. Calculated columns have no handle because their declaration already applies to every row; `=` still opens that declaration in Wrangle. Header drag/drop is what remains. This is the visible half of "feels like Excel"; the operations are done.
 
 - **Done 2026-09-01: `=` is a doorway to the column formula.** The field audit found one keystroke with three silent outcomes. Two answers were tried the same day: routing a cell's `=` to Scratchwork with a visible handoff (a spreadsheet hand does not want a named scalar), then letting a formula be typed inside the cell and committing it as the column's step on Enter (it computed, but it taught cell formulas and redefined data columns from one cell). What stands: the cell editor holds values only. `=` from any cell, a selected column, the cell editor's first keystroke, or the new-row line opens that column's formula in Wrangle, focused and seeded with the column's own name (`requestColumnFill` with an empty formula); a calculated column opens its existing formula; legacy overrides keep their own editing. Text that arrives in an editor already starting with `=` (pasted, seeded) takes the same door (`typedColumnFormula`). The bar also dropped its A1 labels: a cell is named by column and row, never by a coordinate a formula could reach for.
 

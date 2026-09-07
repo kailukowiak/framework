@@ -11,6 +11,27 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Dictionaries are compact Key/Value tables with unique keys. Create one from
+  the canvas menu or use an existing two-column table as a dictionary, then
+  choose Map values on a column to create a live Wrangle transformation.
+  Scratchwork also supports lookup with an optional missing-key fallback.
+- Dragging a literal column's fill handle now fills the indicated rows, with
+  number and date series inferred from the selected values. Other selections
+  repeat their values; one Undo restores the whole drag. Calculated columns
+  no longer show a fill handle that merely opened an editor.
+- Charts over paged tables reload after relevant formulas, source refreshes,
+  and undo change their data. Loading and failed reads no longer leave old
+  rows presented as the current answer.
+- Pasting a rectangle that overruns the columns or touches calculated cells
+  is refused as a whole, with an explanation, instead of silently skipping data.
+- XLSX export lets you choose the current filtered/sorted rows or the entire
+  table, with exact row counts for the chosen scope.
+- A failed pending save now prevents window close or application quit, keeping
+  the document available for retry or Save As.
+- A refused cell edit offers making the rows editable directly. Text and
+  category cells also offer an exact-match replacement in Wrangle, explicitly
+  applying to all matching rows and future refreshes.
+
 ## 0.1.7
 
 - Hold ⌘ and FrameWork shows you the keys. Every button that has a keyboard
