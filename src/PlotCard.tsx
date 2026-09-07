@@ -3,7 +3,7 @@ import embed, { type VisualizationSpec } from "vega-embed";
 import { expressionInterpreter } from "vega-interpreter";
 import { usePrefersDarkMode } from "./lib/palette";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getFramePage, type FramePage } from "./lib/api";
+import { usePlotRows } from "./hooks/usePlotRows";
 import type { OperationHandler } from "./lib/handlers";
 import type { ComputedFrame, PlotObject, FrameObject } from "./lib/types";
 
@@ -17,27 +17,6 @@ function plotRows(
         const value = computed.rows[row.id]?.[column.id]?.typedValue;
         if (!value || value.type === "null") return [column.id, null];
         return [column.id, value.value];
-      })
-    )
-  );
-}
-
-function plotRowsFromPage(
-  columns: FrameObject["columns"],
-  page: FramePage
-): Array<Record<string, unknown>> {
-  return page.rows.map((row) =>
-    Object.fromEntries(
-      columns.map((column, index) => {
-        const raw = row[index] ?? "";
-        if (!raw) return [column.id, null];
-        if (["integer", "number", "currency", "percentage"].includes(column.dataType)) {
-          const number = Number(raw);
-          return [column.id, Number.isFinite(number) ? number : null];
-        }
-        if (column.dataType === "boolean")
-          return [column.id, raw.toLowerCase() === "true"];
-        return [column.id, raw];
       })
     )
   );
@@ -84,14 +63,6 @@ function mergeVegaConfig(
   return merged;
 }
 
-// A paged frame's rows only exist as pages, so a plot has to pull them itself.
-// Pull them all, not one page: a chart aggregates (a bar total, a mean, a
-// line) over the rows it is handed, and handing it only the thousand rows the
-// grid happens to be showing makes every aggregate wrong for the frame behind
-// them. Pages come in large chunks to keep the round trips down, and stop at a
-// ceiling so a multi-million-row frame cannot lock the SVG renderer -- when
-// that ceiling is hit the chart says so rather than quietly plotting a slice.
-const PLOT_PAGE_SIZE = 10000;
 // Above this many rows, the cost of shipping every row to the browser just so
 // Vega can reduce them there is worth a word to the user. It is a warning, not
 // a cap: the chart still loads the whole frame. A plot that draws all four
@@ -139,18 +110,18 @@ function VegaChart({
   plot,
   frame,
   computed,
+  dataRefreshRevision,
 }: {
   plot: PlotObject;
   frame: FrameObject;
   computed: ComputedFrame;
+  dataRefreshRevision: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isDark = usePrefersDarkMode();
   const [renderError, setRenderError] = useState<string | null>(null);
-  const [fileRows, setFileRows] = useState<Array<Record<string, unknown>>>([]);
   const [confirmedRender, setConfirmedRender] = useState(false);
   const regularRows = useMemo(() => plotRows(frame, computed), [computed, frame]);
-  const rows = computed.paged ? fileRows : regularRows;
   const aggregates = useMemo(() => specAggregates(plot.spec), [plot.spec]);
 
   // A paged frame this large does not draw itself on open -- it waits behind a
@@ -159,7 +130,10 @@ function VegaChart({
   // open always starts closed and there is always a way back in.
   const totalRows = computed.totalRows ?? frame.rows.length;
   const gated =
-    computed.paged && totalRows > PLOT_AUTORENDER_ROWS && !confirmedRender;
+    Boolean(computed.paged && totalRows > PLOT_AUTORENDER_ROWS && !confirmedRender);
+
+  const page = usePlotRows(frame, computed, gated, dataRefreshRevision);
+  const rows = computed.paged ? page.rows : regularRows;
 
   // Reset the gate whenever the bound frame changes: the new frame's size, not
   // the last one's, decides whether it draws on its own.
@@ -174,35 +148,6 @@ function VegaChart({
     computed.paged && aggregates && rows.length >= PLOT_AGG_WARN_ROWS
       ? `Aggregating ${rows.length.toLocaleString()} rows in the chart. A Summarize step on the frame is faster for data this size.`
       : null;
-
-  useEffect(() => {
-    if (!computed.paged || gated) return;
-    let disposed = false;
-    async function loadAllRows() {
-      const collected: Array<Record<string, unknown>> = [];
-      let offset = 0;
-      let total = Infinity;
-      while (!disposed && offset < total) {
-        const page = await getFramePage(frame.id, offset, PLOT_PAGE_SIZE);
-        total = page.totalRows;
-        if (page.rows.length === 0) break;
-        collected.push(...plotRowsFromPage(frame.columns, page));
-        offset += page.rows.length;
-      }
-      if (disposed) return;
-      setFileRows(collected);
-    }
-    void loadAllRows().catch((reason) => {
-      if (!disposed) setRenderError(String(reason).replace(/^Error:\s*/, ""));
-    });
-    return () => {
-      disposed = true;
-    };
-    // Keyed on frame.id so an unrelated canvas edit that only changes the
-    // frame object's identity doesn't re-scan every row of a large import.
-    // `gated` is here so clicking Render (which clears it) starts the load.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [computed.paged, frame.id, gated]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -294,6 +239,8 @@ function VegaChart({
   return (
     <div className="plot-visual-shell">
       <div className="plot-visual" ref={containerRef} />
+      {page.loading && <div role="status">Loading current chart data…</div>}
+      {page.error && <div role="status">{page.error}</div>}
       {note && <div className="plot-render-note">{note}</div>}
       {renderError && (
         <div className="plot-render-error">
@@ -310,10 +257,12 @@ export function PlotCard({
   frame,
   computed,
   onOperation,
+  dataRefreshRevision,
 }: {
   plot: PlotObject;
   frame: FrameObject;
   computed: ComputedFrame;
+  dataRefreshRevision: number;
   onOperation: OperationHandler;
 }) {
   return (
@@ -333,11 +282,12 @@ export function PlotCard({
           }}
         />
         <span>
-          <BarChart3 size={11} /> {frame.name} ·{" "}
-          {(computed.totalRows ?? frame.rows.length).toLocaleString()} rows
+          <BarChart3 size={11} /> {frame.name}
+          {(!computed.paged || computed.totalRows != null) &&
+            ` · ${(computed.totalRows ?? frame.rows.length).toLocaleString()} rows`}
         </span>
       </div>
-      <VegaChart plot={plot} frame={frame} computed={computed} />
+      <VegaChart plot={plot} frame={frame} computed={computed} dataRefreshRevision={dataRefreshRevision} />
     </div>
   );
 }

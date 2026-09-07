@@ -695,6 +695,7 @@ export function CanvasObject({
           onOperation={onOperation}
         />
       )}
+          dataRefreshRevision={dataRefreshRevision}
       {/* Resizing works the way a window's does: the edges are invisible
           strips just inside the border, each moving the one dimension it
           owns, and the corners move both. The south-east corner is the only
