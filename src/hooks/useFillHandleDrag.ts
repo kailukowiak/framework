@@ -1,18 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import type { GridFocusMode } from "../FrameGrid";
+import { isEditableGridColumn, type GridFocusMode } from "../FrameGrid";
+import { dragFillCells } from "../lib/dragFill";
+import type { OperationHandler } from "../lib/handlers";
 import type { GridPosition, GridRange } from "../lib/gridNavigation";
-import type { Column, FrameObject } from "../lib/types";
+import type { Column, ComputedFrame, FrameObject, Row } from "../lib/types";
 
-/**
- * Excel's fill handle, reinterpreted. There it drags a value down a range;
- * here the unit is the column, and a column already has a declaration slot,
- * so the drag opens that slot instead of copying cells — the same door `=`
- * in a cell and a double-click on a calculated column already open.
- *
- * ⌘D still fills literally. This gesture never writes a value of its own:
- * it hands the column to Wrangle and leaves the selection where it was.
- */
+/** The fill square belongs only to literal, document-owned data. A drag
+ * commits the values in its preview as one undoable operation. */
 export type FillHandleTarget = {
   column: Column;
   /** Visual row index of the range's bottom row — the cell the handle sits in. */
@@ -56,11 +51,11 @@ function fillHandleTarget(
 }
 
 /** The row a screen point is over, read off the grid's own row markers. */
-function rowIndexAt(x: number, y: number): number | null {
+function rowIndexAt(x: number, y: number, table: Element | null): number | null {
   const row = document
     .elementFromPoint(x, y)
     ?.closest<HTMLElement>("tr[data-row-index]");
-  if (!row) return null;
+  if (!row || row.closest("table") !== table) return null;
   const index = Number(row.dataset.rowIndex);
   return Number.isInteger(index) ? index : null;
 }
@@ -70,15 +65,22 @@ export function useFillHandleDrag(
   selectionRange: GridRange | null,
   focusPosition: GridPosition | null,
   gridFocus: { mode: GridFocusMode } | null,
-  onTransformColumn: (frame: FrameObject, column: Column, formula: string) => void
+  options: { computed: ComputedFrame; rows: Row[]; rowOffset?: number; onOperation: OperationHandler }
 ): FillHandleDrag {
   const [preview, setPreview] = useState<FillHandleDrag["preview"]>(null);
-  const target = fillHandleTarget(
+  const candidate = fillHandleTarget(
     frame,
     selectionRange,
     focusPosition,
     gridFocus?.mode === "edit"
   );
+
+  const offset = options.rowOffset ?? 0;
+  const target = candidate && isEditableGridColumn(options.computed, candidate.column)
+    && frame.rows.length > 0 && (selectionRange?.top ?? candidate.rowIndex) >= offset
+    && candidate.rowIndex < offset + options.rows.length ? candidate : null;
+  const cleanup = useRef<(() => void) | null>(null);
+  useEffect(() => () => cleanup.current?.(), []);
 
   const beginFillDrag = (event: ReactPointerEvent) => {
     if (event.button !== 0 || !target) return;
@@ -86,7 +88,10 @@ export function useFillHandleDrag(
     // selection the handle is describing.
     event.preventDefault();
     event.stopPropagation();
+    cleanup.current?.();
     const { column, rowIndex: top } = target;
+    const first = selectionRange?.top ?? top;
+    const table = event.currentTarget.closest("table");
     try {
       event.currentTarget.setPointerCapture?.(event.pointerId);
     } catch {
@@ -94,24 +99,36 @@ export function useFillHandleDrag(
     }
     let reached = top;
     const move = (moveEvent: PointerEvent) => {
-      const row = rowIndexAt(moveEvent.clientX, moveEvent.clientY);
+      const row = rowIndexAt(moveEvent.clientX, moveEvent.clientY, table);
       // Crossing a row is the only event worth a render; a drag stays inside
       // one row for most of the pointer moves it emits.
       if (row === null || row === reached) return;
       reached = row;
-      setPreview(row > top ? { columnId: column.id, top, bottom: row } : null);
+      setPreview(row > top ? { columnId: column.id, top, bottom: row }
+        : row < first ? { columnId: column.id, top: row - 1, bottom: first - 1 } : null);
     };
     const end = (endEvent: PointerEvent) => {
+      cleanup.current?.();
+      setPreview(null);
+      if (endEvent.type === "pointercancel") return;
+      const row = rowIndexAt(endEvent.clientX, endEvent.clientY, table);
+      if (row === null || (row >= first && row <= top)) return;
+      const cells = dragFillCells(column, options.rows, first - offset, top - offset, row - offset);
+      if (cells.length) void options.onOperation({ type: "setCells", frameId: frame.id, cells });
+    };
+    const cancel = (key: KeyboardEvent) => {
+      if (key.key !== "Escape") return;
+      cleanup.current?.();
+      setPreview(null);
+    };
+    cleanup.current = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
-      setPreview(null);
-      if (endEvent.type === "pointercancel") return;
-      const row = rowIndexAt(endEvent.clientX, endEvent.clientY) ?? reached;
-      // Down at least one row is the whole gesture. Up, sideways, or a
-      // release on the row it started from asked for nothing.
-      if (row > top) onTransformColumn(frame, column, "");
+      window.removeEventListener("keydown", cancel);
+      cleanup.current = null;
     };
+    window.addEventListener("keydown", cancel);
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", end);
     window.addEventListener("pointercancel", end);

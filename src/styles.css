@@ -697,9 +697,8 @@ td.row-number.selectable-header:hover { background: light-dark(#e7ece8, #223229)
 td.cell-range { box-shadow: inset 0 0 0 500px light-dark(rgba(49, 92, 73, 0.14), rgba(111, 163, 132, 0.28)); }
 td.cell-focus { box-shadow: inset 0 0 0 2px var(--accent); }
 td.cell-focus.cell-range { box-shadow: inset 0 0 0 2px var(--accent); }
-/* The fill handle fills a column, not a range: the square on the corner of a
-   single-column selection opens that column's formula, and the dashed rows
-   under the drag say which column is about to be spoken for. */
+/* A fill preview is the exact literal range that will be written on release;
+   the square does not appear on calculated columns. */
 .frame-scroll td.fill-anchor { position: relative; }
 .fill-handle { position: absolute; z-index: 4; right: -3px; bottom: -3px; width: 6px; height: 6px; background: var(--accent); cursor: crosshair; }
 td.fill-preview { outline: 1px dashed var(--accent); outline-offset: -1px; }

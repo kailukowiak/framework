@@ -83,7 +83,7 @@ export type RecordsAsRowsFrameCardProps = {
   visibleRows: Row[];
   virtualRange: VirtualRange;
   selectionRange: GridRange | null;
-  /** Drag-fill, reinterpreted: the handle opens the column's formula. */
+  /** Drag-fill of literal cells within the previewed range. */
   fillHandle: FillHandleDrag;
   filterMark: {
     weight: "unfiltered" | "structural";

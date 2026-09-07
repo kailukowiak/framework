@@ -2,27 +2,13 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GridRange } from "../lib/gridNavigation";
-import type { FrameObject } from "../lib/types";
 import { useFillHandleDrag } from "./useFillHandleDrag";
 
-// The claim under test: the fill handle is a doorway, not a fill. A drag
-// down opens the column's formula exactly once; every other direction is
-// silence, and the drag paints what it would speak for while it is held.
-
-const frame: FrameObject = {
-  kind: "frame",
-  id: "sales",
-  name: "Sales",
-  columns: [
-    { id: "column-1", name: "Revenue", dataType: "number", formula: null },
-    { id: "column-2", name: "Cost", dataType: "number", formula: null },
-  ],
-  rows: [],
-  derivation: null,
-  uniqueKeys: [],
-  summaries: [],
-  display: { orientation: "recordsAsRows" },
-};
+import { fixtures, objectNamed } from "../test/support";
+const view = fixtures.salesBeforeFormula;
+const frame = objectNamed(view, "frame", "Monthly sales");
+const computed = view.computedFrames[frame.id];
+const options = (onOperation = vi.fn().mockResolvedValue(null)) => ({ computed, rows: frame.rows, onOperation });
 
 const ROW_HEIGHT = 20;
 const ONE_CELL: GridRange = { top: 1, left: 0, bottom: 1, right: 0 };
@@ -35,7 +21,7 @@ function mountRows(count: number) {
     const row = document.createElement("tr");
     row.dataset.rowIndex = String(index);
     const cell = document.createElement("td");
-    cell.dataset.columnId = "column-1";
+    cell.dataset.columnId = frame.columns[0].id;
     row.append(cell);
     body.append(row);
   }
@@ -62,7 +48,7 @@ function handlePress() {
   return {
     button: 0,
     pointerId: 1,
-    currentTarget: document.createElement("span"),
+    currentTarget: document.querySelector("td")!,
     preventDefault: vi.fn(),
     stopPropagation: vi.fn(),
   };
@@ -74,11 +60,11 @@ afterEach(() => {
 });
 
 describe("fill handle drag", () => {
-  it("opens the column's formula once when dragged down, and previews on the way", () => {
+  it("writes the previewed literal rows as one operation", () => {
     mountRows(6);
-    const onTransformColumn = vi.fn();
+    const onOperation = vi.fn();
     const { result } = renderHook(() =>
-      useFillHandleDrag(frame, ONE_CELL, null, null, onTransformColumn)
+      useFillHandleDrag(frame, ONE_CELL, null, null, options(onOperation))
     );
     expect(result.current.target).toEqual({ column: frame.columns[0], rowIndex: 1 });
 
@@ -95,7 +81,7 @@ describe("fill handle drag", () => {
       window.dispatchEvent(pointerEvent("pointermove", rowY(2)));
     });
     expect(result.current.preview).toEqual({
-      columnId: "column-1",
+      columnId: frame.columns[0].id,
       top: 1,
       bottom: 2,
     });
@@ -103,22 +89,23 @@ describe("fill handle drag", () => {
       window.dispatchEvent(pointerEvent("pointermove", rowY(3)));
     });
     expect(result.current.preview).toEqual({
-      columnId: "column-1",
+      columnId: frame.columns[0].id,
       top: 1,
       bottom: 3,
     });
     // The anchor keeps its square; the rows below it read as one column.
-    expect(result.current.cellClass("column-1", 1)).toBe("fill-anchor");
-    expect(result.current.cellClass("column-1", 2)).toBe("fill-preview");
-    expect(result.current.cellClass("column-1", 3)).toBe("fill-preview");
-    expect(result.current.cellClass("column-1", 4)).toBe("");
-    expect(result.current.cellClass("column-2", 2)).toBe("");
+    expect(result.current.cellClass(frame.columns[0].id, 1)).toBe("fill-anchor");
+    expect(result.current.cellClass(frame.columns[0].id, 2)).toBe("fill-preview");
+    expect(result.current.cellClass(frame.columns[0].id, 3)).toBe("fill-preview");
+    expect(result.current.cellClass(frame.columns[0].id, 4)).toBe("");
+    expect(result.current.cellClass(frame.columns[1].id, 2)).toBe("");
 
     act(() => {
       window.dispatchEvent(pointerEvent("pointerup", rowY(3)));
     });
-    expect(onTransformColumn).toHaveBeenCalledTimes(1);
-    expect(onTransformColumn).toHaveBeenCalledWith(frame, frame.columns[0], "");
+    expect(onOperation).toHaveBeenCalledTimes(1);
+    expect(onOperation).toHaveBeenCalledWith({ type: "setCells", frameId: frame.id,
+      cells: frame.rows.slice(2, 4).map((row) => ({ rowId: row.id, columnId: frame.columns[0].id, raw: frame.rows[1].cells[frame.columns[0].id].raw })) });
     expect(result.current.preview).toBeNull();
 
     // The listeners are gone with the gesture: a stray move asks for nothing.
@@ -128,41 +115,41 @@ describe("fill handle drag", () => {
     expect(result.current.preview).toBeNull();
   });
 
-  it("does nothing when dragged up or released on the row it started from", () => {
+  it("fills upwards, but does nothing on the starting row", () => {
     mountRows(6);
-    const onTransformColumn = vi.fn();
+    const onOperation = vi.fn();
     const { result } = renderHook(() =>
-      useFillHandleDrag(frame, ONE_CELL, null, null, onTransformColumn)
+      useFillHandleDrag(frame, ONE_CELL, null, null, options(onOperation))
     );
 
     act(() => {
       result.current.beginFillDrag(handlePress() as unknown as React.PointerEvent);
       window.dispatchEvent(pointerEvent("pointermove", rowY(0)));
     });
-    expect(result.current.preview).toBeNull();
+    expect(result.current.preview).not.toBeNull();
     act(() => {
       window.dispatchEvent(pointerEvent("pointerup", rowY(0)));
     });
-    expect(onTransformColumn).not.toHaveBeenCalled();
+    expect(onOperation).toHaveBeenCalledTimes(1);
 
     act(() => {
       result.current.beginFillDrag(handlePress() as unknown as React.PointerEvent);
       window.dispatchEvent(pointerEvent("pointermove", rowY(1)));
       window.dispatchEvent(pointerEvent("pointerup", rowY(1)));
     });
-    expect(onTransformColumn).not.toHaveBeenCalled();
+    expect(onOperation).toHaveBeenCalledTimes(1);
   });
 
   it("carries no handle for a selection across several columns", () => {
     mountRows(6);
-    const onTransformColumn = vi.fn();
+    const onOperation = vi.fn();
     const { result } = renderHook(() =>
       useFillHandleDrag(
         frame,
         { top: 0, left: 0, bottom: 2, right: 1 },
         null,
         null,
-        onTransformColumn
+        options(onOperation)
       )
     );
     expect(result.current.target).toBeNull();
@@ -173,19 +160,19 @@ describe("fill handle drag", () => {
       window.dispatchEvent(pointerEvent("pointerup", rowY(4)));
     });
     expect(result.current.preview).toBeNull();
-    expect(onTransformColumn).not.toHaveBeenCalled();
+    expect(onOperation).not.toHaveBeenCalled();
   });
 
   it("stands the focused cell in for the range a single cell never paints", () => {
     const { result } = renderHook(() =>
-      useFillHandleDrag(frame, null, { row: 2, col: 1 }, null, vi.fn())
+      useFillHandleDrag(frame, null, { row: 2, col: 1 }, null, options())
     );
     expect(result.current.target).toEqual({ column: frame.columns[1], rowIndex: 2 });
   });
 
   it("carries no handle while a cell is being edited", () => {
     const { result } = renderHook(() =>
-      useFillHandleDrag(frame, ONE_CELL, null, { mode: "edit" }, vi.fn())
+      useFillHandleDrag(frame, ONE_CELL, null, { mode: "edit" }, options())
     );
     expect(result.current.target).toBeNull();
   });

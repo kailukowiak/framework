@@ -1,11 +1,6 @@
 import type { RecordsAsRowsFrameCardProps } from "./FrameCardProps";
 
-/**
- * The small square at the bottom-right of a single-column selection. In a
- * spreadsheet dragging it fills cells; the unit here is the column, so
- * dragging it down opens the column's formula instead of copying values.
- * It renders only in the cell it belongs to and nowhere else.
- */
+/** The previewed rows receive copies or an inferred literal series. */
 export function FillHandle({
   model,
   column,
@@ -21,7 +16,9 @@ export function FillHandle({
   return (
     <span
       className="fill-handle"
-      title={`Drag down to write ${column.name}'s formula`}
+      role="button"
+      aria-label={`Fill ${column.name}`}
+      title={`Drag to fill ${column.name}`}
       onPointerDown={beginFillDrag}
     />
   );
