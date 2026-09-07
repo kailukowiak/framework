@@ -20,6 +20,7 @@ mod database_connections;
 mod export;
 mod menu;
 mod persist;
+mod save_guard;
 mod scratchwork_window;
 
 use persist::{PendingWrite, SNAPSHOT_WRITE_DEBOUNCE, SystemClock};
@@ -2916,64 +2917,6 @@ fn watch_collaboration(app: AppHandle) {
     });
 }
 
-/// Flushes whichever document `window` is showing, if it has a debounced
-/// write waiting. Any window over a shared `DocumentSession` -- the
-/// Scratchwork pop-out included -- reaches the same session through
-/// `document_for`, so it does not matter which window's blur or close
-/// triggered this.
-///
-/// A failure here has no command return to reject: it is surfaced the same
-/// way `watch_collaboration`'s own background flush surfaces one, over
-/// `COLLABORATION_FAILED_EVENT`, rather than being logged and dropped.
-fn flush_window_document(window: &tauri::Window, state: &AppState) {
-    let Ok(session) = state.document_for(window.label()) else {
-        return;
-    };
-    let Ok(mut session) = session.lock() else {
-        return;
-    };
-    if let Err(error) = flush_session(&mut session) {
-        let _ = window
-            .app_handle()
-            .emit_to(window.label(), COLLABORATION_FAILED_EVENT, &error);
-    }
-}
-
-fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
-    let Some(state) = window.try_state::<AppState>() else {
-        return;
-    };
-    match event {
-        // `CloseRequested` fires while the window (and this document's
-        // path) is still known; flushing here, ahead of `Destroyed`, is what
-        // keeps a debounced write from being silently dropped when a window
-        // closes before its two-second idle window elapses on its own.
-        tauri::WindowEvent::CloseRequested { .. } => {
-            flush_window_document(window, &state);
-        }
-        tauri::WindowEvent::Destroyed => {
-            scratchwork_window::handle_destroyed(window, &state);
-        }
-        // Losing focus is exactly the moment a person is likely to switch to
-        // a file browser, a sync client's UI, or another app entirely --
-        // any of which may read the file next. A pending write should not
-        // still be sitting in memory when that happens.
-        tauri::WindowEvent::Focused(false) => {
-            flush_window_document(window, &state);
-        }
-        tauri::WindowEvent::Focused(true) => {
-            if let Ok(session) = state.document_for(window.label())
-                && let Ok(session) = session.lock()
-                && let Some(history) = window.try_state::<menu::HistoryMenuItems<tauri::Wry>>()
-            {
-                let view = session.store.view();
-                history.set(view.can_undo, view.can_redo);
-            }
-        }
-        _ => {}
-    }
-}
-
 fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // The wdio plugin's commands are invoked from the webview, so document
     // windows need their permission only in the build that contains it.
@@ -3192,7 +3135,7 @@ pub fn run() {
         .menu(menu::build)
         .on_menu_event(|app, event| menu::forward(app, event.id().0.as_str()));
 
-    let builder = builder.on_window_event(handle_window_event);
+    let builder = builder.on_window_event(save_guard::handle_window_event);
 
     let app = register_commands(builder.setup(setup_app))
         .build(tauri::generate_context!())
@@ -3219,27 +3162,12 @@ pub fn run() {
         // every document window was closed without quitting), and any
         // platform detail that lets `ExitRequested` arrive without a prior
         // per-window close. Flushing an already-clean session is a no-op.
-        if let tauri::RunEvent::ExitRequested { .. } = &event {
-            flush_all_sessions(app);
+        if let tauri::RunEvent::ExitRequested { api, .. } = &event
+            && !save_guard::flush_all_sessions(app)
+        {
+            api.prevent_exit();
         }
     });
-}
-
-/// The last chance to write out debounced edits before the process exits.
-/// Walks every open document once -- `grouped_sessions` already collapses a
-/// Scratchwork pop-out onto the workbook session it shares, so a document
-/// with both open is not flushed twice -- and logs on failure: there is no
-/// window left to hand a rejected promise to, and exiting is not something
-/// this can refuse just because a write failed.
-fn flush_all_sessions(app: &AppHandle) {
-    for (session, _labels) in scratchwork_window::grouped_sessions(&app.state::<AppState>()) {
-        let Ok(mut session) = session.lock() else {
-            continue;
-        };
-        if let Err(error) = flush_session(&mut session) {
-            log::error!("failed to flush document on exit: {error}");
-        }
-    }
 }
 
 #[cfg(test)]

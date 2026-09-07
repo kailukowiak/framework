@@ -54,6 +54,11 @@ impl Clock for SystemClock {
 #[derive(Default)]
 pub struct PendingWrite {
     due_at: Option<Instant>,
+    /// Whether the person has already been told that this pending write is
+    /// failing. Blur flushes run on every focus change, and a document
+    /// whose path stays unwritable would otherwise re-announce the same
+    /// failure each time the window comes and goes.
+    failure_reported: bool,
 }
 
 impl PendingWrite {
@@ -80,9 +85,17 @@ impl PendingWrite {
         self.due_at.is_some_and(|due| clock.now() >= due)
     }
 
-    /// Called once a write has actually reached disk: nothing is pending.
+    /// Called once a write has actually reached disk: nothing is pending,
+    /// and the next failure, if there is one, is news again.
     pub fn clear(&mut self) {
         self.due_at = None;
+        self.failure_reported = false;
+    }
+
+    /// True the first time a failure of the current pending write is
+    /// reported, and false until a write succeeds and `clear` runs.
+    pub fn report_failure_once(&mut self) -> bool {
+        !std::mem::replace(&mut self.failure_reported, true)
     }
 }
 
@@ -147,6 +160,18 @@ mod tests {
         );
         clock.advance(Duration::from_millis(1500));
         assert!(pending.is_due(&clock));
+    }
+
+    #[test]
+    fn a_failure_is_reported_once_until_a_write_succeeds() {
+        let clock = ManualClock::new();
+        let mut pending = PendingWrite::default();
+        pending.schedule(&clock, SNAPSHOT_WRITE_DEBOUNCE);
+        assert!(pending.report_failure_once());
+        assert!(!pending.report_failure_once());
+        pending.clear();
+        pending.schedule(&clock, SNAPSHOT_WRITE_DEBOUNCE);
+        assert!(pending.report_failure_once());
     }
 
     #[test]
