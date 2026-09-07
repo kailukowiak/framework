@@ -815,8 +815,7 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         y: 70.0,
     })?;
     let actuals_start_y = 70.0;
-    let budget_start_y =
-        actuals_start_y + view_height(&store, &frame(&store, "Actuals").id) + 40.0;
+    let budget_start_y = actuals_start_y + view_height(&store, &frame(&store, "Actuals").id) + 40.0;
     store.apply(Operation::AddFrame {
         name: "Budget".into(),
         grid: vec![
@@ -840,8 +839,7 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         x: 70.0,
         y: budget_start_y,
     })?;
-    let checks_start_y =
-        budget_start_y + view_height(&store, &frame(&store, "Budget").id) + 40.0;
+    let checks_start_y = budget_start_y + view_height(&store, &frame(&store, "Budget").id) + 40.0;
     store.apply(Operation::AddBlock {
         name: "Close checks".into(),
         x: 70.0,

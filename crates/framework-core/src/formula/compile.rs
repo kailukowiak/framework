@@ -1,6 +1,5 @@
 #[path = "root_call.rs"]
 mod root_call;
-pub(crate) use root_call::polars_call_declared_type;
 use crate::formula::ast::{BinaryOperator, Expr, Shape};
 use crate::model::document::{DataObject, Document};
 use crate::model::frame::FrameObject;
@@ -8,6 +7,7 @@ use crate::model::value::{DataType, ScalarValue};
 use crate::{keyword_argument, parse_scalar_value};
 use polars::prelude as pl;
 use polars::prelude::NamedFrom;
+pub(crate) use root_call::polars_call_declared_type;
 
 const MAX_SEQUENCE_VALUES: usize = 1_000_000;
 

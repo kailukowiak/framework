@@ -609,9 +609,9 @@ impl Expr {
             },
             Expr::PolarsCall {
                 name, arguments, ..
-            } => crate::formula::compile::polars_call_declared_type(
-                name, arguments, document, scope,
-            ),
+            } => {
+                crate::formula::compile::polars_call_declared_type(name, arguments, document, scope)
+            }
         }
     }
 

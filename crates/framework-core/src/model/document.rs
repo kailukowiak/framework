@@ -525,9 +525,9 @@ impl Document {
     /// ours to choose, so they read as they would be spoken.
     pub(crate) fn unique_numbered_frame_name(&self, base: &str) -> String {
         let taken = |candidate: &str| {
-            self.objects.iter().any(|object| {
-                matches!(object, DataObject::Frame(_)) && object.name() == candidate
-            })
+            self.objects
+                .iter()
+                .any(|object| matches!(object, DataObject::Frame(_)) && object.name() == candidate)
         };
         if !taken(base) {
             return base.to_string();
