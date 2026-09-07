@@ -180,10 +180,8 @@ impl Document {
 
     /// Resolves a paste into the cells it writes plus the rows it has to add.
     ///
-    /// Columns are clipped to the frame's width — widening a frame is a
-    /// schema change, and a paste that silently added columns would be one
-    /// made by accident. Rows are not clipped: running past the last row is
-    /// the ordinary way a paste arrives.
+    /// A rectangle that cannot fit the columns is refused whole. Rows grow
+    /// to fit, because appending records does not change the frame's schema.
     pub(crate) fn prepare_paste_cells(
         &self,
         frame_id: Id,
@@ -203,6 +201,21 @@ impl Document {
             .iter()
             .position(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
+
+        // A paste is one rectangle, not a best-effort collection of edits.
+        // Refuse it before preparing any changes when part of that rectangle
+        // would disappear or land on a calculated column. Keeping the schema
+        // fixed must never look like successfully pasting data we discarded.
+        let width = grid.iter().map(Vec::len).max().unwrap_or(0);
+        if width > frame.columns.len() - first_column {
+            return Err(CoreError::InvalidOperation(format!(
+                "Nothing pasted: the clipboard needs {width} columns, but only {} fit here. Add columns first, or paste onto empty canvas to create a new table.",
+                frame.columns.len() - first_column
+            )));
+        }
+        for column in frame.columns.iter().skip(first_column).take(width) {
+            self.ensure_column_is_editable(&frame_id, &column.id)?;
+        }
 
         let mut cells = Vec::new();
         let mut appended_rows: Vec<Row> = Vec::new();

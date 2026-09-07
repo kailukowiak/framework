@@ -19,6 +19,35 @@ fn sales_store() -> (Store, FrameObject) {
     (store, frame)
 }
 
+#[test]
+fn paste_does_not_skip_a_calculated_column_and_change_its_neighbour() {
+    let (mut store, frame) = sales_store();
+    let revenue = &frame.columns[1];
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: revenue.id.clone(),
+                    name: revenue.name.clone(),
+                    formula: "`Revenue` * 2".into(),
+                }],
+            }],
+        })
+        .unwrap();
+    let before = store.document().clone();
+    let error = store
+        .apply(Operation::PasteCells {
+            frame_id: frame.id.clone(),
+            row_id: frame.rows[0].id.clone(),
+            column_id: frame.columns[0].id.clone(),
+            grid: vec![vec!["West".into(), "999".into()]],
+        })
+        .unwrap_err();
+    assert!(error.to_string().contains("calculated by Wrangle"));
+    assert_eq!(store.document(), &before);
+}
+
 fn set_cell(frame: &FrameObject, column: usize, raw: &str) -> Operation {
     Operation::SetCell {
         frame_id: frame.id.clone(),

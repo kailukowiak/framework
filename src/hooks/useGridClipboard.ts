@@ -267,7 +267,7 @@ export function useGridClipboard({
       ) {
         const updates = positionsInRange(range).flatMap((position) => {
           const target = gridCellAt(context, position);
-          return target && isEditableGridColumn(context.computed, target.column)
+          return target
             ? [{ rowId: target.row.id, columnId: target.column.id, raw: matrix[0][0] }]
             : [];
         });

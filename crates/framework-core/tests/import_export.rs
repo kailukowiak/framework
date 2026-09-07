@@ -1095,11 +1095,9 @@ fn pasting_past_the_last_row_appends_rows_instead_of_dropping_them() {
     assert_eq!(frame_named(store.document(), "Scratch").rows.len(), 2);
 }
 
-/// Pasting a single column into one column fills that column and nothing
-/// else — a paste is not allowed to widen a frame, because a schema change
-/// made by accident is not a paste.
+/// A paste wider than the available columns is refused without partial edits.
 #[test]
-fn pasting_one_column_leaves_the_others_alone_and_never_widens() {
+fn pasting_beyond_the_last_column_is_atomic_and_explains_the_remedy() {
     let mut store = Store::new(Document::blank("Paste"));
     store
         .apply(Operation::AddFrame {
@@ -1114,7 +1112,8 @@ fn pasting_one_column_leaves_the_others_alone_and_never_widens() {
         .unwrap();
     let frame = frame_named(store.document(), "Scratch").clone();
 
-    store
+    let before = store.document().clone();
+    let error = store
         .apply(Operation::PasteCells {
             frame_id: frame.id.clone(),
             row_id: frame.rows[0].id.clone(),
@@ -1125,14 +1124,10 @@ fn pasting_one_column_leaves_the_others_alone_and_never_widens() {
                 vec!["22".into(), "ignored".into()],
             ],
         })
-        .unwrap();
-
-    let pasted = frame_named(store.document(), "Scratch");
-    assert_eq!(pasted.columns.len(), 2, "a paste never adds columns");
-    assert_eq!(
-        store.get_frame_page(&frame.id, 0, 10).unwrap().rows,
-        vec![vec!["Alpha", "11"], vec!["", "22"]]
-    );
+        .unwrap_err();
+    assert!(error.to_string().contains("Nothing pasted"));
+    assert!(error.to_string().contains("Add columns"));
+    assert_eq!(store.document(), &before);
 }
 
 /// Whether a frame can be typed into is a property of the frame, and the
