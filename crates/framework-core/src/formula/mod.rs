@@ -15,3 +15,5 @@ pub use catalog::*;
 pub(crate) use column_list::parse_column_list;
 pub use complete::{CompletionResult, Suggestion, SuggestionKind, complete_formula};
 pub(crate) use parser::*;
+
+pub(crate) mod dictionary;

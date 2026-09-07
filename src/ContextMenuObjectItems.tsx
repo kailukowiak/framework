@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   FolderInput,
   FolderOutput,
   FolderPlus,
@@ -120,6 +121,10 @@ export function ContextMenuCreateItems({
 }: ContextMenuCreateItemsProps) {
   return (
     <>
+        <button onClick={() => {
+          setContextMenu(null);
+          void run({ type: "addDictionary", name: "Dictionary", x: contextMenu.canvasX, y: contextMenu.canvasY });
+        }}><BookOpen size={14} /><span>Add dictionary here</span></button>
         {/* A block, a frame, a container. There used to be three more
             — a value, a result, a list — and every one of them made a
             card that held one number. Those are lines of a block now,

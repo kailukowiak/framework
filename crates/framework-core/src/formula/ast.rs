@@ -1187,6 +1187,12 @@ impl Expr {
     /// and being wrong the other way costs arithmetic somebody meant.
     pub(crate) fn shape(&self, document: &Document) -> Shape {
         match self {
+            Expr::PolarsCall {
+                name, arguments, ..
+            } if matches!(name.as_str(), "lookup" | "map_values") => arguments
+                .first()
+                .map(|arg| arg.shape(document))
+                .unwrap_or(Shape::Scalar),
             Expr::Column { .. } => Shape::Column,
             Expr::ForeignColumn { frame_id, .. } => {
                 match document.snapshot_row_count(frame_id).unwrap_or(1) {

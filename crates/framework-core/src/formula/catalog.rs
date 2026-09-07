@@ -32,6 +32,26 @@ pub(crate) struct FormulaFunctionDefinition {
 
 pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
     formula_function!(
+        "root.lookup",
+        "lookup",
+        ["dictionary", "vlookup", "xlookup"],
+        "Dictionary",
+        "lookup(value, keys, values, fallback?)",
+        "Look up a unique key in a dictionary table. Missing keys error unless a fallback is supplied.",
+        3,
+        4
+    ),
+    formula_function!(
+        "root.map_values",
+        "map_values",
+        ["mapping", "replace values"],
+        "Dictionary",
+        "map_values(value, keys, values, fallback?)",
+        "Map exact keys using a dictionary table. Unmatched values stay unchanged unless a fallback is supplied.",
+        3,
+        4
+    ),
+    formula_function!(
         "root.sum_horizontal",
         "sum_horizontal",
         ["row sum"],

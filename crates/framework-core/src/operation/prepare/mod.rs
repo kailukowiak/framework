@@ -8,6 +8,7 @@ pub mod calculation_matrix;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
+pub mod dictionary;
 pub mod objects;
 pub mod pass_through;
 pub mod scenarios;
@@ -98,17 +99,10 @@ impl Document {
                 object_id,
                 data_type,
             },
-            Operation::AddFrame { name, grid, x, y } => self.prepare_add_frame(name, grid, x, y)?,
-            Operation::AddFrameFromPastedText { name, text, x, y } => {
-                self.prepare_add_frame_from_pasted_text(name, text, x, y)?
-            }
-            Operation::AddGeneratorFrame {
-                name,
-                formula,
-                column_name,
-                x,
-                y,
-            } => self.prepare_add_generator_frame(name, formula, column_name, x, y)?,
+            operation @ (Operation::AddDictionary { .. }
+            | Operation::AddFrame { .. }
+            | Operation::AddFrameFromPastedText { .. }
+            | Operation::AddGeneratorFrame { .. }) => self.prepare_table_creation(operation)?,
             Operation::SetFrameGenerator { frame_id, formula } => {
                 self.prepare_set_frame_generator(frame_id, formula)?
             }

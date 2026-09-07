@@ -238,7 +238,7 @@ export function useGridClipboard({
       // An empty frame has no shape to preserve, so the clipboard gets to
       // decide it — headers, column count, and types all come from the
       // core's Polars reader, exactly as a file import would.
-      if (isEmptyLiteralFrame(context.frame)) {
+      if (isEmptyLiteralFrame(context.frame) && context.frame.uniqueKeys.length === 0) {
         const viewId = gridFocus.viewId;
         void run({
           type: "setFrameFromPastedText",

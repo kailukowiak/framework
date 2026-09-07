@@ -1,3 +1,5 @@
+#[path = "dictionary_parser.rs"]
+mod dictionary_parser;
 use crate::error::CoreError;
 use crate::formula::ast::{BinaryOperator, Expr};
 use crate::formula::lexer::{FormulaReference, ReferenceName, Token, tokenize};
@@ -26,6 +28,7 @@ pub(crate) struct Parser<'a> {
     /// Scratchwork evaluates it live, while a one-value result may still ask
     /// for an explicit snapshot or recorded answer at evaluation time.
     scalar: bool,
+    mapping_arguments: bool,
     /// Whether this formula may evaluate to a list rather than one value.
     ///
     /// True on a block line and nowhere else. A column formula has to
@@ -48,6 +51,7 @@ impl<'a> Parser<'a> {
             frame,
             block: None,
             scalar: false,
+            mapping_arguments: false,
             lists: false,
             document,
         })
@@ -67,6 +71,7 @@ impl<'a> Parser<'a> {
             frame,
             block: None,
             scalar: true,
+            mapping_arguments: false,
             lists: false,
             document,
         })
@@ -87,6 +92,7 @@ impl<'a> Parser<'a> {
             frame,
             block: None,
             scalar: true,
+            mapping_arguments: false,
             lists: true,
             document,
         })
@@ -107,6 +113,7 @@ impl<'a> Parser<'a> {
             frame,
             block: Some(block),
             scalar: true,
+            mapping_arguments: false,
             lists: true,
             document,
         })
@@ -736,7 +743,7 @@ impl<'a> Parser<'a> {
         // and a snapshot is where a lineage ends rather than continues.
         // Scalar surfaces may name the live frame; Scratchwork evaluates that
         // semantic query directly, while Result keeps its one-value boundary.
-        if !self.scalar && other.materialization.is_none() {
+        if !self.scalar && !self.mapping_arguments && other.materialization.is_none() {
             return Err(CoreError::Formula(format!(
                 "‘{}’ has to be materialized before another frame can read from it. \
                  Materialize it, and this reference will work.",
@@ -764,23 +771,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_function_call(&mut self, name: &ReferenceName) -> Result<Expr, CoreError> {
-        self.next();
-        let (arguments, keyword_arguments) = self.parse_arguments()?;
-        Ok(Expr::PolarsCall {
-            name: name.value.clone(),
-            arguments,
-            keyword_arguments,
-        })
-    }
-
-    /// Parse the one virtual value owned by a frame formula: `frame.len()`.
-    ///
-    /// It is represented as a root call internally because there is no
-    /// pretend frame object to compile or persist. Keeping the public spelling
-    /// namespaced matters, though: `len()` beside a column formula looks like
-    /// it might count a column, while `frame.len()` says exactly which rows
-    /// determine a generated sequence.
     fn parse_current_frame_call(&mut self) -> Result<Expr, CoreError> {
         if self.scalar || self.frame.id.is_empty() {
             return Err(CoreError::Formula(

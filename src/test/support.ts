@@ -1,3 +1,4 @@
+import dictionariesJson from "./fixtures/dictionaries.json";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import type { DataObject, DocumentView } from "../lib/types";
 import blankJson from "./fixtures/blank.json";
@@ -20,6 +21,7 @@ import salesWithMarginJson from "./fixtures/sales-with-margin.json";
 // ---------------------------------------------------------------------------
 
 export const fixtures = {
+  dictionaries: dictionariesJson as unknown as DocumentView,
   blank: blankJson as unknown as DocumentView,
   salesBeforeFormula: salesBeforeJson as unknown as DocumentView,
   salesWithFormula: salesWithJson as unknown as DocumentView,

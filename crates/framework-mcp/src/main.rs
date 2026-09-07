@@ -3043,36 +3043,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn generic_operation_surface_tracks_and_applies_the_canonical_enum() {
-        let (server, path) = test_server();
-        let catalog = server.describe_operations().unwrap().0;
-        assert!(catalog.type_script.contains(r#""type": "renameDocument""#));
-        assert!(
-            catalog
-                .type_script
-                .contains(r#""type": "setFramePipeline""#)
-        );
-
-        let receipt = server
-            .apply_operation(Parameters(ApplyOperationArgs {
-                operation: serde_json::json!({
-                    "type": "renameDocument",
-                    "name": "Named through the operation API"
-                }),
-                expected_revision: Some(0),
-            }))
-            .unwrap()
-            .0;
-        assert_eq!(receipt.revision, 1);
-        assert_eq!(
-            server.inspect_document().unwrap().0.name,
-            "Named through the operation API"
-        );
-        if path.exists() {
-            std::fs::remove_file(path).unwrap();
-        }
-    }
+    include!("dictionary_tests.rs");
 
     #[test]
     fn generic_operation_rejects_unknown_variants_without_writing() {

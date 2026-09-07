@@ -95,6 +95,7 @@ export type Operation =
   }
   | { "type": "setSeries"; objectId: string; values: string }
   | { "type": "setSeriesType"; objectId: string; dataType: DataType }
+  | { "type": "addDictionary"; name: string; x: number; y: number }
   | {
     "type": "addFrame";
     name: string;

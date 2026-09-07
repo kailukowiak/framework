@@ -180,6 +180,12 @@ pub enum Operation {
         object_id: Id,
         data_type: DataType,
     },
+    /// A compact two-column frame with an enforced unique key.
+    AddDictionary {
+        name: String,
+        x: f64,
+        y: f64,
+    },
     AddFrame {
         name: String,
         grid: Vec<Vec<String>>,

@@ -1,3 +1,4 @@
+import { DictionaryMenuItems } from "./DictionaryMenuItems";
 import { Frame, Trash2 } from "lucide-react";
 import { ContextMenuGroup, ContextMenuSurface } from "./ContextMenuSurface";
 import type { ContextMenuState } from "./FrameGrid";
@@ -81,6 +82,9 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
         <ContextMenuCreateItems {...props} />
       ) : contextFrame ? (
         <>
+          <DictionaryMenuItems document={props.document} frame={contextFrame} column={contextColumn}
+            run={props.run} close={() => props.setContextMenu(null)}
+            onMap={(formula) => contextColumn && props.requestColumnTransformation(contextFrame, contextColumn, formula, true, contextMenu.viewId)} />
           <ContextMenuColumnItems {...props} contextFrame={contextFrame} />
           <ContextMenuColumnDisplayItems {...props} contextFrame={contextFrame} />
           <ContextMenuGroup

@@ -30,8 +30,14 @@ impl Document {
                     .into(),
             );
         }
+        // A mapping call reads another frame, so it joins that frame into
+        // the plan here rather than compiling to a literal; the columns
+        // below are the same step with each call pointing at its answer.
+        let (joined, columns, answers) =
+            crate::formula::dictionary::join_mappings(self, plan, columns)?;
+        plan = joined;
         let mut ordinary = Vec::new();
-        for column in columns {
+        for column in &columns {
             match column.expression.recurrence_parts()? {
                 Some(recurrence) => {
                     if !ordinary.is_empty() {
@@ -47,10 +53,13 @@ impl Document {
                 ),
             }
         }
-        Ok(if ordinary.is_empty() {
+        if !ordinary.is_empty() {
+            plan = plan.with_columns(ordinary);
+        }
+        Ok(if answers.is_empty() {
             plan
         } else {
-            plan.with_columns(ordinary)
+            plan.drop(pl::cols(answers))
         })
     }
 

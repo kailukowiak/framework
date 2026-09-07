@@ -1,3 +1,4 @@
+import { dictionaryColumns } from "./lib/dictionaries";
 import { CircleAlert, Database, Filter, GitBranch, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { Markdown } from "./Markdown";
@@ -207,8 +208,8 @@ export function FrameTitleRow({
               depending on where the data came from, which is a palette that
               teaches the wrong thing. */}
           <span className="nature-words">
-            <span className={`origin-${dataNature(frame, computed).origin}`}>
-              {dataNature(frame, computed).origin}
+            <span className={`origin-${dictionaryColumns(frame) ? "dictionary" : dataNature(frame, computed).origin}`}>
+              {dictionaryColumns(frame) ? "dictionary" : dataNature(frame, computed).origin}
             </span>
             <i>·</i>
             <span className={`refresh-${dataNature(frame, computed).refresh}`}>
