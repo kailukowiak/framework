@@ -198,6 +198,7 @@ function LearningLibrary({
   loading,
   opening,
   confirmReset,
+  resetStatus,
   onCreateTutorials,
   onResetTutorials,
   onRequestReset,
@@ -209,6 +210,7 @@ function LearningLibrary({
   loading: boolean;
   opening: string | null;
   confirmReset: boolean;
+  resetStatus: string | null;
   onCreateTutorials: () => Promise<void>;
   onResetTutorials: () => Promise<void>;
   onRequestReset: () => void;
@@ -236,6 +238,7 @@ function LearningLibrary({
             tutorials={tutorials}
             opening={opening}
             confirmReset={confirmReset}
+            resetStatus={resetStatus}
             onCreate={onCreateTutorials}
             onReset={onResetTutorials}
             onRequestReset={onRequestReset}
@@ -279,6 +282,15 @@ export function DatasetDialog({
   const [opening, setOpening] = useState<string | null>(null);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [confirmTutorialReset, setConfirmTutorialReset] = useState(false);
+  const [tutorialResetStatus, setTutorialResetStatus] = useState<string | null>(null);
+
+  // The status line reports the outcome where the confirmation just was, then
+  // clears itself — it is a result, not a persistent setting.
+  useEffect(() => {
+    if (!tutorialResetStatus) return;
+    const timer = window.setTimeout(() => setTutorialResetStatus(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [tutorialResetStatus]);
   const [commandSource, setCommandSource] = useState<AddDataSourceKind | null>(null);
   // Escape peels one layer at a time: a stacked CLI/database source editor
   // closes first, and only a bare library closes the dialog itself —
@@ -373,11 +385,16 @@ export function DatasetDialog({
   const resetTutorials = async () => {
     setOpening("__tutorial-reset__");
     setLibraryError(null);
+    setTutorialResetStatus(null);
     try {
-      setTutorials(await resetTutorialDocuments());
+      const library = await resetTutorialDocuments();
+      setTutorials(library);
       setConfirmTutorialReset(false);
+      const count = library.documents.length;
+      setTutorialResetStatus(`Replaced ${count} tutorial workbook${count === 1 ? "" : "s"}`);
     } catch (reason) {
-      setLibraryError(String(reason).replace(/^Error:\s*/, ""));
+      setConfirmTutorialReset(false);
+      setTutorialResetStatus(String(reason).replace(/^Error:\s*/, ""));
     } finally {
       setOpening(null);
     }
@@ -459,6 +476,7 @@ export function DatasetDialog({
           loading={loading}
           opening={opening}
           confirmReset={confirmTutorialReset}
+          resetStatus={tutorialResetStatus}
           onCreateTutorials={createTutorials}
           onResetTutorials={resetTutorials}
           onRequestReset={() => setConfirmTutorialReset(true)}

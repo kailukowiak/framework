@@ -35,6 +35,7 @@ export function HelpBrowser({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<{ key: string; copied: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const resetCopy = useRef<number | null>(null);
   const entries = useMemo(
     () => helpEntries(scope, formulaFunctions),
@@ -56,12 +57,28 @@ export function HelpBrowser({
     if (selected && selected.id !== selectedId) setSelectedId(selected.id);
   }, [selected, selectedId]);
 
+  // Escape is handled twice on purpose, and the panel's own handler is the one
+  // that matters. A keydown raised inside the panel did not reach the window
+  // listener below in the packaged app — Escape from the search field closed
+  // nothing, while Quick Commands, which handles Escape on its own surface,
+  // closed as expected. So the panel closes itself from any key it can see,
+  // and the window listener stays for the case it never sees: focus somewhere
+  // else on the canvas while the panel is open.
+  const closeOnEscape = (event: { key: string; preventDefault: () => void }) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    onClose();
+  };
+
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+    const closeFromWindow = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const target = event.target;
+      if (target instanceof Node && panelRef.current?.contains(target)) return;
+      onClose();
     };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    window.addEventListener("keydown", closeFromWindow);
+    return () => window.removeEventListener("keydown", closeFromWindow);
   }, [onClose]);
 
   useEffect(
@@ -93,10 +110,12 @@ export function HelpBrowser({
 
   return (
     <section
+      ref={panelRef}
       className="help-browser"
       role="dialog"
       aria-modal="false"
       aria-label="FrameWork Reference"
+      onKeyDown={closeOnEscape}
     >
       <HelpSearchHeader
         scope={scope}

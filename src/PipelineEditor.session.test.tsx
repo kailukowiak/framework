@@ -241,6 +241,31 @@ describe("PipelineEditor formula sessions", () => {
     expect(screen.getByLabelText("Edit Margin")).toBeTruthy();
   });
 
+  it("opens the same blank line from Wrangle's own add, and writes nothing until Return", async () => {
+    const view = fixtures.salesWithMargin;
+    const frame = objectNamed(view, "frame", "Monthly sales");
+    const onOperation = vi.fn<OperationHandler>().mockResolvedValue(null);
+
+    render(editorFor(view, frame, onOperation));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Add or replace column/ })
+    );
+
+    // The line the header's Add calculated column opens, selected whole.
+    const blank = '`Column 1` = None.cast("number")';
+    await waitFor(() => expect(commands.getActive()?.draft).toBe(blank));
+    expect(commands.getActive()?.selection).toEqual({
+      start: 0,
+      end: blank.length,
+    });
+
+    const editing = screen.getByLabelText("Edit Column 1") as HTMLTextAreaElement;
+    fireEvent.change(editing, { target: { value: "`Change` = Monthly" } });
+    // Half a sentence is not a calculation: nothing reaches the document,
+    // so nothing can carry it there under some later gesture's save either.
+    expect(onOperation).not.toHaveBeenCalled();
+  });
+
   it("keeps a session whose draft does not parse, and says what is missing", async () => {
     const view = fixtures.salesWithMargin;
     const frame = objectNamed(view, "frame", "Monthly sales");
@@ -249,15 +274,13 @@ describe("PipelineEditor formula sessions", () => {
     render(editorFor(view, frame, onOperation));
     clickMarginAddress();
     const editing = screen.getByLabelText("Edit Margin") as HTMLTextAreaElement;
-    // The backticked name was deleted along the way: nothing here can be
-    // saved as a named column, and nothing is sent to the engine.
+    // The assignment was deleted along the way: nothing here can be saved
+    // as a named column, and nothing is sent to the engine.
     fireEvent.change(editing, { target: { value: "Revenue - Cost" } });
     fireEvent.keyDown(editing, { key: "Enter" });
 
     const notice = await screen.findByRole("status");
-    expect(notice.textContent).toContain(
-      "Write a backticked column name, =, and a formula"
-    );
+    expect(notice.textContent).toContain("Write a column name, =, and a formula");
     expect(onOperation).not.toHaveBeenCalled();
     expect(commands.getActive()?.label).toBe("Margin");
   });

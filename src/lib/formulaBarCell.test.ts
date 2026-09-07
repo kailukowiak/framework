@@ -54,6 +54,30 @@ const context = (next: ComputedFrame = computed): GridContext => ({
 });
 
 describe("formula bar cells", () => {
+  // Sorting a frame moves the cell without changing which cell it is, and
+  // the bar names it by where it now sits. The row order the card shows is
+  // the only thing that can answer that -- the index the selection was made
+  // at was still saying "row 1" after a sort put the cell fourth.
+  it("names the row by where the cell sits in the rows on screen", () => {
+    const sorted: Row[] = [
+      { id: "r0", cells: { a: { raw: "1", overrideFormula: null } } },
+      { id: "rx", cells: { a: { raw: "2", overrideFormula: null } } },
+      rows[0],
+    ];
+    expect(
+      formulaBarCell(
+        {
+          ...context(),
+          frame: { ...frame, rows: sorted } as FrameObject,
+          displayedRows: sorted,
+          rowOffset: 0,
+          totalRows: 3,
+        },
+        focus("a")
+      )
+    ).toMatchObject({ label: "Amount \u00b7 row 3", rowIndex: 2 });
+  });
+
   it("shows the raw literal and the saved calculated-column declaration", () => {
     expect(formulaBarCell(context(), focus("a"))).toMatchObject({
       kind: "literal",

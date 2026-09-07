@@ -89,6 +89,37 @@ describe("ScratchworkFormulaBar", () => {
     expect(onCommit).toHaveBeenCalledWith("value\n  .dt\n  .month_start()");
   });
 
+  it("gives a refused cell its stored value back once the edit is over", async () => {
+    const refusal = "‘lots’ is not a valid integer for column ‘Amount’";
+    const onCommitCell = vi.fn(async () => refusal);
+    render(
+      <ActiveFormulaEditorProvider>
+        <ScratchworkFormulaBar
+          onCommit={vi.fn(async () => ({ saved: true }))}
+          references={[]}
+          cell={selectedCell}
+          onCommitCell={onCommitCell}
+          onEditCalculatedCell={vi.fn()}
+          onEditOverrideCell={vi.fn()}
+          onRequestReadOnlyCell={vi.fn()}
+          expanded={false}
+          onToggle={vi.fn()}
+        />
+      </ActiveFormulaEditorProvider>
+    );
+
+    const field = screen.getByLabelText(
+      "Edit Amount · row 1"
+    ) as HTMLTextAreaElement;
+    fireEvent.change(field, { target: { value: "lots" } });
+    fireEvent.blur(field);
+
+    await waitFor(() => expect(screen.getByTitle(refusal)).toBeTruthy());
+    // The refusal is said once; what the cell holds is what the bar shows.
+    expect(field.value).toBe("42");
+    expect(onCommitCell).toHaveBeenCalledTimes(1);
+  });
+
   it("formatting keeps the session; it is not a finishing gesture", async () => {
     render(
       <ActiveFormulaEditorProvider>

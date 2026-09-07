@@ -1,4 +1,4 @@
-import { frameCardSize } from "../lib/cardPlacement";
+import { frameCardSize, grownFrameCardHeight } from "../lib/cardPlacement";
 import { useCallback, useState, type RefObject } from "react";
 import {
   COPY_CONFIRM_CELLS,
@@ -291,7 +291,11 @@ export function useGridClipboard({
               // columns, so the block is transposed back before it is sent.
               (matrix[0] ?? []).map((_, index) => matrix.map((line) => line[index] ?? ""))
             : matrix,
-      });
+      }).then((failure) =>
+        failure || context.orientation === "fieldsAsRows"
+          ? null
+          : growCardForPastedRows(document, gridFocus, range.top + matrix.length, run)
+      );
     },
     [document, gridFocus, renderedRows, run]
   );
@@ -305,4 +309,25 @@ export function useGridClipboard({
     handleGridCut,
     handleGridPaste,
   };
+}
+
+/**
+ * A paste that runs past the last row grows the frame; a card that is still
+ * the size the app gave it grows with it, up to the dozen-row cap after which
+ * a table is a thing to scroll rather than a card to unroll. A card someone
+ * has dragged to a size of their own is left exactly as they left it —
+ * `grownFrameCardHeight` is where that judgement is made and argued.
+ */
+function growCardForPastedRows(
+  document: DocumentView,
+  gridFocus: GridFocus,
+  rowCount: number,
+  run: (operation: Operation) => Promise<string | null>
+): Promise<string | null> | null {
+  const view = document.views.find((candidate) => candidate.id === gridFocus.viewId);
+  if (!view) return null;
+  const height = grownFrameCardHeight(view.height, rowCount);
+  return height === null
+    ? null
+    : run({ type: "resizeView", viewId: view.id, width: view.width, height });
 }

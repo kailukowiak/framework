@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { useState } from "react";
 import { PipelineCommand } from "./PipelineCommand";
 import {
   draftName,
@@ -9,6 +10,31 @@ import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
 import { namedCommand } from "./lib/pipelineStepCommands";
 import { namedDraft, type StepDraft, type VisibleColumn } from "./lib/pipelineSteps";
 import type { Column, FrameStepInput } from "./lib/types";
+
+/**
+ * The column a new group key starts on.
+ *
+ * "+ Group" used to take the first column in the frame, which on a table
+ * that starts with a date meant every added group silently grouped by
+ * Month — a choice nobody made, spelled as though they had. The selected
+ * column is what someone pointing at a column means; failing that the
+ * first column that names things rather than measures them, which is what
+ * grouping needs; failing that the first column, because a wrong guess a
+ * person can see and change beats an empty line. The aggregate side of
+ * this step has always guessed the same way, with the first numeric column.
+ */
+export function summarizeGroupColumn(
+  visible: VisibleColumn[],
+  selectedColumnId?: string
+): VisibleColumn | undefined {
+  const groupable = (column: VisibleColumn) =>
+    column.dataType === "string" ||
+    column.dataType === "categorical" ||
+    column.dataType === "boolean";
+  const selected = visible.find((column) => column.id === selectedColumnId);
+  if (selected && groupable(selected)) return selected;
+  return visible.find(groupable) ?? visible[0];
+}
 
 /** The group keys and aggregates of one Summarize step. */
 export function PipelineSummarizeStep({
@@ -24,9 +50,12 @@ export function PipelineSummarizeStep({
   savePatch,
   rejectCommand,
   setPendingEditor,
+  selectedColumnId,
 }: {
   step: Extract<StepDraft, { kind: "summarize" }>;
   visible: VisibleColumn[];
+  /** The grid's active column, which is usually what "group by" means here. */
+  selectedColumnId?: string;
   stepReferences: FormulaReference[];
   input: { label: string; columns: Column[]; completionFrameId?: string };
   scope: { steps: FrameStepInput[]; stepIndex: number };
@@ -44,6 +73,10 @@ export function PipelineSummarizeStep({
   rejectCommand: (message: string) => never;
   setPendingEditor: (editorId: string) => void;
 }) {
+  // The group a person has just added is the one whose name is worth
+  // selecting: the prefill is a guess, and a selected name is the guess
+  // saying so. Every other row keeps the ordinary caret placement.
+  const [freshGroupId, setFreshGroupId] = useState<string | null>(null);
   return (
     <div className="pipeline-command-list">
       {[
@@ -88,6 +121,11 @@ export function PipelineSummarizeStep({
             frameId={input.completionFrameId}
             scope={scope}
             focusToken={commandFocus(id)}
+            focusSelection={
+              item.id === freshGroupId
+                ? { start: 0, end: formulaToken(draftName(item)).length }
+                : undefined
+            }
             onChange={(draft) => update(draft, false)}
             onCommit={(draft) => update(draft, true)}
           />
@@ -96,15 +134,17 @@ export function PipelineSummarizeStep({
       <div className="pipeline-item-actions">
         <button
           onClick={() => {
+            const column = summarizeGroupColumn(visible, selectedColumnId);
             const item = namedDraft(
-              visible[0]?.name ?? "Group",
-              visible[0] ? formulaToken(visible[0].name) : ""
+              column?.name ?? "Group",
+              column ? formulaToken(column.name) : ""
             );
             patch(step.id, (current) =>
               current.kind === "summarize"
                 ? { ...current, groupKeys: [...current.groupKeys, item] }
                 : current
             );
+            setFreshGroupId(item.id);
             setPendingEditor(commandId(step, item.id));
           }}
         >

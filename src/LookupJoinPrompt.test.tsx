@@ -45,6 +45,57 @@ describe("lookup join gesture", () => {
     expect(suggestedLookupKey(orders.columns[1], customers)).toBe("customer-key");
   });
 
+  // The dialog used to lose a row when the key was marked unique, which
+  // recentred it and slid the create button up under the pointer. The row
+  // now stays and states what it knows.
+  it("confirms a unique key in place of the button that marked it", async () => {
+    serveInvoke({
+      get_join_diagnostics: () => ({
+        primaryRows: 20,
+        matchedRows: 20,
+        unmatchedRows: 0,
+        lookupRows: 10,
+        lookupNullKeyRows: 0,
+        lookupDuplicateKeyValues: 0,
+      }),
+    });
+    const prompt = (lookupFrame: FrameObject) => (
+      <LookupJoinPrompt
+        state={{
+          primaryFrameId: orders.id,
+          primaryKeyId: "customer",
+          lookupFrameId: lookupFrame.id,
+          lookupOutputColumnIds: ["region"],
+          x: 0,
+          y: 0,
+        }}
+        document={
+          {
+            objects: [orders, lookupFrame],
+            computedFrames: {},
+          } as unknown as DocumentView
+        }
+        onClose={() => undefined}
+        onMoreOptions={() => undefined}
+        onOperation={vi.fn().mockResolvedValue(null)}
+        onCreated={() => undefined}
+      />
+    );
+    const notUnique = { ...customers, uniqueKeys: [] } as unknown as FrameObject;
+    const view = render(prompt(notUnique));
+    await screen.findByText("20 matched");
+    expect(
+      screen.getByRole("button", { name: /Mark Customer ID as unique/ })
+    ).toBeTruthy();
+
+    view.rerender(prompt(customers));
+    await screen.findByText(/Customer ID is unique/);
+    expect(screen.queryByRole("button", { name: /Mark Customer ID as unique/ })).toBe(
+      null
+    );
+    view.unmount();
+  });
+
   it("brings only the dragged lookup columns over after full-data diagnostics", async () => {
     serveInvoke({
       get_join_diagnostics: () => ({

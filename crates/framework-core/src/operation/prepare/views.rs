@@ -143,7 +143,11 @@ impl Document {
             ));
         }
         let source = self.frame(&frame_id)?;
-        let name = self.unique_frame_name(&format!("{} copy", source.name), None);
+        // Not "copy": nothing is copied. The branch reads the same rows
+        // through the same source and only holds a chain and a display layer
+        // of its own, which is what a second view of a table is. A name that
+        // said "copy" taught the opposite, and the tour's README says so.
+        let name = self.unique_numbered_frame_name(&format!("{} view", source.name));
         Ok(ReplicatedOperation::AddTab {
             view_id,
             object: DataObject::Frame(source.pass_through_child(name)),

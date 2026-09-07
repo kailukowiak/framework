@@ -87,13 +87,20 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
             onMap={(formula) => contextColumn && props.requestColumnTransformation(contextFrame, contextColumn, formula, true, contextMenu.viewId)} />
           <ContextMenuColumnItems {...props} contextFrame={contextFrame} />
           <ContextMenuColumnDisplayItems {...props} contextFrame={contextFrame} />
+          {/* Everything below reads as "what this frame does with other
+              frames and views", "row and column structure", then "undo
+              this by deleting it" — three separators, not one undivided
+              list, so the eye can skip a whole group at a glance. */}
+          <span className="menu-separator" />
           <ContextMenuGroup
             collapsed={contextMenu.rowId !== undefined}
             label="Frame actions"
             Icon={Frame}
           >
             <ContextMenuFrameActions {...props} contextFrame={contextFrame} />
+            <span className="menu-separator" />
             <ContextMenuFramePlotItems {...props} contextFrame={contextFrame} />
+            <span className="menu-separator" />
             <ContextMenuFrameEditItems {...props} contextFrame={contextFrame} />
             <ContextMenuFrameShapeItems {...props} contextFrame={contextFrame} />
           </ContextMenuGroup>

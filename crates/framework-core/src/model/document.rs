@@ -517,6 +517,27 @@ impl Document {
         untaken_frame_name(base, taken)
     }
 
+    /// The same uniqueness, counted in plain numbers rather than the
+    /// `name_2` suffix. A branch is named for what it is — "Sales view" —
+    /// and a second branch of the same frame is "Sales view 2", which is
+    /// how a person would number two views of one table. The underscore
+    /// spelling exists to disambiguate names someone typed; these names are
+    /// ours to choose, so they read as they would be spoken.
+    pub(crate) fn unique_numbered_frame_name(&self, base: &str) -> String {
+        let taken = |candidate: &str| {
+            self.objects.iter().any(|object| {
+                matches!(object, DataObject::Frame(_)) && object.name() == candidate
+            })
+        };
+        if !taken(base) {
+            return base.to_string();
+        }
+        (2..)
+            .map(|suffix| format!("{base} {suffix}"))
+            .find(|candidate| !taken(candidate))
+            .expect("an unbounded range always yields an untaken name")
+    }
+
     /// Repairs documents written before frame names became unique. Formula
     /// expressions already hold frame IDs, so changing only the display
     /// spelling preserves what every saved formula reads.

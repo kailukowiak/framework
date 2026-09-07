@@ -23,9 +23,19 @@ function statisticValue(
 ): StatisticValue | null {
   const target = gridCellAt(context, position);
   if (!target) return null;
+  // The evaluated answer first, and the row on screen when there isn't one.
+  //
+  // A frame carrying a transformation chain is read through pages, so its
+  // rows arrive already evaluated while `computed.rows` still describes that
+  // frame's *stored* input — where a column the chain calculated has no
+  // literal at all and reads as null. Taking that null for an empty cell is
+  // what made a calculated column sit the aggregate out: Revenue and Cost
+  // summed while Profit was skipped, and Forecast selected on its own
+  // reported "Count 0" over six numbers plainly on screen. A null cell over
+  // a row that still holds a value means the cache is not describing these
+  // rows, so the value on screen is the only value there is.
   const cell = context.computed?.rows[target.row.id]?.[target.column.id];
-  if (cell) {
-    if (cell.typedValue.type === "null") return null;
+  if (cell && cell.typedValue.type !== "null") {
     return cell.typedValue.type === "number"
       ? { numeric: cell.typedValue.value }
       : {};

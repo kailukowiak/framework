@@ -5,6 +5,8 @@ import {
   formulaCellRangePick,
   formulaColumnPick,
   formulaSummaryPick,
+  siblingColumnExplanation,
+  siblingColumnInStep,
 } from "./lib/formulaPicking";
 import { formulaReferenceDecorations } from "./lib/formulaReferenceDecorations";
 import type { DocumentView, SummaryOperation, FrameObject } from "./lib/types";
@@ -12,7 +14,7 @@ import type { DocumentView, SummaryOperation, FrameObject } from "./lib/types";
 type PickingOptions = {
   document: DocumentView;
   getActive: () => ActiveFormulaEditor | null;
-  insertReference: (token: string, refocus?: boolean) => void;
+  insertReference: (token: string) => void;
   clear: () => void;
   disengage: () => void;
   onNotice: (notice: string | null) => void;
@@ -69,6 +71,34 @@ function paintRangePreview(start: PointedCell, end: PointedCell): Set<HTMLElemen
   return painted;
 }
 
+/**
+ * Keep the click that follows a pick from also being a grid click.
+ *
+ * Preventing the pointerdown is not enough. A cell's value renders its own
+ * `onClick` — that is how an ordinary click selects a cell — and a `click`
+ * is a separate event that a cancelled `pointerdown` does not suppress in
+ * WKWebView. So a pointed reference used to insert correctly and *then*
+ * select the cell it pointed at, which moved the keyboard to the grid's
+ * clipboard target: the next characters typed went into the clicked cell
+ * instead of the formula, and the unfinished draft was committed on the way
+ * out. Swallowing the click at window capture, before React's own listener
+ * sees it, keeps the gesture what it was meant to be. The timeout is for the
+ * press that never becomes a click (the pointer left the element, or a drag
+ * was cancelled) so a stale suppressor cannot eat someone's next click.
+ */
+function swallowFollowingClick() {
+  const swallow = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.clearTimeout(timer);
+  };
+  const timer = window.setTimeout(
+    () => window.removeEventListener("click", swallow, true),
+    500
+  );
+  window.addEventListener("click", swallow, { capture: true, once: true });
+}
+
 function clearRangePreview(painted: Set<HTMLElement>) {
   for (const element of painted) element.classList.remove("formula-pick-range-preview");
 }
@@ -117,7 +147,6 @@ function trySummaryPick(
   event: ReactPointerEvent,
   target: HTMLElement,
   active: ActiveFormulaEditor,
-  editingFromBar: boolean,
   options: PickingOptions
 ): boolean {
   const cell = target.closest<HTMLElement>("[data-summary-operation]");
@@ -136,12 +165,22 @@ function trySummaryPick(
   }
   const pick = formulaSummaryPick(active, operation, columnId);
   if (pick.kind === "insert") {
-    options.insertReference(pick.token, !editingFromBar);
+    options.insertReference(pick.token);
     options.onNotice(null);
   } else {
     options.onNotice(pick.message);
   }
   return true;
+}
+
+/**
+ * Which frame a session calls its own. `frameId` is set only when the core
+ * would resolve backtick names against that frame, so a source frame that
+ * has grown a chain leaves it empty and answers with `anchorFrameId`
+ * instead.
+ */
+function sessionFrameId(active: ActiveFormulaEditor): string | undefined {
+  return active.completion.frameId ?? active.completion.anchorFrameId;
 }
 
 /**
@@ -151,6 +190,12 @@ function trySummaryPick(
  * of the chain. On any other frame it is an ordinary selection gesture: the
  * pick declines it un-prevented, and the caller's fallthrough ends the
  * session and lets the click select the cell it landed on.
+ *
+ * Asking `sessionFrameId` rather than `completion.frameId` alone is what
+ * keeps a wrangle session over a chained source frame from treating its own
+ * grid as foreign: clicking a column it cannot read — a sibling written in
+ * the same step, most often — used to abandon the draft and select the
+ * column instead of saying why.
  */
 function foreignUnaddressablePick(
   pick: ReturnType<typeof formulaColumnPick>,
@@ -160,7 +205,7 @@ function foreignUnaddressablePick(
   return (
     pick.kind === "refuse" &&
     pick.message === null &&
-    active.completion.frameId !== frameId
+    sessionFrameId(active) !== frameId
   );
 }
 
@@ -168,14 +213,18 @@ function tryColumnPick(
   event: ReactPointerEvent,
   target: HTMLElement,
   active: ActiveFormulaEditor,
-  editingFromBar: boolean,
   options: PickingOptions
 ): boolean {
   const columnId = target.closest<HTMLElement>("[data-column-id]")?.dataset.columnId;
   const frameId = target.closest<HTMLElement>("[data-frame-id]")?.dataset.frameId;
   const hitControl = target.closest("button, input, textarea, select, a");
-  const semanticHeader = target.closest("button.column-select");
-  if (event.button !== 0 || !columnId || !frameId || (hitControl && !semanticHeader))
+  // Two controls *are* the thing being pointed at rather than something on
+  // top of it: the header that names a column, and the button a calculated
+  // cell's value is drawn as. Reading them as ordinary controls made a
+  // calculated column the one thing a formula could not point at — the click
+  // fell through and ended the session instead.
+  const columnItself = target.closest("button.column-select, button.computed-cell");
+  if (event.button !== 0 || !columnId || !frameId || (hitControl && !columnItself))
     return false;
   const pickedRow = rowIndex(target);
   const pick = formulaColumnPick(
@@ -191,7 +240,7 @@ function tryColumnPick(
   event.preventDefault();
   event.stopPropagation();
   if (pick.kind === "insert") {
-    options.insertReference(pick.token, !editingFromBar);
+    options.insertReference(pick.token);
     options.onNotice(null);
     return true;
   }
@@ -220,8 +269,12 @@ function tryColumnPick(
     (object): object is FrameObject => object.kind === "frame" && object.id === frameId
   );
   const column = frame?.columns.find((candidate) => candidate.id === columnId);
+  const sibling = siblingColumnInStep(active, columnId);
   options.onNotice(
-    pick.message ?? `${column?.name ?? "That column"} is not available to ${active.label}.`
+    pick.message ??
+      (sibling
+        ? siblingColumnExplanation(sibling.name, active.label)
+        : `${column?.name ?? "That column"} is not available to ${active.label}.`)
   );
   return true;
 }
@@ -230,7 +283,6 @@ function tryScratchworkRangePick(
   event: ReactPointerEvent,
   target: HTMLElement,
   active: ActiveFormulaEditor,
-  editingFromBar: boolean,
   options: PickingOptions
 ): boolean {
   if (active.kind !== "scratchwork" || event.button !== 0) return false;
@@ -260,6 +312,9 @@ function tryScratchworkRangePick(
     const pointed = cellUnderPointer(upEvent);
     if (pointed) end = pointed;
     cleanup();
+    // A drag can outlast the suppressor the press installed; the click still
+    // arrives at its release.
+    swallowFollowingClick();
     if (start.frameId !== end.frameId || start.columnId !== end.columnId) {
       options.onNotice("Drag within one column to insert a row slice.");
       return;
@@ -273,7 +328,7 @@ function tryScratchworkRangePick(
       hasStableCellAddresses(options.document, start.frameId)
     );
     if (pick.kind === "insert") {
-      options.insertReference(pick.token, !editingFromBar);
+      options.insertReference(pick.token);
       options.onNotice(null);
     } else options.onNotice(pick.message);
   };
@@ -287,7 +342,6 @@ function tryObjectPick(
   event: ReactPointerEvent,
   target: HTMLElement,
   active: ActiveFormulaEditor,
-  editingFromBar: boolean,
   options: PickingOptions
 ): boolean {
   const objectId = target.closest<HTMLElement>("[data-object-id]")?.dataset.objectId;
@@ -301,7 +355,7 @@ function tryObjectPick(
   if (!reference) return false;
   event.preventDefault();
   event.stopPropagation();
-  options.insertReference(reference.token, !editingFromBar);
+  options.insertReference(reference.token);
   options.onNotice(null);
   return true;
 }
@@ -316,10 +370,15 @@ export function canvasFormulaPointerHandler(options: PickingOptions) {
       focused instanceof HTMLElement &&
       Boolean(focused.closest(".scratchwork-formula-bar"));
     if (active && (active.focused || fromBar)) {
-      if (trySummaryPick(event, target, active, fromBar, options)) return;
-      if (tryScratchworkRangePick(event, target, active, fromBar, options)) return;
-      if (tryColumnPick(event, target, active, fromBar, options)) return;
-      if (tryObjectPick(event, target, active, fromBar, options)) return;
+      if (
+        trySummaryPick(event, target, active, options) ||
+        tryScratchworkRangePick(event, target, active, options) ||
+        tryColumnPick(event, target, active, options) ||
+        tryObjectPick(event, target, active, options)
+      ) {
+        swallowFollowingClick();
+        return;
+      }
     }
     // The surfaces that own or serve the session: the bar, inline formula
     // editors, the block card being written in, the variable card whose

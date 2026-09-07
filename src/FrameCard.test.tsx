@@ -199,6 +199,30 @@ describe("FrameCard editing gate", () => {
     );
   });
 
+  // Return ends an inline edit everywhere else in the application; here it
+  // used to leave the caret sitting in the field with the rename unsent, so
+  // the tab strip and the inspector went on showing the old name.
+  it("commits a frame rename on Return and gives the field back", async () => {
+    const view = fixtures.salesWithMargin;
+    const frame = objectNamed(view, "frame", "Monthly sales");
+    serveInvoke({ get_frame_page: () => pageOfLiteralRows(frame) });
+    const onOperation = vi.fn().mockResolvedValue(null);
+    const user = userEvent.setup();
+    render(<GridHarness documentView={view} onOperation={onOperation} />);
+
+    const title = document.querySelector<HTMLInputElement>("input.frame-name")!;
+    await user.clear(title);
+    await user.type(title, "Sales by month{Enter}");
+    await waitFor(() =>
+      expect(onOperation).toHaveBeenCalledWith({
+        type: "renameObject",
+        objectId: frame.id,
+        name: "Sales by month",
+      })
+    );
+    expect(document.activeElement).not.toBe(title);
+  });
+
   it("opens the editor from a typed key, seeded with the keystroke", async () => {
     const view = fixtures.salesWithMargin;
     const frame = objectNamed(view, "frame", "Monthly sales");

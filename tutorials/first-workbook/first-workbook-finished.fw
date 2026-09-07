@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "3fba10c9-31fc-4a68-9197-4b5c818187ac",
+    "id": "0b57e968-eaeb-4252-9861-9f15ef64f1e1",
     "name": "Your first FrameWork workbook",
     "revision": 28,
     "objects": [
       {
         "kind": "frame",
-        "id": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
+        "id": "92bbeec7-a308-4ff7-901e-3af875ee369a",
         "name": "Monthly sales",
         "columns": [
           {
-            "id": "month~d302pj",
+            "id": "month~ynxm26",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "region~4sh61j",
+            "id": "region~t36k32",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -31,7 +31,7 @@
             "formula": null
           },
           {
-            "id": "revenue~ef1g23",
+            "id": "revenue~hzw1hz",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -42,12 +42,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "cost~351qbb",
+            "id": "cost~ttz49a",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -58,12 +59,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "profit~j6nsvm",
+            "id": "profit~dxstk1",
             "name": "Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -74,7 +76,8 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": {
               "expression": {
@@ -82,11 +85,11 @@
                 "operator": "subtract",
                 "left": {
                   "kind": "column",
-                  "column_id": "revenue~ef1g23"
+                  "column_id": "revenue~hzw1hz"
                 },
                 "right": {
                   "kind": "column",
-                  "column_id": "cost~351qbb"
+                  "column_id": "cost~ttz49a"
                 }
               }
             }
@@ -94,150 +97,150 @@
         ],
         "rows": [
           {
-            "id": "a9e5dd18-9443-49ec-b8fb-90297eb62621",
+            "id": "e515c802-e086-4492-a98c-4a27c526fad9",
             "cells": {
-              "cost~351qbb": {
+              "cost~ttz49a": {
                 "raw": "91000",
                 "overrideFormula": null
               },
-              "month~d302pj": {
+              "month~ynxm26": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "profit~j6nsvm": {
+              "profit~dxstk1": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "region~4sh61j": {
+              "region~t36k32": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~ef1g23": {
+              "revenue~hzw1hz": {
                 "raw": "142000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "2e91f376-bb6e-4d2c-b05c-b74fb8aa4349",
+            "id": "e2bf34d1-225b-404b-8b29-5a00a3693b64",
             "cells": {
-              "cost~351qbb": {
+              "cost~ttz49a": {
                 "raw": "76000",
                 "overrideFormula": null
               },
-              "month~d302pj": {
+              "month~ynxm26": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "profit~j6nsvm": {
+              "profit~dxstk1": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "region~4sh61j": {
+              "region~t36k32": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~ef1g23": {
+              "revenue~hzw1hz": {
                 "raw": "118000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "930552b1-39b7-49ca-8343-595e5118eb51",
+            "id": "95195f81-5a5c-482c-8ce8-289f4e7d226f",
             "cells": {
-              "cost~351qbb": {
+              "cost~ttz49a": {
                 "raw": "104000",
                 "overrideFormula": null
               },
-              "month~d302pj": {
+              "month~ynxm26": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "profit~j6nsvm": {
+              "profit~dxstk1": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "region~4sh61j": {
+              "region~t36k32": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~ef1g23": {
+              "revenue~hzw1hz": {
                 "raw": "168000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "7d16458a-c020-4f9c-838e-35c5d23d7885",
+            "id": "e8c43d64-81c1-4114-9946-c98a164a2d91",
             "cells": {
-              "cost~351qbb": {
+              "cost~ttz49a": {
                 "raw": "85000",
                 "overrideFormula": null
               },
-              "month~d302pj": {
+              "month~ynxm26": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "profit~j6nsvm": {
+              "profit~dxstk1": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "region~4sh61j": {
+              "region~t36k32": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~ef1g23": {
+              "revenue~hzw1hz": {
                 "raw": "136000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "a1bf70a9-46e7-4ca1-8cb7-44cf82bb9e1a",
+            "id": "c9b65333-9e95-4a2b-809a-eed25d413a81",
             "cells": {
-              "cost~351qbb": {
+              "cost~ttz49a": {
                 "raw": "79000",
                 "overrideFormula": null
               },
-              "month~d302pj": {
+              "month~ynxm26": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "profit~j6nsvm": {
+              "profit~dxstk1": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "region~4sh61j": {
+              "region~t36k32": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~ef1g23": {
+              "revenue~hzw1hz": {
                 "raw": "124000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "db75a193-1e9c-4f76-936c-b3cbda289d65",
+            "id": "75bb1d03-1fc7-4774-9d21-7fe7ceef739a",
             "cells": {
-              "cost~351qbb": {
+              "cost~ttz49a": {
                 "raw": "96000",
                 "overrideFormula": null
               },
-              "month~d302pj": {
+              "month~ynxm26": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "profit~j6nsvm": {
+              "profit~dxstk1": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "region~4sh61j": {
+              "region~t36k32": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~ef1g23": {
+              "revenue~hzw1hz": {
                 "raw": "151000",
                 "overrideFormula": null
               }
@@ -249,7 +252,7 @@
             "kind": "sort",
             "keys": [
               {
-                "columnId": "month~d302pj",
+                "columnId": "month~ynxm26",
                 "descending": false
               }
             ]
@@ -265,11 +268,11 @@
       },
       {
         "kind": "block",
-        "id": "a9414aad-8152-4e55-8882-6f5381b3883b",
+        "id": "c3fad22d-d43c-46e7-866d-f1ef681c8c63",
         "name": "Assumptions",
         "lines": [
           {
-            "id": "24141504-1f2f-4fd8-a903-3a9bd0a49703",
+            "id": "b1bdcced-4f2d-4861-99a5-9d5715f53b20",
             "name": "Target margin",
             "named": true,
             "nameQuoted": false,
@@ -283,7 +286,7 @@
             "error": null
           },
           {
-            "id": "66230576-b11f-4391-a7b1-06481be82c60",
+            "id": "53ce16b1-5dbb-487b-91c1-c8a6c0d25e1e",
             "name": "January profit",
             "named": true,
             "nameQuoted": false,
@@ -308,7 +311,7 @@
       },
       {
         "kind": "text",
-        "id": "6d4713cf-a09c-4c17-ba6d-0d4e5c4e2c5c",
+        "id": "88b2df67-712d-4f0d-b75e-32a96d657de0",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -320,11 +323,11 @@
       },
       {
         "kind": "frame",
-        "id": "1283a78b-c3f4-44ce-b1fd-88f0606e831c",
+        "id": "6c04c505-39f2-415b-9d90-fa33e25ca7a3",
         "name": "East only",
         "columns": [
           {
-            "id": "month~3swkfj",
+            "id": "month~q2y3b2",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -333,7 +336,7 @@
             "formula": null
           },
           {
-            "id": "region~2n4pzt",
+            "id": "region~z2vxq3",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -342,7 +345,7 @@
             "formula": null
           },
           {
-            "id": "revenue~2szcpa",
+            "id": "revenue~gk9597",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -353,12 +356,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "cost~jm7bde",
+            "id": "cost~cyy67y",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -369,12 +373,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "profit~e24k37",
+            "id": "profit~r82zmr",
             "name": "Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -385,7 +390,8 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           }
@@ -395,45 +401,45 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
+          "sourceFrameId": "92bbeec7-a308-4ff7-901e-3af875ee369a",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "month~3swkfj",
+                  "outputColumnId": "month~q2y3b2",
                   "expression": {
                     "kind": "column",
-                    "column_id": "month~d302pj"
+                    "column_id": "month~ynxm26"
                   }
                 },
                 {
-                  "outputColumnId": "region~2n4pzt",
+                  "outputColumnId": "region~z2vxq3",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~4sh61j"
+                    "column_id": "region~t36k32"
                   }
                 },
                 {
-                  "outputColumnId": "revenue~2szcpa",
+                  "outputColumnId": "revenue~gk9597",
                   "expression": {
                     "kind": "column",
-                    "column_id": "revenue~ef1g23"
+                    "column_id": "revenue~hzw1hz"
                   }
                 },
                 {
-                  "outputColumnId": "cost~jm7bde",
+                  "outputColumnId": "cost~cyy67y",
                   "expression": {
                     "kind": "column",
-                    "column_id": "cost~351qbb"
+                    "column_id": "cost~ttz49a"
                   }
                 },
                 {
-                  "outputColumnId": "profit~e24k37",
+                  "outputColumnId": "profit~r82zmr",
                   "expression": {
                     "kind": "column",
-                    "column_id": "profit~j6nsvm"
+                    "column_id": "profit~dxstk1"
                   }
                 }
               ]
@@ -441,11 +447,11 @@
             {
               "kind": "select",
               "columnIds": [
-                "month~3swkfj",
-                "region~2n4pzt",
-                "revenue~2szcpa",
-                "cost~jm7bde",
-                "profit~e24k37"
+                "month~q2y3b2",
+                "region~z2vxq3",
+                "revenue~gk9597",
+                "cost~cyy67y",
+                "profit~r82zmr"
               ]
             },
             {
@@ -456,7 +462,7 @@
                   "operator": "equal",
                   "left": {
                     "kind": "column",
-                    "column_id": "region~2n4pzt"
+                    "column_id": "region~z2vxq3"
                   },
                   "right": {
                     "kind": "string",
@@ -474,7 +480,7 @@
       },
       {
         "kind": "text",
-        "id": "6659fd50-7dda-4770-bc46-177994fe03a8",
+        "id": "2cb5d72c-b248-4072-a327-34f0d2626dbd",
         "name": "Sales narrative",
         "text": "",
         "segments": [
@@ -489,8 +495,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
-                  "column_id": "revenue~ef1g23"
+                  "frame_id": "92bbeec7-a308-4ff7-901e-3af875ee369a",
+                  "column_id": "revenue~hzw1hz"
                 },
                 "path": [
                   "sum"
@@ -511,8 +517,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
-                  "column_id": "profit~j6nsvm"
+                  "frame_id": "92bbeec7-a308-4ff7-901e-3af875ee369a",
+                  "column_id": "profit~dxstk1"
                 },
                 "path": [
                   "sum"
@@ -530,9 +536,9 @@
       },
       {
         "kind": "plot",
-        "id": "121d72da-070d-4903-a76b-af827bb5f462",
+        "id": "6d13e78a-75a1-4a02-ae22-78a4b875f8ac",
         "name": "Profit by month",
-        "sourceFrameId": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
+        "sourceFrameId": "92bbeec7-a308-4ff7-901e-3af875ee369a",
         "spec": {
           "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
           "mark": {
@@ -542,18 +548,18 @@
           },
           "encoding": {
             "x": {
-              "field": "month~d302pj",
+              "field": "month~ynxm26",
               "type": "nominal",
               "title": "Month",
               "sort": null
             },
             "y": {
-              "field": "profit~j6nsvm",
+              "field": "profit~dxstk1",
               "type": "quantitative",
               "title": "Profit"
             },
             "color": {
-              "field": "region~4sh61j",
+              "field": "region~t36k32",
               "type": "nominal",
               "title": "Region"
             }
@@ -563,21 +569,21 @@
     ],
     "views": [
       {
-        "id": "480df584-42d6-4da9-9c20-fb34233d42d7",
-        "objectId": "1283a78b-c3f4-44ce-b1fd-88f0606e831c",
+        "id": "99516b9f-910c-452a-87bd-4027ae1caf09",
+        "objectId": "6c04c505-39f2-415b-9d90-fa33e25ca7a3",
         "x": 720.0,
         "y": 70.0,
         "width": 910.0,
         "height": 464.0,
         "collapsed": false,
         "tabObjectIds": [
-          "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
-          "1283a78b-c3f4-44ce-b1fd-88f0606e831c"
+          "92bbeec7-a308-4ff7-901e-3af875ee369a",
+          "6c04c505-39f2-415b-9d90-fa33e25ca7a3"
         ]
       },
       {
-        "id": "23bb2b2a-c8cb-4c90-bcef-3fff4c03dbcf",
-        "objectId": "a9414aad-8152-4e55-8882-6f5381b3883b",
+        "id": "9049774b-ecc5-4541-afe7-f7297c2ecda5",
+        "objectId": "c3fad22d-d43c-46e7-866d-f1ef681c8c63",
         "x": 727.0,
         "y": 669.0,
         "width": 520.0,
@@ -585,8 +591,8 @@
         "collapsed": false
       },
       {
-        "id": "d8bb583d-11e9-4db6-a37d-3fc2e5781d0a",
-        "objectId": "6d4713cf-a09c-4c17-ba6d-0d4e5c4e2c5c",
+        "id": "7a61e099-370d-4a60-b5af-7c21592734b6",
+        "objectId": "88b2df67-712d-4f0d-b75e-32a96d657de0",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -594,8 +600,8 @@
         "collapsed": false
       },
       {
-        "id": "1ebf0e80-0a41-4615-9c15-13e704098672",
-        "objectId": "6659fd50-7dda-4770-bc46-177994fe03a8",
+        "id": "ea279c3e-7d75-4c30-b6af-58fa8a8e5c0f",
+        "objectId": "2cb5d72c-b248-4072-a327-34f0d2626dbd",
         "x": 1270.0,
         "y": 669.0,
         "width": 520.0,
@@ -603,8 +609,8 @@
         "collapsed": false
       },
       {
-        "id": "85a0fb4b-2e9f-4e30-923f-d59fff545e05",
-        "objectId": "121d72da-070d-4903-a76b-af827bb5f462",
+        "id": "a2f23b5f-1c77-498e-98ac-29e416238696",
+        "objectId": "6d13e78a-75a1-4a02-ae22-78a4b875f8ac",
         "x": 1626.0,
         "y": 57.0,
         "width": 360.0,
@@ -612,7 +618,9 @@
         "collapsed": false
       }
     ],
-    "frozenValues": {}
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
   },
   "versionVector": {}
 }

@@ -65,6 +65,13 @@ function pointerDown(target: HTMLElement, button = 0) {
   } as never;
 }
 
+/** The click a real press is followed by, which the grid also listens for. */
+function clickAfterPress(target: HTMLElement): boolean {
+  return target.dispatchEvent(
+    new MouseEvent("click", { bubbles: true, cancelable: true })
+  );
+}
+
 /** A wrangle-style session scoped to the sales frame, with no cell anchor. */
 const formulaSession: ActiveFormulaEditor = {
   ...active,
@@ -86,10 +93,7 @@ describe("canvas formula pointing", () => {
     const configured = options();
     canvasFormulaPointerHandler(configured)(pointerDown(target));
 
-    expect(configured.insertReference).toHaveBeenCalledWith(
-      "`Sales`.`Revenue`",
-      true
-    );
+    expect(configured.insertReference).toHaveBeenCalledWith("`Sales`.`Revenue`");
   });
 
   it("explains a same-column drag instead of inserting its first cell", () => {
@@ -122,8 +126,7 @@ describe("canvas formula pointing", () => {
     cell.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
 
     expect(configured.insertReference).toHaveBeenCalledWith(
-      "`Sales`.`Revenue`.head(2).last()",
-      true
+      "`Sales`.`Revenue`.head(2).last()"
     );
   });
 
@@ -155,6 +158,68 @@ describe("canvas formula pointing", () => {
     expect(configured.clear).not.toHaveBeenCalled();
     expect(configured.onNotice).toHaveBeenCalledWith(
       expect.stringContaining("Amount")
+    );
+  });
+
+  // A cell renders its own onClick — that is how an ordinary click selects
+  // it — and a cancelled pointerdown does not suppress the click that
+  // follows. Left alone it moved the keyboard into the grid right after the
+  // reference landed in the formula.
+  it("keeps the click that follows a pick from also selecting the cell", () => {
+    document.body.innerHTML = `
+      <div data-frame-id="sales">
+        <table><thead><tr><th data-column-id="revenue">
+          <button class="column-select"><span>Revenue</span></button>
+        </th></tr></thead></table>
+      </div>`;
+    const target = document.querySelector("span")!;
+    canvasFormulaPointerHandler(options())(pointerDown(target));
+
+    expect(clickAfterPress(target)).toBe(false);
+    // And only that one click: the next gesture is the person's again.
+    expect(clickAfterPress(target)).toBe(true);
+  });
+
+  it("explains a column added in the same step instead of selecting it", () => {
+    document.body.innerHTML = `
+      <div data-frame-id="sales"><table><tbody>
+        <tr data-row-index="0"><td data-column-id="previous">118000</td></tr>
+      </tbody></table></div>`;
+    const cell = document.querySelector<HTMLElement>("td")!;
+    const writingChange: ActiveFormulaEditor = {
+      ...formulaSession,
+      label: "Change",
+      completion: {
+        references: active.completion.references,
+        // A source frame that has grown a chain publishes no completion
+        // frame id; the anchor is what says which grid is its own.
+        anchorFrameId: "sales",
+        targetColumnId: "change",
+        scope: {
+          steps: [
+            {
+              kind: "withColumns",
+              columns: [
+                {
+                  outputColumnId: "previous",
+                  name: "Previous revenue",
+                  formula: "`Revenue`.shift(1)",
+                },
+                { outputColumnId: "change", name: "Change", formula: "" },
+              ],
+            },
+          ],
+          stepIndex: 0,
+        },
+      },
+    };
+    const configured = { ...options(), getActive: () => writingChange };
+    canvasFormulaPointerHandler(configured)(pointerDown(cell));
+
+    expect(configured.clear).not.toHaveBeenCalled();
+    expect(configured.insertReference).not.toHaveBeenCalled();
+    expect(configured.onNotice).toHaveBeenCalledWith(
+      "Previous revenue is added in this same step, so Change cannot read it yet. Add Change as a new step to read it."
     );
   });
 

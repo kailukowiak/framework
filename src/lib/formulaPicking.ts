@@ -2,6 +2,7 @@ import type { ActiveFormulaEditor } from "./activeFormulaEditor";
 import {
   columnReferenceForPick,
   columnTokenForCellPick,
+  formulaToken,
   scalarTokenForCellPick,
 } from "./formulaReferences";
 import type { SummaryOperation } from "./types";
@@ -105,6 +106,70 @@ export function formulaColumnPick(
       anchored && Number.isFinite(rowIndex) ? rowIndex : undefined
     ),
   };
+}
+
+/**
+ * Why one calculation cannot read another written beside it.
+ *
+ * An "Add or replace columns" step is one `with_columns`, and every formula
+ * in it is evaluated against the frame as it stood *before* the step. So a
+ * sibling written in the same block is genuinely not there yet — this is the
+ * engine's semantics, not a missing feature, and the way through is a second
+ * step rather than a different spelling. The sentence is shared by the two
+ * surfaces that have to say it, the refused click and the refused save, so
+ * pointing and typing get the same explanation instead of one of them
+ * getting "Unknown name".
+ */
+export function siblingColumnExplanation(
+  siblingName: string,
+  targetName: string
+): string {
+  return `${siblingName} is added in this same step, so ${targetName} cannot read it yet. Add ${targetName} as a new step to read it.`;
+}
+
+/** The clicked column, if this session's own step is what produces it. */
+export function siblingColumnInStep(
+  active: ActiveFormulaEditor,
+  columnId: string
+): { name: string } | null {
+  const scope = active.completion.scope;
+  const step = scope?.steps[scope.stepIndex];
+  if (step?.kind !== "withColumns") return null;
+  const sibling = step.columns.find(
+    (column) =>
+      column.outputColumnId === columnId &&
+      column.outputColumnId !== active.completion.targetColumnId
+  );
+  return sibling ? { name: sibling.name } : null;
+}
+
+/**
+ * The same refusal for a reference that was *typed* rather than pointed at.
+ *
+ * Sent to the engine this is "Unknown name ‘Previous revenue’", which is true
+ * and useless: the name is on screen, one line up, in the step being written.
+ * Answered here instead, before the save, so both spellings of the same
+ * mistake get the same sentence.
+ *
+ * A name that also belongs to a column arriving from above is deliberately
+ * not refused. `with_columns` reads the pre-step frame, so a step that
+ * replaces `Amount` while another of its calculations reads `Amount` is
+ * reading the upstream value — an ordinary, meaningful thing to write, and
+ * not a sibling reference at all.
+ */
+export function siblingReferenceInFormula(
+  formula: string,
+  siblings: Array<{ name: string }>,
+  visibleNames: string[]
+): string | null {
+  return (
+    siblings.find(
+      (sibling) =>
+        sibling.name &&
+        !visibleNames.includes(sibling.name) &&
+        formula.includes(formulaToken(sibling.name))
+    )?.name ?? null
+  );
 }
 
 /** Keep a drag from quietly degrading to whichever cell received the press. */

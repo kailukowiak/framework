@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { reorderColumnIds } from "./lib/pipelineStepCommands";
-import type { FrameObject } from "./lib/types";
+import type { Column, FrameObject } from "./lib/types";
 import type { GridRange } from "./lib/gridNavigation";
 import { formulaToken } from "./lib/formulaReferences";
+import { useRevealNewColumn } from "./hooks/useRevealNewColumn";
 import {
   dispatchVectorDrop,
   updateVectorDragPreview,
   type VectorDrag,
 } from "./lib/vectorDrag";
+import { updateColumnDragLabel, type ColumnDragAction } from "./lib/columnDragLabel";
 
-export function useFrameScrollState() {
+export function useFrameScrollState(
+  columns: readonly Column[],
+  revealNewColumns: boolean
+) {
   const [scrollState, setScrollState] = useState({ top: 0, height: 300 });
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingScrollTop = useRef(0);
@@ -35,6 +40,12 @@ export function useFrameScrollState() {
       cancelPendingFrame();
     };
   }, []);
+
+  // A column added to this frame — a calculated column, most often — is
+  // scrolled to rather than left hanging off the right-hand end of a table
+  // wider than its card. It lives here because this is where the grid's
+  // scroll element does.
+  useRevealNewColumn(columns, scrollRef, revealNewColumns);
 
   return {
     scrollState,
@@ -74,9 +85,32 @@ export function useFrameColumnDrag(
     let latestVectorTarget: HTMLElement | null = null;
     let highlighted: HTMLElement | null = null;
     let preview: HTMLElement | null = null;
+    let label: HTMLElement | null = null;
     const clearHighlight = () => {
       highlighted?.classList.remove("join-column-drop", "vector-column-drop");
       highlighted = null;
+    };
+    // A drag carries whatever the header run under it holds when the gesture
+    // is a lookup, and the single column when it is a rearrangement — the
+    // same rule the drop itself follows, so the label cannot promise one
+    // thing and the release do another.
+    const showLabel = (action: ColumnDragAction, moveEvent: PointerEvent) => {
+      const carried =
+        action === "join"
+          ? lookupDragColumnIds(frame, columnId, selectionRange)
+          : [columnId];
+      label = updateColumnDragLabel(
+        label,
+        carried.map(
+          (id) => frame.columns.find((candidate) => candidate.id === id)?.name ?? "column"
+        ),
+        action,
+        moveEvent
+      );
+    };
+    const clearLabel = () => {
+      label?.remove();
+      label = null;
     };
     const move = (moveEvent: PointerEvent) => {
       if (
@@ -100,6 +134,7 @@ export function useFrameColumnDrag(
         const payload = frameColumnVector(frame, columnId, rowCount);
         if (payload)
           preview = updateVectorDragPreview(preview, payload, moveEvent, vectorTarget);
+        clearLabel();
         setFrameColumnDrop(null);
         return;
       }
@@ -112,6 +147,7 @@ export function useFrameColumnDrag(
         latestDrop = null;
         latestJoin = null;
         clearHighlight();
+        showLabel(null, moveEvent);
         setFrameColumnDrop(null);
         return;
       }
@@ -124,11 +160,13 @@ export function useFrameColumnDrag(
         clearHighlight();
         highlighted = target;
         highlighted.classList.add("join-column-drop");
+        showLabel("join", moveEvent);
         setFrameColumnDrop(null);
         return;
       }
       latestJoin = null;
       clearHighlight();
+      showLabel("reorder", moveEvent);
       const bounds = target.getBoundingClientRect();
       latestDrop = {
         columnId: target.dataset.columnId!,
@@ -165,6 +203,7 @@ export function useFrameColumnDrag(
       setFrameColumnDrop(null);
       clearHighlight();
       preview?.remove();
+      clearLabel();
     };
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", end);

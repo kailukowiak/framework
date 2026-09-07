@@ -1,12 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   getDocument,
   getDocumentPath,
   shouldOpenLibrary,
 } from "../lib/api";
-import type { ContextMenuState } from "../FrameGrid";
-import type { DocumentView, Selection } from "../lib/types";
+import type { DocumentView } from "../lib/types";
 
 /**
  * Loads the document this window opened with, and — inside Tauri — stays
@@ -18,18 +17,28 @@ import type { DocumentView, Selection } from "../lib/types";
 export function useDocumentBootstrap({
   setDocument,
   setDocumentPath,
-  setSelection,
-  setContextMenu,
   setError,
   setDatasetLibrary,
+  onDocumentOpened,
 }: {
   setDocument: (value: DocumentView) => void;
   setDocumentPath: (value: string | null) => void;
-  setSelection: (value: Selection | null) => void;
-  setContextMenu: (value: ContextMenuState | null) => void;
   setError: (value: string | null) => void;
   setDatasetLibrary: (value: boolean) => void;
+  /**
+   * A document arriving from outside this window — the Finder, a second
+   * launch, another window saving over this file. It is an *open*, not a
+   * refresh, so it goes through the same adoption the in-app open paths use
+   * rather than clearing a hand-kept subset of the state here.
+   */
+  onDocumentOpened: (opened: { document: DocumentView; path: string }) => void;
 }) {
+  // Read through a ref because the subscription below is made once for the
+  // life of the window: a handler captured in that one effect would go on
+  // adopting documents into the state the window had when it launched.
+  const adopt = useRef(onDocumentOpened);
+  adopt.current = onDocumentOpened;
+
   useEffect(() => {
     let disposed = false;
     let stopOpened: (() => void) | undefined;
@@ -57,13 +66,7 @@ export function useDocumentBootstrap({
         void (async () => {
           const opened = await listen<{ document: DocumentView; path: string }>(
             "framework-document-opened",
-            (event) => {
-              setDocument(event.payload.document);
-              setDocumentPath(event.payload.path);
-              setSelection(null);
-              setContextMenu(null);
-              setError(null);
-            }
+            (event) => adopt.current(event.payload)
           );
           if (disposed) opened();
           else stopOpened = opened;
@@ -111,5 +114,9 @@ export function useDocumentBootstrap({
       stopChanged?.();
       stopCollaborationFailed?.();
     };
-  }, [setContextMenu]);
+    // Subscribed once for the life of the window: the handlers read through
+    // callbacks that are themselves stable, and re-subscribing on every
+    // document change would drop events between the two listeners.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

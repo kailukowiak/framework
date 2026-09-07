@@ -17,10 +17,14 @@ import {
 import type { Column, FrameObject, RenderedFrameStep } from "./types";
 
 /**
- * The context-menu gesture creates something real before asking for its
- * expression. A typed null is blank in every row but still gives the query
- * plan a stable dtype, so the column can render immediately and the formula
- * can be replaced in place without a second creation path.
+ * The formula a column starts life with, wherever it is added from — the
+ * header's *Add calculated column* and Wrangle's *Add or replace column*
+ * open the identical line, `` `Column 1` = None.cast("number") ``, selected
+ * whole so the first keystroke replaces all of it.
+ *
+ * A typed null is blank in every row but still gives the query plan a
+ * stable dtype, so the column can render immediately and the formula can be
+ * replaced in place without a second creation path.
  *
  * `None`, not `null`: the parser takes either, but the engine renders the
  * saved expression back canonically — `Expr::Null` prints as `None` — and
@@ -28,6 +32,12 @@ import type { Column, FrameObject, RenderedFrameStep } from "./types";
  * placeholder spelled `null` can never reconcile with its own save, so the
  * round trip reseeded the step list and severed the formula session the
  * gesture had just opened.
+ */
+export const BLANK_CALCULATION = 'None.cast("number")';
+
+/**
+ * The context-menu gesture creates something real before asking for its
+ * expression: see `BLANK_CALCULATION`.
  */
 export function appendBlankCalculatedColumn(
   steps: StepDraft[],
@@ -40,7 +50,7 @@ export function appendBlankCalculatedColumn(
   const fallbackName = nextBlankColumnName(visibleColumns.map((column) => column.name));
   const outputColumnId = mintColumnId(fallbackName);
   const column = {
-    ...namedDraft(fallbackName, 'None.cast("number")'),
+    ...namedDraft(fallbackName, BLANK_CALCULATION),
     outputColumnId,
     focusToken,
     anchorRowIndex,

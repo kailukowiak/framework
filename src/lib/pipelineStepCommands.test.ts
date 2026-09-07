@@ -30,6 +30,26 @@ describe("pipeline step commands", () => {
     });
   });
 
+  it("takes a name written without backticks, and still refuses an expression", () => {
+    expect(parseNamedTransformation("Profit = `Revenue` - `Cost`")).toEqual({
+      name: "Profit",
+      formula: "`Revenue` - `Cost`",
+    });
+    expect(parseNamedTransformation("Gross Profit_2 = 1")).toEqual({
+      name: "Gross Profit_2",
+      formula: "1",
+    });
+    expect(parseNamedTransformation("count(`Revenue`) = 1")).toBeNull();
+    expect(parseNamedTransformation("`Revenue` - `Cost` = 1")).toMatchObject({
+      // Long-standing: a name that opens and closes with a backtick is
+      // taken at its word, quotes and all. Unquoted names change nothing
+      // about that reading.
+      name: "Revenue` - `Cost",
+    });
+    expect(parseNamedTransformation("2024 = 1")).toBeNull();
+    expect(parseNamedTransformation("Profit")).toBeNull();
+  });
+
   it("binds a same-name transformation to the existing column id", () => {
     const visible = [{ id: "memo", name: "Memo" }];
     expect(outputColumnIdForName(visible, "new-id", "Memo")).toBe("memo");

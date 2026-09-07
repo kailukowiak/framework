@@ -18,7 +18,7 @@ export function defaultPlotSpec(frame: FrameObject): Record<string, unknown> {
       mark: { type: "bar", tooltip: true },
       encoding: field
         ? {
-            x: { field, type: "nominal", title: frame.columns[0].name },
+            x: { field, type: "nominal", title: frame.columns[0].name, sort: null },
             y: { aggregate: "count", type: "quantitative", title: "Count" },
           }
         : {},
@@ -36,7 +36,12 @@ export function defaultPlotSpec(frame: FrameObject): Record<string, unknown> {
         field: x.id,
         type: isTemporal ? "temporal" : isScatter ? "quantitative" : "nominal",
         title: x.name,
-        sort: isTemporal || isScatter ? undefined : "-y",
+        // The frame's own row order, not the bars' heights. A declared sort
+        // is part of what the table is, so a chart of a table sorted by
+        // month that drew the months by descending revenue was drawing a
+        // different table. `null` is Vega-Lite's "as the data arrives";
+        // temporal and quantitative axes order themselves by value already.
+        sort: isTemporal || isScatter ? undefined : null,
       },
       y: {
         field: y.id,
@@ -54,6 +59,26 @@ export function defaultPlotSpec(frame: FrameObject): Record<string, unknown> {
       ],
     },
   };
+}
+
+/**
+ * The cards the canvas actually draws.
+ *
+ * An object inside a container is drawn by its container's card rather than
+ * by its own view, so its view is a rectangle nothing occupies. Anything
+ * reasoning about the canvas as a space — where a new card fits, where the
+ * contents begin — has to ask this question rather than read `views`, or it
+ * will fend a new card away from empty screen and scroll to a corner nothing
+ * is drawn in.
+ */
+export function drawnCanvasCards(document: DocumentView | null): CanvasView[] {
+  if (!document) return [];
+  const contained = new Set(
+    document.objects.flatMap((object) =>
+      object.kind === "container" ? object.memberIds : []
+    )
+  );
+  return document.views.filter((view) => !contained.has(view.objectId));
 }
 
 /**

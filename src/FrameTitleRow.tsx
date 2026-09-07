@@ -86,6 +86,17 @@ function FrameNameField({
             name: event.target.value,
           });
       }}
+      // Return is what ends an edit everywhere else in the application, and
+      // it has to end this one too: the blur below is the commit, so a
+      // Return that only sat in the field left the tab strip and the
+      // inspector reading the old name until something else took focus.
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        else if (event.key === "Escape") {
+          event.currentTarget.value = name;
+          event.currentTarget.blur();
+        }
+      }}
     />
   );
 }

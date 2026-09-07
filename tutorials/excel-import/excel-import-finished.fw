@@ -3,13 +3,13 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "01f658b1-e7b8-4471-b2c8-308fa256008d",
+    "id": "527f792a-8866-4055-b53f-0720769497f0",
     "name": "Importing an Excel workbook",
     "revision": 13,
     "objects": [
       {
         "kind": "text",
-        "id": "19ac585e-6756-404d-8435-a7816873259d",
+        "id": "f00d0c80-c971-4842-bd3d-48ea93a8356c",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -21,11 +21,11 @@
       },
       {
         "kind": "frame",
-        "id": "b5300b35-ca3c-4511-90a0-25463bc25549",
+        "id": "a0321ae5-090a-4c62-8c9e-3783e56008fe",
         "name": "Customers",
         "columns": [
           {
-            "id": "customer_id~j250ck",
+            "id": "customer_id~7qda49",
             "name": "Customer ID",
             "sourceName": "Customer ID",
             "dataType": "string",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "customer~y4ax1x",
+            "id": "customer~1a87x4",
             "name": "Customer",
             "sourceName": "Customer",
             "dataType": "string",
@@ -43,7 +43,7 @@
             "formula": null
           },
           {
-            "id": "segment~m5kzjg",
+            "id": "segment~3qtakk",
             "name": "Segment",
             "sourceName": "Segment",
             "dataType": "string",
@@ -52,7 +52,7 @@
             "formula": null
           },
           {
-            "id": "annual_spend~7f3bp7",
+            "id": "annual_spend~wxktdt",
             "name": "Annual Spend",
             "sourceName": "Annual Spend",
             "dataType": "integer",
@@ -78,11 +78,11 @@
       },
       {
         "kind": "frame",
-        "id": "d9164fcc-badd-409c-a214-2b9daf8dd9ab",
+        "id": "5a523e13-2327-4f49-88da-7b371dd0e009",
         "name": "Inventory",
         "columns": [
           {
-            "id": "sku~4d70sz",
+            "id": "sku~8jbd64",
             "name": "SKU",
             "sourceName": "SKU",
             "dataType": "string",
@@ -91,7 +91,7 @@
             "formula": null
           },
           {
-            "id": "product~hfs22m",
+            "id": "product~0z68sm",
             "name": "Product",
             "sourceName": "Product",
             "dataType": "string",
@@ -100,7 +100,7 @@
             "formula": null
           },
           {
-            "id": "supplier_id~kqw0kq",
+            "id": "supplier_id~0v4r4e",
             "name": "Supplier ID",
             "sourceName": "Supplier ID",
             "dataType": "string",
@@ -109,7 +109,7 @@
             "formula": null
           },
           {
-            "id": "on_hand~v2d9yt",
+            "id": "on_hand~3w10jp",
             "name": "On Hand",
             "sourceName": "On Hand",
             "dataType": "integer",
@@ -118,7 +118,7 @@
             "formula": null
           },
           {
-            "id": "reorder_point~kdpg38",
+            "id": "reorder_point~w02b47",
             "name": "Reorder Point",
             "sourceName": "Reorder Point",
             "dataType": "integer",
@@ -127,7 +127,7 @@
             "formula": null
           },
           {
-            "id": "unit_cost~w0wfdn",
+            "id": "unit_cost~bbhfn2",
             "name": "Unit Cost",
             "sourceName": "Unit Cost",
             "dataType": "number",
@@ -153,11 +153,11 @@
       },
       {
         "kind": "frame",
-        "id": "3bdd9207-66da-46f1-aadf-0f5b342d8d24",
+        "id": "64cda7ee-db8e-4594-a329-5d011d25ea93",
         "name": "Suppliers",
         "columns": [
           {
-            "id": "supplier_id~m3f851",
+            "id": "supplier_id~axt0hd",
             "name": "Supplier ID",
             "sourceName": "Supplier ID",
             "dataType": "string",
@@ -166,7 +166,7 @@
             "formula": null
           },
           {
-            "id": "supplier~6vbfrs",
+            "id": "supplier~kh4kpc",
             "name": "Supplier",
             "sourceName": "Supplier",
             "dataType": "string",
@@ -175,7 +175,7 @@
             "formula": null
           },
           {
-            "id": "city~jdhezz",
+            "id": "city~8zv6kn",
             "name": "City",
             "sourceName": "City",
             "dataType": "string",
@@ -184,7 +184,7 @@
             "formula": null
           },
           {
-            "id": "lead_days~v247g3",
+            "id": "lead_days~8pq8q9",
             "name": "Lead Days",
             "sourceName": "Lead Days",
             "dataType": "integer",
@@ -193,7 +193,7 @@
             "formula": null
           },
           {
-            "id": "status~9p290x",
+            "id": "status~52wkmw",
             "name": "Status",
             "sourceName": "Status",
             "dataType": "string",
@@ -219,11 +219,11 @@
       },
       {
         "kind": "frame",
-        "id": "9dfc437e-9a1c-4c92-82ed-1e907b708173",
+        "id": "e7ee1a6e-f7c3-455f-b8ad-587338b9f6f6",
         "name": "Orders",
         "columns": [
           {
-            "id": "order_id~qxngm4",
+            "id": "order_id~nh53pm",
             "name": "Order ID",
             "sourceName": "Order ID",
             "dataType": "string",
@@ -232,7 +232,7 @@
             "formula": null
           },
           {
-            "id": "order_date~sy1xx5",
+            "id": "order_date~4epfn8",
             "name": "Order Date",
             "sourceName": "Order Date",
             "dataType": "date",
@@ -241,7 +241,7 @@
             "formula": null
           },
           {
-            "id": "sku~0hcs5q",
+            "id": "sku~bdyv9e",
             "name": "SKU",
             "sourceName": "SKU",
             "dataType": "string",
@@ -250,7 +250,7 @@
             "formula": null
           },
           {
-            "id": "customer~jh2bsz",
+            "id": "customer~yemkej",
             "name": "Customer",
             "sourceName": "Customer",
             "dataType": "string",
@@ -259,7 +259,7 @@
             "formula": null
           },
           {
-            "id": "region~8j3yvh",
+            "id": "region~ajpsgs",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -268,7 +268,7 @@
             "formula": null
           },
           {
-            "id": "units~mzbz2a",
+            "id": "units~fxd4f2",
             "name": "Units",
             "sourceName": "Units",
             "dataType": "integer",
@@ -277,7 +277,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~vfketk",
+            "id": "unit_price~0xkxp5",
             "name": "Unit Price",
             "sourceName": "Unit Price",
             "dataType": "number",
@@ -286,7 +286,7 @@
             "formula": null
           },
           {
-            "id": "revenue~h3jcnd",
+            "id": "revenue~fjhm4e",
             "name": "Revenue",
             "sourceName": "Revenue",
             "dataType": "number",
@@ -312,11 +312,11 @@
       },
       {
         "kind": "frame",
-        "id": "8faf1d81-4065-4ad8-a7d3-d4d98653cc69",
+        "id": "6b986142-a5f3-400c-befe-1954e975a87a",
         "name": "Adjustments",
         "columns": [
           {
-            "id": "adjustment_id~kg0fjz",
+            "id": "adjustment_id~a1hehd",
             "name": "Adjustment ID",
             "sourceName": "Adjustment ID",
             "dataType": "string",
@@ -325,7 +325,7 @@
             "formula": null
           },
           {
-            "id": "region~xxrxm9",
+            "id": "region~w4r4tb",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -334,7 +334,7 @@
             "formula": null
           },
           {
-            "id": "amount~18w3sj",
+            "id": "amount~yfv3w3",
             "name": "Amount",
             "sourceName": "Amount",
             "dataType": "integer",
@@ -343,7 +343,7 @@
             "formula": null
           },
           {
-            "id": "reason~1j4h6m",
+            "id": "reason~nbqwj9",
             "name": "Reason",
             "sourceName": "Reason",
             "dataType": "string",
@@ -369,11 +369,11 @@
       },
       {
         "kind": "frame",
-        "id": "bbf1f1db-7b4b-4733-968b-076175a33d4c",
+        "id": "33941093-3d59-4bb3-8c40-fd4628de0d88",
         "name": "Targets",
         "columns": [
           {
-            "id": "scenario~0ggge1",
+            "id": "scenario~3p58m5",
             "name": "Scenario",
             "sourceName": "Scenario",
             "dataType": "string",
@@ -382,7 +382,7 @@
             "formula": null
           },
           {
-            "id": "region~kammng",
+            "id": "region~bdn6pa",
             "name": "Region",
             "sourceName": "Region",
             "dataType": "string",
@@ -391,7 +391,7 @@
             "formula": null
           },
           {
-            "id": "target_units~e1fm24",
+            "id": "target_units~fafyej",
             "name": "Target Units",
             "sourceName": "Target Units",
             "dataType": "integer",
@@ -400,7 +400,7 @@
             "formula": null
           },
           {
-            "id": "owner~g9y2wh",
+            "id": "owner~0ntap3",
             "name": "Owner",
             "sourceName": "Owner",
             "dataType": "string",
@@ -427,8 +427,8 @@
     ],
     "views": [
       {
-        "id": "08624ccd-dce9-41d6-8095-c288bdc444a0",
-        "objectId": "19ac585e-6756-404d-8435-a7816873259d",
+        "id": "ea272089-c4e1-40bc-a643-210e4dfb6658",
+        "objectId": "f00d0c80-c971-4842-bd3d-48ea93a8356c",
         "x": 60.0,
         "y": 50.0,
         "width": 920.0,
@@ -436,61 +436,63 @@
         "collapsed": false
       },
       {
-        "id": "aa261101-41a4-4309-9ef3-5717cc2e2dc3",
-        "objectId": "b5300b35-ca3c-4511-90a0-25463bc25549",
+        "id": "ebc4d702-fae9-40f7-890a-9e6563488f1f",
+        "objectId": "a0321ae5-090a-4c62-8c9e-3783e56008fe",
         "x": 60.0,
         "y": 880.0,
         "width": 648.0,
-        "height": 300.0,
+        "height": 486.0,
         "collapsed": false
       },
       {
-        "id": "8101026b-0d45-4376-832c-cc5a014b30ae",
-        "objectId": "d9164fcc-badd-409c-a214-2b9daf8dd9ab",
+        "id": "995b820c-5c71-4a1f-a08d-5debc613e81d",
+        "objectId": "5a523e13-2327-4f49-88da-7b371dd0e009",
         "x": 650.0,
         "y": 880.0,
         "width": 900.0,
-        "height": 300.0,
+        "height": 450.0,
         "collapsed": false
       },
       {
-        "id": "d2d2c1a7-83bd-44b0-9893-407df07285b3",
-        "objectId": "3bdd9207-66da-46f1-aadf-0f5b342d8d24",
+        "id": "12398545-6592-4911-b661-2f8e1d2d3472",
+        "objectId": "64cda7ee-db8e-4594-a329-5d011d25ea93",
         "x": 1240.0,
         "y": 880.0,
         "width": 798.0,
-        "height": 300.0,
+        "height": 378.0,
         "collapsed": false
       },
       {
-        "id": "2578916c-34d1-4451-9da4-9dda0a4b5d1e",
-        "objectId": "9dfc437e-9a1c-4c92-82ed-1e907b708173",
+        "id": "3a803d21-1319-44d3-be55-070a71ce33c5",
+        "objectId": "e7ee1a6e-f7c3-455f-b8ad-587338b9f6f6",
         "x": 60.0,
-        "y": 1270.0,
+        "y": 1406.0,
         "width": 900.0,
-        "height": 300.0,
+        "height": 666.0,
         "collapsed": false
       },
       {
-        "id": "fd960a00-f42b-4b72-9f0f-26108ee8be91",
-        "objectId": "8faf1d81-4065-4ad8-a7d3-d4d98653cc69",
+        "id": "058b559a-6d9c-4dfc-9898-371fb2e53692",
+        "objectId": "6b986142-a5f3-400c-befe-1954e975a87a",
         "x": 650.0,
-        "y": 1270.0,
+        "y": 1406.0,
         "width": 648.0,
-        "height": 300.0,
+        "height": 522.0,
         "collapsed": false
       },
       {
-        "id": "b2433ddf-bd01-46a8-b385-8762e9baeca2",
-        "objectId": "bbf1f1db-7b4b-4733-968b-076175a33d4c",
+        "id": "c1cfcf12-7e85-433b-9d22-9d888a8fb154",
+        "objectId": "33941093-3d59-4bb3-8c40-fd4628de0d88",
         "x": 1240.0,
-        "y": 1270.0,
+        "y": 1406.0,
         "width": 648.0,
-        "height": 300.0,
+        "height": 594.0,
         "collapsed": false
       }
     ],
-    "frozenValues": {}
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
   },
   "versionVector": {}
 }

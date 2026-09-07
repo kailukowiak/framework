@@ -10,6 +10,7 @@ import {
   insertFormulaReference,
   insertionResumesAt,
   isFormulaExecuteShortcut,
+  referenceInsertionRange,
   type FormulaReference,
 } from "./formulaReferences";
 
@@ -174,5 +175,52 @@ describe("insertionResumesAt", () => {
 
   it("leaves everything alone for a token that closes nothing", () => {
     expect(insertionResumesAt("= su`", 4, "sum(")).toBe(4);
+  });
+});
+
+describe("referenceInsertionRange", () => {
+  const command = "`Column 1` = None.cast(\"number\")";
+
+  // A new wrangle row opens with its whole line selected so typing can
+  // replace it. A pointed reference must not take that as licence to delete
+  // the column's name: what is left cannot be saved as a named command at
+  // all.
+  it("keeps a pick out of the name when the whole command is selected", () => {
+    expect(referenceInsertionRange(command, { start: 0, end: command.length })).toEqual(
+      { start: 13, end: command.length }
+    );
+  });
+
+  it("moves a caret resting in the name to the start of the formula", () => {
+    expect(referenceInsertionRange(command, { start: 3, end: 3 })).toEqual({
+      start: 13,
+      end: 13,
+    });
+  });
+
+  it("leaves a selection already inside the formula alone", () => {
+    expect(referenceInsertionRange(command, { start: 14, end: 18 })).toEqual({
+      start: 14,
+      end: 18,
+    });
+  });
+
+  it("leaves an ordinary formula surface alone", () => {
+    expect(referenceInsertionRange("`Debit` - `Credit`", { start: 0, end: 18 })).toEqual(
+      { start: 0, end: 18 }
+    );
+  });
+
+  // A predicate is a formula surface with an operator in it, not a command
+  // with a name in front: nothing about it is protected from a pick.
+  it("leaves a comparison alone", () => {
+    for (const predicate of [
+      '`Region` == "East"',
+      "`Amount` <= 5",
+      "`Amount` != 5",
+    ])
+      expect(
+        referenceInsertionRange(predicate, { start: 0, end: predicate.length })
+      ).toEqual({ start: 0, end: predicate.length });
   });
 });

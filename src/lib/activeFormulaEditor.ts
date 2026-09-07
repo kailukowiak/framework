@@ -1,5 +1,6 @@
 import {
   insertFormulaReference,
+  referenceInsertionRange,
   type FormulaReference,
 } from "./formulaReferences";
 import type { FrameStepInput } from "./types";
@@ -287,7 +288,13 @@ export class ActiveFormulaEditorRegistry {
 
   insertReference(token: string, refocus = true): void {
     if (!this.active) return;
-    const { draft, selection } = this.active;
+    const { draft } = this.active;
+    // Scratchwork is a document of many named lines, not one named command,
+    // so the name-preserving narrowing below is not its rule to follow.
+    const selection =
+      this.active.kind === "formula"
+        ? referenceInsertionRange(draft, this.active.selection)
+        : this.active.selection;
     if (selection.start !== selection.end) {
       const next = `${draft.slice(0, selection.start)}${token}${draft.slice(
         selection.end

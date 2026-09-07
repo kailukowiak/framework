@@ -82,7 +82,7 @@ export function LeftRail({
           title="Every frame in this document, and where each one reads from (⇧⌘D)"
         >
           <Database size={19} />
-          <span>Data</span>
+          <span>Sources</span>
         </button>
         <button
           className="rail-button"

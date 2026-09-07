@@ -202,10 +202,21 @@ function LookupDiagnosticsStatus({
           {diagnostics.lookupNullKeyRows.toLocaleString()} lookup rows have a blank key.
         </p>
       )}
-      {!unique && diagnostics && duplicates === 0 && (
-        <button className="secondary-action lookup-mark-key" onClick={onMarkUnique}>
-          <KeyRound size={13} /> Mark {lookupKeyName} as unique
-        </button>
+      {/* Marking the key unique used to remove this row, which recentred the
+          dialog and slid "Bring columns over" up under the pointer — the
+          person's next click landed somewhere they had not aimed at. The row
+          stays, at the same height, and says what it now knows instead: the
+          state is confirmed where the question was asked, and nothing moves. */}
+      {diagnostics && duplicates === 0 && (
+        unique ? (
+          <p className="lookup-mark-key lookup-key-unique">
+            <KeyRound size={13} /> {lookupKeyName} is unique
+          </p>
+        ) : (
+          <button className="secondary-action lookup-mark-key" onClick={onMarkUnique}>
+            <KeyRound size={13} /> Mark {lookupKeyName} as unique
+          </button>
+        )
       )}
       {duplicates > 0 && (
         <p className="formula-editor-error">

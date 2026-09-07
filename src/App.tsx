@@ -47,6 +47,7 @@ import { useConnectorRefreshApproval } from "./hooks/useConnectorRefreshApproval
 import { ConnectorRefreshConfirmDialog } from "./ConnectorRefreshConfirmDialog";
 import { useGridKeyboardNavigation } from "./hooks/useGridKeyboardNavigation";
 import { useDocumentBootstrap } from "./hooks/useDocumentBootstrap";
+import { useOpenedDocument } from "./hooks/useOpenedDocument";
 import { CollapsedInspector, Inspector } from "./Inspector";
 import { JoinDialog } from "./JoinDialog";
 import { DataSidebar } from "./DataSidebar";
@@ -55,8 +56,6 @@ import {
   CARD_SIZES,
   frameCardSize,
   placeNewCard,
-  type CardSize,
-  type Rect,
 } from "./lib/cardPlacement";
 import {
   inspectorAvailable,
@@ -98,6 +97,8 @@ import {
 } from "./FrameGrid";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
 import { revealScroll } from "./lib/canvasReveal";
+import { useInsertPosition } from "./hooks/useInsertPosition";
+import { useSplashSlow } from "./hooks/useSplashSlow";
 import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
 import { combineVectorWithFrame } from "./lib/vectorCombine";
 import {
@@ -122,6 +123,11 @@ import {
   type RecentDocument,
 } from "./lib/api";
 import { reconcileSelection } from "./lib/reconcileSelection";
+import {
+  columnRangeKey,
+  emptyColumnRangeMemo,
+  stableColumnRange,
+} from "./lib/selectedColumnRange";
 import { formulaToken } from "./lib/formulaReferences";
 import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNavigation";
 import {
@@ -157,21 +163,6 @@ import type {
  * the canvas only ever has to know whether something is there.
  */
 export type LeftPanel = "data" | "project" | null;
-// The anchor a fresh import prefers — just inside the viewport's corner —
-// displaced only if a card is already sitting there. Importing a CSV used
-// to land the new frame exactly on top of an existing card (Frame 1, most
-// often, since both computed the same fixed point), hiding it outright.
-function importPosition(
-  viewport: HTMLDivElement | null,
-  existingViews: Rect[]
-): { x: number; y: number } {
-  const anchor = {
-    x: (viewport?.scrollLeft ?? 0) + 110,
-    y: (viewport?.scrollTop ?? 0) + 100,
-  };
-  return placeNewCard(existingViews, anchor, CARD_SIZES.frame);
-}
-
 /**
  * The selected object as Quick Commands names it: the card, the column when
  * one is picked, and the few facts its verbs need to read correctly — whether
@@ -303,6 +294,7 @@ export default function App() {
   });
   const inspectorSection = inspectorPanel.section;
   const [error, setError] = useState<string | null>(null);
+  const splashSlow = useSplashSlow(document === null && !error);
   /** For work that finishes quietly and is worth reporting anyway. */
   const [notice, setNotice] = useState<string | null>(null);
   const [dataRefreshRevision, setDataRefreshRevision] = useState(0);
@@ -329,18 +321,61 @@ export default function App() {
     canvasRef,
     documentOpened: document !== null,
   });
+
+  // What a document open clears in this window, and the canvas jump that goes
+  // with it — see `useOpenedDocument` for why each line is here.
+  const resetForOpenedDocument = useCallback(
+    (opened: { document: DocumentView; path: string | null }) => {
+      setDocument(opened.document);
+      setDocumentPath(opened.path);
+      setSelection(null);
+      setGridFocus(null);
+      setContextMenu(null);
+      setError(null);
+      setScratchFocus(null);
+      setScratchworkDrawerOpen(false);
+      clearActiveFormulaEditor();
+    },
+    [clearActiveFormulaEditor]
+  );
+  const adoptOpenedDocument = useOpenedDocument({
+    document,
+    canvasRef,
+    canvasZoomRef,
+    reset: resetForOpenedDocument,
+  });
   // What each card actually has on screen, by frame. A ref rather than
-  // state: this changes on every scroll of a paged frame, and nothing here
-  // renders from it — the keyboard and clipboard handlers read it when a
-  // key arrives.
+  // state: this changes on every scroll of a paged frame, and the keyboard
+  // and clipboard handlers read it when a key arrives rather than rendering
+  // from it.
   const renderedRows = useRef(new Map<string, RenderedGrid>());
+  // Three things *are* rendered from it, though — the formula bar's cell
+  // label, the status bar's aggregate and the inspector's column range —
+  // and a ref write reaches none of them. That is how a sort that moved the
+  // selected cell to row 4 left the bar still saying "row 1": the card
+  // published its new order and nothing on this side re-read it. So the
+  // focused card's rows are mirrored into state. Only that card's: every
+  // other frame keeps the silent ref write it had, which is what keeps
+  // scrolling a million-row import off the render path.
+  const [focusedGrids, setFocusedGrids] = useState(new Map<string, RenderedGrid>());
+  const focusedFrameIdRef = useRef<string | null>(null);
   const publishRenderedRows = useCallback(
     (frameId: string, grid: RenderedGrid | null) => {
       if (grid) renderedRows.current.set(frameId, grid);
       else renderedRows.current.delete(frameId);
+      if (frameId === focusedFrameIdRef.current)
+        setFocusedGrids(new Map(renderedRows.current));
     },
     []
   );
+  const columnRangeRef = useRef(emptyColumnRangeMemo);
+  const focusedFrameId = gridFocus?.objectId ?? null;
+  useEffect(() => {
+    focusedFrameIdRef.current = focusedFrameId;
+    // The newly focused card published its rows before it was focused, so
+    // the mirror has to be taken now rather than waiting for its next one.
+    setFocusedGrids(new Map(renderedRows.current));
+  }, [focusedFrameId]);
 
   const {
     importMode,
@@ -363,10 +398,9 @@ export default function App() {
   useDocumentBootstrap({
     setDocument,
     setDocumentPath,
-    setSelection,
-    setContextMenu,
     setError,
     setDatasetLibrary,
+    onDocumentOpened: adoptOpenedDocument,
   });
 
   useEffect(() => {
@@ -591,29 +625,7 @@ export default function App() {
     [canvasZoomRef, document, run]
   );
 
-  // Just inside the top-left corner of what is on screen. The offsets are
-  // screen distances, so they shrink into canvas units as the canvas zooms
-  // out — otherwise a card inserted at 40% lands a long way in from the
-  // corner you asked for.
-  //
-  // That corner is only where a new card *prefers* to land: every caller
-  // used to get exactly that point regardless of what already sat there,
-  // which is how clicking Matrix right after an Arrange dropped the new
-  // card behind Frame 1 instead of beside it. `placeNewCard` checks the
-  // preferred spot against the document's current views and steps aside
-  // only if something is actually in the way — see `src/lib/cardPlacement.ts`.
-  // `size` defaults to a Block's footprint since most no-argument callers
-  // (Scratchwork's block, in particular) are creating one.
-  const insertPosition = useCallback(
-    (size: CardSize = CARD_SIZES.block) => {
-      const anchor = {
-        x: ((canvasRef.current?.scrollLeft ?? 0) + 110) / canvasZoomRef.current,
-        y: ((canvasRef.current?.scrollTop ?? 0) + 100) / canvasZoomRef.current,
-      };
-      return placeNewCard(document?.views ?? [], anchor, size);
-    },
-    [canvasZoomRef, document]
-  );
+  const insertPosition = useInsertPosition(document, canvasRef, canvasZoomRef);
 
   const fitViewToWindow = useFitViewToWindow(canvasRef, canvasZoomRef, run);
 
@@ -900,13 +912,7 @@ export default function App() {
   /** Opening a recent from the palette lands the same way the library does. */
   const openRecentDocument = (path: string) => {
     void openDocument(path)
-      .then((opened) => {
-        setDocument(opened.document);
-        setDocumentPath(opened.path);
-        setSelection(null);
-        setContextMenu(null);
-        setError(null);
-      })
+      .then(adoptOpenedDocument)
       .catch((reason) => setError(String(reason).replace(/^Error:\s*/, "")));
   };
 
@@ -1093,6 +1099,12 @@ export default function App() {
       <main className="loading-screen">
         <div className="mark">F</div>
         <p>{error ?? "Opening your canvas…"}</p>
+        {!error && splashSlow && (
+          <p>
+            Still opening. If macOS is asking for permission to read your
+            Documents folder, allow it to continue.
+          </p>
+        )}
         {error && (
           <button className="secondary-action" onClick={() => window.location.reload()}>
             Retry
@@ -1175,14 +1187,21 @@ export default function App() {
     })
   );
   const selectedGridContext = gridFocus
-    ? resolveGridContext(document, gridFocus, renderedRows.current)
+    ? resolveGridContext(document, gridFocus, focusedGrids)
     : null;
   // Every column the grid selection covers, in frame order, so the inspector
   // can format a range of columns as one gesture rather than the active one.
-  const selectedColumnIds =
+  // Held across a render where the card has no rows to resolve against —
+  // see `stableColumnRange` for why that is not a narrowing.
+  const columnRange = stableColumnRange(
+    columnRangeRef.current,
+    columnRangeKey(gridFocus),
     selectedGridContext && gridFocus
       ? selectedGridColumnIds(selectedGridContext, gridFocus)
-      : [];
+      : []
+  );
+  columnRangeRef.current = columnRange;
+  const selectedColumnIds = columnRange.ids;
   const selectedCellFormulaReferences = selectedGridContext
     ? [
         ...selectedGridContext.frame.columns
@@ -1900,13 +1919,8 @@ export default function App() {
           <NewDocumentDialog
             onClose={() => setNewDocumentOpen(false)}
             onOpened={(opened) => {
-              setDocument(opened.document);
-              setDocumentPath(opened.path);
-              setSelection(null);
-              setGridFocus(null);
-              setContextMenu(null);
+              adoptOpenedDocument(opened);
               setNewDocumentOpen(false);
-              setError(null);
             }}
           />
         )}
@@ -1917,8 +1931,7 @@ export default function App() {
             onSourceChanged={changeFrameSource}
             onClose={() => setDatasetLibrary(false)}
             onImportFile={async () => {
-              const viewport = canvasRef.current;
-              const position = importPosition(viewport, document.views);
+              const position = insertPosition(CARD_SIZES.frame);
               // The question comes before the file picker rather than after:
               // it is about what this document becomes, not about the file,
               // and answering it first means the picker is the last step.
@@ -1934,18 +1947,16 @@ export default function App() {
             onImportExcelFile={async () => {
               const workbook = await inspectExcelWorkbook();
               if (!workbook) return false;
-              const viewport = canvasRef.current;
               setExcelImport({
                 workbook,
-                position: importPosition(viewport, document.views),
+                position: insertPosition(CARD_SIZES.frame),
               });
               setDatasetLibrary(false);
               return true;
             }}
             onImportCliSource={async (source) => {
-              const viewport = canvasRef.current;
               const next = await importCliSource(
-                importPosition(viewport, document.views),
+                insertPosition(CARD_SIZES.frame),
                 source
               );
               setDocument(next);
@@ -1953,9 +1964,8 @@ export default function App() {
               setNotice(`Connected ${source.sourceLabel}.`);
             }}
             onImportDatabaseSource={async (source) => {
-              const viewport = canvasRef.current;
               const next = await importDatabaseSource(
-                importPosition(viewport, document.views),
+                insertPosition(CARD_SIZES.frame),
                 source
               );
               setDocument(next);
@@ -1963,12 +1973,8 @@ export default function App() {
               setNotice(`Connected ${source.sourceName}.`);
             }}
             onOpened={(opened) => {
-              setDocument(opened.document);
-              setDocumentPath(opened.path);
-              setSelection(null);
-              setContextMenu(null);
+              adoptOpenedDocument(opened);
               setDatasetLibrary(false);
-              setError(null);
             }}
           />
         )}

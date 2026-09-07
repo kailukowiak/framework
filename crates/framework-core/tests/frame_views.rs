@@ -49,8 +49,27 @@ fn branched_tabs_filter_the_same_data_independently() {
     assert_ne!(copy_id, orders_id);
     assert_eq!(
         branched.document.frame(&copy_id).unwrap().name,
-        "Orders copy"
+        "Orders view"
     );
+
+    // A branch is a second view of the same data, so it is numbered the way
+    // a person numbers views — never "Orders view_2", and never "copy".
+    let again = store
+        .apply(Operation::BranchFrame {
+            view_id: window_id.clone(),
+            frame_id: orders_id.clone(),
+        })
+        .unwrap();
+    let second_id = again.document.view(&window_id).unwrap().object_id.clone();
+    assert_eq!(
+        again.document.frame(&second_id).unwrap().name,
+        "Orders view 2"
+    );
+    store
+        .apply(Operation::DeleteObject {
+            object_id: second_id,
+        })
+        .unwrap();
 
     store
         .apply(Operation::SetFrameDisplayFilter {

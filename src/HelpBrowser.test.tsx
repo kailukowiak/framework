@@ -106,4 +106,27 @@ describe("HelpBrowser", () => {
       screen.getByRole("option", { name: /Conditional formatting rules/ })
     ).toBeTruthy();
   });
+
+  it("closes on Escape from the search field and from a result", async () => {
+    const onClose = vi.fn();
+    render(
+      <HelpBrowser
+        scope="guide"
+        formulaFunctions={fixtures.blank.formulaFunctions}
+        canInsert={false}
+        onScopeChange={vi.fn()}
+        onInsert={vi.fn()}
+        onClose={onClose}
+      />
+    );
+
+    const search = screen.getByRole("textbox", { name: "Search help" });
+    await userEvent.type(search, "join{Escape}");
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    const result = screen.getAllByRole("option")[0];
+    result.focus();
+    await userEvent.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
 });

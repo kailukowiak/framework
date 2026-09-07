@@ -103,6 +103,23 @@ fn view_id(store: &Store, object_id: &str) -> String {
         .clone()
 }
 
+/// The height the engine actually gave an object's card, so the next card
+/// in a column can be placed below it instead of at a guessed offset —
+/// frame cards size to their row count now (`frame_card_height` in
+/// `engine/build.rs`), so a fixed gap between rows silently overlaps once a
+/// card grows past the old ~300-450px guesses.
+fn view_height(store: &Store, object_id: &str) -> f64 {
+    store
+        .document()
+        .views
+        .iter()
+        .find(|view| {
+            view.object_id == object_id || view.tab_object_ids.iter().any(|id| id == object_id)
+        })
+        .expect("tutorial object has a view")
+        .height
+}
+
 fn money_format() -> ColumnFormat {
     ColumnFormat {
         style: ColumnFormatStyle::Accounting,
@@ -797,6 +814,9 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         x: 70.0,
         y: 70.0,
     })?;
+    let actuals_start_y = 70.0;
+    let budget_start_y =
+        actuals_start_y + view_height(&store, &frame(&store, "Actuals").id) + 40.0;
     store.apply(Operation::AddFrame {
         name: "Budget".into(),
         grid: vec![
@@ -818,12 +838,14 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         .map(|row| row.into_iter().map(str::to_string).collect())
         .collect(),
         x: 70.0,
-        y: 480.0,
+        y: budget_start_y,
     })?;
+    let checks_start_y =
+        budget_start_y + view_height(&store, &frame(&store, "Budget").id) + 40.0;
     store.apply(Operation::AddBlock {
         name: "Close checks".into(),
         x: 70.0,
-        y: 850.0,
+        y: checks_start_y,
     })?;
     add_tutorial_walkthrough(
         &mut store,
@@ -1056,13 +1078,6 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         view_id: analysis_view,
         object_id: analysis.id.clone(),
     })?;
-    for (object, x) in [(&actuals, 720.0), (&budget, 1520.0)] {
-        store.apply(Operation::MoveView {
-            view_id: view_id(&store, &object.id),
-            x,
-            y: 800.0,
-        })?;
-    }
     store.apply(Operation::MoveView {
         view_id: view_id(&store, &checks),
         x: 692.0,
@@ -1073,6 +1088,16 @@ fn generate_advanced(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         width: 983.0,
         height: 255.0,
     })?;
+    // Below the checks card, not at a guessed offset: the raw inputs must
+    // clear whatever height the checks block actually resized to.
+    let raw_inputs_y = 547.0 + view_height(&store, &checks) + 40.0;
+    for (object, x) in [(&actuals, 720.0), (&budget, 1520.0)] {
+        store.apply(Operation::MoveView {
+            view_id: view_id(&store, &object.id),
+            x,
+            y: raw_inputs_y,
+        })?;
+    }
 
     let finished = output.join("month-end-close-finished.fw");
     store.save(&finished)?;
@@ -1264,10 +1289,15 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
         x: 1410.0,
         y: 770.0,
     })?;
+    // Below Launch inputs' actual card height, not the 6-row guess: that
+    // card sizes itself to its row count and would otherwise clip under
+    // the matrix in the same column.
+    let launch_inputs = frame(&store, "Launch inputs");
+    let matrix_y = 540.0 + view_height(&store, &launch_inputs.id) + 40.0;
     store.apply(Operation::AddCalculationMatrix {
         name: "Scenario × Quarter".into(),
         x: 720.0,
-        y: 930.0,
+        y: matrix_y,
     })?;
     let calculation_matrix_id = calculation_matrix_id(&store, "Scenario × Quarter");
     store.apply(Operation::SetCalculationMatrix {

@@ -4,6 +4,9 @@ import {
   formulaCellRangePick,
   formulaColumnPick,
   formulaSummaryPick,
+  siblingColumnExplanation,
+  siblingColumnInStep,
+  siblingReferenceInFormula,
   summaryFormulaToken,
 } from "./formulaPicking";
 
@@ -37,6 +40,20 @@ describe("formula cell picking", () => {
       kind: "insert",
       token: "`Revenue`.shift(1)",
     });
+  });
+
+  // The tutorial gesture: the formula was opened on the second row, so the
+  // first row — index 0 — is one row back. A falsy row index is a real row.
+  it("reads the row above row two as one period back", () => {
+    expect(
+      formulaColumnPick(
+        { ...active, completion: { ...active.completion, anchorRowIndex: 1 } },
+        "revenue",
+        "sales",
+        0,
+        true
+      )
+    ).toEqual({ kind: "insert", token: "`Revenue`.shift(1)" });
   });
 
   it("routes the previous value of the target to recurrence authoring", () => {
@@ -155,5 +172,61 @@ describe("formula summary picking", () => {
     expect(formulaSummaryPick(active, "sum", "previous")).toMatchObject({
       kind: "refuse",
     });
+  });
+});
+
+describe("a calculation written beside another", () => {
+  const step = {
+    kind: "withColumns" as const,
+    columns: [
+      { outputColumnId: "previous", name: "Previous revenue", formula: "`Revenue`.shift(1)" },
+      { outputColumnId: "change", name: "Change", formula: "" },
+    ],
+  };
+  const writingChange: ActiveFormulaEditor = {
+    ...active,
+    label: "Change",
+    completion: {
+      ...active.completion,
+      targetColumnId: "change",
+      scope: { steps: [step], stepIndex: 0 },
+    },
+  };
+
+  it("names the sibling a click cannot read yet", () => {
+    expect(siblingColumnInStep(writingChange, "previous")).toEqual({
+      name: "Previous revenue",
+    });
+    expect(siblingColumnInStep(writingChange, "change")).toBeNull();
+    expect(siblingColumnInStep(writingChange, "revenue")).toBeNull();
+  });
+
+  it("says which step to add instead of leaving the refusal bare", () => {
+    expect(siblingColumnExplanation("Previous revenue", "Change")).toBe(
+      "Previous revenue is added in this same step, so Change cannot read it yet. Add Change as a new step to read it."
+    );
+  });
+
+  it("catches the typed spelling of the same mistake", () => {
+    expect(
+      siblingReferenceInFormula(
+        "`Revenue` - `Previous revenue`",
+        [{ name: "Previous revenue" }],
+        ["Month", "Revenue"]
+      )
+    ).toBe("Previous revenue");
+  });
+
+  // Replacing a column while another calculation in the same step reads it
+  // is reading the value from above, which is exactly what with_columns
+  // means. Refusing it would forbid an ordinary chain.
+  it("leaves a name that also arrives from above alone", () => {
+    expect(
+      siblingReferenceInFormula(
+        "`Amount` * 2",
+        [{ name: "Amount" }],
+        ["Amount", "Revenue"]
+      )
+    ).toBeNull();
   });
 });

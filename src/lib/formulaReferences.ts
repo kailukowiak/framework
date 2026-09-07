@@ -173,6 +173,52 @@ export function insertionResumesAt(
   return insertText.endsWith("`") && source[cursor] === "`" ? cursor + 1 : cursor;
 }
 
+/**
+ * The part of a named command a pointed reference is allowed to replace.
+ *
+ * A wrangle row is written `` `Name` = formula ``, and a freshly created
+ * column opens with the whole line selected so that *typing* can replace
+ * name and expression in one stroke. Pointing is not typing: clicking a cell
+ * means "read that column here", never "and throw the column's name away".
+ * With the name gone the line stops being a named command at all — nothing
+ * can be saved, and the person is left holding a bare reference where their
+ * calculation used to be. So a pick that would swallow the name is narrowed
+ * to the expression side. Returns null when the source is not a named
+ * command, which is every other formula surface.
+ */
+function namedCommandFormulaStart(source: string): number | null {
+  let backticked = false;
+  for (let index = 0; index < source.length; index += 1) {
+    if (source[index] === "`") {
+      if (backticked && source[index + 1] === "`") index += 1;
+      else backticked = !backticked;
+      continue;
+    }
+    if (backticked || source[index] !== "=") continue;
+    // Only an assignment counts. `==`, `!=`, `<=` and `>=` are comparisons —
+    // a filter predicate is a formula surface too, and narrowing a pick to
+    // the right of its operator would be nonsense. The left side must also
+    // read as one backticked name, which is how every named command this
+    // rule is for prints itself.
+    if ("=!<>".includes(source[index - 1] ?? "") || source[index + 1] === "=")
+      return null;
+    if (!/^`(?:[^`]|``)+`$/.test(source.slice(0, index).trim())) return null;
+    let start = index + 1;
+    while (source[start] === " ") start += 1;
+    return start;
+  }
+  return null;
+}
+
+export function referenceInsertionRange(
+  source: string,
+  selection: { start: number; end: number }
+): { start: number; end: number } {
+  const formulaStart = namedCommandFormulaStart(source);
+  if (formulaStart === null || selection.start >= formulaStart) return selection;
+  return { start: formulaStart, end: Math.max(formulaStart, selection.end) };
+}
+
 export function insertFormulaReference(
   source: string,
   cursor: number,

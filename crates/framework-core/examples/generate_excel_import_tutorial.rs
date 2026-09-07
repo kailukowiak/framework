@@ -16,6 +16,29 @@ fn text_id(store: &Store) -> String {
         .expect("tutorial instructions exist")
 }
 
+/// The height the engine actually gave the named frame's card, so the next
+/// row can be placed below it instead of at a guessed offset — cards size
+/// to their row count now (`frame_card_height` in `engine/build.rs`), so a
+/// fixed gap between rows silently overlaps once a card grows past ~450px.
+fn frame_view_height(store: &Store, name: &str) -> f64 {
+    let object_id = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Frame(frame) if frame.name == name => Some(frame.id.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("frame {name} exists"));
+    store
+        .document()
+        .views
+        .iter()
+        .find(|view| view.object_id == object_id)
+        .unwrap_or_else(|| panic!("frame {name} has a view"))
+        .height
+}
+
 fn view_id(store: &Store, object_id: &str) -> String {
     store
         .document()
@@ -90,6 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let simple = sources.join("simple-customers.xlsx");
     let complex = sources.join("multi-table-operations.xlsx");
+    let row1_y = 880.0;
     import_range(
         &mut store,
         &simple,
@@ -99,15 +123,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             sheet: "Customers",
             range: "A4:D11",
             x: 60.0,
-            y: 880.0,
+            y: row1_y,
         },
     )?;
     for (name, sheet, range, x, y) in [
-        ("Inventory", "Operations", "A4:F10", 650.0, 880.0),
-        ("Suppliers", "Operations", "H4:L8", 1240.0, 880.0),
-        ("Orders", "Sales", "B5:I25", 60.0, 1270.0),
-        ("Adjustments", "Operations", "A15:D23", 650.0, 1270.0),
-        ("Targets", "Sales", "P15:S25", 1240.0, 1270.0),
+        ("Inventory", "Operations", "A4:F10", 650.0, row1_y),
+        ("Suppliers", "Operations", "H4:L8", 1240.0, row1_y),
     ] {
         import_range(
             &mut store,
@@ -119,6 +140,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 range,
                 x,
                 y,
+            },
+        )?;
+    }
+    // The second row starts below the tallest card the first row actually
+    // got, not a guessed offset: frame cards now size to their row count.
+    let row1_height = ["Customers", "Inventory", "Suppliers"]
+        .into_iter()
+        .map(|name| frame_view_height(&store, name))
+        .fold(0.0_f64, f64::max);
+    let row2_y = row1_y + row1_height + 40.0;
+    for (name, sheet, range, x) in [
+        ("Orders", "Sales", "B5:I25", 60.0),
+        ("Adjustments", "Operations", "A15:D23", 650.0),
+        ("Targets", "Sales", "P15:S25", 1240.0),
+    ] {
+        import_range(
+            &mut store,
+            &complex,
+            &data,
+            ImportSpec {
+                name,
+                sheet,
+                range,
+                x,
+                y: row2_y,
             },
         )?;
     }

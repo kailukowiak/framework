@@ -808,6 +808,7 @@ export function FrameInspector({
               references={references}
               frames={otherFrames.map(({ id, name }) => ({ id, name }))}
               joinFrames={allFrames}
+              selectedColumnId={selection.columnId}
               addCalculatedColumnRequest={addCalculatedColumnRequest}
               onAddCalculatedColumnRequestHandled={
                 onAddCalculatedColumnRequestHandled

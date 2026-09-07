@@ -313,4 +313,72 @@ describe("DatasetDialog", () => {
       Node.DOCUMENT_POSITION_FOLLOWING
     );
   });
+
+  // Reset used to leave the confirmation button's place blank once the
+  // replace finished, with nothing on screen to say it happened. The result
+  // now prints where the confirmation was, using whatever the reset command
+  // reports back.
+  it("reports how many tutorial workbooks a reset replaced", async () => {
+    serveInvoke({
+      list_sample_documents: () => [],
+      list_recent_documents: () => [],
+      list_tutorial_documents: () => ({
+        directory: "/tmp/tutorials",
+        documents: [
+          {
+            title: "Importing an Excel workbook — Start",
+            lesson: "Importing an Excel workbook",
+            kind: "Start",
+            path: "/tmp/tutorials/excel/Start/Workbook.fw",
+            exists: true,
+          },
+        ],
+      }),
+      reset_tutorial_documents: () => ({
+        directory: "/tmp/tutorials",
+        documents: [
+          {
+            title: "Importing an Excel workbook — Start",
+            lesson: "Importing an Excel workbook",
+            kind: "Start",
+            path: "/tmp/tutorials/excel/Start/Workbook.fw",
+            exists: true,
+          },
+          {
+            title: "Importing an Excel workbook — Answer key",
+            lesson: "Importing an Excel workbook",
+            kind: "Answer key",
+            path: "/tmp/tutorials/excel/Answer key/Workbook.fw",
+            exists: true,
+          },
+        ],
+      }),
+    });
+    render(
+      <DatasetDialog
+        document={fixtures.blank}
+        onClose={vi.fn()}
+        onImportFile={vi.fn(async () => false)}
+        onImportExcelFile={vi.fn(async () => false)}
+        onImportCliSource={vi.fn(async () => {})}
+        onImportDatabaseSource={vi.fn(async () => {})}
+        onSourceChanged={vi.fn(async () => null)}
+        onOpened={vi.fn()}
+      />
+    );
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Tutorials and examples/ })
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Reset tutorials…" })
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Replace all tutorial workbooks" })
+    );
+
+    expect(
+      await screen.findByText("Replaced 2 tutorial workbooks")
+    ).toBeTruthy();
+  });
 });

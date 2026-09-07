@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "442d0f6e-fe8f-4210-83e8-e14120d98813",
+    "id": "2dc1cdfd-36c8-47b0-91e1-e386064d683a",
     "name": "Month-end close tutorial",
     "revision": 38,
     "objects": [
       {
         "kind": "frame",
-        "id": "381dd14d-40ad-4024-8d92-2068670bb2ae",
+        "id": "80aa566b-5777-4555-bd7c-31c2da065625",
         "name": "Actuals",
         "columns": [
           {
-            "id": "key~01vkje",
+            "id": "key~vdg9hj",
             "name": "Key",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "month~0yp1s8",
+            "id": "month~bs4h1f",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -31,7 +31,7 @@
             "formula": null
           },
           {
-            "id": "region~he5tjm",
+            "id": "region~56msmc",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -40,7 +40,7 @@
             "formula": null
           },
           {
-            "id": "revenue~h45vya",
+            "id": "revenue~zyjv7k",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -49,7 +49,7 @@
             "formula": null
           },
           {
-            "id": "cost~xzc494",
+            "id": "cost~p7k3rs",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -60,300 +60,300 @@
         ],
         "rows": [
           {
-            "id": "b6cc74d9-1783-4333-af19-e90b0635394c",
+            "id": "cb10ed1a-2a46-4fc5-864c-ae50d4f34296",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "76000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-01-East",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "118000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "b0806dc0-99b4-4562-9a86-afe8bca647a4",
+            "id": "f8b4fb8a-ac65-48f1-8395-5ab40ff07c06",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "72000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-01-West",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "110000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "335c7d05-d76f-4f35-a5f7-226598afa979",
+            "id": "93979a0c-351a-437a-b577-39e8a23392f1",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "80000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-02-East",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "125000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "1f0f1fa2-c347-459a-8dcb-4e3ebff25d71",
+            "id": "bff77886-31f9-4569-94c8-5b02f92b3723",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "79000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-02-West",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "124000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "36462aeb-4b39-4870-afb2-84b00f81037c",
+            "id": "6dba0522-c445-438d-be88-fcfadc1d463a",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "85000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-03-East",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "136000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "51a9fdb8-4646-4bf6-b412-e13576e612ea",
+            "id": "1248446b-53dd-4de9-9523-638f29f9954e",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "83000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-03-West",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "129000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "a36814db-15b1-40a9-9abe-d44f09b20711",
+            "id": "d03faece-02fa-4e7d-894c-6d24ad80142f",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "92000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-04-East",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "145000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "ec990ead-9190-4e7d-8cc6-a818d0f95786",
+            "id": "08dd9700-588c-49c0-9688-bae1e1d7fd00",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "91000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-04-West",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "142000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "5c57c8d5-a8fa-4353-8784-c58e778b47ac",
+            "id": "1d114026-810c-40cb-9956-4c3ce7f07781",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "96000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-05-East",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "151000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "74f89f70-9415-4936-84cd-ecf49d54f74c",
+            "id": "8efdf366-e46d-4f6d-8e60-ef1a3d879617",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "94000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-05-West",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "148000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "5c33eb4c-a338-4dae-8fad-75512d58ae4d",
+            "id": "b05435e5-b116-4e65-8dd2-900ea1ee9b33",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "104000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-06-East",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "168000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "28f848c5-dfe1-4839-8b8e-349946102e98",
+            "id": "9ba64b9b-5c47-4e6b-bdcb-52a77cb6e276",
             "cells": {
-              "cost~xzc494": {
+              "cost~p7k3rs": {
                 "raw": "99000",
                 "overrideFormula": null
               },
-              "key~01vkje": {
+              "key~vdg9hj": {
                 "raw": "2026-06-West",
                 "overrideFormula": null
               },
-              "month~0yp1s8": {
+              "month~bs4h1f": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~he5tjm": {
+              "region~56msmc": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~h45vya": {
+              "revenue~zyjv7k": {
                 "raw": "155000",
                 "overrideFormula": null
               }
@@ -370,11 +370,11 @@
       },
       {
         "kind": "frame",
-        "id": "95b7f978-30a7-404e-8551-a04382008513",
+        "id": "326f5b46-f368-41d3-9512-cebc45c62ca2",
         "name": "Budget",
         "columns": [
           {
-            "id": "key~x7t179",
+            "id": "key~qnc047",
             "name": "Key",
             "sourceName": null,
             "dataType": "string",
@@ -383,7 +383,7 @@
             "formula": null
           },
           {
-            "id": "month~jscp52",
+            "id": "month~6rk5zj",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -392,7 +392,7 @@
             "formula": null
           },
           {
-            "id": "region~4nfn09",
+            "id": "region~cr54wb",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -401,7 +401,7 @@
             "formula": null
           },
           {
-            "id": "budget~8fxv82",
+            "id": "budget~w8kxx2",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -412,252 +412,252 @@
         ],
         "rows": [
           {
-            "id": "284d8dca-e271-4595-b09f-4c0fc345e913",
+            "id": "69b9359c-c924-42bb-9a07-7b4754f5f812",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "120000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-01-East",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "64087374-50aa-4d85-ab5d-82c865e9fad7",
+            "id": "b084fcae-a8ef-49a6-a99a-26bb8e383128",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "112000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-01-West",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "fcb20689-9750-4de0-82fe-bb11af21cc0b",
+            "id": "c9b9685b-2d11-458c-89be-cea8f359dbf6",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "122000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-02-East",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "63582e26-25be-4585-83bb-ffb80624cac1",
+            "id": "e54d51d8-756c-4378-beb4-762c0da97e3c",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "120000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-02-West",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "b88c3561-b703-419e-85ae-029e291ab3f2",
+            "id": "afdb22a2-8e30-4871-b691-56e97debe243",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "130000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-03-East",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "a09ee163-8ebb-4bd9-8adf-bf02553e9ccb",
+            "id": "a10f29b0-ccbd-4650-98b0-be39adca7370",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "128000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-03-West",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "3be921ae-811e-4e1f-8516-060e27a788bc",
+            "id": "4358d6f8-0d20-4361-941c-aee4b920db07",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "140000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-04-East",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "c68e93e0-6d19-45ac-a773-06d19372f7d3",
+            "id": "7d2fa44a-12ae-4095-b6df-e416f064770f",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "138000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-04-West",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "e2c87c69-06d8-4c24-b211-9beb13b7b27b",
+            "id": "d96d8949-ef71-451d-b9e4-dbe32f1c1b21",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "150000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-05-East",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "9d9530df-905f-4e23-9b3f-8ca8c5bc6315",
+            "id": "af7cde94-964c-4af0-908d-47dc55774ee9",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "145000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-05-West",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "West",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "d69e4f21-158f-417d-aa09-fc7454085c7e",
+            "id": "220b285f-59e3-4837-9d83-e43bbe6359a5",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "160000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-06-East",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "East",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "9ac512d6-4942-4b0a-971e-fbeac1e262ca",
+            "id": "b62af91d-ebe6-425b-946c-936c6b84a648",
             "cells": {
-              "budget~8fxv82": {
+              "budget~w8kxx2": {
                 "raw": "150000",
                 "overrideFormula": null
               },
-              "key~x7t179": {
+              "key~qnc047": {
                 "raw": "2026-06-West",
                 "overrideFormula": null
               },
-              "month~jscp52": {
+              "month~6rk5zj": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~4nfn09": {
+              "region~cr54wb": {
                 "raw": "West",
                 "overrideFormula": null
               }
@@ -671,9 +671,9 @@
         "materialization": null,
         "uniqueKeys": [
           {
-            "id": "797e5fd0-7696-476a-94db-f3812a2af9f6",
+            "id": "a1bfdce0-014c-4c91-b4b0-9e22309e9c55",
             "columnIds": [
-              "key~x7t179"
+              "key~qnc047"
             ]
           }
         ],
@@ -681,11 +681,11 @@
       },
       {
         "kind": "block",
-        "id": "ae499db9-0b18-4715-bf25-730d1337cee5",
+        "id": "2864febd-7481-4068-b01a-b0a17f89cf29",
         "name": "Close checks",
         "lines": [
           {
-            "id": "34f60728-730f-41cd-a51e-8358332daee4",
+            "id": "77a57a17-85fe-4fdd-946c-5896319a964a",
             "name": "Total revenue",
             "named": true,
             "nameQuoted": false,
@@ -695,8 +695,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "88d6505f-f661-41ec-88db-47e9accbc735",
-                  "column_id": "revenue~kfk568"
+                  "frame_id": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
+                  "column_id": "revenue~gyj092"
                 },
                 "path": [
                   "sum"
@@ -708,7 +708,7 @@
             "error": null
           },
           {
-            "id": "004f8505-d805-4784-ad2e-0e23b13c1f61",
+            "id": "888e011a-cc22-4e0a-96f3-c72fe0e9df33",
             "name": "Total budget",
             "named": true,
             "nameQuoted": false,
@@ -718,8 +718,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "88d6505f-f661-41ec-88db-47e9accbc735",
-                  "column_id": "budget~37v5c1"
+                  "frame_id": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
+                  "column_id": "budget~zy7gcc"
                 },
                 "path": [
                   "sum"
@@ -734,7 +734,7 @@
       },
       {
         "kind": "text",
-        "id": "7c6faaec-45b2-47da-aa28-e75bbdd064b1",
+        "id": "b0a0b739-85a4-4686-965f-28a21a886fd9",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -746,11 +746,11 @@
       },
       {
         "kind": "frame",
-        "id": "88d6505f-f661-41ec-88db-47e9accbc735",
+        "id": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
         "name": "Actuals vs budget",
         "columns": [
           {
-            "id": "month~f12cjy",
+            "id": "month~bk2xxf",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -759,7 +759,7 @@
             "formula": null
           },
           {
-            "id": "region~6x4n7c",
+            "id": "region~dyf6ky",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -768,7 +768,7 @@
             "formula": null
           },
           {
-            "id": "revenue~kfk568",
+            "id": "revenue~gyj092",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -779,12 +779,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "cost~c1g1gg",
+            "id": "cost~vcgs66",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -795,12 +796,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "budget~37v5c1",
+            "id": "budget~zy7gcc",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -811,12 +813,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "profit~87s63b",
+            "id": "profit~qwasrh",
             "name": "Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -827,12 +830,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "variance~95avbr",
+            "id": "variance~bektff",
             "name": "Variance",
             "sourceName": null,
             "dataType": "integer",
@@ -843,12 +847,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "variance~xy12tz",
+            "id": "variance~qp6gk0",
             "name": "Variance %",
             "sourceName": null,
             "dataType": "number",
@@ -859,7 +864,8 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": null
+              "currencyCode": null,
+              "datePattern": null
             },
             "formula": null
           }
@@ -867,7 +873,7 @@
         "rows": [],
         "baseColumns": [
           {
-            "id": "month~f12cjy",
+            "id": "month~bk2xxf",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -876,7 +882,7 @@
             "formula": null
           },
           {
-            "id": "region~6x4n7c",
+            "id": "region~dyf6ky",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -885,7 +891,7 @@
             "formula": null
           },
           {
-            "id": "revenue~kfk568",
+            "id": "revenue~gyj092",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -894,7 +900,7 @@
             "formula": null
           },
           {
-            "id": "cost~c1g1gg",
+            "id": "cost~vcgs66",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -903,7 +909,7 @@
             "formula": null
           },
           {
-            "id": "budget~37v5c1",
+            "id": "budget~zy7gcc",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -916,41 +922,41 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
+          "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
           "join": {
-            "lookupFrameId": "95b7f978-30a7-404e-8551-a04382008513",
+            "lookupFrameId": "326f5b46-f368-41d3-9512-cebc45c62ca2",
             "primaryKeyColumnIds": [
-              "key~01vkje"
+              "key~vdg9hj"
             ],
             "lookupKeyColumnIds": [
-              "key~x7t179"
+              "key~qnc047"
             ],
             "joinType": "left",
             "outputs": [
               {
-                "outputColumnId": "month~f12cjy",
-                "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                "sourceColumnId": "month~0yp1s8"
+                "outputColumnId": "month~bk2xxf",
+                "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                "sourceColumnId": "month~bs4h1f"
               },
               {
-                "outputColumnId": "region~6x4n7c",
-                "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                "sourceColumnId": "region~he5tjm"
+                "outputColumnId": "region~dyf6ky",
+                "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                "sourceColumnId": "region~56msmc"
               },
               {
-                "outputColumnId": "revenue~kfk568",
-                "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                "sourceColumnId": "revenue~h45vya"
+                "outputColumnId": "revenue~gyj092",
+                "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                "sourceColumnId": "revenue~zyjv7k"
               },
               {
-                "outputColumnId": "cost~c1g1gg",
-                "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                "sourceColumnId": "cost~xzc494"
+                "outputColumnId": "cost~vcgs66",
+                "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                "sourceColumnId": "cost~p7k3rs"
               },
               {
-                "outputColumnId": "budget~37v5c1",
-                "sourceFrameId": "95b7f978-30a7-404e-8551-a04382008513",
-                "sourceColumnId": "budget~8fxv82"
+                "outputColumnId": "budget~zy7gcc",
+                "sourceFrameId": "326f5b46-f368-41d3-9512-cebc45c62ca2",
+                "sourceColumnId": "budget~w8kxx2"
               }
             ]
           },
@@ -958,39 +964,39 @@
             {
               "kind": "join",
               "join": {
-                "lookupFrameId": "95b7f978-30a7-404e-8551-a04382008513",
+                "lookupFrameId": "326f5b46-f368-41d3-9512-cebc45c62ca2",
                 "primaryKeyColumnIds": [
-                  "key~01vkje"
+                  "key~vdg9hj"
                 ],
                 "lookupKeyColumnIds": [
-                  "key~x7t179"
+                  "key~qnc047"
                 ],
                 "joinType": "left",
                 "outputs": [
                   {
-                    "outputColumnId": "month~f12cjy",
-                    "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                    "sourceColumnId": "month~0yp1s8"
+                    "outputColumnId": "month~bk2xxf",
+                    "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                    "sourceColumnId": "month~bs4h1f"
                   },
                   {
-                    "outputColumnId": "region~6x4n7c",
-                    "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                    "sourceColumnId": "region~he5tjm"
+                    "outputColumnId": "region~dyf6ky",
+                    "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                    "sourceColumnId": "region~56msmc"
                   },
                   {
-                    "outputColumnId": "revenue~kfk568",
-                    "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                    "sourceColumnId": "revenue~h45vya"
+                    "outputColumnId": "revenue~gyj092",
+                    "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                    "sourceColumnId": "revenue~zyjv7k"
                   },
                   {
-                    "outputColumnId": "cost~c1g1gg",
-                    "sourceFrameId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
-                    "sourceColumnId": "cost~xzc494"
+                    "outputColumnId": "cost~vcgs66",
+                    "sourceFrameId": "80aa566b-5777-4555-bd7c-31c2da065625",
+                    "sourceColumnId": "cost~p7k3rs"
                   },
                   {
-                    "outputColumnId": "budget~37v5c1",
-                    "sourceFrameId": "95b7f978-30a7-404e-8551-a04382008513",
-                    "sourceColumnId": "budget~8fxv82"
+                    "outputColumnId": "budget~zy7gcc",
+                    "sourceFrameId": "326f5b46-f368-41d3-9512-cebc45c62ca2",
+                    "sourceColumnId": "budget~w8kxx2"
                   }
                 ]
               }
@@ -999,37 +1005,37 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "profit~87s63b",
+                  "outputColumnId": "profit~qwasrh",
                   "expression": {
                     "kind": "binary",
                     "operator": "subtract",
                     "left": {
                       "kind": "column",
-                      "column_id": "revenue~kfk568"
+                      "column_id": "revenue~gyj092"
                     },
                     "right": {
                       "kind": "column",
-                      "column_id": "cost~c1g1gg"
+                      "column_id": "cost~vcgs66"
                     }
                   }
                 },
                 {
-                  "outputColumnId": "variance~95avbr",
+                  "outputColumnId": "variance~bektff",
                   "expression": {
                     "kind": "binary",
                     "operator": "subtract",
                     "left": {
                       "kind": "column",
-                      "column_id": "revenue~kfk568"
+                      "column_id": "revenue~gyj092"
                     },
                     "right": {
                       "kind": "column",
-                      "column_id": "budget~37v5c1"
+                      "column_id": "budget~zy7gcc"
                     }
                   }
                 },
                 {
-                  "outputColumnId": "variance~xy12tz",
+                  "outputColumnId": "variance~qp6gk0",
                   "expression": {
                     "kind": "binary",
                     "operator": "divide",
@@ -1038,16 +1044,16 @@
                       "operator": "subtract",
                       "left": {
                         "kind": "column",
-                        "column_id": "revenue~kfk568"
+                        "column_id": "revenue~gyj092"
                       },
                       "right": {
                         "kind": "column",
-                        "column_id": "budget~37v5c1"
+                        "column_id": "budget~zy7gcc"
                       }
                     },
                     "right": {
                       "kind": "column",
-                      "column_id": "budget~37v5c1"
+                      "column_id": "budget~zy7gcc"
                     }
                   }
                 }
@@ -1057,11 +1063,11 @@
               "kind": "sort",
               "keys": [
                 {
-                  "columnId": "month~f12cjy",
+                  "columnId": "month~bk2xxf",
                   "descending": false
                 },
                 {
-                  "columnId": "region~6x4n7c",
+                  "columnId": "region~dyf6ky",
                   "descending": false
                 }
               ]
@@ -1074,11 +1080,11 @@
       },
       {
         "kind": "frame",
-        "id": "b941b4fa-e85a-4e00-9b5a-dad5b84d779c",
+        "id": "1ec39189-4e99-4ca5-a8f1-b62f6e17817c",
         "name": "Regional summary",
         "columns": [
           {
-            "id": "region~6wv6qk",
+            "id": "region~y4ppmn",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -1087,7 +1093,7 @@
             "formula": null
           },
           {
-            "id": "total_revenue~y4cpa0",
+            "id": "total_revenue~ahbyyn",
             "name": "Total Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -1096,7 +1102,7 @@
             "formula": null
           },
           {
-            "id": "total_budget~jamf2v",
+            "id": "total_budget~zrb7xd",
             "name": "Total Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -1105,7 +1111,7 @@
             "formula": null
           },
           {
-            "id": "total_variance~ejf95v",
+            "id": "total_variance~xxwmxh",
             "name": "Total Variance",
             "sourceName": null,
             "dataType": "integer",
@@ -1114,7 +1120,7 @@
             "formula": null
           },
           {
-            "id": "total_profit~c5yrp7",
+            "id": "total_profit~k2h8gg",
             "name": "Total Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -1128,66 +1134,66 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "88d6505f-f661-41ec-88db-47e9accbc735",
+          "sourceFrameId": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "month~fkxser",
+                  "outputColumnId": "month~17qwbv",
                   "expression": {
                     "kind": "column",
-                    "column_id": "month~f12cjy"
+                    "column_id": "month~bk2xxf"
                   }
                 },
                 {
-                  "outputColumnId": "region~t13n8s",
+                  "outputColumnId": "region~6m8xch",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~6x4n7c"
+                    "column_id": "region~dyf6ky"
                   }
                 },
                 {
-                  "outputColumnId": "revenue~4w88ge",
+                  "outputColumnId": "revenue~4jstwn",
                   "expression": {
                     "kind": "column",
-                    "column_id": "revenue~kfk568"
+                    "column_id": "revenue~gyj092"
                   }
                 },
                 {
-                  "outputColumnId": "cost~32a486",
+                  "outputColumnId": "cost~fje2nq",
                   "expression": {
                     "kind": "column",
-                    "column_id": "cost~c1g1gg"
+                    "column_id": "cost~vcgs66"
                   }
                 },
                 {
-                  "outputColumnId": "budget~vavc0w",
+                  "outputColumnId": "budget~hx8jmj",
                   "expression": {
                     "kind": "column",
-                    "column_id": "budget~37v5c1"
+                    "column_id": "budget~zy7gcc"
                   }
                 },
                 {
-                  "outputColumnId": "profit~g9mm8g",
+                  "outputColumnId": "profit~fffv6w",
                   "expression": {
                     "kind": "column",
-                    "column_id": "profit~87s63b"
+                    "column_id": "profit~qwasrh"
                   }
                 },
                 {
-                  "outputColumnId": "variance~sheg7c",
+                  "outputColumnId": "variance~5tstwd",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~95avbr"
+                    "column_id": "variance~bektff"
                   }
                 },
                 {
-                  "outputColumnId": "variance~k40z9f",
+                  "outputColumnId": "variance~eabbsd",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~xy12tz"
+                    "column_id": "variance~qp6gk0"
                   }
                 }
               ]
@@ -1195,35 +1201,35 @@
             {
               "kind": "select",
               "columnIds": [
-                "month~fkxser",
-                "region~t13n8s",
-                "revenue~4w88ge",
-                "cost~32a486",
-                "budget~vavc0w",
-                "profit~g9mm8g",
-                "variance~sheg7c",
-                "variance~k40z9f"
+                "month~17qwbv",
+                "region~6m8xch",
+                "revenue~4jstwn",
+                "cost~fje2nq",
+                "budget~hx8jmj",
+                "profit~fffv6w",
+                "variance~5tstwd",
+                "variance~eabbsd"
               ]
             },
             {
               "kind": "summarize",
               "groupKeys": [
                 {
-                  "outputColumnId": "region~6wv6qk",
+                  "outputColumnId": "region~y4ppmn",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~t13n8s"
+                    "column_id": "region~6m8xch"
                   }
                 }
               ],
               "aggregates": [
                 {
-                  "outputColumnId": "total_revenue~y4cpa0",
+                  "outputColumnId": "total_revenue~ahbyyn",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "revenue~4w88ge"
+                      "column_id": "revenue~4jstwn"
                     },
                     "path": [
                       "sum"
@@ -1233,12 +1239,12 @@
                   }
                 },
                 {
-                  "outputColumnId": "total_budget~jamf2v",
+                  "outputColumnId": "total_budget~zrb7xd",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "budget~vavc0w"
+                      "column_id": "budget~hx8jmj"
                     },
                     "path": [
                       "sum"
@@ -1248,12 +1254,12 @@
                   }
                 },
                 {
-                  "outputColumnId": "total_variance~ejf95v",
+                  "outputColumnId": "total_variance~xxwmxh",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "variance~sheg7c"
+                      "column_id": "variance~5tstwd"
                     },
                     "path": [
                       "sum"
@@ -1263,12 +1269,12 @@
                   }
                 },
                 {
-                  "outputColumnId": "total_profit~c5yrp7",
+                  "outputColumnId": "total_profit~k2h8gg",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "profit~g9mm8g"
+                      "column_id": "profit~fffv6w"
                     },
                     "path": [
                       "sum"
@@ -1288,11 +1294,11 @@
       },
       {
         "kind": "frame",
-        "id": "277335c6-46f5-45e2-90d2-b847440da790",
+        "id": "b94b685a-474c-4a59-9bef-cfccaaea07ec",
         "name": "Revenue by month",
         "columns": [
           {
-            "id": "region~hr3d6z",
+            "id": "region~385rfd",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -1301,7 +1307,7 @@
             "formula": null
           },
           {
-            "id": "2026_01~b6a1dx",
+            "id": "2026_01~ybvf77",
             "name": "2026-01",
             "sourceName": null,
             "dataType": "integer",
@@ -1310,7 +1316,7 @@
             "formula": null
           },
           {
-            "id": "2026_02~tv0sqa",
+            "id": "2026_02~p52059",
             "name": "2026-02",
             "sourceName": null,
             "dataType": "integer",
@@ -1319,7 +1325,7 @@
             "formula": null
           },
           {
-            "id": "2026_03~82bv5d",
+            "id": "2026_03~fmm9an",
             "name": "2026-03",
             "sourceName": null,
             "dataType": "integer",
@@ -1328,7 +1334,7 @@
             "formula": null
           },
           {
-            "id": "2026_04~35egey",
+            "id": "2026_04~2j52xk",
             "name": "2026-04",
             "sourceName": null,
             "dataType": "integer",
@@ -1337,7 +1343,7 @@
             "formula": null
           },
           {
-            "id": "2026_05~pzka57",
+            "id": "2026_05~68432j",
             "name": "2026-05",
             "sourceName": null,
             "dataType": "integer",
@@ -1346,7 +1352,7 @@
             "formula": null
           },
           {
-            "id": "2026_06~cvknxz",
+            "id": "2026_06~dvtvn3",
             "name": "2026-06",
             "sourceName": null,
             "dataType": "integer",
@@ -1360,66 +1366,66 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "88d6505f-f661-41ec-88db-47e9accbc735",
+          "sourceFrameId": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "month~vtdm4x",
+                  "outputColumnId": "month~4zv8md",
                   "expression": {
                     "kind": "column",
-                    "column_id": "month~f12cjy"
+                    "column_id": "month~bk2xxf"
                   }
                 },
                 {
-                  "outputColumnId": "region~hr3d6z",
+                  "outputColumnId": "region~385rfd",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~6x4n7c"
+                    "column_id": "region~dyf6ky"
                   }
                 },
                 {
-                  "outputColumnId": "revenue~wwwdpa",
+                  "outputColumnId": "revenue~djbfyw",
                   "expression": {
                     "kind": "column",
-                    "column_id": "revenue~kfk568"
+                    "column_id": "revenue~gyj092"
                   }
                 },
                 {
-                  "outputColumnId": "cost~1kk1aj",
+                  "outputColumnId": "cost~6m44yn",
                   "expression": {
                     "kind": "column",
-                    "column_id": "cost~c1g1gg"
+                    "column_id": "cost~vcgs66"
                   }
                 },
                 {
-                  "outputColumnId": "budget~639y7b",
+                  "outputColumnId": "budget~72y561",
                   "expression": {
                     "kind": "column",
-                    "column_id": "budget~37v5c1"
+                    "column_id": "budget~zy7gcc"
                   }
                 },
                 {
-                  "outputColumnId": "profit~psg0b0",
+                  "outputColumnId": "profit~6hcg3c",
                   "expression": {
                     "kind": "column",
-                    "column_id": "profit~87s63b"
+                    "column_id": "profit~qwasrh"
                   }
                 },
                 {
-                  "outputColumnId": "variance~fr6bca",
+                  "outputColumnId": "variance~rgfx5a",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~95avbr"
+                    "column_id": "variance~bektff"
                   }
                 },
                 {
-                  "outputColumnId": "variance~mqastd",
+                  "outputColumnId": "variance~maawma",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~xy12tz"
+                    "column_id": "variance~qp6gk0"
                   }
                 }
               ]
@@ -1427,52 +1433,52 @@
             {
               "kind": "select",
               "columnIds": [
-                "month~vtdm4x",
-                "region~hr3d6z",
-                "revenue~wwwdpa",
-                "cost~1kk1aj",
-                "budget~639y7b",
-                "profit~psg0b0",
-                "variance~fr6bca",
-                "variance~mqastd"
+                "month~4zv8md",
+                "region~385rfd",
+                "revenue~djbfyw",
+                "cost~6m44yn",
+                "budget~72y561",
+                "profit~6hcg3c",
+                "variance~rgfx5a",
+                "variance~maawma"
               ]
             },
             {
               "kind": "select",
               "columnIds": [
-                "region~hr3d6z",
-                "month~vtdm4x",
-                "revenue~wwwdpa"
+                "region~385rfd",
+                "month~4zv8md",
+                "revenue~djbfyw"
               ]
             },
             {
               "kind": "pivot",
-              "namesColumnId": "month~vtdm4x",
-              "valuesColumnId": "revenue~wwwdpa",
+              "namesColumnId": "month~4zv8md",
+              "valuesColumnId": "revenue~djbfyw",
               "aggregate": "sum",
               "outputs": [
                 {
-                  "outputColumnId": "2026_01~b6a1dx",
+                  "outputColumnId": "2026_01~ybvf77",
                   "value": "2026-01"
                 },
                 {
-                  "outputColumnId": "2026_02~tv0sqa",
+                  "outputColumnId": "2026_02~p52059",
                   "value": "2026-02"
                 },
                 {
-                  "outputColumnId": "2026_03~82bv5d",
+                  "outputColumnId": "2026_03~fmm9an",
                   "value": "2026-03"
                 },
                 {
-                  "outputColumnId": "2026_04~35egey",
+                  "outputColumnId": "2026_04~2j52xk",
                   "value": "2026-04"
                 },
                 {
-                  "outputColumnId": "2026_05~pzka57",
+                  "outputColumnId": "2026_05~68432j",
                   "value": "2026-05"
                 },
                 {
-                  "outputColumnId": "2026_06~cvknxz",
+                  "outputColumnId": "2026_06~dvtvn3",
                   "value": "2026-06"
                 }
               ]
@@ -1485,11 +1491,11 @@
       },
       {
         "kind": "frame",
-        "id": "2b3f15f2-e24c-4635-ade3-2a4f33aafa06",
+        "id": "3a1d5656-2888-4014-870a-4d55bb13d038",
         "name": "Below budget",
         "columns": [
           {
-            "id": "month~3y2gsm",
+            "id": "month~kh3d2d",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -1498,7 +1504,7 @@
             "formula": null
           },
           {
-            "id": "region~mxxhzy",
+            "id": "region~asn3j3",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -1507,7 +1513,7 @@
             "formula": null
           },
           {
-            "id": "revenue~c062dm",
+            "id": "revenue~2d17cn",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -1518,12 +1524,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "budget~tvc7wg",
+            "id": "budget~revarj",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -1534,12 +1541,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "variance~awfefe",
+            "id": "variance~e42dkz",
             "name": "Variance",
             "sourceName": null,
             "dataType": "integer",
@@ -1550,7 +1558,8 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           }
@@ -1560,66 +1569,66 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "88d6505f-f661-41ec-88db-47e9accbc735",
+          "sourceFrameId": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "month~3y2gsm",
+                  "outputColumnId": "month~kh3d2d",
                   "expression": {
                     "kind": "column",
-                    "column_id": "month~f12cjy"
+                    "column_id": "month~bk2xxf"
                   }
                 },
                 {
-                  "outputColumnId": "region~mxxhzy",
+                  "outputColumnId": "region~asn3j3",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~6x4n7c"
+                    "column_id": "region~dyf6ky"
                   }
                 },
                 {
-                  "outputColumnId": "revenue~c062dm",
+                  "outputColumnId": "revenue~2d17cn",
                   "expression": {
                     "kind": "column",
-                    "column_id": "revenue~kfk568"
+                    "column_id": "revenue~gyj092"
                   }
                 },
                 {
-                  "outputColumnId": "cost~rfgth8",
+                  "outputColumnId": "cost~69s6h3",
                   "expression": {
                     "kind": "column",
-                    "column_id": "cost~c1g1gg"
+                    "column_id": "cost~vcgs66"
                   }
                 },
                 {
-                  "outputColumnId": "budget~tvc7wg",
+                  "outputColumnId": "budget~revarj",
                   "expression": {
                     "kind": "column",
-                    "column_id": "budget~37v5c1"
+                    "column_id": "budget~zy7gcc"
                   }
                 },
                 {
-                  "outputColumnId": "profit~xk1qrj",
+                  "outputColumnId": "profit~qayz7z",
                   "expression": {
                     "kind": "column",
-                    "column_id": "profit~87s63b"
+                    "column_id": "profit~qwasrh"
                   }
                 },
                 {
-                  "outputColumnId": "variance~awfefe",
+                  "outputColumnId": "variance~e42dkz",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~95avbr"
+                    "column_id": "variance~bektff"
                   }
                 },
                 {
-                  "outputColumnId": "variance~c5hajv",
+                  "outputColumnId": "variance~k5we3t",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~xy12tz"
+                    "column_id": "variance~qp6gk0"
                   }
                 }
               ]
@@ -1627,24 +1636,24 @@
             {
               "kind": "select",
               "columnIds": [
-                "month~3y2gsm",
-                "region~mxxhzy",
-                "revenue~c062dm",
-                "cost~rfgth8",
-                "budget~tvc7wg",
-                "profit~xk1qrj",
-                "variance~awfefe",
-                "variance~c5hajv"
+                "month~kh3d2d",
+                "region~asn3j3",
+                "revenue~2d17cn",
+                "cost~69s6h3",
+                "budget~revarj",
+                "profit~qayz7z",
+                "variance~e42dkz",
+                "variance~k5we3t"
               ]
             },
             {
               "kind": "select",
               "columnIds": [
-                "month~3y2gsm",
-                "region~mxxhzy",
-                "revenue~c062dm",
-                "budget~tvc7wg",
-                "variance~awfefe"
+                "month~kh3d2d",
+                "region~asn3j3",
+                "revenue~2d17cn",
+                "budget~revarj",
+                "variance~e42dkz"
               ]
             },
             {
@@ -1655,7 +1664,7 @@
                   "operator": "less",
                   "left": {
                     "kind": "column",
-                    "column_id": "variance~awfefe"
+                    "column_id": "variance~e42dkz"
                   },
                   "right": {
                     "kind": "integer",
@@ -1673,9 +1682,9 @@
       },
       {
         "kind": "plot",
-        "id": "8134d246-1ae6-4b2c-a537-0a690ec204ee",
+        "id": "60ad92db-ec1c-4cce-9bc9-95a3b12effbe",
         "name": "Actuals vs budget plot",
-        "sourceFrameId": "88d6505f-f661-41ec-88db-47e9accbc735",
+        "sourceFrameId": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
         "spec": {
           "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
           "mark": {
@@ -1684,31 +1693,31 @@
           },
           "encoding": {
             "x": {
-              "field": "month~f12cjy",
+              "field": "month~bk2xxf",
               "type": "nominal",
               "title": "Month",
               "sort": "-y"
             },
             "y": {
-              "field": "revenue~kfk568",
+              "field": "revenue~gyj092",
               "type": "quantitative",
               "title": "Revenue",
               "aggregate": "sum"
             },
             "tooltip": [
               {
-                "field": "month~f12cjy",
+                "field": "month~bk2xxf",
                 "type": "nominal",
                 "title": "Month"
               },
               {
-                "field": "revenue~kfk568",
+                "field": "revenue~gyj092",
                 "type": "quantitative",
                 "title": "Revenue"
               }
             ],
             "color": {
-              "field": "region~6x4n7c",
+              "field": "region~dyf6ky",
               "type": "nominal",
               "title": "Region"
             }
@@ -1719,26 +1728,26 @@
     ],
     "views": [
       {
-        "id": "0228355e-7162-40a5-9219-99a2bd28dd2f",
-        "objectId": "381dd14d-40ad-4024-8d92-2068670bb2ae",
+        "id": "923ae393-4964-4556-bd72-c39190fb765d",
+        "objectId": "80aa566b-5777-4555-bd7c-31c2da065625",
         "x": 720.0,
-        "y": 800.0,
+        "y": 842.0,
         "width": 798.0,
-        "height": 300.0,
+        "height": 666.0,
         "collapsed": false
       },
       {
-        "id": "96be7a02-1bf6-4920-bbff-3033a91a81f2",
-        "objectId": "95b7f978-30a7-404e-8551-a04382008513",
+        "id": "8c0005ee-9b3d-4e92-9466-1d17e3874897",
+        "objectId": "326f5b46-f368-41d3-9512-cebc45c62ca2",
         "x": 1520.0,
-        "y": 800.0,
+        "y": 842.0,
         "width": 648.0,
-        "height": 300.0,
+        "height": 666.0,
         "collapsed": false
       },
       {
-        "id": "a355dfd0-67ea-44a3-9a58-abfc70cb9510",
-        "objectId": "ae499db9-0b18-4715-bf25-730d1337cee5",
+        "id": "f2d74554-84bd-4edc-8de5-97cc59d73903",
+        "objectId": "2864febd-7481-4068-b01a-b0a17f89cf29",
         "x": 692.0,
         "y": 547.0,
         "width": 983.0,
@@ -1746,8 +1755,8 @@
         "collapsed": false
       },
       {
-        "id": "e4bc20a1-776b-409e-9e89-4e3fc333fd58",
-        "objectId": "7c6faaec-45b2-47da-aa28-e75bbdd064b1",
+        "id": "f513a049-bced-4171-ba4c-a1195d54d56a",
+        "objectId": "b0a0b739-85a4-4686-965f-28a21a886fd9",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -1755,23 +1764,25 @@
         "collapsed": false
       },
       {
-        "id": "655f9c29-e647-439c-8799-3450f571ec2c",
-        "objectId": "88d6505f-f661-41ec-88db-47e9accbc735",
+        "id": "bea41603-ed08-49cd-91b6-bf03d018b2b9",
+        "objectId": "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
         "x": 720.0,
         "y": 70.0,
         "width": 1156.0,
         "height": 470.0,
         "collapsed": false,
         "tabObjectIds": [
-          "88d6505f-f661-41ec-88db-47e9accbc735",
-          "b941b4fa-e85a-4e00-9b5a-dad5b84d779c",
-          "277335c6-46f5-45e2-90d2-b847440da790",
-          "2b3f15f2-e24c-4635-ade3-2a4f33aafa06",
-          "8134d246-1ae6-4b2c-a537-0a690ec204ee"
+          "12ae2b55-126d-480e-bddc-c5d6a4d48afb",
+          "1ec39189-4e99-4ca5-a8f1-b62f6e17817c",
+          "b94b685a-474c-4a59-9bef-cfccaaea07ec",
+          "3a1d5656-2888-4014-870a-4d55bb13d038",
+          "60ad92db-ec1c-4cce-9bc9-95a3b12effbe"
         ]
       }
     ],
-    "frozenValues": {}
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
   },
   "versionVector": {}
 }

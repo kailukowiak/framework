@@ -217,7 +217,10 @@ describe("ValueCard", () => {
     );
 
     const field = screen.getByDisplayValue("0.12") as HTMLInputElement;
-    expect(screen.getByText("number · 1 value · Upside")).toBeTruthy();
+    // Beside the number, not a line down among the type and the count: the
+    // override and the reason for it are one glance.
+    expect(field.parentElement?.textContent).toContain("· Upside");
+    expect(screen.getByText("number · 1 value")).toBeTruthy();
 
     await userEvent.clear(field);
     await userEvent.type(field, "0.2");

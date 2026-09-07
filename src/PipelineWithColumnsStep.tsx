@@ -3,9 +3,15 @@ import { PipelineCommand } from "./PipelineCommand";
 import {
   draftName,
   nextBlankColumnName,
+  type NamedDraft,
   parseNamedTransformation,
 } from "./PipelineColumnNames";
 import type { FormulaReference } from "./lib/formulaReferences";
+import {
+  siblingColumnExplanation,
+  siblingReferenceInFormula,
+} from "./lib/formulaPicking";
+import { BLANK_CALCULATION } from "./lib/pipelineChainEdits";
 import {
   namedCommand,
   outputColumnIdForName,
@@ -54,12 +60,31 @@ export function PipelineWithColumnsStep({
       {step.columns.map((column) => {
         const id = commandId(step, column.id);
         const update = (draft: string, saveNow: boolean) => {
+          // Half a formula is not a calculation yet. The draft lives in the
+          // editor and the bar until Return; it is deliberately not written
+          // into the step on every keystroke, because a step is what the
+          // *next* save writes to the document — so an abandoned draft used
+          // to arrive in the document under some unrelated gesture's save,
+          // and the schema preview kept announcing "unknown name" about a
+          // word still being typed.
+          if (!saveNow) return;
           const parsed = parseNamedTransformation(draft);
           if (!parsed) {
-            if (saveNow)
-              rejectCommand(
-                "Write a backticked column name, =, and a formula"
-              );
+            rejectCommand("Write a column name, =, and a formula");
+            return;
+          }
+          // Answered here rather than by the engine: see
+          // siblingReferenceInFormula for why "Unknown name" is the wrong
+          // sentence for a name that is one line further up this step.
+          const sibling = siblingReferenceInFormula(
+            parsed.formula,
+            step.columns
+              .filter((item) => item.id !== column.id)
+              .map((item) => ({ name: draftName(item) })),
+            visible.map((item) => item.name)
+          );
+          if (sibling) {
+            rejectCommand(siblingColumnExplanation(sibling, parsed.name));
             return;
           }
           const change = (current: StepDraft): StepDraft =>
@@ -86,8 +111,7 @@ export function PipelineWithColumnsStep({
                   ),
                 }
               : current;
-          if (saveNow) return commitPatch(step.id, change);
-          patch(step.id, change);
+          return commitPatch(step.id, change);
         };
         return (
           <div className="pipeline-command-row" key={column.id}>
@@ -145,13 +169,9 @@ export function PipelineWithColumnsStep({
           </div>
         );
       })}
-      <button
-        className="pipeline-add-item"
-        onClick={() => {
-          const column = namedDraft(
-            nextBlankColumnName(visible.map((item) => item.name)),
-            ""
-          );
+      <AddColumnButton
+        names={visible.map((item) => item.name)}
+        onAdd={(column) => {
           patch(step.id, (current) =>
             current.kind === "withColumns"
               ? { ...current, columns: [...current.columns, column] }
@@ -159,9 +179,36 @@ export function PipelineWithColumnsStep({
           );
           setPendingEditor(commandId(step, column.id));
         }}
-      >
-        <Plus size={11} /> Add or replace column
-      </button>
+      />
     </div>
+  );
+}
+
+/**
+ * Wrangle's own doorway into a new column. It opens the same line the
+ * header's *Add calculated column* opens — the placeholder formula and the
+ * whole-line selection both — so the two ways in are one thing to learn.
+ * `focusToken` is what asks for that selection (see `PipelineCommand`); a
+ * freshly minted row only ever needs the one.
+ */
+function AddColumnButton({
+  names,
+  onAdd,
+}: {
+  names: string[];
+  onAdd: (column: NamedDraft & { focusToken: number }) => void;
+}) {
+  return (
+    <button
+      className="pipeline-add-item"
+      onClick={() =>
+        onAdd({
+          ...namedDraft(nextBlankColumnName(names), BLANK_CALCULATION),
+          focusToken: 1,
+        })
+      }
+    >
+      <Plus size={11} /> Add or replace column
+    </button>
   );
 }

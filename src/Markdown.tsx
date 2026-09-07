@@ -1,3 +1,4 @@
+import "./Markdown.css";
 import { Fragment, useContext, type ReactNode } from "react";
 import { NumberDisplayContext } from "./FrameGrid";
 import type { ComputedTextSegment } from "./lib/bindings/ComputedTextSegment";
@@ -5,9 +6,14 @@ import { formatComputedScalar } from "./lib/columnFormatting";
 
 /**
  * A deliberately small markdown: headings, lists, paragraphs, bold, italic,
- * inline code, and http(s) links. Rendered straight to React nodes — no
+ * inline and fenced code, and http(s) links. Rendered straight to React nodes — no
  * HTML string ever exists, so there is nothing to sanitize and no way for
  * a document to smuggle markup into the app.
+ *
+ * A relative-path link or image (no `http(s):` scheme) has nothing inside the
+ * app to point at, so it renders as text only — its link text, or its alt
+ * text for an image — instead of the raw `[text](path)` / `![alt](path)`
+ * syntax or a broken image element. http(s) links and images are unaffected.
  *
  * Values interleave through sentinels: a `\u0000N\u0000` token in the
  * source renders as `values[N]`, which is how a text card's `{{…}}` holes
@@ -35,9 +41,48 @@ function TextHoleError({ source, error }: { source: string; error: string }) {
 
 // The sentinel is a control character *because* no keyboard can put one in
 // a document — any printable sentinel could collide with real prose.
+//
+// Link and image targets are matched for any scheme, http(s) or not, so the
+// handler below can tell the two apart: an http(s) target keeps its existing
+// rendering, and a relative one — nothing the app can navigate to inside
+// FrameWork — collapses to its link text (a link) or its alt text (an image)
+// instead of printing the raw markdown syntax. See renderInline.
 const INLINE_TOKEN =
   // eslint-disable-next-line no-control-regex
-  /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|\[[^\]]+\]\((?:https?:)[^)\s]+\)|\u0000\d+\u0000)/g;
+  /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|!\[[^\]]*\]\([^)\s]+\)|\[[^\]]+\]\([^)\s]+\)|\u0000\d+\u0000)/g;
+
+// An image: an http(s) source keeps the prior (unimplemented) rendering —
+// printed verbatim, since nothing in the app fetches remote images — while a
+// relative path names a file with nothing to load it from, so it renders as
+// its alt text and nothing else, rather than a broken image icon or the raw
+// `![alt](path)` syntax.
+//
+// A link with an http(s) target renders as before, a clickable anchor. A
+// relative target has nothing inside the app to navigate to, so it shows
+// only the link text (as code if it was written as code) with the target
+// kept as a title, rather than an inert bracket-and-paren pair the reader
+// would otherwise try to click.
+function renderLinkOrImage(piece: string, key: string): ReactNode | undefined {
+  const image = piece.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+  if (image) {
+    if (/^https?:/i.test(image[2])) return <Fragment key={key}>{piece}</Fragment>;
+    return <em key={key}>{image[1]}</em>;
+  }
+  const link = piece.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
+  if (!link) return undefined;
+  if (/^https?:/i.test(link[2]))
+    return (
+      <a key={key} href={link[2]} target="_blank" rel="noreferrer noopener">
+        {link[1]}
+      </a>
+    );
+  const codeText = link[1].match(/^`([^`]+)`$/);
+  return (
+    <span key={key} title={link[2]}>
+      {codeText ? <code>{codeText[1]}</code> : link[1]}
+    </span>
+  );
+}
 
 function renderInline(
   text: string,
@@ -68,13 +113,8 @@ function renderInline(
         return (
           <em key={key}>{renderInline(piece.slice(1, -1), values, key)}</em>
         );
-      const link = piece.match(/^\[([^\]]+)\]\((https?:[^)\s]+)\)$/);
-      if (link)
-        return (
-          <a key={key} href={link[2]} target="_blank" rel="noreferrer noopener">
-            {link[1]}
-          </a>
-        );
+      const linkOrImage = renderLinkOrImage(piece, key);
+      if (linkOrImage !== undefined) return linkOrImage;
       return <Fragment key={key}>{piece}</Fragment>;
     });
 }
@@ -83,6 +123,7 @@ type Block =
   | { kind: "heading"; level: number; text: string }
   | { kind: "list"; ordered: boolean; items: string[] }
   | { kind: "table"; header: string[]; rows: string[][] }
+  | { kind: "code"; text: string }
   | { kind: "paragraph"; text: string };
 
 // A pipe row splits on unescaped pipes, with the optional leading and
@@ -93,6 +134,16 @@ function tableCells(line: string): string[] {
 }
 
 const TABLE_DIVIDER = /^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$/;
+
+function fencedCode(lines: string[], start: number): { text: string; end: number } {
+  const code: string[] = [];
+  let end = start + 1;
+  while (end < lines.length && !/^```\s*$/.test(lines[end])) {
+    code.push(lines[end]);
+    end += 1;
+  }
+  return { text: code.join("\n"), end };
+}
 
 function parseBlocks(source: string): Block[] {
   const blocks: Block[] = [];
@@ -105,6 +156,15 @@ function parseBlocks(source: string): Block[] {
   const lines = source.split("\n");
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    // Formula examples contain literal backticks and newlines. Keep them out
+    // of inline markdown so the displayed example can be copied unchanged.
+    if (/^```[^`]*$/.test(line)) {
+      flush();
+      const code = fencedCode(lines, index);
+      index = code.end;
+      blocks.push({ kind: "code", text: code.text });
+      continue;
+    }
     // A header row is only a table if the next line is the dash divider —
     // otherwise a sentence containing a pipe would become a one-cell table.
     if (
@@ -167,6 +227,7 @@ export function Markdown({
     <div className="markdown-body">
       {parseBlocks(source).map((block, index) => {
         const key = `b${index}`;
+        if (block.kind === "code") return <pre key={key}><code>{block.text}</code></pre>;
         if (block.kind === "heading") {
           const Tag = (["h1", "h2", "h3", "h4"] as const)[block.level - 1];
           return <Tag key={key}>{renderInline(block.text, values, key)}</Tag>;

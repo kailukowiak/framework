@@ -6,6 +6,37 @@ use polars::prelude::SerReader;
 use std::fs;
 use std::path::Path;
 
+/// Everything a frame card draws above and below its rows: the card border
+/// (2), the drag handle (32), the tab strip (36), the title row (50), the
+/// grid's bottom padding (12), and inside the scroller the column header
+/// (34), the type row (26), the draft "type here" row an owned frame always
+/// shows (34) and the four 2px gaps the table leaves around them.
+///
+/// The gaps are the part that keeps getting missed: the grid's table is in
+/// the separated-border model with the user agent's own 2px `border-spacing`
+/// (the stylesheet's reset names `frame`, not `table`, so it never applies),
+/// which makes a row cost 36 rather than 34 and leaves one spacing over at
+/// the bottom. The tally was 184 for a long time and then 230, and both times
+/// a six-row table arrived showing five rows and an in-card scrollbar — sized
+/// for rows it had no room to draw. `frameCardHeight` in
+/// `src/lib/cardPlacement.ts` is the same arithmetic on the other side of the
+/// wire, for the paste path that resizes a card the front end already owns;
+/// the two have to move together.
+const FRAME_CHROME_HEIGHT: f64 = 234.0;
+const FRAME_ROW_HEIGHT: f64 = 36.0;
+/// How many rows a card sizes itself to before it becomes a thing to scroll.
+const FRAME_AUTOMATIC_ROW_CAP: usize = 12;
+const FRAME_MIN_HEIGHT: f64 = 300.0;
+
+/// A frame card tall enough to show what arrived, up to a dozen rows: a card
+/// that clips the last row of a six-row paste is the first thing a person has
+/// to fix, every time.
+pub(crate) fn frame_card_height(row_count: usize) -> f64 {
+    let maximum = FRAME_CHROME_HEIGHT + FRAME_AUTOMATIC_ROW_CAP as f64 * FRAME_ROW_HEIGHT;
+    (FRAME_CHROME_HEIGHT + row_count.min(FRAME_AUTOMATIC_ROW_CAP) as f64 * FRAME_ROW_HEIGHT)
+        .clamp(FRAME_MIN_HEIGHT, maximum)
+}
+
 impl Document {
     pub(crate) fn build_frame(
         name: String,
@@ -120,7 +151,7 @@ impl Document {
             x,
             y,
             width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
-            height: (184.0 + row_count.min(12) as f64 * 34.0).clamp(300.0, 600.0),
+            height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),
         };
@@ -143,6 +174,7 @@ impl Document {
         artifact.row_count = reader
             .num_rows()
             .map_err(|error| CoreError::Import(error.to_string()))?;
+        let row_count = artifact.row_count;
         let frame = reader
             .finish()
             .map_err(|error| CoreError::Import(error.to_string()))?;
@@ -196,7 +228,11 @@ impl Document {
             x,
             y,
             width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
-            height: 300.0,
+            // A frozen or connected frame is paged rather than held in the
+            // document, but the card still has to show rows: it was fixed at
+            // the minimum height, which is two rows once the chrome is
+            // counted honestly.
+            height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),
         };
@@ -353,10 +389,7 @@ impl Document {
             x,
             y,
             width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
-            // Tall enough to show what arrived, up to a dozen rows: a card
-            // that clips the third row of a six-row paste is the first thing
-            // a person has to fix.
-            height: (184.0 + row_count.min(12) as f64 * 34.0).clamp(300.0, 600.0),
+            height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),
         };

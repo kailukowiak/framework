@@ -280,6 +280,15 @@ export function PlotCard({
                 name: event.target.value,
               });
           }}
+          // Same contract as the frame title (FrameTitleRow): Return
+          // commits by ending the edit, Escape puts the old name back.
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+            else if (event.key === "Escape") {
+              event.currentTarget.value = plot.name;
+              event.currentTarget.blur();
+            }
+          }}
         />
         <span>
           <BarChart3 size={11} /> {frame.name}

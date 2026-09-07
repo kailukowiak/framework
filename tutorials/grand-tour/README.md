@@ -26,11 +26,11 @@ the Start workbook and the Answer key.
 Allow about 25 minutes. No prior FrameWork experience is assumed, and no
 earlier lesson is required.
 
-In the app, open **Data Library**, choose **Create tutorials** if the tutorial
-workbooks are not present, and open **The FrameWork tour — Answer key** for a
-minute before opening the Start workbook. Make every change in the Start
-workbook. Repository contributors can instead open the two linked `.fw` files
-with **File → Open**.
+In the app, open **Library** in the left rail (the Data Library), choose
+**Create tutorials** if the tutorial workbooks are not present, and open
+**The FrameWork tour — Answer key** for a minute before opening the Start
+workbook. Make every change in the Start workbook. Repository contributors can
+instead open the two linked `.fw` files with **File → Open**.
 
 Work the sections in order. Later sections read the columns and tables the
 earlier ones create, so a checkpoint that disagrees is worth fixing before
@@ -109,11 +109,13 @@ attached to objects rather than spread across a ribbon.
 
 ## 3. One formula, one column
 
-Right-click the `Cost` header and choose **Add calculated column**. Name it
-`Profit` and enter:
+Right-click the `Cost` header and choose **Add calculated column**. The
+formula bar opens with `` `Column 1` = None.cast("number") `` selected end to
+end, so typing replaces the whole template rather than editing around it.
+Backticks on the name are optional. Type the whole line:
 
 ```text
-`Revenue` - `Cost`
+Profit = `Revenue` - `Cost`
 ```
 
 Commit with **Return**.
@@ -268,11 +270,12 @@ Inside it, click **+ Value**, rename the value `Growth`, and give it:
 1.08
 ```
 
-Back on `Monthly sales`, add a calculated column named `Forecast`, and format
-it as USD Accounting like the others:
+Back on `Monthly sales`, add a calculated column and format it as USD
+Accounting like the others. Type the whole line, replacing the selected
+template:
 
 ```text
-(`Revenue` * `Growth`).round()
+Forecast = (`Revenue` * `Growth`).round()
 ```
 
 A column formula is an ordinary expression, so rounding to the dollar is a
@@ -287,10 +290,9 @@ Forecast total = `Monthly sales`.`Forecast`.sum()
 
 answers `906120.00`.
 
-Now select the `Growth` value card. In **Selection** you will find a
-**Scenarios** grid below its number. Type `Upside` into the **New scenario**
-row and press **Return**, give it the value `1.15`, then add `Downside` with
-`0.95`.
+Select the `Growth` value; its inspector shows a **Scenarios** grid below the
+value. Type `Upside` into the **New scenario** row and press **Return**, give
+it the value `1.15`, then add `Downside` with `0.95`.
 
 Use the **Scenario** menu in the bottom-right corner of the canvas to switch
 between them. It appears only once a document has a scenario to switch to.
@@ -316,7 +318,9 @@ Select `Sales vs budget`, use the **+** beside its table tabs, and choose
 Rename it `Revenue by month`.
 
 Checkpoint: six bars, split between East and West, sharing a card with the
-table they describe. Change a Revenue value upstream and the bar moves.
+table they describe. Change a Revenue value upstream and the bar moves. The
+bars run in the table's declared order, January on the left through June on
+the right, rather than a fresh sort of their own.
 
 The plot reads the table by identity, and it reads all of it—not the first
 thousand rows, and not a copied range that has to be re-pointed when the data

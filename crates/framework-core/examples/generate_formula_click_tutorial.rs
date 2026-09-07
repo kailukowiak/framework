@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     store.apply(Operation::AddBlock {
         name: "Checks".into(),
         x: 80.0,
-        y: 430.0,
+        y: 570.0,
     })?;
     add_tutorial_walkthrough(&mut store)?;
 

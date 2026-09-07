@@ -1,0 +1,366 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 2,
+  "document": {
+    "id": "cef15a08-da70-431b-97f5-552d5cbfe2f4",
+    "name": "Dictionaries and value mapping",
+    "revision": 11,
+    "objects": [
+      {
+        "kind": "frame",
+        "id": "811ff880-3303-48ff-a2cf-b2fd25c85f7f",
+        "name": "Expenses",
+        "columns": [
+          {
+            "id": "category~3w6b1s",
+            "name": "Category",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "amount~bxsdps",
+            "name": "Amount",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "5857b14a-fbaa-47aa-bc3e-ef973a598af0",
+            "cells": {
+              "amount~bxsdps": {
+                "raw": "100",
+                "overrideFormula": null
+              },
+              "category~3w6b1s": {
+                "raw": "Offce supplies",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "05d741ed-3e3d-486a-9b60-6cd9949c5fd1",
+            "cells": {
+              "amount~bxsdps": {
+                "raw": "50",
+                "overrideFormula": null
+              },
+              "category~3w6b1s": {
+                "raw": "Travel & meals",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "40a0c897-3f37-4018-8229-6ddc25bea230",
+            "cells": {
+              "amount~bxsdps": {
+                "raw": "30",
+                "overrideFormula": null
+              },
+              "category~3w6b1s": {
+                "raw": "Software",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "42b1cd68-4fc9-43d2-97fb-bda8463c729b",
+            "cells": {
+              "amount~bxsdps": {
+                "raw": "20",
+                "overrideFormula": null
+              },
+              "category~3w6b1s": {
+                "raw": "Offce supplies",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "steps": [
+          {
+            "kind": "withColumns",
+            "columns": [
+              {
+                "outputColumnId": "category~3w6b1s",
+                "expression": {
+                  "kind": "polarsCall",
+                  "name": "map_values",
+                  "arguments": [
+                    {
+                      "kind": "column",
+                      "column_id": "category~3w6b1s"
+                    },
+                    {
+                      "kind": "foreignColumn",
+                      "frame_id": "d861dfa5-1869-4055-a7e8-101045a00529",
+                      "column_id": "key~806vda"
+                    },
+                    {
+                      "kind": "foreignColumn",
+                      "frame_id": "d861dfa5-1869-4055-a7e8-101045a00529",
+                      "column_id": "value~62k3yd"
+                    }
+                  ],
+                  "keyword_arguments": []
+                }
+              }
+            ]
+          }
+        ],
+        "baseColumns": [
+          {
+            "id": "category~3w6b1s",
+            "name": "Category",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "amount~bxsdps",
+            "name": "Amount",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      },
+      {
+        "kind": "frame",
+        "id": "d861dfa5-1869-4055-a7e8-101045a00529",
+        "name": "Category fixes",
+        "columns": [
+          {
+            "id": "key~806vda",
+            "name": "Key",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "value~62k3yd",
+            "name": "Value",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "d68d06e8-f35f-4052-b27c-d208bc1b1ed2",
+            "cells": {
+              "key~806vda": {
+                "raw": "Offce supplies",
+                "overrideFormula": null
+              },
+              "value~62k3yd": {
+                "raw": "Office supplies",
+                "overrideFormula": null
+              }
+            }
+          },
+          {
+            "id": "8fc31f19-bc39-4163-91ff-d6f211b3c369",
+            "cells": {
+              "key~806vda": {
+                "raw": "Travel & meals",
+                "overrideFormula": null
+              },
+              "value~62k3yd": {
+                "raw": "Travel",
+                "overrideFormula": null
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [
+          {
+            "id": "51ee5a8f-b4aa-430d-bad7-b9bf4c9607cb",
+            "columnIds": [
+              "key~806vda"
+            ]
+          }
+        ],
+        "summaries": []
+      },
+      {
+        "kind": "block",
+        "id": "15ac90b7-8fd7-49e5-b797-acdc7f000415",
+        "name": "Checks",
+        "lines": [
+          {
+            "id": "14d20c33-a164-4626-8538-e52ae91c7b78",
+            "name": "total",
+            "named": true,
+            "nameQuoted": false,
+            "source": "`Expenses`.`Amount`.sum()",
+            "formula": {
+              "expression": {
+                "kind": "method",
+                "input": {
+                  "kind": "foreignColumn",
+                  "frame_id": "811ff880-3303-48ff-a2cf-b2fd25c85f7f",
+                  "column_id": "amount~bxsdps"
+                },
+                "path": [
+                  "sum"
+                ],
+                "arguments": [],
+                "keyword_arguments": []
+              }
+            },
+            "error": null
+          },
+          {
+            "id": "ea6b6c53-9863-484a-b3db-cefb9ffc5c8c",
+            "name": "label",
+            "named": true,
+            "nameQuoted": false,
+            "source": "lookup(\"Offce supplies\", `Category fixes`.`Key`, `Category fixes`.`Value`)",
+            "formula": {
+              "expression": {
+                "kind": "polarsCall",
+                "name": "lookup",
+                "arguments": [
+                  {
+                    "kind": "string",
+                    "value": "Offce supplies"
+                  },
+                  {
+                    "kind": "foreignColumn",
+                    "frame_id": "d861dfa5-1869-4055-a7e8-101045a00529",
+                    "column_id": "key~806vda"
+                  },
+                  {
+                    "kind": "foreignColumn",
+                    "frame_id": "d861dfa5-1869-4055-a7e8-101045a00529",
+                    "column_id": "value~62k3yd"
+                  }
+                ],
+                "keyword_arguments": []
+              }
+            },
+            "error": null
+          },
+          {
+            "id": "4a76675c-c1e7-405b-9ae0-f5120e94682e",
+            "name": "missing",
+            "named": true,
+            "nameQuoted": false,
+            "source": "lookup(\"Software\", `Category fixes`.`Key`, `Category fixes`.`Value`, \"Not mapped\")",
+            "formula": {
+              "expression": {
+                "kind": "polarsCall",
+                "name": "lookup",
+                "arguments": [
+                  {
+                    "kind": "string",
+                    "value": "Software"
+                  },
+                  {
+                    "kind": "foreignColumn",
+                    "frame_id": "d861dfa5-1869-4055-a7e8-101045a00529",
+                    "column_id": "key~806vda"
+                  },
+                  {
+                    "kind": "foreignColumn",
+                    "frame_id": "d861dfa5-1869-4055-a7e8-101045a00529",
+                    "column_id": "value~62k3yd"
+                  },
+                  {
+                    "kind": "string",
+                    "value": "Not mapped"
+                  }
+                ],
+                "keyword_arguments": []
+              }
+            },
+            "error": null
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "id": "1705e8d7-ac14-476c-a45a-28bd3eb23df3",
+        "name": "Tutorial walkthrough",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "# Clean categories with a dictionary\n\nAbout 5–10 minutes. Open **Dictionaries and value mapping — Start** from\n**Data library → Tutorials and examples**. The answer key is a separate workbook.\n\n## 1. Turn the small table into a dictionary\n\nThe **Expenses** table has two misspelled category entries and one category\nthat needs a shorter label. **Category fixes** lists the old and new labels.\n\nRight-click **Key** in Category fixes and choose **Use as dictionary — key: Key**.\nThe table now says **dictionary**. Keys must be unique: one old label has one\nreplacement. This uses the same table; nothing is copied.\n\nTo start one from scratch in your own workbook, right-click empty canvas and\nchoose **Add dictionary here**, then type or paste entries under Key and Value.\n\n## 2. Apply it to a column\n\nRight-click **Category** in Expenses. Open **Map values…**, then choose\n**Using Category fixes**. The new formula opens in **Wrangle** and applies live.\n\nBoth `Offce supplies` rows become `Office supplies`; `Travel & meals` becomes\n`Travel`; `Software` stays unchanged. There are still four rows and the amounts\nstill total **200**. This is a transformation over the source, not a cell edit.\nThe same mapping action works with live and imported tables.\n\n## 3. Change the rule once\n\nClick a blank area of the canvas to leave the formula editor. In Category fixes,\nedit the first **Value**, changing `Office supplies` to `Office costs`.\nBoth matching Expenses rows update. Press **⌘Z** to restore `Office supplies`.\nYou can edit a cell with a click followed by **F2**.\n\n## 4. Look up one value\n\nIn **Checks**, keep the existing total line and add:\n\n```text\nlabel = lookup(\"Offce supplies\", `Category fixes`.`Key`, `Category fixes`.`Value`)\nmissing = lookup(\"Software\", `Category fixes`.`Key`, `Category fixes`.`Value`, \"Not mapped\")\n```\n\nThe answers are **Office supplies** and **Not mapped**. Without a fallback,\nan unmatched non-null lookup key shows a formula error. Map values keeps\nunmatched entries by default. A blank replacement is a real null replacement;\nit does not mean “skip this rule.”\n\n## 5. Check the guardrail\n\nTry changing the second Key to `Offce supplies`. The duplicate is refused and\nboth original rules remain. Each key can have only one replacement. Rules\nmatch exact values; their row order does not affect the result.\n\nThe **Answer key** contains the completed mapping and both lookup formulas.\nIts dictionary remains editable, so the same change-and-undo experiment works\nthere too. Filtering the dictionary's display never disables a mapping.\n"
+          }
+        ]
+      }
+    ],
+    "views": [
+      {
+        "id": "e106277a-df08-4cb0-9421-63827131c54f",
+        "objectId": "811ff880-3303-48ff-a2cf-b2fd25c85f7f",
+        "x": 590.0,
+        "y": 70.0,
+        "width": 420.0,
+        "height": 320.0,
+        "collapsed": false
+      },
+      {
+        "id": "4cc54e31-ef06-45a3-af3f-1a7f1893ff3f",
+        "objectId": "d861dfa5-1869-4055-a7e8-101045a00529",
+        "x": 1000.0,
+        "y": 70.0,
+        "width": 420.0,
+        "height": 300.0,
+        "collapsed": false
+      },
+      {
+        "id": "cf36d6ee-727d-4d56-b01a-941cd1813653",
+        "objectId": "15ac90b7-8fd7-49e5-b797-acdc7f000415",
+        "x": 590.0,
+        "y": 370.0,
+        "width": 520.0,
+        "height": 220.0,
+        "collapsed": false
+      },
+      {
+        "id": "da7bcc84-3284-41f0-b511-d2f66dc964a9",
+        "objectId": "1705e8d7-ac14-476c-a45a-28bd3eb23df3",
+        "x": 40.0,
+        "y": 70.0,
+        "width": 510.0,
+        "height": 850.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
+  },
+  "versionVector": {}
+}

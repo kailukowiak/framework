@@ -123,11 +123,18 @@ export function ContextMenuColumnItems({
         }}
         compact={contextMenu.rowId !== undefined}
       />
+      <span className="menu-separator" />
       <button
         onClick={() =>
           requestAddCalculatedColumn(
             contextFrame.id,
-            contextColumn?.id,
+            // No placement: a new calculation belongs at the end of the
+            // frame. Right-clicking Cost to write Forecast used to wedge it
+            // between Cost and Profit, which is a positional edit nobody
+            // asked for — "Insert column here" is the gesture that means
+            // that. The anchor row is kept: it says which row's values the
+            // formula was written against, not where the column goes.
+            undefined,
             contextMenu.rowIndex,
             contextMenu.viewId
           )
@@ -170,6 +177,7 @@ export function ContextMenuColumnItems({
           <span>Add entry column (keyed)</span>
         </button>
       )}
+      <span className="menu-separator" />
       <PinColumnsMenuItem
         frame={contextFrame}
         column={contextColumn}

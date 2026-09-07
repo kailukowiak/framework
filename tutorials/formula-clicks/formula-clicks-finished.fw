@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "3b3617d2-c618-4238-82d1-c878af58b0b0",
+    "id": "2d42dd16-99bf-4edd-b051-e9df557417c1",
     "name": "Formula clicks tutorial",
     "revision": 15,
     "objects": [
       {
         "kind": "frame",
-        "id": "2e9da203-b5b6-4380-839d-b910fa9d1e46",
+        "id": "6ad73c3a-6ef6-4726-9314-65d668e4fb9b",
         "name": "Monthly sales",
         "columns": [
           {
-            "id": "month~j48dct",
+            "id": "month~z2sbb7",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "region~y8wgj2",
+            "id": "region~71nekp",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -31,7 +31,7 @@
             "formula": null
           },
           {
-            "id": "revenue~xgmsy2",
+            "id": "revenue~swghgh",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -40,7 +40,7 @@
             "formula": null
           },
           {
-            "id": "cost~5rbxs7",
+            "id": "cost~bdqnty",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -49,7 +49,7 @@
             "formula": null
           },
           {
-            "id": "previous_revenue~3n4cz8",
+            "id": "previous_revenue~fz5dfd",
             "name": "Previous revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -58,7 +58,7 @@
             "formula": null
           },
           {
-            "id": "change~cax6e0",
+            "id": "change~j6ngpm",
             "name": "Change",
             "sourceName": null,
             "dataType": "integer",
@@ -69,126 +69,126 @@
         ],
         "rows": [
           {
-            "id": "c5eedf0f-561e-44b4-961c-d5454201795f",
+            "id": "680f4cfc-c4d8-4d3f-b1a0-b8ce74e094c9",
             "cells": {
-              "cost~5rbxs7": {
+              "cost~bdqnty": {
                 "raw": "91000",
                 "overrideFormula": null
               },
-              "month~j48dct": {
+              "month~z2sbb7": {
                 "raw": "2026-04",
                 "overrideFormula": null
               },
-              "region~y8wgj2": {
+              "region~71nekp": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~xgmsy2": {
+              "revenue~swghgh": {
                 "raw": "142000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "5eb7bdb3-67d5-4ebc-b19d-1c857a941ae2",
+            "id": "3ad77cf9-a018-477f-9223-a1b01c7c51b8",
             "cells": {
-              "cost~5rbxs7": {
+              "cost~bdqnty": {
                 "raw": "76000",
                 "overrideFormula": null
               },
-              "month~j48dct": {
+              "month~z2sbb7": {
                 "raw": "2026-01",
                 "overrideFormula": null
               },
-              "region~y8wgj2": {
+              "region~71nekp": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~xgmsy2": {
+              "revenue~swghgh": {
                 "raw": "118000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "ac649979-7d37-4340-a90a-cfc54486474f",
+            "id": "e7124bf5-0b38-4053-a16b-694bddbf0442",
             "cells": {
-              "cost~5rbxs7": {
+              "cost~bdqnty": {
                 "raw": "104000",
                 "overrideFormula": null
               },
-              "month~j48dct": {
+              "month~z2sbb7": {
                 "raw": "2026-06",
                 "overrideFormula": null
               },
-              "region~y8wgj2": {
+              "region~71nekp": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~xgmsy2": {
+              "revenue~swghgh": {
                 "raw": "168000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "1e239388-28f5-4eb3-9e70-092e4316ccd6",
+            "id": "f598f069-4624-49ea-83fc-86d0f3122cc2",
             "cells": {
-              "cost~5rbxs7": {
+              "cost~bdqnty": {
                 "raw": "85000",
                 "overrideFormula": null
               },
-              "month~j48dct": {
+              "month~z2sbb7": {
                 "raw": "2026-03",
                 "overrideFormula": null
               },
-              "region~y8wgj2": {
+              "region~71nekp": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~xgmsy2": {
+              "revenue~swghgh": {
                 "raw": "136000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "263bc0eb-28db-4496-879c-9765984eab3d",
+            "id": "1cf0bd88-c0f8-4628-b82a-cc3bdf175dc8",
             "cells": {
-              "cost~5rbxs7": {
+              "cost~bdqnty": {
                 "raw": "79000",
                 "overrideFormula": null
               },
-              "month~j48dct": {
+              "month~z2sbb7": {
                 "raw": "2026-02",
                 "overrideFormula": null
               },
-              "region~y8wgj2": {
+              "region~71nekp": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "revenue~xgmsy2": {
+              "revenue~swghgh": {
                 "raw": "124000",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "a27dc1b6-35a5-4937-83a4-7cb06ae2c437",
+            "id": "699e6011-c07c-4a84-b7fa-257e863c3800",
             "cells": {
-              "cost~5rbxs7": {
+              "cost~bdqnty": {
                 "raw": "96000",
                 "overrideFormula": null
               },
-              "month~j48dct": {
+              "month~z2sbb7": {
                 "raw": "2026-05",
                 "overrideFormula": null
               },
-              "region~y8wgj2": {
+              "region~71nekp": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "revenue~xgmsy2": {
+              "revenue~swghgh": {
                 "raw": "151000",
                 "overrideFormula": null
               }
@@ -200,7 +200,7 @@
             "kind": "sort",
             "keys": [
               {
-                "columnId": "month~j48dct",
+                "columnId": "month~z2sbb7",
                 "descending": false
               }
             ]
@@ -209,12 +209,12 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "previous_revenue~3n4cz8",
+                "outputColumnId": "previous_revenue~fz5dfd",
                 "expression": {
                   "kind": "method",
                   "input": {
                     "kind": "column",
-                    "column_id": "revenue~xgmsy2"
+                    "column_id": "revenue~swghgh"
                   },
                   "path": [
                     "shift"
@@ -234,17 +234,17 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "change~cax6e0",
+                "outputColumnId": "change~j6ngpm",
                 "expression": {
                   "kind": "binary",
                   "operator": "subtract",
                   "left": {
                     "kind": "column",
-                    "column_id": "revenue~xgmsy2"
+                    "column_id": "revenue~swghgh"
                   },
                   "right": {
                     "kind": "column",
-                    "column_id": "previous_revenue~3n4cz8"
+                    "column_id": "previous_revenue~fz5dfd"
                   }
                 }
               }
@@ -253,7 +253,7 @@
         ],
         "baseColumns": [
           {
-            "id": "month~j48dct",
+            "id": "month~z2sbb7",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -262,7 +262,7 @@
             "formula": null
           },
           {
-            "id": "region~y8wgj2",
+            "id": "region~71nekp",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -271,7 +271,7 @@
             "formula": null
           },
           {
-            "id": "revenue~xgmsy2",
+            "id": "revenue~swghgh",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -280,7 +280,7 @@
             "formula": null
           },
           {
-            "id": "cost~5rbxs7",
+            "id": "cost~bdqnty",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -299,11 +299,11 @@
       },
       {
         "kind": "block",
-        "id": "7db479a9-edff-41c7-9d2f-b30ada69d565",
+        "id": "60d35266-0c4e-4ae3-aedc-3b8e22a041e3",
         "name": "Checks",
         "lines": [
           {
-            "id": "92d61939-0803-44dc-b211-befc94f40307",
+            "id": "7dc8767e-562e-40e0-a0c2-218333067d6e",
             "name": "Total revenue",
             "named": true,
             "nameQuoted": false,
@@ -313,8 +313,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "2e9da203-b5b6-4380-839d-b910fa9d1e46",
-                  "column_id": "revenue~xgmsy2"
+                  "frame_id": "6ad73c3a-6ef6-4726-9314-65d668e4fb9b",
+                  "column_id": "revenue~swghgh"
                 },
                 "path": [
                   "sum"
@@ -326,7 +326,7 @@
             "error": null
           },
           {
-            "id": "e4bcf221-170a-44de-91e7-a1c3f36387e5",
+            "id": "6da792ba-d8f4-47d2-bb36-265a63607c93",
             "name": "Latest revenue",
             "named": true,
             "nameQuoted": false,
@@ -336,8 +336,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "2e9da203-b5b6-4380-839d-b910fa9d1e46",
-                  "column_id": "revenue~xgmsy2"
+                  "frame_id": "6ad73c3a-6ef6-4726-9314-65d668e4fb9b",
+                  "column_id": "revenue~swghgh"
                 },
                 "path": [
                   "last"
@@ -352,23 +352,23 @@
       },
       {
         "kind": "text",
-        "id": "0872e79c-a6df-452f-8b49-31a41dfdbdc6",
+        "id": "3d58f8ad-98bc-4506-b657-bae23a23d740",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# Month-over-month formulas by pointing\n\nThis intermediate tutorial starts with six deliberately unsorted monthly sales rows and ends\nwith a small model built through the same public operations exposed by FrameWork\nMCP.\n\nThe complete guide is also rendered as the **Tutorial walkthrough** markdown\ncard in both the Start workbook and the Answer key.\n\nIt demonstrates:\n\n- a header sort becoming real Wrangle lineage;\n- creating ``.shift(n)`` by pointing at cells;\n- selecting a table first in autocomplete, then typing its column;\n- clicking columns into an active formula;\n- using a new tab for an exploratory filter, with no separate View filter layer;\n- table-qualified formulas in a calculation block.\n\n## Files\n\n- [`formula-clicks-start.fw`](formula-clicks-start.fw) — raw table plus an empty\n  `Checks` block.\n- [`formula-clicks-finished.fw`](formula-clicks-finished.fw) — the answer key.\n\nIf this is your first time in FrameWork, complete\n[Your first FrameWork workbook](../first-workbook/README.md) first.\n\nThese captures were taken from the current Tauri build after reopening both\ngenerated files:\n\n![Starting workbook: unsorted source table and empty Checks block](screenshots/start.jpg)\n\n![Finished workbook: East-only rows, shift results, changes, and live checks](screenshots/finished.jpg)\n\n## Before you begin\n\nAllow about 15 minutes. Complete\n[Your first FrameWork workbook](../first-workbook/README.md) first if calculated\ncolumns and Wrangle are new to you. In **Data Library**, create the tutorials if\nneeded, inspect the finished answer key, and then make every change in the\nstarting workbook. Repository contributors can instead open the linked `.fw`\nfiles with **File → Open**.\n\nThe order of this lesson matters: `.shift(1)` is only meaningful after Month is\nsorted. Stop at each checkpoint so that an ordering or naming mistake does not\nsurface later as an unrelated formula error.\n\n## 1. Declare the row order\n\nOpen `formula-clicks-start.fw`. The `Monthly sales` rows are intentionally out\nof order.\n\nClick the sort control in the **Month** header once. The rows should read\nJanuary through June.\n\nCheckpoint: January is the first row, June is the last, and **Sort** is the\nfinal step shown in Wrangle.\n\nThis is not a cosmetic view sort. The header writes a trailing **Sort** step in\nWrangle, so formulas and every downstream table receive the declared order.\nThat declaration is what makes a row-relative formula safe to save.\n\n## 2. Build `shift(1)` by clicking cells\n\n1. Right-click a **Revenue** cell below the first displayed row.\n2. Choose **Formula here**.\n3. While the formula is active, click the Revenue cell one row above it.\n\nThe formula bar should contain:\n\n```text\n`Revenue`.shift(1)\n```\n\nThe row where the gesture began is only an authoring anchor. FrameWork saves a\ncolumn declaration, not a coordinate. A cell two rows above would produce\n`.shift(2)`; a row below would produce a negative shift.\n\nRename the calculated column to **Previous revenue** in the named command and\ncommit with Enter. The expected values are:\n\n| Month | Revenue | Previous revenue |\n|---|---:|---:|\n| 2026-01 | 118000 | blank |\n| 2026-02 | 124000 | 118000 |\n| 2026-03 | 136000 | 124000 |\n| 2026-04 | 142000 | 136000 |\n| 2026-05 | 151000 | 142000 |\n| 2026-06 | 168000 | 151000 |\n\nCheckpoint: the first Previous revenue cell is blank and every later row shows\nthe Revenue from the preceding month.\n\nIf the sort is removed before the shift calculation, FrameWork should refuse\nthe formula with a declared-ordering error instead of silently using whatever\nrow order happened to arrive from the source.\n\n## 3. Complete through a table namespace\n\nAdd another calculated column in Wrangle and call it **Change**.\n\nIn its formula:\n\n1. Start typing `Monthly` and choose the **Monthly sales** table suggestion.\n   Completion inserts `` `Monthly sales`. `` and leaves the cursor after the\n   dot.\n2. Type `rev` and choose **Revenue**. Only columns belonging to that table are\n   offered.\n3. Type ` - `, then click the **Previous revenue** column in the grid.\n\nThe completed formula is:\n\n```text\n`Monthly sales`.`Revenue` - `Previous revenue`\n```\n\nThe expected nonblank changes are `6000`, `12000`, `6000`, `9000`, and\n`17000`.\n\nCheckpoint: Change is blank for January and contains those five values from\nFebruary through June.\n\nThis two-stage completion matters on wide tables: choosing the table does not\nforce anyone to scroll through every `table.column` combination in the\ndocument.\n\n## 4. Make a filtered exploration tab\n\n1. Use the **+** beside the table tabs and choose **Table view**.\n2. Rename the new table **East only**.\n3. Open **Wrangle**, add **Filter rows**, and use:\n\n   ```text\n   `Region` == \"East\"\n   ```\n\nThe `East only` tab should show January, March, May, and June. Switch back to\n`Monthly sales` to see all six rows.\n\nCheckpoint: `East only` has four rows while `Monthly sales` still has six, and\nthe filter appears only in the East-only Wrangle chain.\n\nThe tabs differ because they are separate tables with separate Wrangle chains,\nnot because a hidden display filter can disagree with lineage. Anything derived\nfrom `East only` will inherit the East filter.\n\n## 5. Add table checks\n\nIn the `Checks` block, enter:\n\n```text\nTotal revenue = `Monthly sales`.`Revenue`.sum()\nLatest revenue = `Monthly sales`.`Revenue`.last()\n```\n\nBoth answers appear immediately and remain live. Change a Revenue value: the\ntotal updates, and `Latest revenue` updates when the row declared latest by the\nMonth sort changes. `.last()` here is an ordered query over the current table,\nnot a captured screen cell.\n\nExpected answers:\n\n- **Total revenue:** `839000`\n- **Latest revenue:** `168000`\n\nThe finished workbook already contains these lines and is the answer key for\nthe complete tutorial. It contains no frozen Scratchwork answers.\n\n## Finish line\n\nYour starting workbook should now agree with the finished answer key:\n\n- Month is sorted from January through June;\n- Previous revenue is blank once, then follows the declared order;\n- Change has five nonblank month-over-month values;\n- East only contains four rows without hiding rows in Monthly sales;\n- Total revenue is `839000` and Latest revenue is `168000`;\n- changing source Revenue updates the dependent columns and Checks block.\n\nBefore closing, undo and redo the East-only filter. The row count and visible\nWrangle chain should travel together. Record the step if either one does not.\n\n## Rebuilding the files\n\nThe generator deliberately uses `Store::apply(Operation::...)`, the same\nvalidation, history, persistence, and collaboration boundary used by MCP's\n`apply_operation` tool:\n\n```bash\ncargo run -p framework-core --example generate_formula_click_tutorial\n```\n\nIt writes both `.fw` files into this directory, reloads them, and plans the\nfinished table to catch invalid formulas or persistence drift.\n"
+            "text": "# Month-over-month formulas by pointing\n\nThis intermediate tutorial starts with six deliberately unsorted monthly sales rows and ends\nwith a small model built through the same public operations exposed by FrameWork\nMCP.\n\nThe complete guide is also rendered as the **Tutorial walkthrough** markdown\ncard in both the Start workbook and the Answer key.\n\nIt demonstrates:\n\n- a header sort becoming real Wrangle lineage;\n- creating ``.shift(n)`` by pointing at cells;\n- selecting a table first in autocomplete, then typing its column;\n- clicking columns into an active formula;\n- using a new tab for an exploratory filter, with no separate View filter layer;\n- table-qualified formulas in a calculation block.\n\n## Files\n\n- [`formula-clicks-start.fw`](formula-clicks-start.fw) — raw table plus an empty\n  `Checks` block.\n- [`formula-clicks-finished.fw`](formula-clicks-finished.fw) — the answer key.\n\nIf this is your first time in FrameWork, complete\n[Your first FrameWork workbook](../first-workbook/README.md) first.\n\nThese captures were taken from the current Tauri build after reopening both\ngenerated files:\n\n![Starting workbook: unsorted source table and empty Checks block](screenshots/start.jpg)\n\n![Finished workbook: East-only rows, shift results, changes, and live checks](screenshots/finished.jpg)\n\n## Before you begin\n\nAllow about 15 minutes. Complete\n[Your first FrameWork workbook](../first-workbook/README.md) first if calculated\ncolumns and Wrangle are new to you. In **Data Library**, create the tutorials if\nneeded, inspect the finished answer key, and then make every change in the\nstarting workbook. Repository contributors can instead open the linked `.fw`\nfiles with **File → Open**.\n\nThe order of this lesson matters: `.shift(1)` is only meaningful after Month is\nsorted. Stop at each checkpoint so that an ordering or naming mistake does not\nsurface later as an unrelated formula error.\n\n## 1. Declare the row order\n\nOpen `formula-clicks-start.fw`. The `Monthly sales` rows are intentionally out\nof order.\n\nClick the sort control in the **Month** header once. The rows should read\nJanuary through June.\n\nCheckpoint: January is the first row, June is the last, and **Sort** is the\nfinal step shown in Wrangle.\n\nThis is not a cosmetic view sort. The header writes a trailing **Sort** step in\nWrangle, so formulas and every downstream table receive the declared order.\nThat declaration is what makes a row-relative formula safe to save.\n\n## 2. Build `shift(1)` by clicking cells\n\n1. Right-click a **Revenue** cell below the first displayed row.\n2. Choose **Formula here**.\n3. While the formula is active, click the Revenue cell one row above it.\n\nThe formula bar should read:\n\n```text\n`Column 1` = `Revenue`.shift(1)\n```\n\nThe row where the gesture began is only an authoring anchor. FrameWork saves a\ncolumn declaration, not a coordinate. A cell two rows above would produce\n`.shift(2)`; a row below would produce a negative shift.\n\nReplace `Column 1` with **Previous revenue** — backticks around the name are\noptional — and press **Return**. The expected values are:\n\n| Month | Revenue | Previous revenue |\n|---|---:|---:|\n| 2026-01 | 118000 | blank |\n| 2026-02 | 124000 | 118000 |\n| 2026-03 | 136000 | 124000 |\n| 2026-04 | 142000 | 136000 |\n| 2026-05 | 151000 | 142000 |\n| 2026-06 | 168000 | 151000 |\n\nCheckpoint: the first Previous revenue cell is blank and every later row shows\nthe Revenue from the preceding month.\n\nIf the sort is removed before the shift calculation, FrameWork should refuse\nthe formula with a declared-ordering error instead of silently using whatever\nrow order happened to arrive from the source.\n\n## 3. Complete through a table namespace\n\nIn **Wrangle**, choose **+ Add transformation → Add or replace columns** — a\nnew step, not **+ Add or replace column** inside the Previous revenue step: a\ncolumn cannot read one written beside it in the same step, and FrameWork will\ntell you so. Call the new column **Change**.\n\nIn its formula:\n\n1. Start typing `Monthly` and accept the **Monthly sales** table suggestion\n   with **Tab**. Completion inserts `` `Monthly sales`. `` and leaves the\n   cursor after the dot.\n2. Type `rev` and accept **Revenue** with **Tab**. Only columns belonging to\n   that table are offered.\n3. Type ` - `, then click the **Previous revenue** column in the grid.\n\nThe completed formula is:\n\n```text\n`Monthly sales`.`Revenue` - `Previous revenue`\n```\n\nThe expected nonblank changes are `6000`, `12000`, `6000`, `9000`, and\n`17000`.\n\nCheckpoint: Change is blank for January and contains those five values from\nFebruary through June.\n\nThis two-stage completion matters on wide tables: choosing the table does not\nforce anyone to scroll through every `table.column` combination in the\ndocument.\n\n## 4. Make a filtered exploration tab\n\n1. Use the **+** beside the table tabs and choose **Table view**.\n2. Rename the new table **East only**.\n3. Open **Wrangle**, add **Filter rows**, and use:\n\n   ```text\n   `Region` == \"East\"\n   ```\n\nThe `East only` tab should show January, March, May, and June. Switch back to\n`Monthly sales` to see all six rows.\n\nCheckpoint: `East only` has four rows while `Monthly sales` still has six, and\nthe filter appears only in the East-only Wrangle chain.\n\nThe tabs differ because they are separate tables with separate Wrangle chains,\nnot because a hidden display filter can disagree with lineage. Anything derived\nfrom `East only` will inherit the East filter.\n\n## 5. Add table checks\n\nIn the `Checks` block, enter:\n\n```text\nTotal revenue = `Monthly sales`.`Revenue`.sum()\nLatest revenue = `Monthly sales`.`Revenue`.last()\n```\n\nBoth answers appear immediately and remain live. Change a Revenue value: the\ntotal updates, and `Latest revenue` updates when the row declared latest by the\nMonth sort changes. `.last()` here is an ordered query over the current table,\nnot a captured screen cell.\n\nExpected answers:\n\n- **Total revenue:** `839000`\n- **Latest revenue:** `168000`\n\nThe finished workbook already contains these lines and is the answer key for\nthe complete tutorial. It contains no frozen Scratchwork answers.\n\n## Finish line\n\nYour starting workbook should now agree with the finished answer key:\n\n- Month is sorted from January through June;\n- Previous revenue is blank once, then follows the declared order;\n- Change has five nonblank month-over-month values;\n- East only contains four rows without hiding rows in Monthly sales;\n- Total revenue is `839000` and Latest revenue is `168000`;\n- changing source Revenue updates the dependent columns and Checks block.\n\nBefore closing, undo and redo the East-only filter. The row count and visible\nWrangle chain should travel together. Record the step if either one does not.\n\n## Rebuilding the files\n\nThe generator deliberately uses `Store::apply(Operation::...)`, the same\nvalidation, history, persistence, and collaboration boundary used by MCP's\n`apply_operation` tool:\n\n```bash\ncargo run -p framework-core --example generate_formula_click_tutorial\n```\n\nIt writes both `.fw` files into this directory, reloads them, and plans the\nfinished table to catch invalid formulas or persistence drift.\n"
           }
         ]
       },
       {
         "kind": "frame",
-        "id": "463b8c21-9a0d-4868-9fb0-6c3063d30737",
+        "id": "a8d5d6ce-a276-4e42-9479-348868762c46",
         "name": "East only",
         "columns": [
           {
-            "id": "month~n9x5gp",
+            "id": "month~q25efg",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -377,7 +377,7 @@
             "formula": null
           },
           {
-            "id": "region~bbj99g",
+            "id": "region~k4t4nz",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -386,7 +386,7 @@
             "formula": null
           },
           {
-            "id": "revenue~zstqwg",
+            "id": "revenue~1jpspp",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -395,7 +395,7 @@
             "formula": null
           },
           {
-            "id": "cost~psavqg",
+            "id": "cost~6k9gd2",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -404,7 +404,7 @@
             "formula": null
           },
           {
-            "id": "previous_revenue~skhng1",
+            "id": "previous_revenue~tj19at",
             "name": "Previous revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -413,7 +413,7 @@
             "formula": null
           },
           {
-            "id": "change~2caw25",
+            "id": "change~1j3e7d",
             "name": "Change",
             "sourceName": null,
             "dataType": "integer",
@@ -427,52 +427,52 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "2e9da203-b5b6-4380-839d-b910fa9d1e46",
+          "sourceFrameId": "6ad73c3a-6ef6-4726-9314-65d668e4fb9b",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "month~n9x5gp",
+                  "outputColumnId": "month~q25efg",
                   "expression": {
                     "kind": "column",
-                    "column_id": "month~j48dct"
+                    "column_id": "month~z2sbb7"
                   }
                 },
                 {
-                  "outputColumnId": "region~bbj99g",
+                  "outputColumnId": "region~k4t4nz",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~y8wgj2"
+                    "column_id": "region~71nekp"
                   }
                 },
                 {
-                  "outputColumnId": "revenue~zstqwg",
+                  "outputColumnId": "revenue~1jpspp",
                   "expression": {
                     "kind": "column",
-                    "column_id": "revenue~xgmsy2"
+                    "column_id": "revenue~swghgh"
                   }
                 },
                 {
-                  "outputColumnId": "cost~psavqg",
+                  "outputColumnId": "cost~6k9gd2",
                   "expression": {
                     "kind": "column",
-                    "column_id": "cost~5rbxs7"
+                    "column_id": "cost~bdqnty"
                   }
                 },
                 {
-                  "outputColumnId": "previous_revenue~skhng1",
+                  "outputColumnId": "previous_revenue~tj19at",
                   "expression": {
                     "kind": "column",
-                    "column_id": "previous_revenue~3n4cz8"
+                    "column_id": "previous_revenue~fz5dfd"
                   }
                 },
                 {
-                  "outputColumnId": "change~2caw25",
+                  "outputColumnId": "change~1j3e7d",
                   "expression": {
                     "kind": "column",
-                    "column_id": "change~cax6e0"
+                    "column_id": "change~j6ngpm"
                   }
                 }
               ]
@@ -480,12 +480,12 @@
             {
               "kind": "select",
               "columnIds": [
-                "month~n9x5gp",
-                "region~bbj99g",
-                "revenue~zstqwg",
-                "cost~psavqg",
-                "previous_revenue~skhng1",
-                "change~2caw25"
+                "month~q25efg",
+                "region~k4t4nz",
+                "revenue~1jpspp",
+                "cost~6k9gd2",
+                "previous_revenue~tj19at",
+                "change~1j3e7d"
               ]
             },
             {
@@ -496,7 +496,7 @@
                   "operator": "equal",
                   "left": {
                     "kind": "column",
-                    "column_id": "region~bbj99g"
+                    "column_id": "region~k4t4nz"
                   },
                   "right": {
                     "kind": "string",
@@ -515,30 +515,30 @@
     ],
     "views": [
       {
-        "id": "fa6e1a5f-c3a9-4d04-a1f2-1da9333b9149",
-        "objectId": "463b8c21-9a0d-4868-9fb0-6c3063d30737",
+        "id": "768ebab7-afe4-4872-a518-91f088dd8f1c",
+        "objectId": "a8d5d6ce-a276-4e42-9479-348868762c46",
         "x": 730.0,
         "y": 80.0,
         "width": 920.0,
         "height": 330.0,
         "collapsed": false,
         "tabObjectIds": [
-          "2e9da203-b5b6-4380-839d-b910fa9d1e46",
-          "463b8c21-9a0d-4868-9fb0-6c3063d30737"
+          "6ad73c3a-6ef6-4726-9314-65d668e4fb9b",
+          "a8d5d6ce-a276-4e42-9479-348868762c46"
         ]
       },
       {
-        "id": "06f9f076-4ced-4f83-921d-d2b8e7d25881",
-        "objectId": "7db479a9-edff-41c7-9d2f-b30ada69d565",
+        "id": "d4c0a298-1737-497f-a137-784db2ab209a",
+        "objectId": "60d35266-0c4e-4ae3-aedc-3b8e22a041e3",
         "x": 730.0,
-        "y": 430.0,
+        "y": 570.0,
         "width": 480.0,
         "height": 220.0,
         "collapsed": false
       },
       {
-        "id": "7aa1cdd8-b46a-41fb-b305-4a0f6e33df0b",
-        "objectId": "0872e79c-a6df-452f-8b49-31a41dfdbdc6",
+        "id": "490d0cec-6745-451c-8bfb-bb7366a52e6d",
+        "objectId": "3d58f8ad-98bc-4506-b657-bae23a23d740",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -546,7 +546,9 @@
         "collapsed": false
       }
     ],
-    "frozenValues": {}
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
   },
   "versionVector": {}
 }

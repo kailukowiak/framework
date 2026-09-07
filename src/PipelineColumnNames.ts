@@ -51,6 +51,25 @@ export function exactName(token: string): string | null {
   return trimmed.slice(1, -1).replaceAll("``", "`");
 }
 
+/**
+ * A name written without its backticks. Nobody reading "name it Profit and
+ * enter `Revenue` - `Cost`" types the quoting, and refusing `Profit = …`
+ * taught the syntax by rejection — the worst way to teach it. Accepted only
+ * for text that could not be an expression instead: a word, or several
+ * words, of letters, digits and underscores, starting with a letter or an
+ * underscore. Anything with an operator, a call, a literal or a leading
+ * digit in it is still refused, so `count(x) = 1` cannot quietly become a
+ * column called something nobody typed. The name is stored unquoted and the
+ * command reprints it backticked, so the saved chain is canonical either
+ * way.
+ */
+function plainName(token: string): string | null {
+  const trimmed = token.trim();
+  return /^[A-Za-z_][A-Za-z0-9_]*(?: [A-Za-z0-9_]+)*$/.test(trimmed)
+    ? trimmed
+    : null;
+}
+
 export function parseNamedTransformation(
   source: string
 ): { name: string; formula: string } | null {
@@ -63,7 +82,8 @@ export function parseNamedTransformation(
     }
     if (backticked || source[index] !== "=") continue;
     if (source[index - 1] === "=") continue;
-    const name = exactName(source.slice(0, index));
+    const written = source.slice(0, index);
+    const name = exactName(written) ?? plainName(written);
     // The command already prints its assignment separator. Spreadsheet
     // muscle memory can still add another `=` before the expression, either
     // adjacent (`name == expression`) or after the separator's spaces

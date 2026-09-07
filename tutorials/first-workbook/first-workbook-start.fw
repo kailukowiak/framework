@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "3fba10c9-31fc-4a68-9197-4b5c818187ac",
+    "id": "0b57e968-eaeb-4252-9861-9f15ef64f1e1",
     "name": "Your first FrameWork workbook",
     "revision": 8,
     "objects": [
       {
         "kind": "frame",
-        "id": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
+        "id": "92bbeec7-a308-4ff7-901e-3af875ee369a",
         "name": "Monthly sales",
         "columns": [
           {
-            "id": "column_1~q1bmwd",
+            "id": "column_1~1ycwfk",
             "name": "Column 1",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "column_2~23zy9d",
+            "id": "column_2~tsmk70",
             "name": "Column 2",
             "sourceName": null,
             "dataType": "string",
@@ -33,26 +33,26 @@
         ],
         "rows": [
           {
-            "id": "803a166d-f950-4e15-9dbd-dd44259af549",
+            "id": "3412bbcf-01ec-4d5d-9ac3-4ff6b1d136bf",
             "cells": {
-              "column_1~q1bmwd": {
+              "column_1~1ycwfk": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "column_2~23zy9d": {
+              "column_2~tsmk70": {
                 "raw": "",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "1662ca50-28f0-4c44-a8d0-5b3e226eac6f",
+            "id": "5be23499-0e35-4203-a763-c140c7f2fb27",
             "cells": {
-              "column_1~q1bmwd": {
+              "column_1~1ycwfk": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "column_2~23zy9d": {
+              "column_2~tsmk70": {
                 "raw": "",
                 "overrideFormula": null
               }
@@ -69,13 +69,13 @@
       },
       {
         "kind": "block",
-        "id": "a9414aad-8152-4e55-8882-6f5381b3883b",
+        "id": "c3fad22d-d43c-46e7-866d-f1ef681c8c63",
         "name": "Assumptions",
         "lines": []
       },
       {
         "kind": "text",
-        "id": "6d4713cf-a09c-4c17-ba6d-0d4e5c4e2c5c",
+        "id": "88b2df67-712d-4f0d-b75e-32a96d657de0",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -88,26 +88,26 @@
     ],
     "views": [
       {
-        "id": "480df584-42d6-4da9-9c20-fb34233d42d7",
-        "objectId": "e25c8feb-3f1e-443d-a1dc-2e2c314124d6",
+        "id": "99516b9f-910c-452a-87bd-4027ae1caf09",
+        "objectId": "92bbeec7-a308-4ff7-901e-3af875ee369a",
         "x": 720.0,
         "y": 70.0,
         "width": 420.0,
-        "height": 300.0,
+        "height": 306.0,
         "collapsed": false
       },
       {
-        "id": "23bb2b2a-c8cb-4c90-bcef-3fff4c03dbcf",
-        "objectId": "a9414aad-8152-4e55-8882-6f5381b3883b",
+        "id": "9049774b-ecc5-4541-afe7-f7297c2ecda5",
+        "objectId": "c3fad22d-d43c-46e7-866d-f1ef681c8c63",
         "x": 720.0,
         "y": 420.0,
-        "width": 340.0,
+        "width": 600.0,
         "height": 220.0,
         "collapsed": false
       },
       {
-        "id": "d8bb583d-11e9-4db6-a37d-3fc2e5781d0a",
-        "objectId": "6d4713cf-a09c-4c17-ba6d-0d4e5c4e2c5c",
+        "id": "7a61e099-370d-4a60-b5af-7c21592734b6",
+        "objectId": "88b2df67-712d-4f0d-b75e-32a96d657de0",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -115,7 +115,9 @@
         "collapsed": false
       }
     ],
-    "frozenValues": {}
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
   },
   "versionVector": {}
 }

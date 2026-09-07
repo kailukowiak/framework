@@ -1,6 +1,35 @@
 import { browser, $ } from "@wdio/globals";
 import { Key } from "webdriverio";
-import { openContextMenuOn, resetAndOpenTutorial } from "../lib/helpers";
+import {
+  columnCellTexts,
+  digits,
+  documentJson,
+  openContextMenuOn,
+  pressAndRelease,
+  resetAndOpenTutorial,
+  selectCard,
+} from "../lib/helpers";
+
+/** The frame's column names, left to right, as the grid draws them. */
+const headerNames = () =>
+  browser.execute(() =>
+    Array.from(
+      document
+        .querySelector<HTMLElement>(".frame-object")
+        ?.querySelectorAll<HTMLElement>('button[aria-label^="Sort by "]') ?? []
+    ).map((button) => button.getAttribute("aria-label")!.replace("Sort by ", ""))
+  );
+
+/** The top formula bar's textarea, whatever formula it is currently hosting. */
+const formulaBar = () => $(".scratchwork-formula-bar textarea");
+
+/** Brings the frame's Wrangle chain up, wherever the inspector happens to be. */
+async function openWrangle(): Promise<void> {
+  await browser.execute(() => (document.activeElement as HTMLElement | null)?.blur());
+  await selectCard(".frame-object");
+  await browser.keys([Key.Command, "3"]);
+  await $(".pipeline-command-list").waitForExist();
+}
 
 // The one sanctioned authoring surface for a calculated column: the frame
 // context menu appends a withColumns step to the Wrangle chain and focuses
@@ -58,6 +87,14 @@ describe("calculated column through Wrangle", () => {
           "the new formula never held focus with its whole text selected",
       }
     );
+
+    // Revenue is a column in the middle of the table, and the new calculation
+    // still belongs at the end of it. Wedging Column 1 between Revenue and
+    // Cost would be a positional edit nobody asked for — "Insert column here"
+    // is the gesture that means that.
+    const names = await headerNames();
+    expect(names[names.length - 1]).toBe("Column 1");
+    expect(names.indexOf("Column 1")).toBeGreaterThan(names.indexOf("Cost"));
   });
 
   // This test once failed as "orphaned formula session commit no-op": the
@@ -94,5 +131,95 @@ describe("calculated column through Wrangle", () => {
     // div.cell-display: they render as button.computed-cell, the clickable
     // formula-reference surface.
     await $("button.computed-cell*=284,000").waitForExist();
+  });
+
+  // Nobody reading "name it Profit and enter `Revenue` - `Cost`" types the
+  // quoting, and refusing `Profit = …` taught the syntax by rejection. The
+  // name is accepted bare and stored canonically, so the saved chain reads
+  // the same either way — which is what the Wrangle line is asserted on.
+  it("accepts a name written without backticks and prints it backticked", async () => {
+    await openWrangle();
+    await $(".pipeline-command-list").$("button.pipeline-command").click();
+    const formula = formulaBar();
+    await formula.waitForExist();
+    await formula.setValue("Profit = `Revenue` - `Cost`");
+    await formula.click();
+    await browser.keys(Key.Enter);
+
+    // April's 142000 less its 91000 of cost, through the real pipeline.
+    await browser.waitUntil(
+      async () => {
+        const profit = await columnCellTexts("Profit").catch(() => []);
+        return profit.some((value) => Number(digits(value)) === 51000);
+      },
+      { timeoutMsg: "the bare-named Profit column never computed" }
+    );
+    await browser.waitUntil(
+      () =>
+        browser.execute(() =>
+          Array.from(document.querySelectorAll(".pipeline-command")).some((command) =>
+            (command.textContent ?? "").includes("`Profit`")
+          )
+        ),
+      { timeoutMsg: "the Wrangle line did not print the name back in backticks" }
+    );
+  });
+
+  // Half a formula is not a calculation yet. The draft used to be written
+  // into the step on every keystroke, and a step is what the *next* save
+  // writes to the document — so an abandoned draft arrived in the file under
+  // some unrelated gesture's save, and the schema preview kept announcing
+  // "unknown name" about a word still being typed.
+  it("keeps an abandoned draft out of the document when something else saves", async () => {
+    await openWrangle();
+    await $(".pipeline-command-list").$("button.pipeline-command").click();
+    const formula = formulaBar();
+    await formula.waitForExist();
+    await formula.setValue("Profit = `Revenue` - `Cost` - 4242");
+
+    // Left without Return, the way an abandoned edit is left: focus goes
+    // elsewhere and an unrelated save follows.
+    await browser.execute(() => (document.activeElement as HTMLElement | null)?.blur());
+    const name = $(".frame-object .frame-name");
+    await name.setValue("Monthly sales renamed");
+    await browser.keys(Key.Enter);
+    await browser.waitUntil(async () => (await documentJson()).includes("Monthly sales renamed"), {
+      timeoutMsg: "the frame rename never reached the document",
+    });
+
+    expect(await documentJson()).not.toContain("4242");
+    // And the calculation the person did save is still the one on file.
+    const profit = await columnCellTexts("Profit");
+    expect(profit.some((value) => Number(digits(value)) === 51000)).toBe(true);
+  });
+
+  // A calculated column's rows arrive already evaluated while the cached
+  // `computed.rows` still describes the frame's *stored* input, where a
+  // calculated column has no literal at all. Reading that null as an empty
+  // cell is what made Profit, selected on its own, report "Count 0" over six
+  // numbers plainly on screen.
+  it("counts a calculated column's rows in the selection statistics", async () => {
+    await browser.execute(() => (document.activeElement as HTMLElement | null)?.blur());
+    await pressAndRelease('th.column-header:has(button[aria-label="Sort by Profit"])');
+
+    await browser.waitUntil(
+      async () => {
+        const reading = await browser.execute(
+          () =>
+            document.querySelector('[aria-label="Selection statistics"]')?.textContent ??
+            ""
+        );
+        return /Count\s*[1-9]/.test(reading);
+      },
+      {
+        timeoutMsg: `selecting the calculated column read ${JSON.stringify(
+          await browser.execute(
+            () =>
+              document.querySelector('[aria-label="Selection statistics"]')
+                ?.textContent ?? "<no statistics>"
+          )
+        )}`,
+      }
+    );
   });
 });

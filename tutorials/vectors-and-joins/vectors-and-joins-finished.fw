@@ -3,13 +3,13 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "2517e8f3-3574-40ec-bb13-c3847392031b",
+    "id": "148950a0-a439-42f5-9a55-0bcb64eb616a",
     "name": "Vectors, Calculation Matrix, dates, and visual joins",
     "revision": 25,
     "objects": [
       {
         "kind": "text",
-        "id": "2c5a18da-5ac1-4739-85ea-b656b87d276e",
+        "id": "11fac7ac-6847-4bc1-8346-eb2021e26299",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
@@ -21,11 +21,11 @@
       },
       {
         "kind": "frame",
-        "id": "591ccba3-9a50-4f56-9d69-672a20b4375f",
+        "id": "f78939c7-78fa-4620-9687-cdcf1b0b855a",
         "name": "Launch inputs",
         "columns": [
           {
-            "id": "line~p4kb99",
+            "id": "line~kntmk8",
             "name": "Line",
             "sourceName": null,
             "dataType": "integer",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "sku~sj82jp",
+            "id": "sku~njnyc1",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -43,7 +43,7 @@
             "formula": null
           },
           {
-            "id": "units~sqfy0b",
+            "id": "units~wdg6n8",
             "name": "Units",
             "sourceName": null,
             "dataType": "integer",
@@ -52,7 +52,7 @@
             "formula": null
           },
           {
-            "id": "launch_month~220x5q",
+            "id": "launch_month~j542js",
             "name": "Launch month",
             "sourceName": null,
             "dataType": "date",
@@ -63,126 +63,126 @@
         ],
         "rows": [
           {
-            "id": "6bfc041c-206e-4cb9-bb03-f1bbcc87f509",
+            "id": "434f468c-7d63-4dce-a6d0-cc59d32d7ece",
             "cells": {
-              "launch_month~220x5q": {
+              "launch_month~j542js": {
                 "raw": "2026-09-01",
                 "overrideFormula": null
               },
-              "line~p4kb99": {
+              "line~kntmk8": {
                 "raw": "1",
                 "overrideFormula": null
               },
-              "sku~sj82jp": {
+              "sku~njnyc1": {
                 "raw": "A-100",
                 "overrideFormula": null
               },
-              "units~sqfy0b": {
+              "units~wdg6n8": {
                 "raw": "120",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "15e80e2e-3f31-42a5-87fc-afa3192f7578",
+            "id": "2aaef87b-114d-462b-91ee-e682d4fdcdbb",
             "cells": {
-              "launch_month~220x5q": {
+              "launch_month~j542js": {
                 "raw": "2026-10-01",
                 "overrideFormula": null
               },
-              "line~p4kb99": {
+              "line~kntmk8": {
                 "raw": "2",
                 "overrideFormula": null
               },
-              "sku~sj82jp": {
+              "sku~njnyc1": {
                 "raw": "B-200",
                 "overrideFormula": null
               },
-              "units~sqfy0b": {
+              "units~wdg6n8": {
                 "raw": "90",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "d1d6d03e-8155-4f16-b229-54c4c4700d2c",
+            "id": "812c2444-b1d8-4ebf-8140-338af98b3625",
             "cells": {
-              "launch_month~220x5q": {
+              "launch_month~j542js": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~p4kb99": {
+              "line~kntmk8": {
                 "raw": "3",
                 "overrideFormula": null
               },
-              "sku~sj82jp": {
+              "sku~njnyc1": {
                 "raw": "C-300",
                 "overrideFormula": null
               },
-              "units~sqfy0b": {
+              "units~wdg6n8": {
                 "raw": "75",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "ae8ed0e3-1937-45e7-a3ef-ea28694ca8b5",
+            "id": "4ceb456f-1578-4354-8cc7-3a4ca5bb2e1c",
             "cells": {
-              "launch_month~220x5q": {
+              "launch_month~j542js": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~p4kb99": {
+              "line~kntmk8": {
                 "raw": "4",
                 "overrideFormula": null
               },
-              "sku~sj82jp": {
+              "sku~njnyc1": {
                 "raw": "A-100",
                 "overrideFormula": null
               },
-              "units~sqfy0b": {
+              "units~wdg6n8": {
                 "raw": "140",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "083430c6-612f-4927-b5c9-3779eb876016",
+            "id": "27dfbda5-f97d-4005-b895-72b7870693f2",
             "cells": {
-              "launch_month~220x5q": {
+              "launch_month~j542js": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~p4kb99": {
+              "line~kntmk8": {
                 "raw": "5",
                 "overrideFormula": null
               },
-              "sku~sj82jp": {
+              "sku~njnyc1": {
                 "raw": "D-400",
                 "overrideFormula": null
               },
-              "units~sqfy0b": {
+              "units~wdg6n8": {
                 "raw": "60",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "7fccc3f5-a38b-4a70-a05f-0fb1973d20c1",
+            "id": "7cc0d267-0765-47c8-9c9b-7c045bae9bc9",
             "cells": {
-              "launch_month~220x5q": {
+              "launch_month~j542js": {
                 "raw": "",
                 "overrideFormula": null
               },
-              "line~p4kb99": {
+              "line~kntmk8": {
                 "raw": "6",
                 "overrideFormula": null
               },
-              "sku~sj82jp": {
+              "sku~njnyc1": {
                 "raw": "B-200",
                 "overrideFormula": null
               },
-              "units~sqfy0b": {
+              "units~wdg6n8": {
                 "raw": "110",
                 "overrideFormula": null
               }
@@ -199,11 +199,11 @@
       },
       {
         "kind": "frame",
-        "id": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
+        "id": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
         "name": "Launch plan",
         "columns": [
           {
-            "id": "line~p4kb99",
+            "id": "line~kntmk8",
             "name": "Line",
             "sourceName": null,
             "dataType": "integer",
@@ -212,7 +212,7 @@
             "formula": null
           },
           {
-            "id": "sku~sj82jp",
+            "id": "sku~njnyc1",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -221,7 +221,7 @@
             "formula": null
           },
           {
-            "id": "units~sqfy0b",
+            "id": "units~wdg6n8",
             "name": "Units",
             "sourceName": null,
             "dataType": "integer",
@@ -230,7 +230,7 @@
             "formula": null
           },
           {
-            "id": "launch_month~220x5q",
+            "id": "launch_month~j542js",
             "name": "Launch month",
             "sourceName": null,
             "dataType": "date",
@@ -244,14 +244,14 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "591ccba3-9a50-4f56-9d69-672a20b4375f",
+          "sourceFrameId": "f78939c7-78fa-4620-9687-cdcf1b0b855a",
           "join": null,
           "steps": [
             {
               "kind": "sort",
               "keys": [
                 {
-                  "columnId": "line~p4kb99",
+                  "columnId": "line~kntmk8",
                   "descending": false
                 }
               ]
@@ -260,7 +260,7 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "launch_month~220x5q",
+                  "outputColumnId": "launch_month~j542js",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "sequence",
@@ -300,11 +300,11 @@
       },
       {
         "kind": "frame",
-        "id": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
+        "id": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
         "name": "Product catalog",
         "columns": [
           {
-            "id": "sku~a5k53d",
+            "id": "sku~epmdyb",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -313,7 +313,7 @@
             "formula": null
           },
           {
-            "id": "product~y54vvg",
+            "id": "product~e7rvk4",
             "name": "Product",
             "sourceName": null,
             "dataType": "string",
@@ -322,7 +322,7 @@
             "formula": null
           },
           {
-            "id": "region~3gccc7",
+            "id": "region~bzwt47",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -331,7 +331,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~20y0cj",
+            "id": "unit_price~kdcts9",
             "name": "Unit price",
             "sourceName": null,
             "dataType": "integer",
@@ -342,84 +342,84 @@
         ],
         "rows": [
           {
-            "id": "6381b934-b708-44d0-95d4-e27d22d9bfa5",
+            "id": "c9ec17f4-3bf4-4a68-9adf-6317bfc55c61",
             "cells": {
-              "product~y54vvg": {
+              "product~e7rvk4": {
                 "raw": "Aurora",
                 "overrideFormula": null
               },
-              "region~3gccc7": {
+              "region~bzwt47": {
                 "raw": "West",
                 "overrideFormula": null
               },
-              "sku~a5k53d": {
+              "sku~epmdyb": {
                 "raw": "A-100",
                 "overrideFormula": null
               },
-              "unit_price~20y0cj": {
+              "unit_price~kdcts9": {
                 "raw": "250",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "6a6bc8fd-625e-4d14-a13c-5ae49ab3b6e2",
+            "id": "ac5fd074-f2a6-44e7-a3be-20cadd6859e4",
             "cells": {
-              "product~y54vvg": {
+              "product~e7rvk4": {
                 "raw": "Boreal",
                 "overrideFormula": null
               },
-              "region~3gccc7": {
+              "region~bzwt47": {
                 "raw": "East",
                 "overrideFormula": null
               },
-              "sku~a5k53d": {
+              "sku~epmdyb": {
                 "raw": "B-200",
                 "overrideFormula": null
               },
-              "unit_price~20y0cj": {
+              "unit_price~kdcts9": {
                 "raw": "180",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "0e43f10f-022f-4cf3-afcb-22089f57d48d",
+            "id": "fd7568b7-190b-4648-8583-2922b8063a62",
             "cells": {
-              "product~y54vvg": {
+              "product~e7rvk4": {
                 "raw": "Cedar",
                 "overrideFormula": null
               },
-              "region~3gccc7": {
+              "region~bzwt47": {
                 "raw": "North",
                 "overrideFormula": null
               },
-              "sku~a5k53d": {
+              "sku~epmdyb": {
                 "raw": "C-300",
                 "overrideFormula": null
               },
-              "unit_price~20y0cj": {
+              "unit_price~kdcts9": {
                 "raw": "320",
                 "overrideFormula": null
               }
             }
           },
           {
-            "id": "340aeffb-7a34-4f4e-b0a6-1ad07f55a55b",
+            "id": "c77079a0-21da-496b-9a95-28e7e93ebf9e",
             "cells": {
-              "product~y54vvg": {
+              "product~e7rvk4": {
                 "raw": "Delta",
                 "overrideFormula": null
               },
-              "region~3gccc7": {
+              "region~bzwt47": {
                 "raw": "South",
                 "overrideFormula": null
               },
-              "sku~a5k53d": {
+              "sku~epmdyb": {
                 "raw": "D-400",
                 "overrideFormula": null
               },
-              "unit_price~20y0cj": {
+              "unit_price~kdcts9": {
                 "raw": "210",
                 "overrideFormula": null
               }
@@ -433,9 +433,9 @@
         "materialization": null,
         "uniqueKeys": [
           {
-            "id": "d5d0eccc-a34b-4b5b-8bfb-5d97f8a260d8",
+            "id": "f86863f9-76aa-4e31-8a0c-4e87e0457e06",
             "columnIds": [
-              "sku~a5k53d"
+              "sku~epmdyb"
             ]
           }
         ],
@@ -443,11 +443,11 @@
       },
       {
         "kind": "block",
-        "id": "a35a1b2c-90d4-4756-929f-74e6b532fc02",
+        "id": "578568e9-c1bb-4116-8b76-62447d198467",
         "name": "Checks",
         "lines": [
           {
-            "id": "2c0892a4-cec6-42c7-a0df-fcf37314363a",
+            "id": "05434af4-b0f0-454f-80df-c93e905a5c24",
             "name": "Rows scheduled",
             "named": true,
             "nameQuoted": false,
@@ -457,8 +457,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "2953f343-d739-4ea9-95ab-ce3bf809c332",
-                  "column_id": "line~jpwc5b"
+                  "frame_id": "256c64ef-27a8-4884-8328-61ec601f4bf7",
+                  "column_id": "line~csryfy"
                 },
                 "path": [
                   "len"
@@ -470,7 +470,7 @@
             "error": null
           },
           {
-            "id": "bd6fb500-8fac-4770-92b7-372746884f69",
+            "id": "b7e0d610-e64e-4af9-932b-435130950ce0",
             "name": "Revenue scheduled",
             "named": true,
             "nameQuoted": false,
@@ -480,8 +480,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "2953f343-d739-4ea9-95ab-ce3bf809c332",
-                  "column_id": "revenue~ec0v8s"
+                  "frame_id": "256c64ef-27a8-4884-8328-61ec601f4bf7",
+                  "column_id": "revenue~qmfxkn"
                 },
                 "path": [
                   "sum"
@@ -496,11 +496,11 @@
       },
       {
         "kind": "frame",
-        "id": "2953f343-d739-4ea9-95ab-ce3bf809c332",
+        "id": "256c64ef-27a8-4884-8328-61ec601f4bf7",
         "name": "Scheduled launches",
         "columns": [
           {
-            "id": "line~jpwc5b",
+            "id": "line~csryfy",
             "name": "Line",
             "sourceName": null,
             "dataType": "integer",
@@ -509,7 +509,7 @@
             "formula": null
           },
           {
-            "id": "sku~96ranm",
+            "id": "sku~5ebh5v",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -518,7 +518,7 @@
             "formula": null
           },
           {
-            "id": "units~4xpra9",
+            "id": "units~077p5q",
             "name": "Units",
             "sourceName": null,
             "dataType": "integer",
@@ -527,7 +527,7 @@
             "formula": null
           },
           {
-            "id": "launch_month~5y70m0",
+            "id": "launch_month~yvyszq",
             "name": "Launch month",
             "sourceName": null,
             "dataType": "date",
@@ -536,7 +536,7 @@
             "formula": null
           },
           {
-            "id": "product~jg6gnb",
+            "id": "product~trmp8v",
             "name": "Product",
             "sourceName": null,
             "dataType": "string",
@@ -545,7 +545,7 @@
             "formula": null
           },
           {
-            "id": "region~edt8qc",
+            "id": "region~3hg2jw",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -554,7 +554,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~5z4x1w",
+            "id": "unit_price~jz66hg",
             "name": "Unit price",
             "sourceName": null,
             "dataType": "integer",
@@ -565,12 +565,13 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           },
           {
-            "id": "revenue~ec0v8s",
+            "id": "revenue~qmfxkn",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -581,7 +582,8 @@
               "scale": "units",
               "negativeParens": true,
               "zeroDash": true,
-              "currencyCode": "USD"
+              "currencyCode": "USD",
+              "datePattern": null
             },
             "formula": null
           }
@@ -589,7 +591,7 @@
         "rows": [],
         "baseColumns": [
           {
-            "id": "line~jpwc5b",
+            "id": "line~csryfy",
             "name": "Line",
             "sourceName": null,
             "dataType": "integer",
@@ -598,7 +600,7 @@
             "formula": null
           },
           {
-            "id": "sku~96ranm",
+            "id": "sku~5ebh5v",
             "name": "SKU",
             "sourceName": null,
             "dataType": "string",
@@ -607,7 +609,7 @@
             "formula": null
           },
           {
-            "id": "units~4xpra9",
+            "id": "units~077p5q",
             "name": "Units",
             "sourceName": null,
             "dataType": "integer",
@@ -616,7 +618,7 @@
             "formula": null
           },
           {
-            "id": "launch_month~5y70m0",
+            "id": "launch_month~yvyszq",
             "name": "Launch month",
             "sourceName": null,
             "dataType": "date",
@@ -625,7 +627,7 @@
             "formula": null
           },
           {
-            "id": "product~jg6gnb",
+            "id": "product~trmp8v",
             "name": "Product",
             "sourceName": null,
             "dataType": "string",
@@ -634,7 +636,7 @@
             "formula": null
           },
           {
-            "id": "region~edt8qc",
+            "id": "region~3hg2jw",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -643,7 +645,7 @@
             "formula": null
           },
           {
-            "id": "unit_price~5z4x1w",
+            "id": "unit_price~jz66hg",
             "name": "Unit price",
             "sourceName": null,
             "dataType": "integer",
@@ -656,51 +658,51 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
+          "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
           "join": {
-            "lookupFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
+            "lookupFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
             "primaryKeyColumnIds": [
-              "sku~sj82jp"
+              "sku~njnyc1"
             ],
             "lookupKeyColumnIds": [
-              "sku~a5k53d"
+              "sku~epmdyb"
             ],
             "joinType": "left",
             "outputs": [
               {
-                "outputColumnId": "line~jpwc5b",
-                "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                "sourceColumnId": "line~p4kb99"
+                "outputColumnId": "line~csryfy",
+                "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                "sourceColumnId": "line~kntmk8"
               },
               {
-                "outputColumnId": "sku~96ranm",
-                "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                "sourceColumnId": "sku~sj82jp"
+                "outputColumnId": "sku~5ebh5v",
+                "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                "sourceColumnId": "sku~njnyc1"
               },
               {
-                "outputColumnId": "units~4xpra9",
-                "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                "sourceColumnId": "units~sqfy0b"
+                "outputColumnId": "units~077p5q",
+                "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                "sourceColumnId": "units~wdg6n8"
               },
               {
-                "outputColumnId": "launch_month~5y70m0",
-                "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                "sourceColumnId": "launch_month~220x5q"
+                "outputColumnId": "launch_month~yvyszq",
+                "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                "sourceColumnId": "launch_month~j542js"
               },
               {
-                "outputColumnId": "product~jg6gnb",
-                "sourceFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
-                "sourceColumnId": "product~y54vvg"
+                "outputColumnId": "product~trmp8v",
+                "sourceFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
+                "sourceColumnId": "product~e7rvk4"
               },
               {
-                "outputColumnId": "region~edt8qc",
-                "sourceFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
-                "sourceColumnId": "region~3gccc7"
+                "outputColumnId": "region~3hg2jw",
+                "sourceFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
+                "sourceColumnId": "region~bzwt47"
               },
               {
-                "outputColumnId": "unit_price~5z4x1w",
-                "sourceFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
-                "sourceColumnId": "unit_price~20y0cj"
+                "outputColumnId": "unit_price~jz66hg",
+                "sourceFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
+                "sourceColumnId": "unit_price~kdcts9"
               }
             ]
           },
@@ -708,49 +710,49 @@
             {
               "kind": "join",
               "join": {
-                "lookupFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
+                "lookupFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
                 "primaryKeyColumnIds": [
-                  "sku~sj82jp"
+                  "sku~njnyc1"
                 ],
                 "lookupKeyColumnIds": [
-                  "sku~a5k53d"
+                  "sku~epmdyb"
                 ],
                 "joinType": "left",
                 "outputs": [
                   {
-                    "outputColumnId": "line~jpwc5b",
-                    "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                    "sourceColumnId": "line~p4kb99"
+                    "outputColumnId": "line~csryfy",
+                    "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                    "sourceColumnId": "line~kntmk8"
                   },
                   {
-                    "outputColumnId": "sku~96ranm",
-                    "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                    "sourceColumnId": "sku~sj82jp"
+                    "outputColumnId": "sku~5ebh5v",
+                    "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                    "sourceColumnId": "sku~njnyc1"
                   },
                   {
-                    "outputColumnId": "units~4xpra9",
-                    "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                    "sourceColumnId": "units~sqfy0b"
+                    "outputColumnId": "units~077p5q",
+                    "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                    "sourceColumnId": "units~wdg6n8"
                   },
                   {
-                    "outputColumnId": "launch_month~5y70m0",
-                    "sourceFrameId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
-                    "sourceColumnId": "launch_month~220x5q"
+                    "outputColumnId": "launch_month~yvyszq",
+                    "sourceFrameId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
+                    "sourceColumnId": "launch_month~j542js"
                   },
                   {
-                    "outputColumnId": "product~jg6gnb",
-                    "sourceFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
-                    "sourceColumnId": "product~y54vvg"
+                    "outputColumnId": "product~trmp8v",
+                    "sourceFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
+                    "sourceColumnId": "product~e7rvk4"
                   },
                   {
-                    "outputColumnId": "region~edt8qc",
-                    "sourceFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
-                    "sourceColumnId": "region~3gccc7"
+                    "outputColumnId": "region~3hg2jw",
+                    "sourceFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
+                    "sourceColumnId": "region~bzwt47"
                   },
                   {
-                    "outputColumnId": "unit_price~5z4x1w",
-                    "sourceFrameId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
-                    "sourceColumnId": "unit_price~20y0cj"
+                    "outputColumnId": "unit_price~jz66hg",
+                    "sourceFrameId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
+                    "sourceColumnId": "unit_price~kdcts9"
                   }
                 ]
               }
@@ -759,17 +761,17 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "revenue~ec0v8s",
+                  "outputColumnId": "revenue~qmfxkn",
                   "expression": {
                     "kind": "binary",
                     "operator": "multiply",
                     "left": {
                       "kind": "column",
-                      "column_id": "units~4xpra9"
+                      "column_id": "units~077p5q"
                     },
                     "right": {
                       "kind": "column",
-                      "column_id": "unit_price~5z4x1w"
+                      "column_id": "unit_price~jz66hg"
                     }
                   }
                 }
@@ -783,7 +785,7 @@
       },
       {
         "kind": "result",
-        "id": "2cb40a16-ca7d-4a0b-98b6-ddaf857129d0",
+        "id": "4d79bc69-9687-4741-9c81-f046b866002f",
         "name": "Scenario",
         "formula": {
           "expression": {
@@ -808,7 +810,7 @@
       },
       {
         "kind": "result",
-        "id": "eb7893c0-27ce-46e1-b610-abdd6df7ab90",
+        "id": "1e7090c4-0bfb-4dcf-8c1a-a7297abe9846",
         "name": "Multiplier",
         "formula": {
           "expression": {
@@ -833,7 +835,7 @@
       },
       {
         "kind": "result",
-        "id": "34daa4a4-590f-4587-9faf-76a0367e7f16",
+        "id": "0435ba2a-b0d3-4824-b0c3-219bb9180c70",
         "name": "Quarter",
         "formula": {
           "expression": {
@@ -862,7 +864,7 @@
       },
       {
         "kind": "result",
-        "id": "8d45eb93-2b52-4c29-a18a-5ac1b298f622",
+        "id": "d333739d-c672-4eaa-9dd7-1af71c5468a3",
         "name": "Base revenue",
         "formula": {
           "expression": {
@@ -891,29 +893,29 @@
       },
       {
         "kind": "calculationMatrix",
-        "id": "cabb0700-bcb1-4a56-975a-78c68a5d5d98",
+        "id": "71552ca3-421b-4133-b288-83314b561b5c",
         "name": "Scenario × Quarter",
         "rows": [
           {
-            "id": "71578eb8-68ca-4d5c-a936-86d23a1d68ff",
+            "id": "cc18237f-f35f-4544-968c-50bd499688fb",
             "name": "Scenario",
             "source": "`Scenario`",
             "formula": {
               "expression": {
                 "kind": "value",
-                "object_id": "2cb40a16-ca7d-4a0b-98b6-ddaf857129d0"
+                "object_id": "4d79bc69-9687-4741-9c81-f046b866002f"
               }
             },
             "dataType": "string"
           },
           {
-            "id": "06182690-4a6d-4589-9a30-52dd1edf4916",
+            "id": "206f2675-f23e-43b0-9dc4-adee9745d304",
             "name": "Multiplier",
             "source": "`Multiplier`",
             "formula": {
               "expression": {
                 "kind": "value",
-                "object_id": "eb7893c0-27ce-46e1-b610-abdd6df7ab90"
+                "object_id": "1e7090c4-0bfb-4dcf-8c1a-a7297abe9846"
               }
             },
             "dataType": "number"
@@ -921,25 +923,25 @@
         ],
         "columns": [
           {
-            "id": "bad48991-729f-48ed-ad9d-dc722a3f3bb7",
+            "id": "e38ecfa9-5ee4-4a1a-8576-d79082d2c82b",
             "name": "Quarter",
             "source": "`Quarter`",
             "formula": {
               "expression": {
                 "kind": "value",
-                "object_id": "34daa4a4-590f-4587-9faf-76a0367e7f16"
+                "object_id": "0435ba2a-b0d3-4824-b0c3-219bb9180c70"
               }
             },
             "dataType": "string"
           },
           {
-            "id": "55ab9365-fc63-4d01-9d32-d15bf8b59195",
+            "id": "5bcebc38-cfa5-46fb-b893-44732e7cc9b9",
             "name": "Base revenue",
             "source": "`Base revenue`",
             "formula": {
               "expression": {
                 "kind": "value",
-                "object_id": "8d45eb93-2b52-4c29-a18a-5ac1b298f622"
+                "object_id": "d333739d-c672-4eaa-9dd7-1af71c5468a3"
               }
             },
             "dataType": "integer"
@@ -953,11 +955,11 @@
               "operator": "multiply",
               "left": {
                 "kind": "column",
-                "column_id": "55ab9365-fc63-4d01-9d32-d15bf8b59195"
+                "column_id": "5bcebc38-cfa5-46fb-b893-44732e7cc9b9"
               },
               "right": {
                 "kind": "column",
-                "column_id": "06182690-4a6d-4589-9a30-52dd1edf4916"
+                "column_id": "206f2675-f23e-43b0-9dc4-adee9745d304"
               }
             }
           }
@@ -966,8 +968,8 @@
     ],
     "views": [
       {
-        "id": "054ca37f-e42b-4d71-8d3c-e2f68394b0ef",
-        "objectId": "2c5a18da-5ac1-4739-85ea-b656b87d276e",
+        "id": "fd98f7b6-417b-4965-9353-c17f29d1f4a4",
+        "objectId": "11fac7ac-6847-4bc1-8346-eb2021e26299",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -975,17 +977,17 @@
         "collapsed": false
       },
       {
-        "id": "108baf6e-2dc3-4a36-bf9d-ebe09b8406b3",
-        "objectId": "591ccba3-9a50-4f56-9d69-672a20b4375f",
+        "id": "303e0f69-d8bb-49e8-9129-827705be819d",
+        "objectId": "f78939c7-78fa-4620-9687-cdcf1b0b855a",
         "x": 720.0,
         "y": 540.0,
         "width": 648.0,
-        "height": 300.0,
+        "height": 450.0,
         "collapsed": false
       },
       {
-        "id": "db2eb40f-7bb5-4940-b6c6-5f8a25eb9407",
-        "objectId": "becc13ec-60dc-4078-abd1-b2c072c2c2a8",
+        "id": "8323e8b2-f646-46b8-8907-45bd6c53300b",
+        "objectId": "a8e9b161-1007-4b76-b60a-1b1294cb730e",
         "x": 720.0,
         "y": 70.0,
         "width": 620.0,
@@ -993,8 +995,8 @@
         "collapsed": false
       },
       {
-        "id": "2fa62337-0085-4c41-8682-86bb82fd11a5",
-        "objectId": "3fce5a25-0d85-49d3-8c0d-382f551f44e9",
+        "id": "aeaff67d-315a-4328-b9bc-3d60d2537856",
+        "objectId": "2834330a-eb91-420e-b3b3-8acf5100e9e7",
         "x": 1410.0,
         "y": 70.0,
         "width": 600.0,
@@ -1002,17 +1004,17 @@
         "collapsed": false
       },
       {
-        "id": "bcf870f3-54ca-47a4-bfa1-6543e16d8813",
-        "objectId": "a35a1b2c-90d4-4756-929f-74e6b532fc02",
+        "id": "a7634f64-f558-4a4c-8e23-23ffea21d417",
+        "objectId": "578568e9-c1bb-4116-8b76-62447d198467",
         "x": 1410.0,
         "y": 930.0,
-        "width": 340.0,
+        "width": 600.0,
         "height": 220.0,
         "collapsed": false
       },
       {
-        "id": "f1dc359e-77af-468c-b2ce-c7e8f6bbb3f0",
-        "objectId": "2953f343-d739-4ea9-95ab-ce3bf809c332",
+        "id": "01b804b4-a5f1-4a9f-a847-47649408edff",
+        "objectId": "256c64ef-27a8-4884-8328-61ec601f4bf7",
         "x": 720.0,
         "y": 1320.0,
         "width": 1160.0,
@@ -1020,8 +1022,8 @@
         "collapsed": false
       },
       {
-        "id": "ac7db384-49e4-4b77-a3ca-e4065d48206a",
-        "objectId": "2cb40a16-ca7d-4a0b-98b6-ddaf857129d0",
+        "id": "59c60bee-d8f0-4e22-9ce5-045a8d5ebc73",
+        "objectId": "4d79bc69-9687-4741-9c81-f046b866002f",
         "x": 1410.0,
         "y": 560.0,
         "width": 320.0,
@@ -1029,8 +1031,8 @@
         "collapsed": false
       },
       {
-        "id": "a1c09ede-253d-4976-b81d-860690faaf13",
-        "objectId": "eb7893c0-27ce-46e1-b610-abdd6df7ab90",
+        "id": "1404a3dd-a79b-454a-a9c8-f14beecbabf2",
+        "objectId": "1e7090c4-0bfb-4dcf-8c1a-a7297abe9846",
         "x": 1410.0,
         "y": 630.0,
         "width": 320.0,
@@ -1038,8 +1040,8 @@
         "collapsed": false
       },
       {
-        "id": "bece9482-d5cd-4f1b-91a7-9ac93a83106b",
-        "objectId": "34daa4a4-590f-4587-9faf-76a0367e7f16",
+        "id": "1aa09044-36b2-4210-b429-0bfa766f98dc",
+        "objectId": "0435ba2a-b0d3-4824-b0c3-219bb9180c70",
         "x": 1410.0,
         "y": 700.0,
         "width": 320.0,
@@ -1047,8 +1049,8 @@
         "collapsed": false
       },
       {
-        "id": "600dc151-323a-4d9e-b069-a74d78f8286b",
-        "objectId": "8d45eb93-2b52-4c29-a18a-5ac1b298f622",
+        "id": "094f1ebf-4cb7-4aa6-94c4-6e0cdbfd2e3f",
+        "objectId": "d333739d-c672-4eaa-9dd7-1af71c5468a3",
         "x": 1410.0,
         "y": 770.0,
         "width": 320.0,
@@ -1056,16 +1058,18 @@
         "collapsed": false
       },
       {
-        "id": "8a5bd746-f0a3-4b2c-8333-060073ea1bcb",
-        "objectId": "cabb0700-bcb1-4a56-975a-78c68a5d5d98",
+        "id": "0f1f85a5-8a9a-48cb-8ac6-1088a3aa0ebe",
+        "objectId": "71552ca3-421b-4133-b288-83314b561b5c",
         "x": 720.0,
-        "y": 930.0,
+        "y": 1030.0,
         "width": 440.0,
         "height": 240.0,
         "collapsed": false
       }
     ],
-    "frozenValues": {}
+    "frozenValues": {},
+    "scenarios": [],
+    "activeScenario": null
   },
   "versionVector": {}
 }

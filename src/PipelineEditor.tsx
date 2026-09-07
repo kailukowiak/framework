@@ -1,5 +1,6 @@
 import { CircleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useActiveFormulaEditorWatcher } from "./ActiveFormulaEditor";
 import { CommentStepRow } from "./PipelineCommentStepRow";
 import { FormulaErrorDetails } from "./FormulaEditor";
 import { PipelineCommand } from "./PipelineCommand";
@@ -22,7 +23,13 @@ import {
 } from "./PipelineVectorSteps";
 import { meltedColumnIds } from "./lib/columnList";
 import { type FormulaReference } from "./lib/formulaReferences";
-import { exactName, parseNamedTransformation, uniqueColumnName } from "./PipelineColumnNames";
+import {
+  draftName,
+  exactName,
+  parseNamedTransformation,
+  uniqueColumnName,
+} from "./PipelineColumnNames";
+import { siblingColumnExplanation } from "./lib/formulaPicking";
 import { formatPipelineFormulas } from "./PipelineFormulaFormatting";
 import {
   appendBlankCalculatedColumn,
@@ -64,6 +71,31 @@ import type {
   RenderedFrameStep,
 } from "./lib/types";
 
+/**
+ * A persisted step can still carry a sibling reference the commit-time check
+ * never saw: a chain written by MCP, an older document, or a step edited
+ * elsewhere. The engine reports it as "Unknown name ‘X’", which is true and
+ * useless when X is the line just above. Translate it into the same sentence
+ * the commit refusal uses, so the two paths agree; only when X is produced by
+ * this very step and does not also arrive from above (in which case the
+ * engine's complaint is about something else and stays as it is).
+ */
+function explainSiblingFailure(
+  failure: string,
+  step: Extract<StepDraft, { kind: "withColumns" }>,
+  visible: VisibleColumn[]
+): string {
+  const unknown = /Unknown (?:Polars )?name [‘'"]([^’'"]+)[’'"]/.exec(failure)?.[1];
+  if (!unknown) return failure;
+  const siblings = step.columns.map(draftName);
+  if (!siblings.includes(unknown) || visible.some((column) => column.name === unknown))
+    return failure;
+  const reader = step.columns.find(
+    (column) => column.formula.includes(`\`${unknown}\``) && draftName(column) !== unknown
+  );
+  return reader ? siblingColumnExplanation(unknown, draftName(reader)) : failure;
+}
+
 function fixedJoinStep(
   frame: FrameObject,
   frames: FrameObject[],
@@ -102,6 +134,7 @@ export function DerivedFrameCreator({
   onApplyVectorRequestHandled,
   pairVectorRequest,
   onPairVectorRequestHandled,
+  selectedColumnId,
   onOperation,
 }: {
   /** Where the chain starts: the frame it derives from, or its own data. */
@@ -159,6 +192,8 @@ export function DerivedFrameCreator({
     expectedLength: number;
   };
   onPairVectorRequestHandled?: () => void;
+  /** The grid's active column, which a step's prefill can reasonably guess from. */
+  selectedColumnId?: string;
   onOperation: OperationHandler;
 }) {
   const [steps, setSteps] = useState<StepDraft[]>(() =>
@@ -189,6 +224,18 @@ export function DerivedFrameCreator({
     after: boolean;
   } | null>(null);
   const [pendingEditor, setPendingEditor] = useState<string | null>(null);
+  // Which step, if any, is being typed into right now. Held as the editor's
+  // id rather than by subscribing this whole panel to the draft, so a
+  // keystroke re-renders nothing here: the id changes when a session opens
+  // or ends, and React bails out of the identical set in between.
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  useActiveFormulaEditorWatcher((active) => {
+    const prefix = `pipeline:${editingFrame.id}:`;
+    const stepId = active?.id.startsWith(prefix)
+      ? active.id.slice(prefix.length).split(":")[0]
+      : null;
+    setEditingStepId((current) => (current === stepId ? current : stepId));
+  });
   const handledAddRequest = useRef<number | null>(null);
   const handledTransformRequest = useRef<number | null>(null);
   const handledFilterRequest = useRef<number | null>(null);
@@ -255,14 +302,20 @@ export function DerivedFrameCreator({
         steps,
         addCalculatedColumnRequest.token,
         addCalculatedColumnRequest.afterColumnId,
-        editingFrame.columns,
+        // The chain's own walk, not the frame's rendered columns: the
+        // placement projection this may append is drawn or hidden by
+        // comparing its column ids against that same walk
+        // (isOrderingOnlySelect), so listing anything else is how a
+        // bookkeeping projection turned into a numbered "Columns" step
+        // sitting under the calculation that had just minted it.
+        columnsBeforeStep(input.columns, steps, steps.length),
         passThroughSteps,
         addCalculatedColumnRequest.anchorRowIndex
       )
     );
   }, [
     addCalculatedColumnRequest,
-    editingFrame.columns,
+    input.columns,
     onAddCalculatedColumnRequestHandled,
     passThroughSteps,
     persist,
@@ -514,10 +567,22 @@ export function DerivedFrameCreator({
           })),
         ];
         const scope = { steps: stepScopeInputs, stepIndex: index };
-        const stepFailure =
-          previewOf === stepScopeInputs && preview?.failedStep === index
+        // A step nobody has finished writing is not a step that failed.
+        // While a formula session is open on this step the person is still
+        // assembling the sentence — often with the completion menu offering
+        // the rest of the very name the preview is calling unknown — so the
+        // verdict waits for Return, which is when the save reports the real
+        // error against the real chain.
+        const rawFailure =
+          previewOf === stepScopeInputs &&
+          preview?.failedStep === index &&
+          editingStepId !== step.id
             ? preview.error
             : null;
+        const stepFailure =
+          rawFailure && step.kind === "withColumns"
+            ? explainSiblingFailure(rawFailure, step, visible)
+            : rawFailure;
         return (
           <section
             key={step.id}
@@ -706,6 +771,7 @@ export function DerivedFrameCreator({
               <PipelineSummarizeStep
                 step={step}
                 visible={visible}
+                selectedColumnId={selectedColumnId}
                 stepReferences={stepReferences}
                 input={input}
                 scope={scope}

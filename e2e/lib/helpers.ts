@@ -290,3 +290,33 @@ export async function pressAndRelease(selector: string): Promise<void> {
     );
   }, selector);
 }
+
+/**
+ * The document as the Rust store describes it, over the real IPC bridge.
+ *
+ * Invoke-then-poll rather than an async script, for the reason `smoke.e2e.ts`
+ * spells out: the embedded server's execute endpoint does not await a
+ * returned promise, so the answer is parked on `window` and read back once it
+ * lands. Returned as JSON text rather than an object because the only
+ * questions specs ask of it are "is this text in the saved document" and
+ * "which document is this" — and a JSON string survives the WebDriver bridge
+ * unchanged, where an object graph does not.
+ */
+export async function documentJson(): Promise<string> {
+  await browser.execute(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    w.__e2eDocumentJson = undefined;
+    w.__TAURI__.core
+      .invoke("get_document")
+      .then((view: unknown) => (w.__e2eDocumentJson = JSON.stringify(view)))
+      .catch((reason: unknown) => (w.__e2eDocumentJson = JSON.stringify({ failure: String(reason) })));
+  });
+  await browser.waitUntil(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async () => browser.execute(() => (window as any).__e2eDocumentJson !== undefined),
+    { timeoutMsg: "get_document never answered" }
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return browser.execute(() => (window as any).__e2eDocumentJson as string);
+}

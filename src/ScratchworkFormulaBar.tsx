@@ -258,7 +258,7 @@ export function ScratchworkFormulaBar({
       error: String(reason).replace(/^Error:\s*/, ""),
     });
 
-  const commit = async () => {
+  const commit = async (options: { settling?: boolean } = {}) => {
     if (busy) return;
     if (active) {
       setBusy(true);
@@ -286,6 +286,16 @@ export function ScratchworkFormulaBar({
         const error = await onCommitCell(selectedCell, cellDraft);
         setCellError(error);
         if (!error) setCellDirty(false);
+        // A refused value is worth holding on to only while the person is
+        // still in the field to fix it. Once the edit is over — focus left
+        // the bar — the cell goes back to saying what it actually holds:
+        // a refusal is not a pending change, and leaving it in the draft
+        // made every later visit to that cell look like an unsaved edit,
+        // with ⌘A typing over a value nobody was editing any more.
+        else if (options.settling) {
+          setCellDraft(selectedCell.value);
+          setCellDirty(false);
+        }
       } finally {
         setBusy(false);
       }
@@ -359,13 +369,17 @@ export function ScratchworkFormulaBar({
             onRequestReadOnlyCell(selectedCell);
             return;
           }
+          // Starting an edit clears the last refusal: it described a value
+          // that is no longer in the field.
+          if (selectedCell?.kind === "literal") setCellError(null);
           engageActiveEditor();
           setFreshCursor(event.currentTarget.selectionStart ?? draft.length);
         }}
         onBlur={() => {
           setFocused(false);
           if (active) disengageActiveEditor();
-          else if (selectedCell?.kind === "literal" && cellDirty) void commit();
+          else if (selectedCell?.kind === "literal" && cellDirty)
+            void commit({ settling: true });
         }}
         onChange={(event) => {
           change(

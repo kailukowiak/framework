@@ -789,6 +789,16 @@ function ContainerCard({
               name: event.target.value,
             });
         }}
+        // Return commits here too: a container's name is read by every
+        // formula that reaches through it, and leaving the rename pending
+        // in the field made those read stale.
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+          else if (event.key === "Escape") {
+            event.currentTarget.value = container.name;
+            event.currentTarget.blur();
+          }
+        }}
       />
       <div className="container-members">
         {members.length === 0 && (

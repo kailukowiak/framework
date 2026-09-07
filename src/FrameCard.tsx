@@ -119,7 +119,7 @@ export function FrameCard({
     scrollRef,
     pendingScrollTop,
     scrollFrame,
-  } = useFrameScrollState();
+  } = useFrameScrollState(frame.columns, !isTransposed);
   const editCalculatedColumn = (column: Column, rowIndex: number) =>
     onEditCalculatedColumn(frame, column, rowIndex);
   const filterColumn = (column: Column) => onFilterColumn(frame, column);

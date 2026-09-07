@@ -6,7 +6,9 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
-const BUNDLED_TUTORIALS: [[&str; 2]; 12] = [
+const BUNDLED_TUTORIALS: [[&str; 2]; 14] = [
+    ["dictionaries", "dictionaries-start.fw"],
+    ["dictionaries", "dictionaries-finished.fw"],
     ["grand-tour", "grand-tour-start.fw"],
     ["grand-tour", "grand-tour-finished.fw"],
     ["first-workbook", "first-workbook-start.fw"],

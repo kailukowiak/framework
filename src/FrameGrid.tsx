@@ -11,6 +11,7 @@ import { expandRangeForSpan } from "./lib/gridSpan";
 import { themedColor } from "./lib/palette";
 import { parseUseThousandsSeparators } from "./lib/preferences";
 import { isGridClipboardTarget } from "./lib/gridClipboardTarget";
+import { frameCardVisibleRows } from "./lib/cardPlacement";
 import type {
   CanvasView,
   Column,
@@ -456,7 +457,10 @@ export function resolveGridContext(
     rowOffset: grid?.offset ?? 0,
     totalRows: grid?.totalRows ?? frame.rows.length,
     orientation: frameOrientation(frame),
-    viewportRows: Math.max(1, Math.floor((view.height - 184) / 34)),
+    // Page Up/Down move by what the card actually shows, so this reads the
+    // same chrome tally the card is sized from rather than a second guess at
+    // it.
+    viewportRows: frameCardVisibleRows(view.height),
   };
 }
 

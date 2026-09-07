@@ -298,10 +298,12 @@ export function SeriesCard({
  * A number somebody typed, and — when a scenario is overriding it — the
  * number actually being read, with the scenario's name after it.
  *
- * The override goes in the field itself and its provenance in the muted line
- * already under it (`number · 1 value · Upside`), rather than into a badge.
- * A chip would be a second thing on a card that holds one number, and the
- * line below is where this card already says what it is.
+ * The override goes in the field itself and its provenance immediately after
+ * it, as muted text on the same line (`1.15 · Upside`), rather than into a
+ * badge. A chip would be a second thing on a card that holds one number, and
+ * the point of the cue is that the number and the reason it is that number
+ * are read in one glance — under the field, a line down and among the type
+ * and the value count, the scenario's name was there and went unread.
  */
 export function ValueCard({
   value,
@@ -359,6 +361,14 @@ export function ValueCard({
             if (event.key === "Enter") event.currentTarget.blur();
           }}
         />
+        {scenarioName && (
+          <span
+            className="value-scenario"
+            title={`${scenarioName} overrides this value`}
+          >
+            · {scenarioName}
+          </span>
+        )}
       </div>
       <small
         data-vector-drag="true"
@@ -372,7 +382,7 @@ export function ValueCard({
           })
         }
       >
-        {value.dataType} · 1 value{scenarioName ? ` · ${scenarioName}` : ""}
+        {value.dataType} · 1 value
       </small>
     </div>
   );

@@ -47,8 +47,18 @@ export function PipelineCommand({
 }: PipelineCommandProps) {
   const [draft, setDraft] = useState(initialDraft);
   const previousInitial = useRef(initialDraft);
+  const committed = useRef<string | null>(null);
   useEffect(() => {
-    if (draft === previousInitial.current) setDraft(initialDraft);
+    // An untouched row follows whatever the step says. A row being typed
+    // into keeps its own draft — until the person commits it, because a
+    // committed line is the step's to spell from then on: `Profit = …`,
+    // accepted without its backticks, is stored as `Profit` and must be
+    // *shown* backticked too, or the line goes on printing a name that no
+    // longer matches the chain on file. A refused commit changes no step,
+    // so the draft it refused stays put to be fixed.
+    const stepChanged = initialDraft !== previousInitial.current;
+    if (draft === previousInitial.current || (stepChanged && draft === committed.current))
+      setDraft(initialDraft);
     previousInitial.current = initialDraft;
   }, [draft, initialDraft]);
   const registration = useFormulaEditorRegistration({
@@ -70,7 +80,10 @@ export function PipelineCommand({
       setDraft(next);
       onChange(next);
     },
-    onCommit,
+    onCommit: (next) => {
+      committed.current = next;
+      return onCommit(next);
+    },
     onFocus: (selection) => {
       // Deferred on a timer, never requestAnimationFrame: a hidden or
       // occluded WKWebView schedules no animation frames at all, so an

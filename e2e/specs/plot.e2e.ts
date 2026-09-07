@@ -1,6 +1,12 @@
 import { browser, $ } from "@wdio/globals";
 import { Key } from "webdriverio";
-import { closeDataLibrary, openContextMenuOn } from "../lib/helpers";
+import {
+  closeDataLibrary,
+  columnCellTexts,
+  digits,
+  openContextMenuOn,
+  resetAndOpenTutorial,
+} from "../lib/helpers";
 
 // PlotCard renders through vega-embed, and Vega's default runtime compiles
 // expressions with `new Function(...)` -- eval, which the bundled app's CSP
@@ -65,6 +71,46 @@ describe("plotting a frame", () => {
         return state.marks > 0;
       },
       { timeoutMsg: "the plot card never rendered a mark" }
+    );
+  });
+
+  // A declared sort is part of what the table is. The default spec used to
+  // order a categorical axis by the bars' own heights ("-y"), so a chart of a
+  // table sorted by month drew the months by descending revenue — a picture
+  // of a different table than the one on screen. The axis is read out of the
+  // rendered SVG rather than out of the spec object, because what a person
+  // sees is the claim.
+  it("draws a category axis in the table's own row order", async () => {
+    await browser.keys([Key.Command, Key.Shift, "l"]);
+    await resetAndOpenTutorial("Month-over-month formulas by pointing — Start");
+    await $("div.cell-display*=142,000").waitForExist();
+
+    await $('[aria-label="Sort by Month"]').click();
+    await browser.waitUntil(
+      async () => Number(digits((await columnCellTexts("Revenue"))[0])) === 118000,
+      { timeoutMsg: "the Month sort never put January first" }
+    );
+
+    await openContextMenuOn('[aria-label="Sort by Month"]');
+    await $(".framework-context-menu").$("button*=Plot in this card").click();
+
+    await browser.waitUntil(
+      async () => {
+        // Every text Vega drew, filtered to the month labels: the axis
+        // renderer's class names are Vega's business, the labels are ours.
+        const months = await browser.execute(() =>
+          Array.from(
+            document.querySelectorAll(".plot-visual-shell svg.marks text")
+          )
+            .map((text) => (text.textContent ?? "").trim())
+            .filter((text) => /^2026-\d\d$/.test(text))
+        );
+        return months.length >= 2 && months[0] === "2026-01";
+      },
+      {
+        timeoutMsg:
+          "the month axis did not begin at January — the chart is ordering by bar height, not by the table's rows",
+      }
     );
   });
 });

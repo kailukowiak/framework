@@ -479,7 +479,7 @@ fn a_wrangle_filter_propagates_downstream_and_a_display_filter_does_not() {
             frame_id: frame.id.clone(),
         })
         .unwrap();
-    let branch = frame_named(store.document(), "Roster copy").id.clone();
+    let branch = frame_named(store.document(), "Roster view").id.clone();
     assert_eq!(
         (rows(&store, &frame.id), rows(&store, &branch)),
         (2, 3),

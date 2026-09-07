@@ -5,6 +5,7 @@
 //! Derived frames — transformation chains, joins, unique keys, and the
 //! parquet snapshots a frame can be materialized into.
 
+use crate::engine::build::frame_card_height;
 use crate::*;
 use polars::prelude as pl;
 use std::collections::{HashMap, HashSet};
@@ -111,7 +112,10 @@ impl Document {
                     x,
                     y,
                     width: 520.0,
-                    height: 280.0,
+                    // The same row-counted height a literal frame gets. A
+                    // fixed 280 predated an honest tally of the card's own
+                    // chrome and left a summary showing one row of itself.
+                    height: frame_card_height(6),
                     collapsed: false,
                     tab_object_ids: Vec::new(),
                 },
@@ -196,7 +200,10 @@ impl Document {
                     x,
                     y,
                     width: 520.0,
-                    height: 280.0,
+                    // The same row-counted height a literal frame gets. A
+                    // fixed 280 predated an honest tally of the card's own
+                    // chrome and left a summary showing one row of itself.
+                    height: frame_card_height(6),
                     collapsed: false,
                     tab_object_ids: Vec::new(),
                 },

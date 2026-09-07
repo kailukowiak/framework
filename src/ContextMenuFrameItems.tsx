@@ -308,6 +308,9 @@ export function ContextMenuFrameEditItems({
                 </select>
               </label>
             )}
+            {(contextMenu.rowId || contextColumn) && (
+              <span className="menu-separator" />
+            )}
             {contextMenu.rowId && (
               <button
                 className="destructive"

@@ -359,6 +359,9 @@ button:disabled { cursor: default; opacity: 0.35; }
 .object-name-input { width: 100%; color: light-dark(#3d3f3a, #c3c5c0); font-size: var(--text-base); }
 .value-input-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 .value-input { min-width: 0; width: 100%; border: 0; background: transparent; outline: 0; font: 500 var(--text-base) / 1.4 "DM Mono", monospace; }
+/* Whose number this is, on the same line as the number. Muted and the same
+   size: it qualifies the value, it does not compete with it. */
+.value-scenario { flex: 0 0 auto; margin-left: 6px; color: light-dark(#8a8c84, #8d8f88); font: 500 var(--text-base) / 1.4 "DM Mono", monospace; white-space: nowrap; }
 /* No LIVE chip: a card whose whole job is to be live does not need a badge
    saying so. What is worth marking is the opposite case — an answer written
    down, and how long ago — which is a fact and also the button that
@@ -836,6 +839,27 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .inspector-nav button:hover,
 .inspector-nav button.active { color: var(--accent); }
 .inspector-nav button.active::after { background: var(--accent); }
+/* A drag that starts on a card and travels right ends up over this panel,
+   and until it was said here that drag painted every label in the inspector
+   blue instead of resizing the card. Labels, headings and helper prose are
+   things to read, so they opt out; anything worth copying — a field, a
+   formula, a rendered value — is left selectable below. */
+.inspector .eyebrow,
+.inspector-header h2,
+.inspector-nav button,
+.inspector-section > h3,
+.inspector-note,
+.selection-summary > span,
+.selection-summary > strong,
+.selection-summary > small,
+.empty-inspector-section > strong,
+.empty-inspector-section > p,
+.info-panel p,
+.inspector-field,
+.inspector-section > label { user-select: none; }
+.inspector-field input,
+.inspector-field select,
+.inspector-field textarea { user-select: text; }
 .inspector-content { padding: 19px; }
 .frame-inspector-content { padding-top: 16px; }
 .inspector-section-stack > :first-child { margin-top: 0; }
@@ -1088,7 +1112,15 @@ small.vector-dragging { cursor: grabbing; }
 .vector-combine-prompt small { display: block; font-size: var(--text-sm); }
 .vector-combine-prompt small { margin-top: 1px; color: var(--muted); font-weight: 400; }
 .vector-combine-prompt .vector-combine-cancel { min-height: 25px; justify-content: center; color: var(--muted); font-size: var(--text-sm); }
-.column-header.join-column-drop { box-shadow: inset 0 -2px 0 var(--accent); }
+/* A 2px underline was too quiet to find while a pointer was moving over it:
+   the header a lookup would match against now reads as the target it is. */
+.column-header.join-column-drop { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-soft); }
+/* The header drag's own label. Plain text beside the pointer, in the drag
+   preview's clothes so the two gestures look like one family. */
+.column-drag-label { position: fixed; z-index: 200; top: 0; left: 0; max-width: 240px; display: grid; gap: 1px; padding: 5px 8px; border: 1px solid light-dark(#c9d4cc, #4a6354); border-radius: 7px; background: light-dark(rgba(255, 255, 253, 0.97), rgba(38, 39, 32, 0.97)); box-shadow: 0 6px 18px light-dark(rgba(37, 35, 30, 0.18), rgba(0, 0, 0, 0.32)); color: var(--ink); pointer-events: none; font: 500 var(--text-sm) "DM Mono", monospace; }
+.column-drag-label strong { overflow: hidden; color: var(--ink); font: inherit; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.column-drag-label span { color: var(--accent); font-size: var(--text-xs); }
+.column-drag-label[data-target="false"] span { color: var(--muted); }
 .pipeline-refresh-generated { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 0; border: 0; background: transparent; color: var(--accent); font-size: var(--text-sm); font-weight: 600; }
 .query-plan-panel { margin-top: 6px; color: var(--ink); font-size: var(--text-sm); }
 .query-plan-panel > summary,
@@ -1395,6 +1427,10 @@ small.vector-dragging { cursor: grabbing; }
 .lookup-diagnostics .invalid { color: var(--danger); }
 .lookup-note { margin: 5px 0 0; color: light-dark(#777970, #92948b); font-size: var(--text-xs); }
 .lookup-mark-key { margin-top: 8px; }
+/* The confirmation stands exactly where the button stood, at the same height,
+   so marking the key unique moves nothing under the pointer. It is text, not
+   a disabled button: there is no gesture left to offer. */
+.lookup-key-unique { height: 38px; display: flex; align-items: center; justify-content: center; gap: 7px; margin: 8px 0 17px; color: light-dark(#4f6558, #9ab0a3); font-size: var(--text-base); }
 .pipeline-join-reading,
 .pipeline-join-keys,
 .pipeline-join-status { display: flex; align-items: center; gap: 6px; }

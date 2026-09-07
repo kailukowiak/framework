@@ -19,6 +19,7 @@ import {
   isCalculatedFrameColumn,
 } from "./FrameGrid";
 import { nextSortKeys } from "./lib/sortKeys";
+import { isIdentityColumnFormula } from "./lib/identityColumnFormula";
 import { formulaToken } from "./lib/formulaReferences";
 import type { Column } from "./lib/types";
 import type { GridRange } from "./lib/gridNavigation";
@@ -92,7 +93,7 @@ export function RecordsFrameHeader({
                       ...pinnedCellStyle(columnIndex + 1, pinned),
                     }}
                   >
-                    {isCalculatedFrameColumn(computed, column) ? (
+                    {declaresFormula(computed, column) ? (
                       <button
                         className="column-formula-declaration"
                         title={`Edit ${column.name} for all rows`}
@@ -117,6 +118,27 @@ export function RecordsFrameHeader({
   );
 }
 
+/**
+ * Whether this column's header should say a formula produced it.
+ *
+ * A branched tab passes every column through unchanged, and the engine
+ * reports that pass-through as a formula, so asking only "does it have a
+ * formula" put a ƒ badge on every column of a table nobody had calculated
+ * in. A formula that is exactly the column's own name declares nothing.
+ */
+function declaresFormula(
+  computed: RecordsAsRowsFrameCardProps["computed"],
+  column: Column
+): boolean {
+  return (
+    isCalculatedFrameColumn(computed, column) &&
+    !isIdentityColumnFormula(
+      computed.formulas[column.id] ?? column.formula,
+      column.name
+    )
+  );
+}
+
 function RecordsColumnHeader({
   model,
   column,
@@ -133,7 +155,7 @@ function RecordsColumnHeader({
   setVectorTarget: Dispatch<SetStateAction<string | null>>;
 }) {
   const { frame, computed, selection, frameColumnDrop } = model;
-  const calculated = isCalculatedFrameColumn(computed, column);
+  const calculated = declaresFormula(computed, column);
   const columnError = computed.columnErrors?.[column.id];
   const selectedVectorColumns =
     model.selectionRange &&

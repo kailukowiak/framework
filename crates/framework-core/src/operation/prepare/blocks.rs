@@ -35,7 +35,16 @@ impl Document {
                 object_id,
                 x,
                 y,
-                width: 520.0,
+                // Wide enough for a fifty-character line with its answer
+                // still beside it. The card spends 150px on the answer
+                // gutter and about 54px on padding and borders before a
+                // character is drawn, and DM Mono at 13px advances about
+                // 7.8px, so 520 clipped a line at roughly forty-one
+                // characters — `Total revenue = ...Revenue.sum()`, the first
+                // line the tutorials teach, lost its tail as it was typed.
+                // See `CARD_SIZES` in `src/lib/cardPlacement.ts`, which
+                // mirrors this for placement.
+                width: 600.0,
                 height: 220.0,
                 collapsed: false,
                 tab_object_ids: Vec::new(),

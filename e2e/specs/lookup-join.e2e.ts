@@ -51,8 +51,21 @@ describe("look up columns by dragging", () => {
     });
 
     await $(".lookup-join-prompt").waitForExist();
-    await $("button*=Mark Key as unique").click();
+
+    // Confirming the key used to remove the row that asked about it, which
+    // recentred the dialog and slid "Bring columns over" up under the
+    // pointer — the next click landed somewhere nobody had aimed at. The
+    // answer replaces the question in place, so the button below it must not
+    // move at all.
     const create = $("button*=Bring columns over");
+    await create.waitForExist();
+    const buttonTop = (await create.getLocation()).y;
+    await $("button*=Mark Key as unique").click();
+    const unique = $(".lookup-key-unique");
+    await unique.waitForExist();
+    await expect(unique).toHaveText(expect.stringContaining("is unique"));
+    expect(Math.abs((await create.getLocation()).y - buttonTop)).toBeLessThan(2);
+
     await create.waitForEnabled();
     await create.click();
 

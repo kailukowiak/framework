@@ -11,6 +11,11 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Formula examples in text cards preserve code formatting, backticks, and line breaks.
+
+- A new Dictionaries and value mapping tutorial includes an editable Start
+  workbook, an answer key, and an in-workbook walkthrough.
+
 - Dictionaries are compact Key/Value tables with unique keys. Create one from
   the canvas menu or use an existing two-column table as a dictionary, then
   choose Map values on a column to create a live Wrangle transformation.
@@ -31,6 +36,66 @@ tagged and opens a fresh `## Unreleased` above it.
 - A refused cell edit offers making the rows editable directly. Text and
   category cells also offer an exact-match replacement in Wrangle, explicitly
   applying to all matching rows and future refreshes.
+- Pointing at a cell while writing a formula keeps the keyboard in the
+  formula: the cell is no longer selected as well, so the next keystrokes no
+  longer land in the grid as a rejected value. A reference clicked into a new
+  calculated column drops into the formula instead of replacing the column's
+  name, and calculated columns can be pointed at by their cells as well as
+  their headers.
+- When a calculation cannot read a column written beside it in the same "Add
+  or replace columns" step, FrameWork says so where you clicked and again on
+  Return, instead of quietly abandoning the draft or answering "Unknown name".
+- Calculated columns are easier to write: the backticks on the name are
+  optional (`Profit = `Revenue` - `Cost`` works, and the Wrangle line reads
+  it back as `` `Profit` `` once saved), both ways of adding a column open the
+  same fully selected line so the first keystroke replaces it, and a formula
+  becomes a step only on Return. Half-typed text is no longer swept
+  into the document by a later save, and Wrangle no longer reports an error
+  about a name still being typed. "Add calculated column" from a header adds
+  the column at the end of the table; "Insert column here" remains the
+  positional way.
+- Escape closes the Reference panel from anywhere inside it.
+- A cell value the engine refuses no longer lingers as a draft: the refusal is
+  shown once and the cell goes back to showing what it holds.
+- New cards land where you are looking. ⌘J, the ADD rail, imports and pastes
+  place a card in the closest gap that needs the least scrolling, and the
+  canvas moves only that far, so the table you were about to click is still
+  on screen. Scratchwork cards start wide enough for a fifty-character line.
+- Opening a document shows the document: the canvas starts at the top-left of
+  its contents, nothing is selected, and no editor is left running.
+- Frame cards fit their rows, up to a dozen, instead of showing five of six
+  behind a scrollbar; a paste that adds rows grows the card unless you sized it
+  yourself, and adding a calculated column scrolls the grid to it.
+- The status bar's Count, Sum and Average include calculated columns; a
+  Wrangle-produced column used to count as nothing at all. Selecting several
+  columns and applying a number format keeps saying how many columns it is
+  formatting, and the formula bar names a cell by the row it sits in after a
+  sort.
+- A value card under an active scenario shows the scenario after its number
+  ("1.15 · Upside").
+- Dragging a column header shows a label of what it carries, and the header
+  under the pointer lights up when dropping would match two tables. In the
+  lookup dialog, marking a key unique confirms "Month is unique" in place
+  instead of making the buttons jump.
+- A tab made with + → Table view is called "Sales vs budget view" rather than
+  "copy", and its pass-through columns no longer wear a formula badge.
+- Wrangle's + Group starts on the selected column, or the first column that
+  names things, with the name selected so it reads as a choice.
+- A new bar chart draws its categories in the table's own row order rather
+  than resorting them by height.
+- Return commits a frame, container or plot rename and leaves the field.
+- The inspector's labels and helper text are no longer selectable, so a
+  resize drag that overshoots into it stays a resize.
+- The left rail's "Data" button is now "Sources", matching the panel it opens;
+  "Library" remains the Data Library. Recent documents that share a name show
+  their folder ("The FrameWork tour › Start"). Resetting the tutorials reports
+  the result inline. The splash suggests checking for a macOS Documents
+  permission prompt if opening takes more than a few seconds, and the initial
+  window fits smaller screens. The column right-click menu is grouped with
+  separators.
+- Tutorial walkthrough cards show relative links as their text and relative
+  images as their caption instead of raw markdown. The Grand Tour and
+  Month-over-month tutorials were corrected to match the app.
 
 ## 0.1.7
 

@@ -1,4 +1,5 @@
 import { FunctionSquare, GitBranch, Plus } from "lucide-react";
+import { isIdentityColumnFormula } from "./lib/identityColumnFormula";
 import {
   useEffect,
   useMemo,
@@ -308,6 +309,18 @@ export function FieldsAsRowsFrameCard({
     2 + visibleRecordIndexes.length + (paddingBefore ? 1 : 0) + (paddingAfter ? 1 : 0);
   const rowAt = (index: number): Row | null => rows[index] ?? null;
 
+  // The badge and the formula line answer "is this worked out from
+  // something else?" — a branch's pass-through columns are not, however
+  // the engine phrases them (see isIdentityColumnFormula). Editability keeps
+  // reading isCalculatedFrameColumn: a pass-through cell is still not the
+  // place to type a literal.
+  const declaresFormula = (frameComputed: typeof computed, column: Column) =>
+    isCalculatedFrameColumn(frameComputed, column) &&
+    !isIdentityColumnFormula(
+      frameComputed.formulas[column.id] ?? column.formula,
+      column.name
+    );
+
   const renderDraftCell = (column: Column) =>
     isCalculatedFrameColumn(computed, column) ? (
       <span className="draft-formula">ƒ</span>
@@ -362,6 +375,14 @@ export function FieldsAsRowsFrameCard({
                 objectId: frame.id,
                 name: event.target.value,
               });
+          }}
+          // Return commits, the same as in the records-as-rows title row.
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+            else if (event.key === "Escape") {
+              event.currentTarget.value = frame.name;
+              event.currentTarget.blur();
+            }
           }}
         />
         <span>
@@ -501,11 +522,11 @@ export function FieldsAsRowsFrameCard({
                       <TransposedFieldName
                         frame={frame}
                         column={column}
-                        calculated={isCalculatedFrameColumn(computed, column)}
+                        calculated={declaresFormula(computed, column)}
                         onOperation={onOperation}
                       />
                       <small>
-                        {isCalculatedFrameColumn(computed, column)
+                        {declaresFormula(computed, column)
                           ? computed.formulas[column.id]
                           : column.dataType}
                         {summaryText && ` · ${summaryText}`}

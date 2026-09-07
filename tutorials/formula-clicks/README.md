@@ -66,18 +66,18 @@ That declaration is what makes a row-relative formula safe to save.
 2. Choose **Formula here**.
 3. While the formula is active, click the Revenue cell one row above it.
 
-The formula bar should contain:
+The formula bar should read:
 
 ```text
-`Revenue`.shift(1)
+`Column 1` = `Revenue`.shift(1)
 ```
 
 The row where the gesture began is only an authoring anchor. FrameWork saves a
 column declaration, not a coordinate. A cell two rows above would produce
 `.shift(2)`; a row below would produce a negative shift.
 
-Rename the calculated column to **Previous revenue** in the named command and
-commit with Enter. The expected values are:
+Replace `Column 1` with **Previous revenue** — backticks around the name are
+optional — and press **Return**. The expected values are:
 
 | Month | Revenue | Previous revenue |
 |---|---:|---:|
@@ -97,15 +97,18 @@ row order happened to arrive from the source.
 
 ## 3. Complete through a table namespace
 
-Add another calculated column in Wrangle and call it **Change**.
+In **Wrangle**, choose **+ Add transformation → Add or replace columns** — a
+new step, not **+ Add or replace column** inside the Previous revenue step: a
+column cannot read one written beside it in the same step, and FrameWork will
+tell you so. Call the new column **Change**.
 
 In its formula:
 
-1. Start typing `Monthly` and choose the **Monthly sales** table suggestion.
-   Completion inserts `` `Monthly sales`. `` and leaves the cursor after the
-   dot.
-2. Type `rev` and choose **Revenue**. Only columns belonging to that table are
-   offered.
+1. Start typing `Monthly` and accept the **Monthly sales** table suggestion
+   with **Tab**. Completion inserts `` `Monthly sales`. `` and leaves the
+   cursor after the dot.
+2. Type `rev` and accept **Revenue** with **Tab**. Only columns belonging to
+   that table are offered.
 3. Type ` - `, then click the **Previous revenue** column in the grid.
 
 The completed formula is:

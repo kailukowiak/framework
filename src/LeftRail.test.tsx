@@ -13,7 +13,7 @@ import { acceleratorSymbols, menuCommand } from "./lib/menuCommands";
 const railCommands: Array<[string, string]> = [
   ["Quick Commands", "quick-commands"],
   ["Canvas", "canvas-only"],
-  ["Data", "toggle-sources"],
+  ["Sources", "toggle-sources"],
   ["Library", "data-library"],
   ["Variable", "add-variable"],
   ["Block", "add-block"],
