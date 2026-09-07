@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.8
+
 - Formula examples in text cards preserve code formatting, backticks, and line breaks.
 
 - A new Dictionaries and value mapping tutorial includes an editable Start
