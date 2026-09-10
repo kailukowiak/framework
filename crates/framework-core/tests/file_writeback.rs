@@ -903,3 +903,69 @@ fn typing_over_a_parquet_cell_leaves_the_file_untouched() {
         "1"
     );
 }
+
+/// Replacing the base takes the patches with it.
+///
+/// They are keyed by ordinal in the base they were entered against, so the
+/// alternative is applying somebody's correction to whatever row now sits at
+/// that position — a wrong value that looks exactly like a right one.
+#[test]
+fn replacing_the_source_drops_patches_rather_than_moving_them() {
+    let dir = temporary_test_directory("overlay-source-swap");
+    let first = dir.join("first.csv");
+    fs::write(&first, b"Ref,Amount\nA,1\nB,2\n").unwrap();
+    let mut store = demo_store();
+    let artifact = create_data_artifact(&first, &dir.join("data")).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Ledger".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Ledger").clone();
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: page.row_ids[0].clone(),
+            column_id: frame.columns[1].id.clone(),
+            raw: "900".into(),
+        })
+        .unwrap();
+    assert_eq!(
+        frame_named(store.document(), "Ledger").cell_overlay.len(),
+        1
+    );
+
+    let second = dir.join("second.csv");
+    fs::write(&second, b"Ref,Amount\nA,10\nB,20\n").unwrap();
+    let replacement = create_data_artifact(&second, &dir.join("data")).unwrap();
+    store
+        .apply(Operation::SetFrameSource {
+            frame_id: frame.id.clone(),
+            artifact: replacement,
+            connector: ConnectorRecipe::File {
+                source_path: second.display().to_string(),
+            },
+        })
+        .unwrap();
+
+    assert!(
+        frame_named(store.document(), "Ledger")
+            .cell_overlay
+            .is_empty(),
+        "a patch against the old file does not follow the frame to a new one"
+    );
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(
+        page.rows
+            .iter()
+            .map(|row| row[1].as_str())
+            .collect::<Vec<_>>(),
+        ["10", "20"],
+        "the replacement reads as itself"
+    );
+}

@@ -116,7 +116,7 @@ impl Document {
         artifact: DataArtifact,
     ) -> Result<(), CoreError> {
         let frame = self.frame_mut(&frame_id)?;
-        frame.artifact = Some(artifact);
+        frame.replace_base_artifact(artifact);
         frame.derivation = None;
         frame.steps.clear();
         frame.base_columns.clear();

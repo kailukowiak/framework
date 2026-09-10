@@ -54,7 +54,7 @@ impl Document {
                 "Only an imported snapshot with a connector can be refreshed".into(),
             ));
         }
-        frame.artifact = Some(artifact);
+        frame.replace_base_artifact(artifact);
         replace_source_columns(frame, columns, base_columns);
         Ok(())
     }
@@ -76,7 +76,7 @@ impl Document {
                 "Only an imported frame has a source file to change".into(),
             ));
         }
-        frame.artifact = Some(artifact);
+        frame.replace_base_artifact(artifact);
         frame.connector = Some(connector);
         replace_source_columns(frame, columns, base_columns);
         Ok(())

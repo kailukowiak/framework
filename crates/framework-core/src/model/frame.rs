@@ -132,6 +132,19 @@ pub struct OverlayEntry {
 }
 
 impl FrameObject {
+    /// Point this frame at a different base read, dropping any patches.
+    ///
+    /// Patches are keyed by ordinal in the base they were entered against, so
+    /// a new base strands every one of them: row 4,211 of the replacement is
+    /// not the row somebody corrected. Dropping them loses the corrections,
+    /// which is the honest outcome — keeping them would apply each to whatever
+    /// row now sits at that position. Use this rather than assigning
+    /// `artifact`, so the two can never drift apart.
+    pub(crate) fn replace_base_artifact(&mut self, artifact: DataArtifact) {
+        self.artifact = Some(artifact);
+        self.cell_overlay.clear();
+    }
+
     /// The text typed over one cell of the base read, if any.
     pub(crate) fn overlay_value(&self, column_id: &str, row_ordinal: u32) -> Option<&str> {
         self.cell_overlay

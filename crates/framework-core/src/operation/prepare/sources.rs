@@ -81,7 +81,7 @@ impl Document {
             frame.source_file = None;
             frame.materialization = None;
             frame.file_origin = None;
-            frame.artifact = Some(artifact.clone());
+            frame.replace_base_artifact(artifact.clone());
             frame.connector = Some(connector);
         }
         let frame = candidate.frame(&frame_id)?;
@@ -115,7 +115,7 @@ impl Document {
         let mut candidate = self.clone();
         {
             let candidate_frame = candidate.frame_mut(&frame.id)?;
-            candidate_frame.artifact = Some(artifact.clone());
+            candidate_frame.replace_base_artifact(artifact.clone());
             candidate_frame.base_columns = inputs.clone();
         }
         let output = (|| {
