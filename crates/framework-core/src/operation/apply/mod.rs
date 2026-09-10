@@ -187,6 +187,15 @@ impl Document {
                 column_id,
                 raw,
             } => self.apply_set_artifact_cell(frame_id, row_ordinal, column_id, raw)?,
+            ReplicatedOperation::SetRowPatches {
+                frame_id,
+                deleted_rows,
+                appended_rows,
+            } => {
+                let frame = self.frame_mut(&frame_id)?;
+                frame.deleted_rows = deleted_rows;
+                frame.appended_rows = appended_rows;
+            }
             ReplicatedOperation::SetOverlayCell {
                 frame_id,
                 row_ordinal,

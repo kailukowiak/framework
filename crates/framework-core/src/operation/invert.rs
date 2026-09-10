@@ -542,6 +542,17 @@ impl Document {
                 ..
             } => self.invert_set_artifact_cell(frame_id, *row_ordinal, column_id)?,
 
+            // The pair that was there before, which is all an inverse of a
+            // whole-value set can be.
+            ReplicatedOperation::SetRowPatches { frame_id, .. } => {
+                let frame = self.frame(frame_id)?;
+                vec![ReplicatedOperation::SetRowPatches {
+                    frame_id: frame_id.clone(),
+                    deleted_rows: frame.deleted_rows.clone(),
+                    appended_rows: frame.appended_rows,
+                }]
+            }
+
             // Its own inverse, which is the point of letting `raw` be absent:
             // undoing a correction either puts back the correction that stood
             // before it or returns the cell to what the base read says.

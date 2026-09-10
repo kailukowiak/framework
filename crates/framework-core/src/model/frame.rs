@@ -107,6 +107,21 @@ pub struct FrameObject {
     /// that carries these — an entry column is the keyed answer for that case.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cell_overlay: Vec<CellOverlay>,
+    /// Ordinals of base rows struck out, in ascending order.
+    ///
+    /// Deleting a row from a base this document reads cannot mean removing it
+    /// from the file — that is what writing out does, on purpose and once.
+    /// Until then it is a note saying this row is not part of the result.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub deleted_rows: Vec<u32>,
+    /// How many rows have been added past the end of the base read.
+    ///
+    /// They need no storage of their own: ordinals continue past the base, so
+    /// an added row is simply one whose every value is a patch. That keeps one
+    /// ordinal space, one patch mechanism, and one answer to "which row is
+    /// this" for a file that may be read again.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub appended_rows: u32,
     #[serde(default)]
     pub summaries: Vec<Summary>,
 }
@@ -143,6 +158,14 @@ impl FrameObject {
     pub(crate) fn replace_base_artifact(&mut self, artifact: DataArtifact) {
         self.artifact = Some(artifact);
         self.cell_overlay.clear();
+        self.deleted_rows.clear();
+        self.appended_rows = 0;
+    }
+
+    /// Whether anything has been typed over, struck out of, or added to the
+    /// base this frame reads.
+    pub(crate) fn has_row_patches(&self) -> bool {
+        !self.cell_overlay.is_empty() || !self.deleted_rows.is_empty() || self.appended_rows > 0
     }
 
     /// The text typed over one cell of the base read, if any.

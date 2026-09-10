@@ -103,5 +103,22 @@ export type FrameObject = {
    * that carries these — an entry column is the keyed answer for that case.
    */
   cellOverlay?: Array<CellOverlay>;
+  /**
+   * Ordinals of base rows struck out, in ascending order.
+   *
+   * Deleting a row from a base this document reads cannot mean removing it
+   * from the file — that is what writing out does, on purpose and once.
+   * Until then it is a note saying this row is not part of the result.
+   */
+  deletedRows?: Array<number>;
+  /**
+   * How many rows have been added past the end of the base read.
+   *
+   * They need no storage of their own: ordinals continue past the base, so
+   * an added row is simply one whose every value is a patch. That keeps one
+   * ordinal space, one patch mechanism, and one answer to "which row is
+   * this" for a file that may be read again.
+   */
+  appendedRows?: number;
   summaries: Array<Summary>;
 };

@@ -283,11 +283,20 @@ impl Document {
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             let frame = self.frame(&frame_id)?;
-            // Rows added to a frame that reads from somewhere else are not
-            // rejected by the read path, they are ignored by it: the rows
-            // come from the artifact or the transformation, and the added
-            // one sits in the document producing nothing. Refusing says so.
+            // A frame reading a base it can address gets the row as a patch
+            // past the base's end, where ordinals continue and every value is
+            // already a patch. Anything whose rows are made by a reshape step
+            // or a derivation has nowhere to put one: the rows come from the
+            // transformation, and an added row would sit in the document
+            // producing nothing, so saying no is the honest answer.
             if !frame.preserves_own_row_identity() {
+                if frame.carries_base_row_index() && self.frame_cells_are_editable(&frame_id) {
+                    return Ok(ReplicatedOperation::SetRowPatches {
+                        frame_id,
+                        deleted_rows: frame.deleted_rows.clone(),
+                        appended_rows: frame.appended_rows + 1,
+                    });
+                }
                 return Err(CoreError::InvalidOperation(
                     "This frame's rows come from its source or reshape step, so a row cannot be added to it here"
                         .into(),
@@ -333,7 +342,24 @@ impl Document {
         frame_id: Id,
         row_id: Id,
     ) -> Result<ReplicatedOperation, CoreError> {
-        if !self.frame(&frame_id)?.preserves_own_row_identity() {
+        let frame = self.frame(&frame_id)?;
+        if !frame.preserves_own_row_identity() {
+            // Struck out rather than removed: the rows are in a file, and the
+            // only thing that takes a row out of a file is writing one.
+            if frame.carries_base_row_index() && self.frame_cells_are_editable(&frame_id) {
+                let ordinal = Self::artifact_row_ordinal(&frame_id, &row_id)
+                    .and_then(|ordinal| u32::try_from(ordinal).ok())
+                    .ok_or(CoreError::RowNotFound)?;
+                let mut deleted_rows = frame.deleted_rows.clone();
+                if let Err(insert_at) = deleted_rows.binary_search(&ordinal) {
+                    deleted_rows.insert(insert_at, ordinal);
+                }
+                return Ok(ReplicatedOperation::SetRowPatches {
+                    frame_id,
+                    deleted_rows,
+                    appended_rows: frame.appended_rows,
+                });
+            }
             return Err(CoreError::InvalidOperation(
                 "This frame's rows come from its source. Filter them out in the chain instead"
                     .into(),

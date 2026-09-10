@@ -415,6 +415,8 @@ impl FrameObject {
             artifact: None,
             connector: None,
             cell_overlay: Vec::new(),
+            deleted_rows: Vec::new(),
+            appended_rows: 0,
             derivation: Some(FrameDerivation {
                 source_frame_id: self.id.clone(),
                 join: None,

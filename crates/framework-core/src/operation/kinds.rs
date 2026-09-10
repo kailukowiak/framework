@@ -1098,6 +1098,18 @@ pub enum ReplicatedOperation {
         column_id: Id,
         raw: String,
     },
+    /// Which base rows are struck out, and how many rows are added past the
+    /// base's end — set together, the way a pipeline is.
+    ///
+    /// Carrying both whole lists rather than one delta makes the inverse the
+    /// previous pair and nothing else, which is the same bargain
+    /// `SetFramePipeline` makes and for the same reason: these lists are small
+    /// by construction, and a delta would need an ordering story.
+    SetRowPatches {
+        frame_id: Id,
+        deleted_rows: Vec<u32>,
+        appended_rows: u32,
+    },
     /// A value typed over one cell of a base this document reads rather than
     /// holds, recorded as a patch instead of rewriting that base.
     ///

@@ -8,10 +8,6 @@ use std::collections::HashSet;
 /// Column name for the row index a page read carries between the data and
 /// display layers. Not a column id, so it cannot collide with one.
 pub(crate) const ROW_INDEX: &str = "__framework_row";
-/// Private to the overlay merge, so it cannot be confused with [`ROW_INDEX`]:
-/// that one is carried out to the page, this one is minted and dropped inside
-/// one base read.
-const OVERLAY_ROW: &str = "__framework_overlay_row";
 const OVERLAY_PATCH: &str = "__framework_patch_";
 const OVERLAY_PRESENT: &str = "__framework_patched_";
 
@@ -219,9 +215,7 @@ impl Document {
         layer: Layer,
     ) -> Result<pl::LazyFrame, String> {
         debug_assert!(frame.carries_base_row_index());
-        let mut plan = frame
-            .materialize_polars_lazy(self)?
-            .with_row_index(ROW_INDEX, None);
+        let mut plan = frame.materialize_polars_lazy_indexed(self)?;
         let mut visiting = HashSet::new();
         visiting.insert(frame.id.clone());
         for step in &frame.steps {
@@ -518,16 +512,48 @@ impl Document {
     /// One left join per edited column, against a frame holding only the edited
     /// rows, so the cost is the number of corrections rather than the size of
     /// what is being corrected.
-    pub(crate) fn apply_cell_overlay(
+    pub(crate) fn apply_row_patches(
         &self,
         plan: pl::LazyFrame,
         frame: &FrameObject,
+        retain_index: bool,
     ) -> Result<pl::LazyFrame, String> {
-        if frame.cell_overlay.is_empty() {
+        if !frame.has_row_patches() && !retain_index {
             return Ok(plan);
         }
         use polars::prelude::{IntoLazy, NamedFrom};
-        let mut plan = plan.with_row_index(OVERLAY_ROW, None);
+        let inputs: Vec<&Column> = frame
+            .input_columns()
+            .into_iter()
+            .filter(|column| column.formula.is_none())
+            .collect();
+        // Added rows come first, before the ordinals are minted, so they land
+        // past the base's range and need no identity of their own: an added row
+        // is one whose every value is a patch.
+        let mut plan = if frame.appended_rows > 0 {
+            let height = frame.appended_rows as usize;
+            let empty = inputs
+                .iter()
+                .map(|column| {
+                    pl::Series::new_null(pl::PlSmallStr::from(column.id.as_str()), height)
+                        .cast(&polars_type_for(column.data_type))
+                        .map(Into::into)
+                        .map_err(|error| error.to_string())
+                })
+                .collect::<Result<Vec<pl::Column>, String>>()?;
+            let appended = pl::DataFrame::new(height, empty)
+                .map_err(|error| error.to_string())?
+                .lazy();
+            pl::concat([plan, appended], pl::UnionArgs::default())
+                .map_err(|error| error.to_string())?
+        } else {
+            plan
+        };
+        // One ordinal space. The page carries this same column out to name the
+        // row a cell edit belongs to, so a patch and the id that addresses it
+        // cannot be counting different things — which they were when the page
+        // minted its own index after the patches had already removed rows.
+        plan = plan.with_row_index(ROW_INDEX, None);
         for overlay in &frame.cell_overlay {
             if overlay.entries.is_empty() {
                 continue;
@@ -540,7 +566,7 @@ impl Document {
             let patch = format!("{OVERLAY_PATCH}{}", column.id);
             let marker = format!("{OVERLAY_PRESENT}{}", column.id);
             let ordinals = pl::Series::new(
-                pl::PlSmallStr::from(OVERLAY_ROW),
+                pl::PlSmallStr::from(ROW_INDEX),
                 overlay
                     .entries
                     .iter()
@@ -573,8 +599,8 @@ impl Document {
             plan = plan
                 .join(
                     lookup,
-                    vec![pl::col(OVERLAY_ROW)],
-                    vec![pl::col(OVERLAY_ROW)],
+                    vec![pl::col(ROW_INDEX)],
+                    vec![pl::col(ROW_INDEX)],
                     arguments,
                 )
                 // The patch wins where there is one; `coalesce` is what makes
@@ -586,17 +612,31 @@ impl Document {
                         .alias(column.id.clone()),
                 );
         }
+        // Struck-out rows leave last, so their ordinals are still the ones the
+        // patches above were addressed to.
+        if !frame.deleted_rows.is_empty() {
+            let struck = pl::Series::new(
+                pl::PlSmallStr::from("__framework_struck"),
+                frame.deleted_rows.clone(),
+            );
+            plan = plan.filter(
+                pl::col(ROW_INDEX)
+                    .is_in(pl::lit(struck), false)
+                    .not()
+                    .fill_null(pl::lit(true)),
+            );
+        }
         // Naming what survives leaves the patch columns and the ordinal behind
         // without a selector, and says out loud that no scaffolding escapes
         // this function.
-        Ok(plan.select(
-            frame
-                .input_columns()
-                .iter()
-                .filter(|column| column.formula.is_none())
-                .map(|column| pl::col(column.id.clone()))
-                .collect::<Vec<_>>(),
-        ))
+        let mut surviving = inputs
+            .iter()
+            .map(|column| pl::col(column.id.clone()))
+            .collect::<Vec<_>>();
+        if retain_index {
+            surviving.push(pl::col(ROW_INDEX));
+        }
+        Ok(plan.select(surviving))
     }
 
     pub(crate) fn materialize_frame_frame(

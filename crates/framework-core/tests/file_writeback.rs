@@ -969,3 +969,114 @@ fn replacing_the_source_drops_patches_rather_than_moving_them() {
         "the replacement reads as itself"
     );
 }
+
+/// Rows struck out and rows added, against a file nobody rewrote.
+///
+/// Ordinals continue past the base's end, so an added row is one whose every
+/// value is a patch — one identity space, one patch mechanism, and the file
+/// stays exactly as the import wrote it.
+#[test]
+fn rows_can_be_struck_out_and_added_without_touching_the_file() {
+    let dir = temporary_test_directory("overlay-row-patches");
+    let path = dir.join("stock.csv");
+    fs::write(&path, b"SKU,Count\nA,1\nB,2\nC,3\n").unwrap();
+    let mut store = demo_store();
+    let artifact = create_data_artifact(&path, &dir.join("data")).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Stock".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Stock").clone();
+    let (sku, count) = (frame.columns[0].id.clone(), frame.columns[1].id.clone());
+    let bytes_before = fs::read(frame.artifact.as_ref().unwrap().path.clone()).unwrap();
+
+    // Strike out the middle row.
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    store
+        .apply(Operation::DeleteRow {
+            frame_id: frame.id.clone(),
+            row_id: page.row_ids[1].clone(),
+        })
+        .unwrap();
+    assert_eq!(
+        store
+            .get_frame_page(&frame.id, 0, 10)
+            .unwrap()
+            .rows
+            .iter()
+            .map(|row| row[0].clone())
+            .collect::<Vec<_>>(),
+        ["A", "C"],
+        "B is not part of the result any more"
+    );
+
+    // Add one past the end and fill it in.
+    store
+        .apply(Operation::AddRow {
+            frame_id: frame.id.clone(),
+            values: Default::default(),
+        })
+        .unwrap();
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(page.rows.len(), 3, "A, C, and the new one");
+    let added = page.row_ids[2].clone();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: added.clone(),
+            column_id: sku.clone(),
+            raw: "D".into(),
+        })
+        .unwrap();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: added,
+            column_id: count.clone(),
+            raw: "4".into(),
+        })
+        .unwrap();
+
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(
+        page.rows
+            .iter()
+            .map(|row| (row[0].as_str(), row[1].as_str()))
+            .collect::<Vec<_>>(),
+        [("A", "1"), ("C", "3"), ("D", "4")]
+    );
+    assert_eq!(
+        fs::read(
+            frame_named(store.document(), "Stock")
+                .artifact
+                .as_ref()
+                .unwrap()
+                .path
+                .clone()
+        )
+        .unwrap(),
+        bytes_before,
+        "and the file is still byte for byte the one the import wrote"
+    );
+
+    // Undo reaches back through both kinds of patch.
+    store.undo();
+    store.undo();
+    store.undo();
+    assert_eq!(
+        store
+            .get_frame_page(&frame.id, 0, 10)
+            .unwrap()
+            .rows
+            .iter()
+            .map(|row| row[0].clone())
+            .collect::<Vec<_>>(),
+        ["A", "C"],
+        "the added row is gone again"
+    );
+}

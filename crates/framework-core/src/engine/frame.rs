@@ -893,12 +893,29 @@ impl FrameObject {
         &self,
         document: &Document,
     ) -> Result<pl::LazyFrame, String> {
+        self.materialize_polars_lazy_inner(document, false)
+    }
+
+    /// The same plan with the row index still aboard, for the page read that
+    /// has to name which row each result came from.
+    pub(crate) fn materialize_polars_lazy_indexed(
+        &self,
+        document: &Document,
+    ) -> Result<pl::LazyFrame, String> {
+        self.materialize_polars_lazy_inner(document, true)
+    }
+
+    fn materialize_polars_lazy_inner(
+        &self,
+        document: &Document,
+        retain_index: bool,
+    ) -> Result<pl::LazyFrame, String> {
         let mut plan = if self.generator.is_some() {
             self.generator_polars_lazy(document)?
         } else {
             self.base_polars_lazy()?
         };
-        plan = document.apply_cell_overlay(plan, self)?;
+        plan = document.apply_row_patches(plan, self, retain_index)?;
         for layer in self.calculated_column_layers()? {
             let expressions = layer
                 .iter()

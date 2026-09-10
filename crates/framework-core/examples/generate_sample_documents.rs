@@ -63,6 +63,8 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
         artifact: None,
         connector: None,
         cell_overlay: Vec::new(),
+        deleted_rows: Vec::new(),
+        appended_rows: 0,
         derivation: None,
         generator: None,
         materialization: None,
