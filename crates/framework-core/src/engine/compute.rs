@@ -1731,10 +1731,20 @@ impl Document {
                     .iter()
                     .any(|column| frame.column_is_editable_input(&column.id));
             }
-            frame.steps.is_empty()
+            // A chain that keeps its rows no longer disqualifies a frame whose
+            // values live in a parquet: the page now carries the ordinal of
+            // the row the value was read from rather than a position in the
+            // chain's output, so a write can find the row a filter or a sort
+            // moved. Without a stored input among the columns there would be
+            // nothing to type into, and offering the gesture would be a lie.
+            frame.chain_preserves_row_identity()
                 && frame.derivation.is_none()
                 && (frame.owns_its_rows()
                     || (frame.artifact.is_some() && !self.frame_is_live(frame_id)))
+                && frame
+                    .columns
+                    .iter()
+                    .any(|column| frame.column_is_stored_input(&column.id))
         })
     }
 
@@ -1746,9 +1756,9 @@ impl Document {
             if frame.preserves_own_row_identity() {
                 frame.column_is_editable_input(column_id)
             } else {
-                frame.steps.is_empty()
+                frame.chain_preserves_row_identity()
                     && frame.derivation.is_none()
-                    && frame.columns.iter().any(|column| column.id == column_id)
+                    && frame.column_is_stored_input(column_id)
                     && (frame.owns_its_rows()
                         || (frame.artifact.is_some() && !self.frame_is_live(frame_id)))
             }

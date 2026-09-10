@@ -207,12 +207,12 @@ impl Document {
     /// which stored row produced this sorted or filtered output row. Keeping
     /// that index only on the page path avoids leaking an implementation
     /// column into the frame's public schema.
-    fn materialize_own_rows_with_identity(
+    fn materialize_rows_with_identity(
         &self,
         frame: &FrameObject,
         layer: Layer,
     ) -> Result<pl::LazyFrame, String> {
-        debug_assert!(frame.preserves_own_row_identity());
+        debug_assert!(frame.carries_base_row_index());
         let mut plan = frame
             .materialize_polars_lazy(self)?
             .with_row_index(ROW_INDEX, None);
@@ -263,6 +263,21 @@ impl Document {
                 _ => {}
             }
         }
+        // Entered values join on after the chain, the same as in the ordinary
+        // data plan. Before the split this path served only frames that could
+        // not have an entry column — one needs `is_computed`, which for a
+        // frame holding its own rows means a step that reshapes them, and such
+        // a step is not identity-preserving. That stopped being true the
+        // moment this path took on parquet-backed frames: `WithColumns` both
+        // preserves identity and counts as computed, so a calculated column
+        // plus an entry column is now reachable here, and skipping the join
+        // would drop the entered values from every page.
+        let plan = self.apply_entry_columns(plan, frame)?;
+        for entry_column in &frame.entry_columns {
+            if !kept.contains(&entry_column.column_id) {
+                kept.push(entry_column.column_id.clone());
+            }
+        }
         let mut visible = kept
             .iter()
             .map(|id| pl::col(id.clone()))
@@ -280,8 +295,8 @@ impl Document {
         frame: &FrameObject,
         layer: Layer,
     ) -> Result<pl::LazyFrame, CoreError> {
-        if frame.preserves_own_row_identity() {
-            self.materialize_own_rows_with_identity(frame, layer)
+        if frame.carries_base_row_index() {
+            self.materialize_rows_with_identity(frame, layer)
                 .map_err(CoreError::Import)
         } else {
             self.materialize_frame_lazy(&frame.id, layer, &mut HashSet::new())
@@ -294,7 +309,10 @@ impl Document {
         frame: &FrameObject,
     ) -> Result<pl::LazyFrame, CoreError> {
         let plan = self.frame_page_plan(frame, Layer::Data)?;
-        let plan = if frame.preserves_own_row_identity() {
+        // A frame that reads a base carries its ordinal from before the chain;
+        // anything else is counted here, after, because there is no earlier
+        // row to count.
+        let plan = if frame.carries_base_row_index() {
             plan
         } else {
             plan.with_row_index(ROW_INDEX, None)

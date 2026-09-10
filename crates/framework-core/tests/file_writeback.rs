@@ -688,16 +688,16 @@ fn nested_json_records_are_refused_with_the_field_named() {
     assert!(message.contains("flatten"), "{message}");
 }
 
-/// Today's gate, recorded before the overlay work relaxes it: a frame whose
-/// rows live in a parquet it owns may be typed into only while its chain is
-/// empty. The reason is the page's row index, which for such a frame is minted
-/// *after* the chain runs — so with a Filter or Sort in the way, the ordinal a
-/// page reports is a position in the chain's output, while the write splices
-/// that position in the file. The two agree only when nothing stands between
-/// them. Relaxing this therefore has to move the index to the base first.
+/// A filter or a sort between you and the file no longer stops you typing.
+///
+/// This is the assertion the whole index move exists for: the page reports the
+/// ordinal of the row a value was *read* from, so a write finds the row the
+/// chain moved rather than the position it moved it to. Get this wrong and the
+/// edit silently lands on a different row, which is why it is checked against
+/// the file's own order with the chain taken back off.
 #[test]
-fn an_adopted_frame_with_a_chain_refuses_cell_edits_for_now() {
-    let dir = temporary_test_directory("adopted-chain-gate");
+fn a_chained_parquet_frame_edits_the_row_the_value_came_from() {
+    let dir = temporary_test_directory("adopted-chain-edit");
     let path = dir.join("stock.csv");
     fs::write(&path, b"SKU,Count\nA,1\nB,2\nC,3\n").unwrap();
     let mut store = demo_store();
@@ -712,31 +712,113 @@ fn an_adopted_frame_with_a_chain_refuses_cell_edits_for_now() {
         })
         .unwrap();
     let frame = frame_named(store.document(), "Stock").clone();
+    let count = frame.columns[1].id.clone();
 
-    // Chainless, not live: editable today, and the ordinal is the file's own.
-    assert!(store.view().computed_frames[&frame.id].editing.cells);
-
+    // Drop the first row and reverse the rest, so every visible position
+    // disagrees with the file's.
+    let chain = vec![
+        FrameStepInput::Filter {
+            predicates: vec!["`Count` > 1".into()],
+            match_all: true,
+        },
+        FrameStepInput::Sort {
+            keys: vec![framework_core::SortInput {
+                column_id: count.clone(),
+                descending: true,
+            }],
+        },
+    ];
     store
         .apply(Operation::SetFramePipeline {
             frame_id: frame.id.clone(),
-            steps: vec![FrameStepInput::Filter {
-                predicates: vec!["`Count` > 1".into()],
-                match_all: true,
-            }],
+            steps: chain,
+        })
+        .unwrap();
+    assert!(
+        store.view().computed_frames[&frame.id].editing.cells,
+        "an identity-preserving chain over an owned parquet stays editable"
+    );
+
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(page.rows[0][0], "C", "C sorts first on a descending Count");
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: page.row_ids[0].clone(),
+            column_id: count.clone(),
+            raw: "99".into(),
         })
         .unwrap();
 
-    // A Filter preserves row identity, so this refusal is the index's fault
-    // rather than the chain's: nothing about the rows stopped being addressable.
-    assert!(
-        !store.view().computed_frames[&frame.id].editing.cells,
-        "a chained artifact frame is not cell-editable while the page index is minted after the chain"
+    // Take the chain off: the file's own order is the only witness that the
+    // right row was written.
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![],
+        })
+        .unwrap();
+    let bare = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(
+        bare.rows
+            .iter()
+            .map(|row| (row[0].as_str(), row[1].as_str()))
+            .collect::<Vec<_>>(),
+        [("A", "1"), ("B", "2"), ("C", "99")],
+        "the third row of the file changed, and only it"
     );
-    // And the chain is a lone Filter, which is identity-preserving by
-    // inspection — which is what makes this a gap rather than a rule.
-    let chained = frame_named(store.document(), "Stock");
-    assert!(matches!(
-        chained.steps.as_slice(),
-        [FrameStep::Filter { .. }]
-    ));
+}
+
+/// A calculated column on such a frame is still not typeable: the chain made
+/// it, so the chain is where it changes.
+#[test]
+fn a_calculated_column_over_a_parquet_frame_refuses_a_typed_value() {
+    let dir = temporary_test_directory("adopted-chain-calc");
+    let path = dir.join("stock.csv");
+    fs::write(&path, b"SKU,Count\nA,1\nB,2\n").unwrap();
+    let mut store = demo_store();
+    let artifact = create_data_artifact(&path, &dir.join("data")).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Stock".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Stock").clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: "doubled~chain".into(),
+                    name: "Doubled".into(),
+                    formula: "`Count` * 2".into(),
+                }],
+            }],
+        })
+        .unwrap();
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    let doubled = frame_named(store.document(), "Stock")
+        .columns
+        .iter()
+        .find(|column| column.name == "Doubled")
+        .expect("the calculated column is declared")
+        .id
+        .clone();
+    let refused = store.apply(Operation::SetCell {
+        frame_id: frame.id.clone(),
+        row_id: page.row_ids[0].clone(),
+        column_id: doubled,
+        raw: "7".into(),
+    });
+    assert!(refused.is_err(), "a calculation is edited as a formula");
+    // The stored field beside it is still typeable, so the refusal is about
+    // the column rather than the frame.
+    assert!(
+        store.view().computed_frames[&frame.id].editing.cells,
+        "the frame itself still accepts typed values"
+    );
 }

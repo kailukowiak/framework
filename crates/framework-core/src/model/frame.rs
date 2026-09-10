@@ -135,6 +135,18 @@ impl FrameObject {
         self.owns_its_rows() && self.chain_preserves_row_identity()
     }
 
+    /// Whether a page of this frame can carry the ordinal of the row its
+    /// values were read from.
+    ///
+    /// True for a frame that reads a base of its own — literal rows, or a
+    /// parquet — and whose chain keeps those rows addressable. A derived frame
+    /// is excluded because its rows are upstream's, and a generator's because
+    /// they are grown from a rule rather than read from anywhere, so neither
+    /// has a base ordinal to report.
+    pub(crate) fn carries_base_row_index(&self) -> bool {
+        self.derivation.is_none() && self.generator.is_none() && self.chain_preserves_row_identity()
+    }
+
     /// Whether this frame's chain alone leaves each input row addressable as
     /// the same row afterwards, said without reference to where those rows are
     /// kept.
@@ -161,11 +173,18 @@ impl FrameObject {
     /// Whether a visible column is still a stored input rather than the
     /// output of a calculation in this frame's own row-preserving chain.
     pub(crate) fn column_is_editable_input(&self, column_id: &str) -> bool {
-        self.preserves_own_row_identity()
-            && self
-                .input_columns()
-                .iter()
-                .any(|column| column.id == column_id && column.formula.is_none())
+        self.preserves_own_row_identity() && self.column_is_stored_input(column_id)
+    }
+
+    /// Whether a visible column is a stored input rather than a calculation's
+    /// output, said without reference to where those values are kept. Split
+    /// from [`Self::column_is_editable_input`] for the same reason the row
+    /// predicate was: a parquet-backed frame's column can be a plain stored
+    /// field while the document owns none of it.
+    pub(crate) fn column_is_stored_input(&self, column_id: &str) -> bool {
+        self.input_columns()
+            .iter()
+            .any(|column| column.id == column_id && column.formula.is_none())
             && !self.steps.iter().any(|step| {
                 matches!(
                     step,
