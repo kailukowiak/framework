@@ -1,4 +1,5 @@
 import { browser, $ } from "@wdio/globals";
+import { Key } from "webdriverio";
 import { expect } from "expect-webdriverio";
 import { pointAtCell, resetAndOpenTutorial } from "../lib/helpers";
 
@@ -24,24 +25,7 @@ describe("conditional formatting", () => {
     // seed the rule from — the same gesture that aims the direct format
     // controls.
     await pointAtCell("142,000");
-    // The inspector is what a selection opens; if it did not, say what is on
-    // screen instead, because "button not clickable" names the symptom and
-    // not the cause.
-    try {
-      await $(".inspector").waitForExist({ timeout: 8000 });
-    } catch {
-      const onScreen = await browser.execute(() => ({
-        dialog: Boolean(document.querySelector(".dataset-dialog")),
-        cells: document.querySelectorAll("td.styled-frame-cell").length,
-        buttons: Array.from(document.querySelectorAll("button"))
-          .map((button) => button.getAttribute("aria-label") ?? button.textContent ?? "")
-          .slice(0, 40),
-      }));
-      throw new Error(`no inspector after selecting a cell: ${JSON.stringify(onScreen)}`);
-    }
-    const format = $('button[aria-label="Format"]');
-    await format.waitForClickable();
-    await format.click();
+    await openFormatSection();
 
     const addRule = $('button[aria-label="Add rule"]');
     await addRule.waitForClickable();
@@ -181,9 +165,7 @@ describe("conditional formatting", () => {
     // Region is East on four rows and West on two, so a filled rule has
     // exactly two values in it and they are those two.
     await pointAtCell("West");
-    const format = $('button[aria-label="Format"]');
-    await format.waitForClickable();
-    await format.click();
+    await openFormatSection();
     await browser.execute(() => {
       document
         .querySelector<HTMLElement>('button[aria-label="Add rule"]')
@@ -309,9 +291,7 @@ describe("conditional formatting", () => {
   // in the seam between them.
   it("keeps independent text and fill ramps on the same numeric rule", async () => {
     await pointAtCell("142,000");
-    const format = $('button[aria-label="Format"]');
-    await format.waitForClickable();
-    await format.click();
+    await openFormatSection();
 
     // A ramp of its own to aim at: the first test rewrote its heatmap into a
     // question, so the only rules on this frame paint by condition and by
@@ -443,3 +423,20 @@ describe("conditional formatting", () => {
     expect(rules).toEqual(["condition", "category", "scale"]);
   });
 });
+
+/**
+ * Opens the inspector on its Format section, the way a person asks for it.
+ *
+ * Selecting a cell does not open the panel. The inspector is hidden until
+ * asked for (`INITIAL_INSPECTOR_PANEL`), so that a panel someone put away
+ * cannot swallow an editor a later gesture opens — which means ⌘2 is not
+ * decoration here, it is the gesture that makes the Format tab reachable at
+ * all. This spec was written when a selection opened the panel, and went on
+ * asserting that a button behind a hidden panel was clickable.
+ */
+async function openFormatSection(): Promise<void> {
+  await browser.keys([Key.Command, "2"]);
+  const format = $('button[aria-label="Format"]');
+  await format.waitForClickable();
+  await format.click();
+}

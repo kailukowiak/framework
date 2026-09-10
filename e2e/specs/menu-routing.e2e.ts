@@ -23,6 +23,19 @@ describe("native menu routing", () => {
     // A small table, pasted the way the pop-out spec pastes one, so there is
     // a document change for Undo to be about.
     await pressAndRelease('[aria-label="Free-form data canvas"]');
+    // Standing in for the focus transfer a synthesized press cannot perform,
+    // the same compensation `tutorial-formula-clicks.e2e.ts` makes after
+    // typing in a formula editor. It matters here and nowhere else: the
+    // scratch canvas opens with the Scratchwork textarea holding the
+    // keyboard, and a text field that owns the keyboard is *meant* to take
+    // Undo for itself (`runFocusedTextHistory` — macOS routes an accelerator
+    // to the focused field before the application sees it). A real press on
+    // the canvas would have moved focus off it; a dispatched PointerEvent
+    // does not, so the replayed Undo went into the textarea's own history
+    // and the workbook never heard it.
+    await browser.execute(() =>
+      (document.activeElement as HTMLElement | null)?.blur()
+    );
     await browser.execute(() => {
       const data = new DataTransfer();
       data.setData("text/plain", "Amount\n21");
