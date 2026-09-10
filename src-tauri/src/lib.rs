@@ -1,8 +1,8 @@
 mod tutorial_assets;
 use framework_core::{
     ArtifactSweep, CollaborationPaths, ConnectorRecipe, DataArtifact, DataObject, Document,
-    DocumentView, EventJournal, ExcelRangePreview, ExcelWorkbookInfo, Operation, SchemaDiff, Store,
-    create_data_artifact, create_excel_range_artifact,
+    DocumentView, EXPORT_FILE_EXTENSIONS, EventJournal, ExcelRangePreview, ExcelWorkbookInfo,
+    FrameObject, Operation, SchemaDiff, Store, create_data_artifact, create_excel_range_artifact,
     inspect_excel_workbook as read_excel_workbook, is_framework_document_path,
     preview_excel_range as read_excel_range_preview,
 };
@@ -19,7 +19,12 @@ use uuid::Uuid;
 
 mod cli_connectors;
 mod database_connections;
+mod database_source;
 mod export;
+mod external_open;
+use external_open::{initial_session, try_open_from_arguments, try_open_startup_arguments};
+mod file_writeback;
+use database_source::import_database_source;
 mod menu;
 mod persist;
 mod save_guard;
@@ -31,6 +36,16 @@ const SCRATCH_DOCUMENT_NAME: &str = "untitled.fw";
 const BLANK_DOCUMENT_TITLE: &str = "Untitled";
 const DOCUMENT_OPENED_EVENT: &str = "framework-document-opened";
 const DOCUMENT_OPEN_FAILED_EVENT: &str = "framework-document-open-failed";
+
+struct FinderOpenQueue {
+    ready: bool,
+    pending: Vec<(Vec<OsString>, PathBuf)>,
+}
+
+static FINDER_OPEN_QUEUE: Mutex<FinderOpenQueue> = Mutex::new(FinderOpenQueue {
+    ready: false,
+    pending: Vec::new(),
+});
 /// The application identifier. On Linux this one string has to appear in three
 /// places or the desktop does not recognise its own app: the Wayland app_id,
 /// the `.desktop` file stem, and the AppStream component id. It is the same
@@ -68,6 +83,7 @@ struct DocumentSession {
     /// reports no path at all for one, because "saved locally" pointing at a
     /// temp directory is how work gets lost.
     scratch: bool,
+    external_source: Option<PathBuf>,
 }
 
 struct AppState {
@@ -137,6 +153,7 @@ struct CliSourceInput {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct DatabaseSourceInput {
+    frame_id: Option<String>,
     x: f64,
     y: f64,
     connection_id: String,
@@ -1174,49 +1191,6 @@ fn pick_data_file() -> Option<String> {
 }
 
 #[tauri::command]
-fn import_dataset_file(
-    window: tauri::WebviewWindow,
-    x: f64,
-    y: f64,
-    path: Option<String>,
-    linked: bool,
-    state: State<'_, AppState>,
-) -> Result<Option<DocumentView>, String> {
-    let path = match path {
-        Some(path) => PathBuf::from(path),
-        None => {
-            let Some(path) = rfd::FileDialog::new()
-                .add_filter("Data files", &["csv", "tsv", "parquet"])
-                .pick_file()
-            else {
-                return Ok(None);
-            };
-            path
-        }
-    };
-    let name = path
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or("Imported data")
-        .to_string();
-    let session = state.document_for(window.label())?;
-    let mut session = session.lock().map_err(|error| error.to_string())?;
-    ensure_live(&session)?;
-    let artifact = stage_import_file(&session.path, session.store.document_id(), &path)?;
-    let operation = Operation::ImportFrameFromArtifact {
-        name,
-        artifact,
-        connector: linked.then(|| ConnectorRecipe::File {
-            source_path: path.display().to_string(),
-        }),
-        x,
-        y,
-    };
-    apply_session_operation(&window, &mut session, &state.writer_id, operation).map(Some)
-}
-
-#[tauri::command]
 async fn import_cli_source(
     window: tauri::WebviewWindow,
     app: AppHandle,
@@ -1266,54 +1240,6 @@ async fn import_cli_source(
         &state.writer_id,
         Operation::ImportFrameFromArtifact {
             name,
-            artifact,
-            connector: Some(connector),
-            x: input.x,
-            y: input.y,
-        },
-    )
-}
-
-#[tauri::command]
-async fn import_database_source(
-    window: tauri::WebviewWindow,
-    app: AppHandle,
-    input: DatabaseSourceInput,
-    state: State<'_, AppState>,
-) -> Result<DocumentView, String> {
-    let source_name = input.source_name.trim().to_string();
-    let query = input.query.trim().to_string();
-    if source_name.is_empty() || query.is_empty() {
-        return Err("A database table needs a name and SQL query".into());
-    }
-    let connector = ConnectorRecipe::Database {
-        connection_id: input.connection_id.clone(),
-        source_name: source_name.clone(),
-        query,
-    };
-    let connection =
-        database_connections::by_id(&database_connections_path(&app)?, &input.connection_id)?;
-    let session = state.document_for(window.label())?;
-    let (document_path, document_id) = {
-        let session = session.lock().map_err(|error| error.to_string())?;
-        (
-            session.path.clone(),
-            session.store.document_id().to_string(),
-        )
-    };
-    let staged_connector = connector.clone();
-    let artifact = tauri::async_runtime::spawn_blocking(move || {
-        stage_database_artifact(&document_path, &document_id, &connection, &staged_connector)
-    })
-    .await
-    .map_err(|error| error.to_string())??;
-    let mut session = session.lock().map_err(|error| error.to_string())?;
-    apply_session_operation(
-        &window,
-        &mut session,
-        &state.writer_id,
-        Operation::ImportFrameFromArtifact {
-            name: source_name,
             artifact,
             connector: Some(connector),
             x: input.x,
@@ -2111,52 +2037,6 @@ fn stage_database_artifact(
     Ok(artifact)
 }
 
-#[tauri::command]
-fn export_frame_csv(
-    window: tauri::WebviewWindow,
-    frame_id: String,
-    path: Option<String>,
-    state: State<'_, AppState>,
-) -> Result<Option<String>, String> {
-    let path = match path {
-        Some(path) => PathBuf::from(path),
-        None => {
-            let suggested = {
-                let session = state.document_for(window.label())?;
-                let session = session.lock().map_err(|error| error.to_string())?;
-                ensure_live(&session)?;
-                session
-                    .store
-                    .view()
-                    .document
-                    .objects
-                    .iter()
-                    .find(|object| object.id() == frame_id)
-                    .map(|object| format!("{}.csv", object.name()))
-                    .unwrap_or_else(|| "frame.csv".into())
-            };
-            let Some(mut path) = rfd::FileDialog::new()
-                .add_filter("CSV", &["csv"])
-                .set_file_name(suggested)
-                .save_file()
-            else {
-                return Ok(None);
-            };
-            if path.extension().is_none() {
-                path.set_extension("csv");
-            }
-            path
-        }
-    };
-    let session = state.document_for(window.label())?;
-    let session = session.lock().map_err(|error| error.to_string())?;
-    session
-        .store
-        .export_frame_csv(&frame_id, &path)
-        .map_err(|error| error.to_string())?;
-    Ok(Some(path.display().to_string()))
-}
-
 /// The mutation itself, with no opinion about a menu: prepares, journals,
 /// applies, and schedules a debounced persist of one operation. Kept separate from
 /// [`apply_session_operation`] so the operation/history unit tests below
@@ -2457,6 +2337,7 @@ fn open_document_at_inner(
             journal,
             pending_write: PendingWrite::default(),
             scratch: false,
+            external_source: None,
         },
     )?;
     scratchwork_window::emit_document_to_peers_from(app, &state, window_label, &payload.document);
@@ -2483,65 +2364,6 @@ fn open_document_at_inner(
             .map_err(|error| error.to_string())?;
     }
     Ok(payload)
-}
-
-fn try_open_from_arguments<I>(app: &AppHandle, arguments: I, working_directory: &Path)
-where
-    I: IntoIterator<Item = OsString>,
-{
-    let Some(path) = document_path_from_arguments(arguments, working_directory) else {
-        return;
-    };
-    if let Err(error) = open_document_window(app, path) {
-        let _ = app.emit(DOCUMENT_OPEN_FAILED_EVENT, error);
-    }
-}
-
-fn document_path_from_arguments<I>(arguments: I, working_directory: &Path) -> Option<PathBuf>
-where
-    I: IntoIterator<Item = OsString>,
-{
-    arguments.into_iter().find_map(|argument| {
-        let path = PathBuf::from(argument);
-        if !is_framework_document_path(&path) {
-            return None;
-        }
-        Some(if path.is_absolute() {
-            path
-        } else {
-            working_directory.join(path)
-        })
-    })
-}
-
-/// The document this launch starts on, and whether it chose that document
-/// itself.
-///
-/// A path on the command line is an instruction and is followed. Without
-/// one, the launch starts on an empty scratch document in a fresh temporary
-/// directory and lets the Data library ask which document the user actually
-/// wants.
-///
-/// Two alternatives were considered and rejected. Reopening the last
-/// document automatically puts an unattended writer on real work: under
-/// `tauri dev` every Rust edit relaunches the app, which is how a Save As
-/// lands on the wrong file. Keeping one scratch document in the application
-/// data directory is the same trap in miniature — whatever was left on it
-/// yesterday is what greets you today, which is exactly how every launch
-/// used to open in the Commerce playground. A per-launch temporary
-/// directory has neither problem, and the demo becomes a sample document to
-/// open on purpose.
-fn initial_session() -> Result<(DocumentSession, bool, Option<String>), String> {
-    let working_directory = env::current_dir().map_err(|error| error.to_string())?;
-    if let Some(requested_path) = document_path_from_arguments(env::args_os(), &working_directory) {
-        if requested_path.exists() {
-            let (session, warning) = load_session(requested_path)?;
-            return Ok((session, false, warning));
-        }
-        return Ok((blank_session(requested_path, false)?, false, None));
-    }
-
-    Ok((scratch_session()?, true, None))
 }
 
 /// An unsaved window still writes every edit immediately; its private
@@ -2571,6 +2393,7 @@ fn blank_session(path: PathBuf, scratch: bool) -> Result<DocumentSession, String
         journal,
         pending_write: PendingWrite::default(),
         scratch,
+        external_source: None,
     })
 }
 
@@ -2603,6 +2426,7 @@ fn load_session(path: PathBuf) -> Result<(DocumentSession, Option<String>), Stri
             journal,
             pending_write: PendingWrite::default(),
             scratch: false,
+            external_source: None,
         },
         warning,
     ))
@@ -2886,7 +2710,9 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         reset_tutorial_documents,
         apply_operation,
         exit_safe_mode,
-        import_dataset_file,
+        file_writeback::import_dataset_file,
+        file_writeback::export_frame_as,
+        file_writeback::update_original_delimited,
         import_cli_source,
         import_database_source,
         inspect_excel_workbook,
@@ -2905,7 +2731,6 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         compact_document_data,
         refresh_stale_snapshots,
         clear_frame_materialization,
-        export_frame_csv,
         export::export_document_excel,
         export::export_row_counts,
         undo,
@@ -2920,6 +2745,41 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         #[cfg(feature = "e2e")]
         menu::replay_menu_command
     ])
+}
+
+#[cfg(target_os = "macos")]
+fn receive_finder_open(app: &AppHandle, arguments: Vec<OsString>, working_directory: PathBuf) {
+    let ready = match FINDER_OPEN_QUEUE.lock() {
+        Ok(mut queue) if !queue.ready => {
+            queue.pending.push((arguments, working_directory));
+            return;
+        }
+        Ok(_) => true,
+        Err(error) => {
+            log::error!("could not queue Finder open: {error}");
+            false
+        }
+    };
+    if ready {
+        try_open_from_arguments(app, arguments, &working_directory);
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn flush_finder_opens(app: &AppHandle) {
+    let pending = match FINDER_OPEN_QUEUE.lock() {
+        Ok(mut queue) => {
+            queue.ready = true;
+            std::mem::take(&mut queue.pending)
+        }
+        Err(error) => {
+            log::error!("could not read queued Finder opens: {error}");
+            return;
+        }
+    };
+    for (arguments, working_directory) in pending {
+        try_open_startup_arguments(app, arguments, &working_directory);
+    }
 }
 
 pub fn run() {
@@ -2960,14 +2820,11 @@ pub fn run() {
     // deliberately many-instance.
     #[cfg(all(desktop, not(feature = "e2e")))]
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, arguments, cwd| {
-        let app = app.clone();
-        thread::spawn(move || {
-            try_open_from_arguments(
-                &app,
-                arguments.into_iter().map(OsString::from),
-                Path::new(&cwd),
-            );
-        });
+        try_open_from_arguments(
+            app,
+            arguments.into_iter().map(OsString::from),
+            Path::new(&cwd),
+        );
     }));
 
     // The updater never acts on its own. It is registered so the webview can
@@ -3006,6 +2863,10 @@ pub fn run() {
 
     app.run(|app, event| {
         #[cfg(target_os = "macos")]
+        if matches!(&event, tauri::RunEvent::Ready) {
+            flush_finder_opens(app);
+        }
+        #[cfg(target_os = "macos")]
         if let tauri::RunEvent::Opened { ref urls } = event {
             let arguments = urls
                 .iter()
@@ -3013,10 +2874,7 @@ pub fn run() {
                 .map(PathBuf::into_os_string)
                 .collect::<Vec<_>>();
             let working_directory = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-            let app = app.clone();
-            thread::spawn(move || {
-                try_open_from_arguments(&app, arguments, &working_directory);
-            });
+            receive_finder_open(app, arguments, working_directory);
         }
         // The window-level flushes in `handle_window_event` already cover an
         // ordinary quit, which closes every window first. This is the
@@ -3036,28 +2894,6 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn finds_cross_platform_document_arguments() {
-        let cwd = Path::new("/shared/projects");
-        let path = document_path_from_arguments(
-            [OsString::from("framework"), OsString::from("Orders.FW")],
-            cwd,
-        )
-        .unwrap();
-        assert_eq!(path, cwd.join("Orders.FW"));
-    }
-
-    #[test]
-    fn ignores_unrelated_startup_arguments() {
-        assert!(
-            document_path_from_arguments(
-                [OsString::from("framework"), OsString::from("--verbose")],
-                Path::new("."),
-            )
-            .is_none()
-        );
-    }
 
     #[test]
     fn finds_sample_library_from_a_nested_runtime_directory() {

@@ -1,6 +1,7 @@
+import { useFrameSourceReplacement } from "./useFrameSourceReplacement";
+import { useFrameDataActions } from "./useFrameDataActions";
 import { useCallback, useState } from "react";
 import {
-  adoptFrameRows,
   clearFrameMaterialization,
   compactDocumentData,
   freezeFrameCopy,
@@ -9,7 +10,6 @@ import {
   packageDocument,
   redo,
   refreshStaleSnapshots,
-  setFrameSource,
   undo,
 } from "../lib/api";
 import { formatBytes } from "../lib/formatBytes";
@@ -76,24 +76,7 @@ export function useDocumentLifecycle({
     [setDataRefreshRevision, setDocument, setError]
   );
 
-  // Cancelling the picker is not a failure and leaves the frame alone; the
-  // command returns no document, so there is nothing to apply.
-  const changeFrameSource = useCallback(
-    async (frameId: string) => {
-      try {
-        const changed = await setFrameSource(frameId);
-        if (changed) {
-          setDocument(changed);
-          setDataRefreshRevision((revision) => revision + 1);
-        }
-        setError(null);
-        return null;
-      } catch (reason) {
-        return String(reason).replace(/^Error:\s*/, "");
-      }
-    },
-    [setDataRefreshRevision, setDocument, setError]
-  );
+  const changeFrameSource = useFrameSourceReplacement(setDocument, setDataRefreshRevision, setError);
 
   // Refreshing every stale snapshot at once. Partial success is the normal
   // outcome worth reporting: one frame failing to compute leaves the frames
@@ -120,23 +103,12 @@ export function useDocumentLifecycle({
     }
   }, [setDataRefreshRevision, setDocument, setError]);
 
-  // Taking ownership rewrites what a frame is, so every page already
-  // fetched is now read from somewhere else.
-  const takeOwnership = useCallback(
-    async (frameId: string, options?: { inlineError?: boolean }) => {
-      try {
-        setDocument(await adoptFrameRows(frameId));
-        setDataRefreshRevision((revision) => revision + 1);
-        setError(null);
-        return null;
-      } catch (reason) {
-        const message = String(reason).replace(/^Error:\s*/, "");
-        if (!options?.inlineError) setError(message);
-        return message;
-      }
-    },
-    [setDataRefreshRevision, setDocument, setError]
-  );
+  const { takeOwnership, updateOriginalFile, exportFrameFile } = useFrameDataActions({
+    setDocument,
+    setDataRefreshRevision,
+    setError,
+    setNotice,
+  });
 
   const packageThisDocument = useCallback(async () => {
     try {
@@ -223,6 +195,8 @@ export function useDocumentLifecycle({
     refreshingSnapshots,
     refreshStale,
     takeOwnership,
+    updateOriginalFile,
+    exportFrameFile,
     packageThisDocument,
     compactData,
     freezeCopy,

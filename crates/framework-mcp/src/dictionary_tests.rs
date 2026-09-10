@@ -46,3 +46,34 @@
         drop(session);
         if path.exists() { std::fs::remove_file(path).unwrap(); }
     }
+
+    #[test]
+    fn mapping_rename_is_discoverable_and_uses_the_canonical_operation() {
+        let (server, path) = test_server();
+        assert!(server.describe_operations().unwrap().0.type_script.contains(r#""type": "renameColumnsUsingMapping""#));
+        for operation in [
+            serde_json::json!({"type":"addFrame","name":"Data","grid":[["Old"],["42"]],"x":0,"y":0}),
+            serde_json::json!({"type":"addDictionary","name":"Names","x":0,"y":0}),
+        ] {
+            server.apply_operation(Parameters(ApplyOperationArgs { operation, expected_revision: None })).unwrap();
+        }
+        let (target, mapping) = {
+            let session = server.lock().unwrap();
+            let find = |name: &str| session.store.document().objects.iter().find_map(|object| match object {
+                DataObject::Frame(frame) if frame.name == name => Some(frame.clone()), _ => None,
+            }).unwrap();
+            (find("Data"), find("Names"))
+        };
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({"type":"pasteCells","frameId":mapping.id,"rowId":mapping.rows[0].id,"columnId":mapping.columns[0].id,"grid":[["Old","New"]]}), expected_revision: None,
+        })).unwrap();
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({"type":"renameColumnsUsingMapping","frameId":target.id,"mappingFrameId":mapping.id,"keyColumnId":mapping.columns[0].id,"valueColumnId":mapping.columns[1].id}), expected_revision: None,
+        })).unwrap();
+        let session = server.lock().unwrap();
+        let frame = session.store.document().frame(&target.id).unwrap();
+        assert_eq!(frame.columns[0].name, "New");
+        assert_eq!(frame.columns[0].id, target.columns[0].id);
+        drop(session);
+        if path.exists() { std::fs::remove_file(path).unwrap(); }
+    }

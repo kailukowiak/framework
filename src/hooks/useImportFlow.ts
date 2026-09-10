@@ -38,6 +38,7 @@ export function useImportFlow({
   setSelection,
   setContextMenu,
   setError,
+  setNotice,
   setInspectorSection,
   setGridFocus,
   setDatasetLibrary,
@@ -46,6 +47,7 @@ export function useImportFlow({
   setSelection: (value: Selection | null) => void;
   setContextMenu: Dispatch<SetStateAction<ContextMenuState | null>>;
   setError: (value: string | null) => void;
+  setNotice: (value: string | null) => void;
   setInspectorSection: (value: "wrangle") => void;
   setGridFocus: (value: GridFocus | null) => void;
   setDatasetLibrary: (value: boolean) => void;
@@ -77,17 +79,18 @@ export function useImportFlow({
         const imported = await importDatasetFile(position, mode === "linked");
         // A cancelled file picker is not a failure and imports nothing.
         if (!imported) return false;
-        setDocument(imported);
+        setDocument(imported.document);
         setSelection(null);
         setContextMenu(null);
         setError(null);
+        if (imported.notice) setNotice(imported.notice);
         return true;
       } catch (reason) {
         setError(String(reason).replace(/^Error:\s*/, ""));
         return false;
       }
     },
-    [setContextMenu, setDocument, setError, setSelection]
+    [setContextMenu, setDocument, setError, setNotice, setSelection]
   );
 
   // Appending is deliberately an import of a second source plus a derived
@@ -115,7 +118,14 @@ export function useImportFlow({
         return false;
       }
     },
-    [setContextMenu, setDocument, setError, setGridFocus, setInspectorSection, setSelection]
+    [
+      setContextMenu,
+      setDocument,
+      setError,
+      setGridFocus,
+      setInspectorSection,
+      setSelection,
+    ]
   );
 
   const handleOpenDocument = useCallback(async () => {

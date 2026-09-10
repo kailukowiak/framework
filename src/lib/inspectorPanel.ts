@@ -2,6 +2,7 @@ import type { SetStateAction } from "react";
 import type { InspectorSection } from "../Inspector";
 
 export type InspectorPanel = { hidden: boolean; section: InspectorSection };
+export const INITIAL_INSPECTOR_PANEL: InspectorPanel = { hidden: true, section: "selection" };
 
 /**
  * Either a section request — the shape every existing caller already sends
@@ -10,7 +11,8 @@ export type InspectorPanel = { hidden: boolean; section: InspectorSection };
  */
 export type InspectorPanelAction =
   | SetStateAction<InspectorSection>
-  | { panel: "toggle" | "hide" };
+  | { panel: "toggle" | "hide" }
+  | { panel: "prepare"; section: InspectorSection };
 
 /**
  * Hidden is "until asked for": every explicit request for a section —
@@ -21,8 +23,12 @@ export function inspectorPanelReducer(
   state: InspectorPanel,
   action: InspectorPanelAction
 ): InspectorPanel {
-  if (typeof action === "object")
+  if (typeof action === "object") {
+    // Grid edits use the top bar. Prepare its owning section without making
+    // the inspector visible; an explicit section request still opens it.
+    if (action.panel === "prepare") return { ...state, section: action.section };
     return { ...state, hidden: action.panel === "toggle" ? !state.hidden : true };
+  }
   const section = typeof action === "function" ? action(state.section) : action;
   return { hidden: false, section };
 }
@@ -35,9 +41,9 @@ export function inspectorShortcutAction(shortcut: string): InspectorPanelAction 
 }
 
 /**
- * One answer to "is the inspector there", used by the panel and by the
- * canvas that makes room for it. Two answers is how you get a 360px strip
- * of nothing: the canvas insetting for a panel that decided not to draw.
+ * One answer to "is the inspector there", used by the panel and the status
+ * controls that move out of its way. The canvas itself stays full width so
+ * opening the inspector does not change the space available to fit a frame.
  */
 export function inspectorShown(
   panel: InspectorPanel,

@@ -24,18 +24,23 @@ pub fn create_data_artifact(
         .and_then(|value| value.to_str())
         .map(str::to_ascii_lowercase)
         .unwrap_or_default();
-    if !matches!(extension.as_str(), "csv" | "tsv" | "parquet") {
+    if !matches!(
+        extension.as_str(),
+        "csv" | "tsv" | "parquet" | "ndjson" | "jsonl"
+    ) {
         return Err(CoreError::Import(
-            "Only .csv, .tsv, and .parquet files can be imported".into(),
+            "Only .csv, .tsv, .parquet, and .ndjson files can be imported".into(),
         ));
     }
     fs::create_dir_all(data_directory).map_err(|error| CoreError::Import(error.to_string()))?;
     let temporary_path = data_directory.join(format!(".artifact-{}.tmp", Uuid::new_v4()));
-    if extension == "parquet" {
-        fs::copy(source_path, &temporary_path)
-            .map_err(|error| CoreError::Import(error.to_string()))?;
-    } else {
-        normalize_delimited_artifact(source_path, &temporary_path, extension == "tsv")?;
+    match extension.as_str() {
+        "parquet" => {
+            fs::copy(source_path, &temporary_path)
+                .map_err(|error| CoreError::Import(error.to_string()))?;
+        }
+        "ndjson" | "jsonl" => normalize_json_lines_artifact(source_path, &temporary_path)?,
+        _ => normalize_delimited_artifact(source_path, &temporary_path, extension == "tsv")?,
     }
 
     let artifact_id = sha256_file(&temporary_path)?;
@@ -64,6 +69,38 @@ pub fn create_data_artifact(
     })
 }
 
+/// Read every line before choosing the schema, the same promise the delimited
+/// path makes: a field that is null for the first thousand records and a string
+/// after that must not decide the column's type from the first page alone. JSON
+/// states each value's own type, so there are no inference *rules* here beyond
+/// that — only the requirement to look at all of it.
+fn normalize_json_lines_artifact(source_path: &Path, destination: &Path) -> Result<(), CoreError> {
+    let source = source_path
+        .to_str()
+        .ok_or_else(|| CoreError::Import("Import path is not valid UTF-8".into()))?;
+    let mut scan = pl::LazyJsonLineReader::new(pl::PlRefPath::new(source))
+        .with_infer_schema_length(None)
+        .finish()
+        .map_err(|error| CoreError::Import(error.to_string()))?;
+    // Refuse a nested record here, before anything reaches the canvas. Polars
+    // will happily infer a struct or list column and write it to the artifact,
+    // and the frame will even import — but the grid cannot render such a cell,
+    // so the table would land looking fine and fail on its first page read.
+    // A grid holds one value per cell; saying so now beats a broken table.
+    let schema = scan
+        .collect_schema()
+        .map_err(|error| CoreError::Import(error.to_string()))?;
+    for (name, data_type) in schema.iter() {
+        if crate::framework_type_from_polars(data_type).is_err() {
+            return Err(CoreError::Import(format!(
+                "The field `{name}` holds nested JSON ({data_type}). FrameWork reads one flat \
+                 record per line; flatten the nested fields before importing this file."
+            )));
+        }
+    }
+    sink_artifact(scan, destination)
+}
+
 fn normalize_delimited_artifact(
     source_path: &Path,
     destination: &Path,
@@ -72,12 +109,22 @@ fn normalize_delimited_artifact(
     let source = source_path
         .to_str()
         .ok_or_else(|| CoreError::Import("Import path is not valid UTF-8".into()))?;
-    let mut scan = pl::LazyCsvReader::new(pl::PlRefPath::new(source))
+    let scan = pl::LazyCsvReader::new(pl::PlRefPath::new(source))
         .with_has_header(true)
         .with_separator(if tab_separated { b'\t' } else { b',' })
-        .with_try_parse_dates(true)
+        .with_dtype_overwrite_by_position(Some(Arc::new(super::conservative_csv::types(
+            source_path,
+            if tab_separated { b'\t' } else { b',' },
+        )?)))
         .finish()
         .map_err(|error| CoreError::Import(error.to_string()))?;
+    sink_artifact(scan, destination)
+}
+
+/// Stream a scan into the document's parquet artifact in bounded memory. Every
+/// import format arrives through here, so a large file costs the same whichever
+/// one it was.
+fn sink_artifact(mut scan: pl::LazyFrame, destination: &Path) -> Result<(), CoreError> {
     let schema = scan
         .collect_schema()
         .map_err(|error| CoreError::Import(error.to_string()))?;

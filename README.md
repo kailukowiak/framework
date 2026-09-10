@@ -74,6 +74,12 @@ npm install
 npm run tauri dev
 ```
 
+On macOS, `npm run build:dev-app` builds and registers **FrameWork Dev** in
+Finder’s **Open With** menu, separately from the installed release. It opens
+CSV/TSV/Parquet files into unsaved workbooks. This is a bundled debug build;
+rerun the command after code changes. `npm run tauri dev` remains the hot-reload
+workflow and does not register a Finder application.
+
 FrameWork runs through Tauri; there is no browser-only preview. The application uses the canonical Rust core and opens ordinary, cross-platform `.fw` document files. Installed builds register `.fw` as a FrameWork document type, so a document can be opened from Explorer, Finder, or a Linux file manager.
 
 A launch that is handed a document opens it. A launch that is not starts on an empty canvas in a temporary directory and raises the Data library, so nobody lands in a document they did not ask for — including under `tauri dev`, where every Rust edit relaunches the app. That scratch canvas is genuinely throwaway: Save As is what turns it into a document.

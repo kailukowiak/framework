@@ -8,12 +8,12 @@ About 5–10 minutes. Open **Dictionaries and value mapping — Start** from
 The **Expenses** table has two misspelled category entries and one category
 that needs a shorter label. **Category fixes** lists the old and new labels.
 
-Right-click **Key** in Category fixes and choose **Use as dictionary — key: Key**.
-The table now says **dictionary**. Keys must be unique: one old label has one
+Right-click **Key** in Category fixes and choose **Use for mapping — key: Key**.
+The key column now shows a key marker. Keys must be unique: one old label has one
 replacement. This uses the same table; nothing is copied.
 
 To start one from scratch in your own workbook, right-click empty canvas and
-choose **Add dictionary here**, then type or paste entries under Key and Value.
+choose **Add mapping frame here**, then type or paste entries under Key and Value.
 
 ## 2. Apply it to a column
 

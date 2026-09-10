@@ -80,7 +80,17 @@ export function shouldOfferFormulaSuggestions(
     }
   }
   if (quote) return false;
-  const explicitQuery = query.startsWith(".") || query.startsWith("`");
+  // The lexer-shaped query begins at the last dot, so the decimal in `1.1`
+  // used to look exactly like an explicit request for numeric methods. A dot
+  // followed by a digit is still part of the number, not a completion
+  // gesture. The unfinished spelling `1.` belongs to the number for the same
+  // reason; a parenthesized numeric receiver such as `(1).` remains explicit.
+  const queryStart = cursor - query.length;
+  const decimalPoint =
+    /^\.\d/u.test(query) ||
+    (query === "." && /\d/u.test(source[queryStart - 1] ?? ""));
+  const explicitQuery =
+    (!decimalPoint && query.startsWith(".")) || query.startsWith("`");
   const implicit = query.replace(/^[.`]/, "");
   return (
     explicitQuery ||

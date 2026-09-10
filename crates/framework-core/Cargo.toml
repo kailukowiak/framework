@@ -11,6 +11,7 @@ workspace = true
 [dependencies]
 calamine.workspace = true
 chrono.workspace = true
+csv = "1.4"
 fuzzy-matcher.workspace = true
 polars.workspace = true
 serde.workspace = true

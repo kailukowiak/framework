@@ -87,7 +87,7 @@ fn branched_tabs_filter_the_same_data_independently() {
         2
     );
 
-    // A display filter is stored against column ids, so renaming the column
+    // A pipeline filter is stored against column ids, so renaming the column
     // it reads re-renders it rather than breaking it.
     let quantity_id = frame_named(store.document(), "Orders").columns[0]
         .id
@@ -107,13 +107,13 @@ fn branched_tabs_filter_the_same_data_independently() {
         })
         .unwrap();
     assert!(matches!(
-        &renamed.computed_frames[&orders_id].display_steps[0],
+        renamed.computed_frames[&orders_id].steps.last().unwrap(),
         RenderedFrameStep::Filter { predicates, .. } if predicates == &["`Units` > 1"]
     ));
     // The branch has columns of its own, so its filter still names the copy's
     // "Quantity" — and still selects the same rows.
     assert!(matches!(
-        &renamed.computed_frames[&copy_id].display_steps[0],
+        renamed.computed_frames[&copy_id].steps.last().unwrap(),
         RenderedFrameStep::Filter { predicates, .. } if predicates == &["`Quantity` > 2"]
     ));
     assert_eq!(

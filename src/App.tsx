@@ -52,12 +52,9 @@ import { CollapsedInspector, Inspector } from "./Inspector";
 import { JoinDialog } from "./JoinDialog";
 import { DataSidebar } from "./DataSidebar";
 import { LeftRail } from "./LeftRail";
+import { CARD_SIZES, frameCardSize, placeNewCard } from "./lib/cardPlacement";
 import {
-  CARD_SIZES,
-  frameCardSize,
-  placeNewCard,
-} from "./lib/cardPlacement";
-import {
+  INITIAL_INSPECTOR_PANEL,
   inspectorAvailable,
   inspectorPanelReducer,
   inspectorShown,
@@ -288,10 +285,7 @@ export default function App() {
   // One reducer rather than a hidden flag beside the section, so the
   // dispatch stays the stable section setter every hook already takes, and
   // asking for a section is what un-hides the panel (see inspectorPanel.ts).
-  const [inspectorPanel, setInspectorSection] = useReducer(inspectorPanelReducer, {
-    hidden: false,
-    section: "selection",
-  });
+  const [inspectorPanel, setInspectorSection] = useReducer(inspectorPanelReducer, INITIAL_INSPECTOR_PANEL);
   const inspectorSection = inspectorPanel.section;
   const [error, setError] = useState<string | null>(null);
   const splashSlow = useSplashSlow(document === null && !error);
@@ -390,6 +384,7 @@ export default function App() {
     setSelection,
     setContextMenu,
     setError,
+    setNotice,
     setInspectorSection,
     setGridFocus,
     setDatasetLibrary,
@@ -555,6 +550,8 @@ export default function App() {
     refreshingSnapshots,
     refreshStale,
     takeOwnership,
+    updateOriginalFile,
+    exportFrameFile,
     packageThisDocument,
     compactData,
     freezeCopy,
@@ -829,17 +826,18 @@ export default function App() {
     undo: () => void navigateHistory("undo"),
     redo: () => void navigateHistory("redo"),
     "data-library": () => setDatasetLibrary(true),
-    "toggle-sources": () =>
-      setLeftPanel((panel) => (panel === "data" ? null : "data")),
+    "toggle-sources": () => setLeftPanel((panel) => (panel === "data" ? null : "data")),
     "tidy-layout": () => void run({ type: "tidyLayout" }),
     "fit-view": () => withCanvasView(selectedCommandView, fitViewToWindow),
     "collapse-view": () =>
-      withCanvasView(selectedCommandView, (view) =>
-        void run({
-          type: "setViewCollapsed",
-          viewId: view.id,
-          collapsed: !view.collapsed,
-        })
+      withCanvasView(
+        selectedCommandView,
+        (view) =>
+          void run({
+            type: "setViewCollapsed",
+            viewId: view.id,
+            collapsed: !view.collapsed,
+          })
       ),
     "inspector-toggle": () => setInspectorSection({ panel: "toggle" }),
     "inspector-selection": () => setInspectorSection("selection"),
@@ -1101,8 +1099,8 @@ export default function App() {
         <p>{error ?? "Opening your canvas…"}</p>
         {!error && splashSlow && (
           <p>
-            Still opening. If macOS is asking for permission to read your
-            Documents folder, allow it to continue.
+            Still opening. If macOS is asking for permission to read your Documents
+            folder, allow it to continue.
           </p>
         )}
         {error && (
@@ -1328,9 +1326,7 @@ export default function App() {
         )}
 
         <main
-          className={`canvas-viewport ${showInspector ? "with-inspector" : ""} ${
-            showCollapsedInspector ? "with-inspector-collapsed" : ""
-          } ${leftPanel ? "with-panel" : ""}`}
+          className={`canvas-viewport ${leftPanel ? "with-panel" : ""}`}
           ref={canvasRef}
           // Dragging the bare canvas moves the canvas. A press that does not
           // travel is still a click, and still clears the selection — which is
@@ -1595,9 +1591,6 @@ export default function App() {
                     lookupFrameId,
                     lookupOutputColumnIds
                   ) => {
-                    const primaryView = document.views.find(
-                      (candidate) => candidate.objectId === primaryFrameId
-                    );
                     // Where a new card lands: in free space inside the
                     // viewport, not past the primary frame's right edge,
                     // which was off screen and behind the inspector.
@@ -1652,8 +1645,9 @@ export default function App() {
         {/* Not for a block. A block is edited entirely on its own card, so the
           panel had nothing to put in itself — and a third of the window
           opening to show a heading is worse than not opening. */}
-        {showInspector && selection && selectedObject && (
+        {inspectorAvailable(selectedObject, selection) && selection && selectedObject && (
           <Inspector
+            hidden={!showInspector}
             documentId={document.id}
             object={selectedObject}
             objects={document.objects}
@@ -1785,7 +1779,9 @@ export default function App() {
             onClose={() => setJoin(null)}
             onOperation={run}
             onCreated={() => {
-              setPendingJoinSelect(new Set(document.objects.map((object) => object.id)));
+              setPendingJoinSelect(
+                new Set(document.objects.map((object) => object.id))
+              );
               setJoin(null);
             }}
           />
@@ -2044,6 +2040,8 @@ export default function App() {
 
         {contextMenu && (
           <CanvasContextMenu
+            updateOriginalFile={updateOriginalFile}
+            exportFrameFile={exportFrameFile}
             contextMenu={contextMenu}
             contextKind={contextKind}
             contextObject={contextObject}

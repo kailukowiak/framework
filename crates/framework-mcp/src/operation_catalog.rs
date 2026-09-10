@@ -49,6 +49,9 @@ mod tests {
     fn catalog_follows_simple_and_nested_operation_variants() {
         let catalog = operation_typescript();
         assert!(catalog.contains(r#""type": "renameColumn""#));
+        assert!(catalog.contains(r#""type": "renameColumns""#));
+        assert!(catalog.contains(r#""type": "openDelimitedFile""#));
+        assert!(catalog.contains(r#""type": "bakeFrame""#));
         assert!(catalog.contains(r#""type": "setFramePipeline""#));
         assert!(catalog.contains("type FrameStepInput ="));
         assert!(catalog.contains(r#""kind": "expand""#));

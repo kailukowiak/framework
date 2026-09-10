@@ -14,6 +14,7 @@ pub mod values;
 // `frame` holds `impl FrameObject`, not types, and its name would collide with
 // `model::frame` in the crate root's glob re-exports.
 pub(crate) mod frame;
+mod frame_chain;
 
 // `cache` is derived state, internal to the crate; `compute` carries the public
 // projections (DocumentView, FramePage, FrameQueryPlan) that the desktop and

@@ -6,12 +6,12 @@ import {
   GitBranch,
   GitMerge,
   Plus,
+  Save,
   Trash2,
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { nextColumnName, type ContextMenuState } from "./FrameGrid";
 import { defaultPlotSpec, viewHolding } from "./lib/canvasCards";
-import { exportFrameCsv } from "./lib/api";
 import type { InspectorPanelAction } from "./lib/inspectorPanel";
 import type { JoinState } from "./lib/joinState";
 import type { ImportMode } from "./lib/preferences";
@@ -23,6 +23,14 @@ import type {
   Operation,
   Selection,
 } from "./lib/types";
+
+/** The format an in-place update would write, read off the source path. Take
+ *  the basename first: a directory may carry a dot the filename does not. */
+function sourceFormatName(path: string): string {
+  const name = path.split(/[\\/]/).pop() ?? "";
+  const dot = name.lastIndexOf(".");
+  return dot > 0 ? name.slice(dot + 1).toUpperCase() : "file";
+}
 
 export type ContextMenuFrameActionsProps = {
   contextMenu: ContextMenuState;
@@ -137,6 +145,8 @@ export function ContextMenuFrameActions({
 export type ContextMenuFramePlotItemsProps = {
   contextMenu: ContextMenuState;
   contextFrame: FrameObject;
+  updateOriginalFile: (frameId: string) => Promise<void>;
+  exportFrameFile: (frameId: string) => Promise<void>;
   run: (
     operation: Operation,
     options?: { inlineError?: boolean }
@@ -149,9 +159,10 @@ export type ContextMenuFramePlotItemsProps = {
 export function ContextMenuFramePlotItems({
   contextMenu,
   contextFrame,
+  updateOriginalFile,
+  exportFrameFile,
   run,
   setContextMenu,
-  setError,
 }: ContextMenuFramePlotItemsProps) {
   return (
     <>
@@ -196,14 +207,25 @@ export function ContextMenuFramePlotItems({
       <button
         onClick={() => {
           setContextMenu(null);
-          void exportFrameCsv(contextFrame.id).catch((reason) =>
-            setError(String(reason).replace(/^Error:\s*/, ""))
-          );
+          void exportFrameFile(contextFrame.id);
         }}
       >
         <ArrowDownToLine size={14} />
-        <span>Export CSV — entire table</span>
+        <span>Export frame as…</span>
       </button>
+      {contextFrame.fileOrigin && (
+        <button
+          onClick={() => {
+            setContextMenu(null);
+            void updateOriginalFile(contextFrame.id);
+          }}
+        >
+          <Save size={14} />
+          {/* An update writes the source's own format, so the label reads that
+              format off the path rather than choosing between two names. */}
+          <span>Update original {sourceFormatName(contextFrame.fileOrigin.path)}…</span>
+        </button>
+      )}
     </>
   );
 }
@@ -241,100 +263,87 @@ export function ContextMenuFrameEditItems({
       {/* A read-only grid can still choose which outputs it shows.
           This is exactly unchecking the column in a final Select;
           owned rows keep the structural delete offered below. */}
-      {!document.computedFrames[contextFrame.id]?.editing.rows &&
-        contextColumn && (
-          <button
-            className="destructive"
-            onClick={deleteContextColumn}
-          >
-            <Trash2 size={14} />
-            <span>Delete column</span>
-          </button>
-        )}
+      {!document.computedFrames[contextFrame.id]?.editing.rows && contextColumn && (
+        <button className="destructive" onClick={deleteContextColumn}>
+          <Trash2 size={14} />
+          <span>Delete column</span>
+        </button>
+      )}
       {document.computedFrames[contextFrame.id]?.editing.rows && (
         <>
-            <button
-              onClick={() => {
-                setContextMenu(null);
-                run({ type: "addRow", frameId: contextFrame.id, values: {} });
-              }}
-            >
-              <Plus size={14} />
-              <span>Add empty row</span>
-            </button>
-            <button
-              onClick={() => {
-                setContextMenu(null);
-                run({
-                  type: "addColumn",
-                  frameId: contextFrame.id,
-                  name: nextColumnName(contextFrame),
-                  dataType: "string",
-                  afterColumnId:
-                    contextColumn?.id ??
-                    contextFrame.columns.at(-1)?.id ??
-                    null,
-                });
-              }}
-            >
-              <Plus size={14} />
-              <span>
-                {contextColumn ? "Insert column here" : "Add column"}
-              </span>
-            </button>
-            {contextColumn && (
-              <label className="context-menu-field">
-                <span>Column type</span>
-                <select
-                  value={contextColumn.dataType}
-                  onChange={(event) => {
-                    setContextMenu(null);
-                    run({
-                      type: "setColumnType",
-                      frameId: contextFrame.id,
-                      columnId: contextColumn.id,
-                      dataType: event.target.value as DataType,
-                    });
-                  }}
-                >
-                  <option value="string">Text</option>
-                  <option value="categorical">Categorical</option>
-                  <option value="integer">Integer</option>
-                  <option value="number">Number</option>
-                  <option value="currency">Currency</option>
-                  <option value="percentage">Percentage</option>
-                  <option value="boolean">Boolean</option>
-                  <option value="date">Date</option>
-                </select>
-              </label>
-            )}
-            {(contextMenu.rowId || contextColumn) && (
-              <span className="menu-separator" />
-            )}
-            {contextMenu.rowId && (
-              <button
-                className="destructive"
-                onClick={() =>
-                  deleteFromContext({
-                    type: "deleteRow",
+          <button
+            onClick={() => {
+              setContextMenu(null);
+              run({ type: "addRow", frameId: contextFrame.id, values: {} });
+            }}
+          >
+            <Plus size={14} />
+            <span>Add empty row</span>
+          </button>
+          <button
+            onClick={() => {
+              setContextMenu(null);
+              run({
+                type: "addColumn",
+                frameId: contextFrame.id,
+                name: nextColumnName(contextFrame),
+                dataType: "string",
+                afterColumnId:
+                  contextColumn?.id ?? contextFrame.columns.at(-1)?.id ?? null,
+              });
+            }}
+          >
+            <Plus size={14} />
+            <span>{contextColumn ? "Insert column here" : "Add column"}</span>
+          </button>
+          {contextColumn && (
+            <label className="context-menu-field">
+              <span>Column type</span>
+              <select
+                value={contextColumn.dataType}
+                onChange={(event) => {
+                  setContextMenu(null);
+                  run({
+                    type: "setColumnType",
                     frameId: contextFrame.id,
-                    rowId: contextMenu.rowId!,
-                  })
-                }
+                    columnId: contextColumn.id,
+                    dataType: event.target.value as DataType,
+                  });
+                }}
               >
-                <Trash2 size={14} />
-                <span>Delete row</span>
-              </button>
-            )}
-            {contextColumn && (
-              <button
-                className="destructive"
-                onClick={deleteContextColumn}
-              >
-                <Trash2 size={14} />
-                <span>Delete column</span>
-              </button>
-            )}
+                <option value="string">Text</option>
+                <option value="categorical">Categorical</option>
+                <option value="integer">Integer</option>
+                <option value="number">Number</option>
+                <option value="currency">Currency</option>
+                <option value="percentage">Percentage</option>
+                <option value="boolean">Boolean</option>
+                <option value="date">Date</option>
+              </select>
+            </label>
+          )}
+          {(contextMenu.rowId || contextColumn) && <span className="menu-separator" />}
+          {contextMenu.rowId && (
+            <button
+              className="destructive"
+              onClick={() =>
+                deleteFromContext({
+                  type: "deleteRow",
+                  frameId: contextFrame.id,
+                  rowId: contextMenu.rowId!,
+                })
+              }
+            >
+              <Trash2 size={14} />
+              <span>Delete row</span>
+            </button>
+          )}
+          {contextColumn && (
+            <button className="destructive" onClick={deleteContextColumn}>
+              <Trash2 size={14} />
+              <span>Delete column</span>
+            </button>
+          )}
         </>
       )}
     </>
@@ -378,9 +387,7 @@ export function ContextMenuFrameShapeItems({
         const parent = parentId
           ? document.objects.find((object) => object.id === parentId)
           : undefined;
-        const parentView = parentId
-          ? viewHolding(document, parentId)
-          : undefined;
+        const parentView = parentId ? viewHolding(document, parentId) : undefined;
         if (!own || !parent || !parentView) return null;
         const tabbed = parentView.id === own.id;
         return (

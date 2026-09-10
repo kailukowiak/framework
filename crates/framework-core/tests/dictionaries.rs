@@ -57,14 +57,7 @@ fn answers(store: &mut Store, source: &str) -> Vec<ComputedCell> {
 #[test]
 fn lookup_distinguishes_missing_keys_fallbacks_and_null_replacements() {
     let mut store = Store::new(Document::blank("Dictionaries"));
-    let dict = dictionary(&mut store);
-    store
-        .apply(Operation::SetFrameDisplayFilter {
-            frame_id: dict.id,
-            filters: vec!["`Key` == \"absent\"".into()],
-            filter_match_all: true,
-        })
-        .unwrap();
+    dictionary(&mut store);
     let cells = answers(
         &mut store,
         "a = lookup(\"typo\", `Fixes`.`Key`, `Fixes`.`Value`)\nb = lookup(\"missing\", `Fixes`.`Key`, `Fixes`.`Value`, \"fallback\")\nc = lookup(\"missing\", `Fixes`.`Key`, `Fixes`.`Value`)\nd = map_values(\"missing\", `Fixes`.`Key`, `Fixes`.`Value`)\ne = map_values(\"clear\", `Fixes`.`Key`, `Fixes`.`Value`)",
@@ -295,7 +288,7 @@ fn a_mapped_column_joins_the_dictionary_lazily_and_a_strict_lookup_names_its_mis
         vec![vec!["Correct"], vec!["other"]]
     );
     let path = std::env::temp_dir().join(format!("framework-mapped-{}.csv", id()));
-    store.export_frame_csv(&source.id, &path).unwrap();
+    store.export_frame_file(&source.id, &path).unwrap();
     let header = std::fs::read_to_string(&path).unwrap();
     std::fs::remove_file(&path).unwrap();
     assert_eq!(header.lines().next(), Some("Category"), "{header}");
@@ -311,4 +304,26 @@ fn a_mapped_column_joins_the_dictionary_lazily_and_a_strict_lookup_names_its_mis
         .to_string();
     assert!(error.contains("‘other’"), "{error}");
     assert!(error.contains("Fixes"), "{error}");
+}
+
+#[test]
+fn blank_keys_match_missing_values_and_blank_replacements_stay_null() {
+    let mut store = Store::new(Document::blank("Missing mappings"));
+    let mapping = dictionary(&mut store);
+    store
+        .apply(Operation::SetCell {
+            frame_id: mapping.id.clone(),
+            row_id: mapping.rows[0].id.clone(),
+            column_id: mapping.columns[0].id.clone(),
+            raw: "".into(),
+        })
+        .unwrap();
+    let cells = answers(
+        &mut store,
+        "a = map_values(None, `Fixes`.`Key`, `Fixes`.`Value`)\nb = map_values(\"clear\", `Fixes`.`Key`, `Fixes`.`Value`)\nc = map_values(\"unmatched\", `Fixes`.`Key`, `Fixes`.`Value`, None)",
+    );
+    assert_eq!(cells[0].display, "Correct");
+    assert_eq!(cells[1].typed_value, ScalarValue::Null);
+    assert_eq!(cells[2].typed_value, ScalarValue::Null);
+    assert!(cells.iter().all(|cell| cell.error.is_none()));
 }

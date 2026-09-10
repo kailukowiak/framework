@@ -88,7 +88,7 @@ function useMultiColumnPipelineRequests({
 }: {
   setContextMenu: (value: null) => void;
   setSelection: (value: Selection) => void;
-  setInspectorSection: (value: "wrangle") => void;
+  setInspectorSection: (value: "wrangle" | { panel: "prepare"; section: "wrangle" }) => void;
 }) {
   const [rearrangeColumnsRequest, setRearrangeColumnsRequest] =
     useState<RearrangeColumnsRequest>(null);
@@ -173,7 +173,7 @@ function useAddCalculatedColumnRequest({
 }: {
   setContextMenu: (value: null) => void;
   setSelection: (value: Selection) => void;
-  setInspectorSection: (value: "wrangle") => void;
+  setInspectorSection: (value: "wrangle" | { panel: "prepare"; section: "wrangle" }) => void;
 }) {
   const [addCalculatedColumnRequest, setRequest] =
     useState<AddCalculatedColumnRequest>(null);
@@ -213,7 +213,7 @@ function useColumnTransformationRequests({
 }: {
   setContextMenu: (value: null) => void;
   setSelection: (value: Selection) => void;
-  setInspectorSection: (value: "wrangle") => void;
+  setInspectorSection: (value: "wrangle" | { panel: "prepare"; section: "wrangle" }) => void;
 }) {
   const [transformColumnRequest, setTransformColumnRequest] =
     useState<TransformColumnRequest>(null);
@@ -222,11 +222,12 @@ function useColumnTransformationRequests({
     (
       frame: FrameObject,
       viewId: string | undefined,
-      request: Omit<NonNullable<TransformColumnRequest>, "frameId" | "token">
+      request: Omit<NonNullable<TransformColumnRequest>, "frameId" | "token">,
+      fromGrid = false
     ) => {
       setContextMenu(null);
       setSelection({ objectId: frame.id, viewId, columnId: request.columnId });
-      setInspectorSection("wrangle");
+      setInspectorSection(fromGrid ? { panel: "prepare", section: "wrangle" } : "wrangle");
       transformColumnToken.current += 1;
       setTransformColumnRequest({
         ...request,
@@ -277,7 +278,7 @@ function useColumnTransformationRequests({
         // no anchor at all, and every reference pointed at afterwards lost
         // the `.shift(n)` the clicked row meant.
         anchorRowIndex: rowIndex,
-      }),
+      }, true),
     [openColumnTransformation]
   );
 
@@ -286,7 +287,7 @@ function useColumnTransformationRequests({
   const requestCalculatedColumnEdit = useCallback(
     (frame: FrameObject, column: Column, rowIndex?: number, viewId?: string) => {
       setSelection({ objectId: frame.id, viewId, columnId: column.id });
-      setInspectorSection("wrangle");
+      setInspectorSection({ panel: "prepare", section: "wrangle" });
       transformColumnToken.current += 1;
       setTransformColumnRequest({
         frameId: frame.id,
@@ -333,7 +334,7 @@ export function usePipelineColumnRequests({
 }: {
   setContextMenu: (value: null) => void;
   setSelection: (value: Selection) => void;
-  setInspectorSection: (value: "wrangle") => void;
+  setInspectorSection: (value: "wrangle" | { panel: "prepare"; section: "wrangle" }) => void;
 }) {
   const addRequest = useAddCalculatedColumnRequest({
     setContextMenu,

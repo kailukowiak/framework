@@ -256,6 +256,31 @@ pub enum Operation {
     RefreshFramePipeline {
         frame_id: Id,
     },
+    /// Rename a set of columns atomically, including swaps of existing names.
+    RenameColumns {
+        frame_id: Id,
+        names: Vec<(Id, String)>,
+    },
+    /// Resolve current header names through a keyed frame, then rename once.
+    /// This is an undoable edit, not a live dependency on the mapping frame.
+    RenameColumnsUsingMapping {
+        frame_id: Id,
+        mapping_frame_id: Id,
+        key_column_id: Id,
+        value_column_id: Id,
+    },
+    /// Open a CSV/TSV as an editable copy, preserving cell spellings.
+    OpenDelimitedFile {
+        name: String,
+        path: String,
+        x: f64,
+        y: f64,
+    },
+    /// Capture the current data result as literal rows. This changes only
+    /// the workbook; external write-back is an explicit desktop action.
+    BakeFrame {
+        frame_id: Id,
+    },
     ImportFrameFromFile {
         name: String,
         path: String,

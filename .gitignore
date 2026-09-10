@@ -53,3 +53,7 @@ framework.fw
 
 # Generated demo datasets (reproduce with: uv run examples/generate_accounting_demo.py)
 demo-data*/
+
+# Local CSV/TSV scratch files for the editable-file path. The e2e specs write
+# their own fixtures into a temporary directory, so nothing tracked reads these.
+test-data/

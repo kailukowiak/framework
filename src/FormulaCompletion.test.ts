@@ -43,6 +43,15 @@ describe("completion visibility", () => {
       shouldOfferFormulaSuggestions('`currency` == "CAD', 18, "CAD", true)
     ).toBe(false);
     expect(shouldOfferFormulaSuggestions("123", 3, "123", true)).toBe(false);
+    expect(shouldOfferFormulaSuggestions("1.1", 3, ".1", true)).toBe(false);
+    expect(shouldOfferFormulaSuggestions("1.", 2, ".", true)).toBe(false);
+  });
+
+  it("still offers methods after a non-literal numeric receiver", () => {
+    const source = "(`Amount` * 1).";
+    expect(
+      shouldOfferFormulaSuggestions(source, source.length, ".", true)
+    ).toBe(true);
   });
 
   it("stays dismissed until the draft or cursor changes", () => {

@@ -23,6 +23,18 @@ function requests() {
 }
 
 describe("the requests that open a column's formula", () => {
+  it("prepares the editor without opening Wrangle for grid edits", () => {
+    const setInspectorSection = vi.fn();
+    const { result } = renderHook(() => usePipelineColumnRequests({
+      setContextMenu: vi.fn(), setSelection: vi.fn(), setInspectorSection,
+    }));
+    act(() => result.current.requestColumnFill(frame, column, "", 0));
+    expect(setInspectorSection).toHaveBeenLastCalledWith({ panel: "prepare", section: "wrangle" });
+    act(() => result.current.requestCalculatedColumnEdit(frame, column, 0));
+    expect(setInspectorSection).toHaveBeenLastCalledWith({ panel: "prepare", section: "wrangle" });
+    act(() => result.current.requestColumnTransformation(frame, column, "`Revenue` * 2"));
+    expect(setInspectorSection).toHaveBeenLastCalledWith("wrangle");
+  });
   // The row is the whole reason a formula started from a cell can point at
   // another cell and mean "one row back". It used to be taken and dropped,
   // so every reference pointed at afterwards came out as the whole column.

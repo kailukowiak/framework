@@ -32,6 +32,7 @@ export type ComputedFrame = {
    * that shows them does not need to care which it is looking at.
    */
   steps?: Array<RenderedFrameStep>;
+  disconnectedSteps?: Array<RenderedFrameStep>;
   /**
    * How many leading entries of `steps` are plumbing rather than
    * transformation: the identity projection a linked frame carries so it

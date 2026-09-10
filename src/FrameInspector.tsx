@@ -50,7 +50,7 @@ import {
   type TakeOwnershipHandler,
 } from "./FrameGrid";
 import { DerivedFrameCreator } from "./PipelineEditor";
-import { FrameSourcePanel } from "./FrameSourcePanel";
+import { FrameReadStep } from "./FrameReadStep";
 import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
 import type { OperationHandler } from "./lib/handlers";
 import type {
@@ -365,17 +365,6 @@ export function FrameInspector({
               />
             )}
           </div>
-        )}
-        {/* A connector without an artifact behind it is still a frame that
-            reads a file, and gating on the artifact alone hid the only place
-            to repoint one. A frame somebody typed in has no source to manage
-            and is still offered nothing. */}
-        {(frame.artifact || frame.connector || frame.sourceFile) && (
-          <FrameSourcePanel
-            key={frame.id}
-            frame={frame}
-            onSourceChanged={onSourceChanged}
-          />
         )}
         {frame.derivation && (
           <FrameCachePanel
@@ -798,6 +787,7 @@ export function FrameInspector({
 
       {section === "wrangle" && (
         <div className="inspector-section-stack">
+          <FrameReadStep frame={frame} computed={computed} input={chainInput} onSourceChanged={onSourceChanged} onOperation={onOperation} />
           {chainInput ? (
             <DerivedFrameCreator
               key={frame.id}

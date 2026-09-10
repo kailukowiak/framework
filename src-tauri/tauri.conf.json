@@ -56,6 +56,33 @@
     ],
     "fileAssociations": [
       {
+        "ext": ["csv"],
+        "name": "CSV data",
+        "mimeType": "text/csv",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["tsv"],
+        "name": "Tab-separated data",
+        "mimeType": "text/tab-separated-values",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["parquet"],
+        "name": "Parquet data",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["ndjson", "jsonl"],
+        "name": "JSON lines data",
+        "mimeType": "application/x-ndjson",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
         "ext": ["fw"],
         "name": "FrameWork.Document",
         "description": "FrameWork structured-data canvas",

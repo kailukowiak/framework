@@ -1,0 +1,4 @@
+.mapping-hint { display: block; padding: 3px 10px 6px; font-size: var(--text-sm); line-height: 1.4; }
+.mapping-fallback { display: flex; align-items: center; gap: 6px; padding: 3px 10px; font-size: var(--text-sm); }
+.mapping-fallback select { min-width: 0; flex: 1; height: 26px; font: inherit; }
+.mapping-replacement { box-sizing: border-box; width: calc(100% - 20px); margin: 3px 10px; height: 26px; font: inherit; }

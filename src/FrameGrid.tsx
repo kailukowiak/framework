@@ -195,7 +195,7 @@ export type RefreshConnectorHandler = (
   options?: { inlineError?: boolean }
 ) => Promise<string | null>;
 /** Opens a picker and repoints the frame; resolves to an error, or null. */
-export type SetFrameSourceHandler = (frameId: string) => Promise<string | null>;
+export type SetFrameSourceHandler = (frameId: string, database?: import("./lib/api").DatabaseSourceInput) => Promise<string | null>;
 /** Makes a frame's values the document's own; resolves to an error, or null. */
 export type TakeOwnershipHandler = (
   frameId: string,

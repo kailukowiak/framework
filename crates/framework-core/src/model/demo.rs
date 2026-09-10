@@ -164,7 +164,6 @@ impl Document {
                     lines: vec![demo_tax_line(tax_id.clone())],
                 }),
                 DataObject::Frame(FrameObject {
-                    comment: None,
                     id: frame_id.clone(),
                     name: "Orders".into(),
                     columns: vec![
@@ -197,23 +196,14 @@ impl Document {
                         },
                     ],
                     rows,
-                    steps: Vec::new(),
-                    display: FrameDisplay::default(),
-                    base_columns: Vec::new(),
-                    source_file: None,
-                    artifact: None,
-                    connector: None,
-                    derivation: None,
-                    generator: None,
-                    entry_columns: Vec::new(),
-                    materialization: None,
-                    unique_keys: Vec::new(),
+
                     summaries: vec![Summary {
                         id: id(),
                         column_id: total_id,
                         operation: SummaryOperation::Sum,
                         label: "Total".into(),
                     }],
+                    ..FrameObject::default()
                 }),
                 DataObject::Frame(sales),
                 DataObject::Frame(customers),

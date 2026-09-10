@@ -11,6 +11,89 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Open a CSV or TSV, fix it, and put the result back, without building a
+  reusable pipeline first. A stored CSV/TSV of up to 20,000 rows opens as an
+  editable table: type into cells, rename columns, insert and delete rows, and
+  add calculated columns, filters and sorts. The table's right-click menu then
+  offers **Update original CSV…**, which confirms the path once and then
+  atomically replaces the source file, without leaving a recovery copy. It
+  always writes the format that file already is. Either way the result joins the
+  canvas as a clean table with no transformations, while the table you worked in
+  keeps its input and its Wrangle chain — so saving the workbook keeps the
+  recipe for next week's file. Neither action is bound to ⌘S, and neither
+  changes workbook autosave.
+
+- **Export frame as…** writes any table to a new file as CSV, TSV, Parquet or
+  NDJSON, chosen in the save dialog, and saves the whole data result: manual
+  edits, renames, calculated columns, filters and sorts alike. The chooser
+  offers the table's own source format first, so a table read from Parquet
+  suggests Parquet. Parquet carries the computed types rather than respelling
+  everything as text, which makes it the right destination for a result too
+  large or too typed for CSV. An existing file and the table's own input are
+  both refused — replacing a file in place is what Update original is for.
+
+- NDJSON joins CSV, TSV and Parquet as a format FrameWork both reads and
+  writes, including from Finder and the command line, which is how a dump out
+  of an object store usually arrives. One flat JSON object per line, `.jsonl`
+  accepted as the same thing, and the types are JSON's own — a quoted
+  identifier stays text with no inference rules involved. The schema is decided
+  after reading every line rather than a leading sample, so a field that is
+  empty for a thousand records and filled on the last one still types
+  correctly. A file with nested objects is refused with the field named, rather
+  than imported into a table that cannot be displayed.
+
+- Opening a data file is now a way to start work. Double-click a CSV, TSV or
+  Parquet in Finder, or name one on the command line, and it opens into an
+  unsaved workbook — including when FrameWork was not already running, and
+  without leaving an empty Untitled window beside it. Opening the same file
+  again raises the window already showing it instead of starting a second,
+  competing draft of the same file.
+
+- Wrangle now starts with **Read**, which names the input and makes it
+  changeable. Replace a file with another file or with a database query; choose
+  how each source column is read — text, integer, number, boolean or date, or
+  back to whatever the source says — before any transformation runs; and paste
+  a whole row of column headers, tab-separated or one name per line, to rename
+  every column in a single undoable edit. Columns whose source names still
+  match keep their identities and their display names when the input is
+  replaced.
+
+- Imported values keep their own spelling. A leading-zero identifier such as
+  `0003`, a long digit string and an ambiguous date all stay text instead of
+  being guessed into a number or a date — on the paged import path as well as
+  the editable one, and including values that first appear long after the
+  opening rows. A column is read as numeric only when every value in the file
+  is an unambiguous finite number. Explicit conversions stay where you can see
+  them, in Read or in Wrangle.
+
+- A large or irregularly quoted CSV/TSV no longer opens behind a read-only
+  warning. It arrives as a source-backed paged table, where column names,
+  calculated columns, filters, sorts and the rest of Wrangle work normally; the
+  narrower boundary is explained only if you try to type directly into a source
+  cell, and that explanation still names the file the rows are read from and
+  says what the next refresh will do to them.
+
+- **Map values** and **Rename columns** both create or choose a mapping frame
+  from the column menu. A mapping frame is an ordinary two-column table: blank
+  keys match missing values, blank replacements clear them, and you choose
+  whether unmatched values stay unchanged, go blank, or take custom text.
+  Mapping a header row renames once, as one undoable edit, and leaves unmatched
+  names alone.
+
+- Header filters now reach downstream calculations and exports, the same way a
+  Wrangle filter does. Use a separate frame when you want an independently
+  filtered result.
+
+- Formula editing keeps its own ⌘Z and ⇧⌘Z history until the formula is
+  committed, so undoing inside a formula no longer reaches past it into the
+  document. Typing a decimal point no longer opens function suggestions.
+
+- The inspector starts collapsed, stays collapsed while you edit a column from
+  the top bar, and overlays the canvas instead of squeezing it: Fit to window
+  uses the full canvas width, so closing the inspector reveals the rest of a
+  fitted table without a second fit. The formula bar stays one compact row
+  until you expand it.
+
 ## 0.1.8
 
 - Formula examples in text cards preserve code formatting, backticks, and line breaks.

@@ -126,23 +126,11 @@ impl Document {
             })
             .collect();
         let frame = FrameObject {
-            comment: None,
             id: frame_id.clone(),
             name,
             columns,
-            rows: Vec::new(),
-            steps: Vec::new(),
-            display: FrameDisplay::default(),
-            base_columns: Vec::new(),
             source_file: Some(source_path.to_string_lossy().to_string()),
-            artifact: None,
-            connector: None,
-            derivation: None,
-            generator: None,
-            entry_columns: Vec::new(),
-            materialization: None,
-            unique_keys: Vec::new(),
-            summaries: Vec::new(),
+            ..FrameObject::default()
         };
         let width = data_types.len().max(1);
         let view = CanvasView {
@@ -204,23 +192,12 @@ impl Document {
             .collect::<Vec<_>>();
         let width = columns.len().max(1);
         let frame = FrameObject {
-            comment: None,
             id: frame_id.clone(),
             name,
             columns,
-            rows: Vec::new(),
-            steps: Vec::new(),
-            display: FrameDisplay::default(),
-            base_columns: Vec::new(),
-            source_file: None,
             artifact: Some(artifact),
             connector,
-            derivation: None,
-            generator: None,
-            entry_columns: Vec::new(),
-            materialization: None,
-            unique_keys: Vec::new(),
-            summaries: Vec::new(),
+            ..FrameObject::default()
         };
         let view = CanvasView {
             id: id(),
@@ -354,7 +331,7 @@ impl Document {
 
     /// The object and its card for freshly built columns and rows. The card
     /// is sized to the column count, the way every new literal frame's is.
-    fn frame_with_view(
+    pub(crate) fn frame_with_view(
         name: String,
         columns: Vec<Column>,
         rows: Vec<Row>,
@@ -365,23 +342,11 @@ impl Document {
         let row_count = rows.len();
         let frame_id = id();
         let frame = FrameObject {
-            comment: None,
             id: frame_id.clone(),
             name,
             columns,
             rows,
-            steps: Vec::new(),
-            display: FrameDisplay::default(),
-            base_columns: Vec::new(),
-            source_file: None,
-            artifact: None,
-            connector: None,
-            derivation: None,
-            generator: None,
-            entry_columns: Vec::new(),
-            materialization: None,
-            unique_keys: Vec::new(),
-            summaries: Vec::new(),
+            ..FrameObject::default()
         };
         let view = CanvasView {
             id: id(),
@@ -445,6 +410,8 @@ impl FrameObject {
             },
             base_columns: Vec::new(),
             source_file: None,
+            file_origin: None,
+            disconnected_read: None,
             artifact: None,
             connector: None,
             derivation: Some(FrameDerivation {

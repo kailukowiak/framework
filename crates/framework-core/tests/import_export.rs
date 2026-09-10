@@ -46,8 +46,8 @@ fn csv_imports_round_trip_through_typed_frames_and_export() {
         vec![
             ("Item", DataType::String),
             ("Amount", DataType::Number),
-            ("Sold on", DataType::Date),
-            ("Active", DataType::Boolean),
+            ("Sold on", DataType::String),
+            ("Active", DataType::String),
         ]
     );
     let page = store.get_frame_page(&frame.id, 0, 50).unwrap();
@@ -55,7 +55,7 @@ fn csv_imports_round_trip_through_typed_frames_and_export() {
     assert_eq!(page.rows[0], vec!["Widget", "3", "2026-01-15", "true"]);
 
     let exported = directory.join("orders-export.csv");
-    store.export_frame_csv(&frame.id, &exported).unwrap();
+    store.export_frame_file(&frame.id, &exported).unwrap();
     assert_eq!(
         fs::read_to_string(&exported).unwrap(),
         "Item,Amount,Sold on,Active\nWidget,3.0,2026-01-15,true\nGadget,4.5,2026-02-01,false\n"

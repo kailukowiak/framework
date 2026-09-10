@@ -34,7 +34,7 @@ describe("dictionary tutorial", () => {
     await $("div.cell-display*=Offce supplies").waitForExist();
     await waitForGutterAnswer("200");
     await openContextMenuOn('[aria-label="Sort by Key"]');
-    await $(".framework-context-menu").$("button*=Use as dictionary — key: Key").click();
+    await $(".framework-context-menu").$("button*=Use for mapping — key: Key").click();
     await browser.waitUntil(() => browser.execute(() => document.querySelector(".framework-context-menu") === null));
     await openContextMenuOn('[aria-label="Sort by Category"]');
     await $(".framework-context-menu").$("summary*=Map values…").click();

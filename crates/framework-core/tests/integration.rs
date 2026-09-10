@@ -38,3 +38,8 @@ mod variables;
 mod view_filter_sort;
 
 mod dictionaries;
+mod mapping_rename;
+
+mod file_writeback;
+
+mod legacy_display;

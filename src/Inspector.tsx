@@ -38,6 +38,7 @@ const sectionLabels: Record<InspectorSection, string> = {
 };
 
 type InspectorProps = {
+  hidden?: boolean;
   documentId: string;
   object: DataObject;
   objects: DataObject[];
@@ -78,6 +79,7 @@ type InspectorProps = {
 };
 
 export function Inspector({
+  hidden,
   documentId,
   object,
   objects,
@@ -114,25 +116,11 @@ export function Inspector({
   onTransformColumn,
 }: InspectorProps) {
   return (
-    <aside className="inspector">
-      <div className="inspector-header">
-        <div>
-          <span className="eyebrow">INSPECTOR</span>
-          <h2>{object.name || "Unnamed object"}</h2>
-        </div>
-        <button
-          className="icon-button"
-          aria-label="Hide inspector"
-          data-shortcut="⇧⌘I"
-          title="Hide inspector (⌘⇧I)"
-          onClick={onHide}
-        >
-          <PanelRightClose size={14} />
-        </button>
-        <button className="icon-button" aria-label="Close inspector" onClick={onClose}>
-          <X size={17} />
-        </button>
-      </div>
+    // Keep the editor owner mounted while collapsed: its PipelineCommands
+    // register the shared draft edited by the visible top bar. Unmounting
+    // the panel would force every grid formula gesture to reopen it.
+    <aside className="inspector" hidden={hidden}>
+      <InspectorHeader name={object.name} onHide={onHide} onClose={onClose} />
       {object.kind === "frame" && (
         <nav className="inspector-nav" aria-label="Inspector sections">
           {(["selection", "format", "wrangle"] as InspectorSection[]).map(
@@ -278,4 +266,31 @@ function PlotInspectorForSource({
   return frame ? (
     <PlotInspector plot={object} frame={frame} onOperation={onOperation} />
   ) : null;
+}
+
+function InspectorHeader({ name, onHide, onClose }: {
+  name: string;
+  onHide: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="inspector-header">
+      <div>
+        <span className="eyebrow">INSPECTOR</span>
+        <h2>{name || "Unnamed object"}</h2>
+      </div>
+      <button
+        className="icon-button"
+        aria-label="Hide inspector"
+        data-shortcut="⇧⌘I"
+        title="Hide inspector (⌘⇧I)"
+        onClick={onHide}
+      >
+        <PanelRightClose size={14} />
+      </button>
+      <button className="icon-button" aria-label="Close inspector" onClick={onClose}>
+        <X size={17} />
+      </button>
+    </div>
+  );
 }

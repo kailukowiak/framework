@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { SelectedCellNotice } from "./SelectedCellNotice";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { ActiveFormulaAnswer } from "./ActiveFormulaAnswer";
 import { useActiveFormulaEditor } from "./ActiveFormulaEditor";
 import type { ActiveFormulaEditor } from "./lib/activeFormulaEditor";
@@ -27,6 +28,10 @@ function documentSelection(lineStart: number, start: number, end: number) {
   return { start: lineStart + start, end: lineStart + end };
 }
 
+function formulaRows(draft: string, expanded: boolean) {
+  return expanded ? Math.min(5, Math.max(2, draft.split("\n").length)) : 1;
+}
+
 function canFormatFormula(formulaMode: boolean, draft: string, busy: boolean) {
   return formulaMode && Boolean(draft.trim()) && !busy;
 }
@@ -36,41 +41,8 @@ function canFormatFormula(formulaMode: boolean, draft: string, busy: boolean) {
  * formula editor owns it, so the answer to "why did my click insert a
  * reference" is visible in the bar itself.
  */
-function barModeClass(active: ActiveFormulaEditor | null): string {
-  return `scratchwork-formula-bar${active ? " session" : ""}`;
-}
-
-/** What the bar says about the selected cell while no session owns it. */
-function SelectedCellNotice({
-  cell,
-  error,
-  dirty,
-}: {
-  cell: FormulaBarCell;
-  error: string | null;
-  dirty: boolean;
-}) {
-  return (
-    <span
-      className={`scratchwork-formula-answer${
-        error || cell.kind === "readOnly" ? " invalid" : ""
-      }`}
-      title={error ?? cell.reason}
-    >
-      <strong>{cell.label}</strong>
-      {error
-        ? ` · ${error}`
-        : cell.kind === "calculated"
-        ? " · calculated column · click to edit in Wrangle"
-        : cell.kind === "override"
-        ? " · legacy cell formula · click to inspect"
-        : cell.kind === "readOnly"
-        ? ` · ${cell.reason}`
-        : dirty
-        ? " · Enter saves"
-        : " · literal value"}
-    </span>
-  );
+function barModeClass(active: ActiveFormulaEditor | null, expanded: boolean): string {
+  return `scratchwork-formula-bar${active ? " session" : ""}${expanded ? " formula-expanded" : ""}`;
 }
 
 async function formatDraft({
@@ -112,6 +84,20 @@ async function formatDraft({
   }
 }
 
+// Committing a column formula ends formula mode while the bar still holds
+// the keyboard, so the next keystroke went into the scratch line instead
+// of the grid the person was looking at. Leaving formula mode gives the
+// keyboard back; only the transition does, so editing a cell's value here
+// -- which begins outside formula mode -- is untouched.
+function useFormulaModeFocusTransfer(formulaMode: boolean, input: RefObject<HTMLTextAreaElement | null>) {
+  const wasFormulaMode = useRef(formulaMode);
+  useEffect(() => {
+    const left = wasFormulaMode.current && !formulaMode;
+    wasFormulaMode.current = formulaMode;
+    if (left && window.document.activeElement === input.current) input.current?.blur();
+  }, [formulaMode, input]);
+}
+
 export function ScratchworkFormulaBar({
   onCommit,
   references,
@@ -142,6 +128,7 @@ export function ScratchworkFormulaBar({
     cancel: cancelActiveEditor,
     commit: commitActiveEditor,
   } = useActiveFormulaEditor();
+  const [formulaExpanded, setFormulaExpanded] = useState(false);
   const [freshDraft, setFreshDraft] = useState("");
   const [cellDraft, setCellDraft] = useState("");
   const [cellDirty, setCellDirty] = useState(false);
@@ -170,17 +157,7 @@ export function ScratchworkFormulaBar({
     : freshCursor;
   const formulaMode = Boolean(active || !selectedCell);
   const formulaReferences = active?.completion.references ?? references;
-  // Committing a column formula ends formula mode while the bar still holds
-  // the keyboard, so the next keystroke went into the scratch line instead
-  // of the grid the person was looking at. Leaving formula mode gives the
-  // keyboard back; only the transition does, so editing a cell's value here
-  // -- which begins outside formula mode -- is untouched.
-  const wasFormulaMode = useRef(formulaMode);
-  useEffect(() => {
-    const left = wasFormulaMode.current && !formulaMode;
-    wasFormulaMode.current = formulaMode;
-    if (left && window.document.activeElement === input.current) input.current?.blur();
-  }, [formulaMode]);
+  useFormulaModeFocusTransfer(formulaMode, input);
 
   useEffect(() => setFeedback(null), [active?.id]);
   useEffect(() => {
@@ -323,7 +300,7 @@ export function ScratchworkFormulaBar({
   return (
     <form
       ref={bar}
-      className={barModeClass(active)}
+      className={barModeClass(active, formulaExpanded)}
       onSubmit={(event) => {
         event.preventDefault();
         void commit();
@@ -336,7 +313,7 @@ export function ScratchworkFormulaBar({
       )}
       <HighlightedFormulaTextarea
         ref={input}
-        rows={draft.split("\n").length}
+        rows={formulaRows(draft, formulaExpanded)}
         references={formulaMode ? formulaReferences : []}
         aria-label={
           active
@@ -506,6 +483,7 @@ export function ScratchworkFormulaBar({
       {/* Pointer-down stays out of both actions: blur is a save and cannot
           race either a draft rewrite or the Scratchwork editor handoff. */}
       <FormulaBarActions
+        formulaExpanded={formulaExpanded} onToggleFormula={() => setFormulaExpanded((value) => !value)}
         canFormat={canFormatFormula(formulaMode, draft, busy)}
         expanded={expanded}
         // Format persists through commit but is not a finishing gesture:

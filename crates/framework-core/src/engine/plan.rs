@@ -275,7 +275,7 @@ impl Document {
         }
     }
 
-    fn frame_page_plan(
+    pub(crate) fn frame_page_plan(
         &self,
         frame: &FrameObject,
         layer: Layer,

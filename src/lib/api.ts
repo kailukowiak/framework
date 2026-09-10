@@ -253,9 +253,10 @@ export interface DatabaseSourceInput {
 
 export async function importDatabaseSource(
   position: { x: number; y: number },
-  source: DatabaseSourceInput
+  source: DatabaseSourceInput,
+  frameId?: string
 ): Promise<DocumentView> {
-  return invoke("import_database_source", { input: { ...position, ...source } });
+  return invoke("import_database_source", { input: { ...position, ...source, frameId } });
 }
 
 export async function saveDocumentAsDialog(): Promise<{
@@ -272,10 +273,16 @@ export async function saveDocumentAsDialog(): Promise<{
  * replaces its values; without one the values are the document's own and can
  * be edited. Resolves to `null` when the file picker was cancelled.
  */
+export interface ImportOutcome {
+  document: DocumentView;
+  /** Set when a stored CSV/TSV uses paged rows while retaining frame edits. */
+  notice: string | null;
+}
+
 export async function importDatasetFile(
   position: { x: number; y: number },
   linked: boolean
-): Promise<DocumentView | null> {
+): Promise<ImportOutcome | null> {
   return invoke("import_dataset_file", {
     x: position.x,
     y: position.y,
@@ -640,10 +647,6 @@ export async function completeFormula(
     steps: scope?.steps ?? null,
     stepIndex: scope?.stepIndex ?? null,
   });
-}
-
-export async function exportFrameCsv(frameId: string): Promise<string | null> {
-  return invoke("export_frame_csv", { frameId });
 }
 
 export async function exportDocumentExcel(

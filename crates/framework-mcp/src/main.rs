@@ -2715,6 +2715,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
+    mod file_writeback;
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 

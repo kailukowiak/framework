@@ -140,6 +140,22 @@ export type Operation =
     raw: string;
   }
   | { "type": "refreshFramePipeline"; frameId: string }
+  | { "type": "renameColumns"; frameId: string; names: Array<[string, string]> }
+  | {
+    "type": "renameColumnsUsingMapping";
+    frameId: string;
+    mappingFrameId: string;
+    keyColumnId: string;
+    valueColumnId: string;
+  }
+  | {
+    "type": "openDelimitedFile";
+    name: string;
+    path: string;
+    x: number;
+    y: number;
+  }
+  | { "type": "bakeFrame"; frameId: string }
   | {
     "type": "importFrameFromFile";
     name: string;

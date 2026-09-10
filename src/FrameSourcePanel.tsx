@@ -64,7 +64,6 @@ function ConnectorResult({
   done: string | null;
   error: string | null;
 }) {
-  const changes = schemaDiffLines(useConnectorRefreshDiff(frame.id));
   return (
     <>
       {done && (
@@ -72,16 +71,7 @@ function ConnectorResult({
           <Check size={12} /> {done} · {(frame.artifact?.rowCount ?? 0).toLocaleString()} rows
         </p>
       )}
-      {changes.length > 0 && (
-        <p>
-          {changes.map((line, index) => (
-            <Fragment key={line}>
-              {index > 0 && <br />}
-              <span>{line}</span>
-            </Fragment>
-          ))}
-        </p>
-      )}
+      <SourceSchemaChanges frameId={frame.id} />
       {error && <FormulaErrorDetails title="Could not refresh the source" error={error} />}
     </>
   );
@@ -141,4 +131,12 @@ export function FrameSourcePanel({
       <p>{description}</p>
     </div>
   );
+}
+
+export function SourceSchemaChanges({ frameId }: { frameId: string }) {
+  const changes = schemaDiffLines(useConnectorRefreshDiff(frameId));
+  if (changes.length === 0) return null;
+  return <p>{changes.map((line, index) => <Fragment key={line}>
+    {index > 0 && <br />}<span>{line}</span>
+  </Fragment>)}</p>;
 }

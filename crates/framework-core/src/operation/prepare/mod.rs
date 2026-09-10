@@ -9,11 +9,15 @@ pub mod cells;
 pub mod columns;
 pub mod derivation;
 pub mod dictionary;
+mod files;
 pub mod objects;
 pub mod pass_through;
+mod rename_mapping;
 pub mod scenarios;
 pub mod views;
 
+mod header_filter;
+mod sources;
 use crate::*;
 
 impl Document {
@@ -121,24 +125,15 @@ impl Document {
             Operation::RefreshFramePipeline { frame_id } => {
                 self.prepare_refresh_frame_pipeline(frame_id)?
             }
-            Operation::ImportFrameFromFile { name, path, x, y } => {
-                self.prepare_import_frame_from_file(name, path, x, y)?
-            }
-            Operation::ImportFrameFromArtifact {
-                name,
-                artifact,
-                connector,
-                x,
-                y,
-            } => self.prepare_import_frame_from_artifact(name, artifact, connector, x, y)?,
-            Operation::RefreshFrameArtifact { frame_id, artifact } => {
-                self.prepare_refresh_frame_artifact(frame_id, artifact)?
-            }
-            Operation::SetFrameSource {
-                frame_id,
-                artifact,
-                connector,
-            } => self.prepare_set_frame_source(frame_id, artifact, connector)?,
+            operation @ (Operation::RenameColumn { .. }
+            | Operation::RenameColumnsUsingMapping { .. }
+            | Operation::RenameColumns { .. }
+            | Operation::OpenDelimitedFile { .. }
+            | Operation::BakeFrame { .. }
+            | Operation::ImportFrameFromFile { .. }
+            | Operation::ImportFrameFromArtifact { .. }
+            | Operation::RefreshFrameArtifact { .. }
+            | Operation::SetFrameSource { .. }) => self.prepare_file_operation(operation)?,
             Operation::AddPlot {
                 name,
                 source_frame_id,
@@ -244,11 +239,6 @@ impl Document {
                 frame_id,
                 column_id,
             } => self.prepare_delete_column(frame_id, column_id)?,
-            Operation::RenameColumn {
-                frame_id,
-                column_id,
-                name,
-            } => self.prepare_rename_column(frame_id, column_id, name)?,
             Operation::SetColumnType {
                 frame_id,
                 column_id,

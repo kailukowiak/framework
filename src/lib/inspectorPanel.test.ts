@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  INITIAL_INSPECTOR_PANEL,
   inspectorAvailable,
   inspectorPanelReducer,
   inspectorShortcutAction,
@@ -11,6 +12,13 @@ const shown: InspectorPanel = { hidden: false, section: "selection" };
 const hidden: InspectorPanel = { hidden: true, section: "wrangle" };
 
 describe("inspector panel", () => {
+  it("starts collapsed and prepares a grid formula without opening the panel", () => {
+    expect(INITIAL_INSPECTOR_PANEL.hidden).toBe(true);
+    expect(inspectorPanelReducer(INITIAL_INSPECTOR_PANEL, { panel: "prepare", section: "wrangle" }))
+      .toEqual({ hidden: true, section: "wrangle" });
+    expect(inspectorPanelReducer(shown, { panel: "prepare", section: "wrangle" }))
+      .toEqual({ hidden: false, section: "wrangle" });
+  });
   it("toggles and hides without forgetting the section", () => {
     expect(inspectorPanelReducer(shown, { panel: "toggle" })).toEqual({
       hidden: true,

@@ -16,6 +16,8 @@
     "test:e2e": "npm run prepare:e2e:samples && tauri build --debug --bundles app --features e2e --config e2e/tauri.e2e.conf.json && npm run sign:e2e && npm run test:e2e:only",
     "test:e2e:only": "for f in e2e/specs/*.e2e.ts; do wdio run e2e/wdio.conf.ts --spec \"$f\" || exit 1; done",
     "tauri": "tauri",
+    "setup:dev-signing": "node scripts/setup-dev-signing.mjs",
+    "build:dev-app": "tauri build --debug --bundles app --config src-tauri/tauri.dev-bundle.conf.json && node scripts/register-dev-app.mjs",
     "version:set": "node scripts/set-version.mjs"
   },
   "dependencies": {

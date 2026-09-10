@@ -58,6 +58,8 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
         display: FrameDisplay::default(),
         base_columns: Vec::new(),
         source_file: None,
+        file_origin: None,
+        disconnected_read: None,
         artifact: None,
         connector: None,
         derivation: None,

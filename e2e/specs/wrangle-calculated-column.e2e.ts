@@ -111,7 +111,7 @@ describe("calculated column through Wrangle", () => {
   it("replacing the placeholder formula computes down the grid", async () => {
     // The Wrangle chain's formula editor is the one textarea that is not
     // the Scratchwork block.
-    const formula = $('//textarea[not(contains(@class, "block-source"))]');
+    const formula = formulaBar();
     await formula.waitForExist();
     // A withColumns formula names its output: `Column` = expression. The
     // spec keeps the name the creation gesture chose and replaces only the

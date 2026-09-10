@@ -58,23 +58,10 @@ impl FrameObject {
             return Vec::new();
         }
         let mut scope = FrameObject {
-            comment: None,
             id: self.id.clone(),
             name: self.name.clone(),
             columns: input_columns.to_vec(),
-            rows: Vec::new(),
-            steps: Vec::new(),
-            display: FrameDisplay::default(),
-            base_columns: Vec::new(),
-            source_file: None,
-            artifact: None,
-            connector: None,
-            derivation: None,
-            generator: None,
-            entry_columns: Vec::new(),
-            materialization: None,
-            unique_keys: Vec::new(),
-            summaries: Vec::new(),
+            ..FrameObject::default()
         };
         for step in steps {
             let outputs = derived_outputs(step);
@@ -618,44 +605,7 @@ impl FrameObject {
 
         let summaries = literal_summary_cells(self, &rows);
 
-        // One chain, whichever kind of frame carries it: a derived frame's
-        // starts at the frame it reads, a source frame's at its own data.
-        let (steps, pass_through_steps) = match &self.derivation {
-            Some(derivation) => {
-                let chain = derivation.steps();
-                if derivation.join.is_some() {
-                    // The join is configured in its own compact summary and
-                    // is the fixed input to Wrangle. Only the steps after it
-                    // are editable there, starting from the join's retained
-                    // output schema.
-                    let editable = chain
-                        .strip_prefix(&[FrameStep::Join {
-                            join: derivation.join.clone().expect("checked above"),
-                        }])
-                        .unwrap_or(&chain);
-                    let input = if self.base_columns.is_empty() {
-                        &self.columns
-                    } else {
-                        &self.base_columns
-                    };
-                    (
-                        self.render_steps(document, input, editable),
-                        pass_through_prefix(editable),
-                    )
-                } else {
-                    let rendered = document
-                        .frame(&derivation.source_frame_id)
-                        .map(|source| self.render_steps(document, &source.columns, &chain))
-                        .unwrap_or_default();
-                    (rendered, pass_through_prefix(&chain))
-                }
-            }
-            // A source frame's chain is only ever what someone wrote in it.
-            None => (
-                self.render_steps(document, self.input_columns(), &self.steps),
-                0,
-            ),
-        };
+        let (steps, pass_through_steps) = self.render_active_chain(document);
         let formulas = self.rendered_column_formulas(document, &steps);
         // The display layer runs after the chain, so its formulas resolve
         // against the declared columns rather than the chain's input.
@@ -719,6 +669,7 @@ impl FrameObject {
             derivation,
             steps,
             pass_through_steps,
+            disconnected_steps: self.render_disconnected_steps(document),
             display_steps,
             total_rows,
             paged,
@@ -1152,36 +1103,6 @@ pub(crate) fn step_expressions(step: &FrameStep) -> Box<dyn Iterator<Item = &Exp
         | FrameStep::Unpivot { .. }
         | FrameStep::Comment { .. } => Box::new(std::iter::empty()),
     }
-}
-
-/// How many leading steps exist only so a derived frame owns its column
-/// ids: a projection of bare column references, and the select that adopts
-/// them as the frame's schema.
-///
-/// This is the shape `AddLinkedFrame` and `BranchFrame` produce, and the
-/// shape `FrameDerivation::steps` synthesizes from the legacy `projections`
-/// field. It carries no transformation — every output is one input column,
-/// unchanged — so presenting it as something the user wrote is noise. It is
-/// still load-bearing: it is what records this frame's dependency on each
-/// source column, which is how deleting one out from under it is refused.
-fn pass_through_prefix(steps: &[FrameStep]) -> usize {
-    let [
-        FrameStep::WithColumns { columns },
-        FrameStep::Select { column_ids },
-        ..,
-    ] = steps
-    else {
-        return 0;
-    };
-    let renames_only = columns
-        .iter()
-        .all(|column| matches!(column.expression, Expr::Column { .. }));
-    let adopts_them = column_ids.len() == columns.len()
-        && column_ids
-            .iter()
-            .zip(columns)
-            .all(|(selected, column)| *selected == column.output_column_id);
-    if renames_only && adopts_them { 2 } else { 0 }
 }
 
 /// What a column whose source field has gone away says about itself.

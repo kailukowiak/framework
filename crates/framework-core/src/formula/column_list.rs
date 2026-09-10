@@ -276,11 +276,9 @@ impl ColumnList<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::frame::FrameDisplay;
 
     fn scope(names: &[&str]) -> FrameObject {
         FrameObject {
-            comment: None,
             id: "frame".into(),
             name: "Wide".into(),
             columns: names
@@ -296,19 +294,7 @@ mod tests {
                     formula: None,
                 })
                 .collect(),
-            rows: Vec::new(),
-            steps: Vec::new(),
-            display: FrameDisplay::default(),
-            base_columns: Vec::new(),
-            source_file: None,
-            artifact: None,
-            connector: None,
-            derivation: None,
-            generator: None,
-            entry_columns: Vec::new(),
-            materialization: None,
-            unique_keys: Vec::new(),
-            summaries: Vec::new(),
+            ..FrameObject::default()
         }
     }
 

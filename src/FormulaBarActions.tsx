@@ -1,11 +1,15 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronsUpDown } from "lucide-react";
 
 export function FormulaBarActions({
   canFormat,
   expanded,
   onFormat,
   onToggle,
+  formulaExpanded,
+  onToggleFormula,
 }: {
+  formulaExpanded: boolean;
+  onToggleFormula: () => void;
   canFormat: boolean;
   expanded: boolean;
   onFormat: () => void;
@@ -13,6 +17,13 @@ export function FormulaBarActions({
 }) {
   return (
     <>
+      <button type="button" className="scratchwork-formula-expand"
+        aria-label={formulaExpanded ? "Collapse formula bar" : "Expand formula bar"}
+        aria-expanded={formulaExpanded}
+        title={formulaExpanded ? "Collapse formula bar" : "Expand formula bar"}
+        onPointerDown={(event) => event.preventDefault()} onClick={onToggleFormula}>
+        <ChevronsUpDown size={13} />
+      </button>
       {canFormat && (
         <button
           type="button"

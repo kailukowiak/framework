@@ -19,18 +19,7 @@ pub(crate) fn read_import_frame(path: &Path) -> Result<pl::DataFrame, CoreError>
         .map(str::to_ascii_lowercase)
         .unwrap_or_default();
     match extension.as_str() {
-        "csv" | "tsv" => pl::CsvReadOptions::default()
-            .with_has_header(true)
-            .with_n_rows(Some(MAX_IMPORT_ROWS + 1))
-            .with_parse_options(
-                pl::CsvParseOptions::default()
-                    .with_separator(if extension == "tsv" { b'\t' } else { b',' })
-                    .with_try_parse_dates(true),
-            )
-            .try_into_reader_with_file_path(Some(path.to_path_buf()))
-            .map_err(import_error)?
-            .finish()
-            .map_err(import_error),
+        "csv" | "tsv" => super::conservative_csv::read(path, Some(MAX_IMPORT_ROWS + 1)),
         "parquet" => {
             let file =
                 fs::File::open(path).map_err(|error| CoreError::Import(error.to_string()))?;
@@ -89,17 +78,7 @@ pub(crate) fn read_import_frame_full(path: &Path) -> Result<pl::DataFrame, CoreE
         .map(str::to_ascii_lowercase)
         .unwrap_or_default();
     match extension.as_str() {
-        "csv" | "tsv" => pl::CsvReadOptions::default()
-            .with_has_header(true)
-            .with_parse_options(
-                pl::CsvParseOptions::default()
-                    .with_separator(if extension == "tsv" { b'\t' } else { b',' })
-                    .with_try_parse_dates(true),
-            )
-            .try_into_reader_with_file_path(Some(path.to_path_buf()))
-            .map_err(import_error)?
-            .finish()
-            .map_err(import_error),
+        "csv" | "tsv" => super::conservative_csv::read(path, None),
         "parquet" => {
             let file =
                 fs::File::open(path).map_err(|error| CoreError::Import(error.to_string()))?;

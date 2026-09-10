@@ -114,3 +114,16 @@ mod tests {
         assert!(json.get("credentials").is_none());
     }
 }
+
+/// Row and column identities map original CSV tokens back to cells after
+/// sorting, filtering, and renaming. The hash guards an external write; it
+/// does not grant the workbook an unattended right to change that file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DelimitedFileOrigin {
+    pub path: String,
+    pub sha256: String,
+    pub row_ids: Vec<String>,
+    pub column_ids: Vec<String>,
+}

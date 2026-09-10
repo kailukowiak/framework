@@ -3,7 +3,7 @@ use framework_core::*;
 use std::fs;
 
 #[test]
-fn export_scope_counts_and_rows_agree_with_display_filters_and_sort() {
+fn export_scope_counts_and_rows_agree_with_pipeline_filters_and_sort() {
     let directory = temporary_test_directory("export-scope");
     let mut store = Store::new(Document::blank("Export scope"));
     store
@@ -38,7 +38,7 @@ fn export_scope_counts_and_rows_agree_with_display_filters_and_sort() {
         .unwrap();
     let before = store.document().clone();
     assert_eq!(store.export_row_count(&frame.id, true).unwrap(), 2);
-    assert_eq!(store.export_row_count(&frame.id, false).unwrap(), 3);
+    assert_eq!(store.export_row_count(&frame.id, false).unwrap(), 2);
     let filtered = directory.join("view.xlsx");
     let entire = directory.join("all.xlsx");
     store
@@ -54,14 +54,10 @@ fn export_scope_counts_and_rows_agree_with_display_filters_and_sort() {
         vec![vec!["Keep A", "2"], vec!["Keep B", "3"]]
     );
     assert_eq!(
-        preview_excel_range(&entire, "Items", "A1:B4", true, 10)
+        preview_excel_range(&entire, "Items", "A1:B3", true, 10)
             .unwrap()
             .rows,
-        vec![
-            vec!["Keep A", "2"],
-            vec!["Keep B", "3"],
-            vec!["Remove", "99"]
-        ]
+        vec![vec!["Keep A", "2"], vec!["Keep B", "3"]]
     );
     assert_eq!(store.document(), &before);
     fs::remove_dir_all(directory).unwrap();

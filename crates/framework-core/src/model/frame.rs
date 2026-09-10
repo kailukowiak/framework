@@ -44,6 +44,15 @@ pub struct FrameObject {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub source_file: Option<String>,
+    /// A retained recipe waiting for a replacement input after write-back.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub disconnected_read: Option<crate::DisconnectedRead>,
+    /// The external file this editable copy can explicitly write back to.
+    /// It is provenance, never a live row source or an editing gate.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub file_origin: Option<crate::DelimitedFileOrigin>,
     #[serde(default)]
     #[ts(optional = nullable)]
     pub artifact: Option<DataArtifact>,

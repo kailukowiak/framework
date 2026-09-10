@@ -2,6 +2,8 @@
 import type { Column } from "./Column";
 import type { ConnectorRecipe } from "./ConnectorRecipe";
 import type { DataArtifact } from "./DataArtifact";
+import type { DelimitedFileOrigin } from "./DelimitedFileOrigin";
+import type { DisconnectedRead } from "./DisconnectedRead";
 import type { EntryColumn } from "./EntryColumn";
 import type { FrameDerivation } from "./FrameDerivation";
 import type { FrameDisplay } from "./FrameDisplay";
@@ -43,6 +45,15 @@ export type FrameObject = {
    */
   comment?: string | null;
   sourceFile?: string | null;
+  /**
+   * A retained recipe waiting for a replacement input after write-back.
+   */
+  disconnectedRead?: DisconnectedRead | null;
+  /**
+   * The external file this editable copy can explicitly write back to.
+   * It is provenance, never a live row source or an editing gate.
+   */
+  fileOrigin?: DelimitedFileOrigin | null;
   artifact?: DataArtifact | null;
   connector?: ConnectorRecipe | null;
   derivation: FrameDerivation | null;

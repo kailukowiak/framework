@@ -2706,6 +2706,7 @@ version = "0.1.8"
 dependencies = [
  "calamine",
  "chrono",
+ "csv",
  "fuzzy-matcher",
  "polars",
  "serde",

@@ -387,9 +387,24 @@ fn a_filter_compares_dates_with_the_date_constructor_and_dt_methods() {
     let source_id = frame_named(store.document(), "Bookings").id.clone();
     assert_eq!(
         frame_named(store.document(), "Bookings").columns[1].data_type,
-        DataType::Date,
-        "an ISO date column imports as a date, not text"
+        DataType::String,
+        "Read preserves dates as text until explicitly converted"
     );
+    let booked = frame_named(store.document(), "Bookings").columns[1]
+        .id
+        .clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: source_id.clone(),
+            steps: vec![FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: booked,
+                    name: "Booked".into(),
+                    formula: "`Booked`.cast(\"date\")".into(),
+                }],
+            }],
+        })
+        .unwrap();
     store
         .apply(Operation::AddLinkedFrame {
             source_frame_id: source_id,
@@ -417,12 +432,10 @@ fn a_filter_compares_dates_with_the_date_constructor_and_dt_methods() {
     fs::remove_dir_all(directory).unwrap();
 }
 
-/// The requirement the whole unification exists to serve: a filter written
-/// in the Wrangle tab is lineage and reaches everything downstream, while a
-/// filter written in the View tab is presentation and reaches nothing. Both
-/// on the same frame, at the same time, through the same evaluator.
+/// Header gestures and Wrangle now author the same data chain. A second
+/// frame remains available for an independently filtered result.
 #[test]
-fn a_wrangle_filter_propagates_downstream_and_a_display_filter_does_not() {
+fn header_filters_are_pipeline_steps_and_propagate_downstream() {
     let mut store = demo_store();
     let frame = build_sort_fixture(&mut store);
 
@@ -450,7 +463,7 @@ fn a_wrangle_filter_propagates_downstream_and_a_display_filter_does_not() {
         .unwrap();
     assert_eq!((rows(&store, &frame.id), rows(&store, &downstream)), (3, 3));
 
-    // View: a step in the display layer. Presentation, so it stops here.
+    // The legacy header command edits the trailing pipeline filter.
     store
         .apply(Operation::SetFrameDisplayFilter {
             frame_id: frame.id.clone(),
@@ -460,8 +473,8 @@ fn a_wrangle_filter_propagates_downstream_and_a_display_filter_does_not() {
         .unwrap();
     assert_eq!(
         (rows(&store, &frame.id), rows(&store, &downstream)),
-        (2, 3),
-        "the display filter narrows this frame's own reads and nothing else"
+        (3, 3),
+        "the header filter changes the data read by downstream frames"
     );
 
     // And a second tab is a second frame, so it filters independently of both.
@@ -482,7 +495,7 @@ fn a_wrangle_filter_propagates_downstream_and_a_display_filter_does_not() {
     let branch = frame_named(store.document(), "Roster view").id.clone();
     assert_eq!(
         (rows(&store, &frame.id), rows(&store, &branch)),
-        (2, 3),
-        "a branch inherits the wrangle chain but starts with no display layer"
+        (3, 3),
+        "a branch inherits the same data chain"
     );
 }

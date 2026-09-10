@@ -4,13 +4,34 @@ use std::collections::HashSet;
 use std::path::Path;
 
 impl Store {
-    /// Write a frame's materialized values to `path` as CSV.
+    /// Write a frame's materialized values to `path`, as CSV, TSV or Parquet
+    /// according to its extension.
     ///
     /// Derived frames evaluate through the same recursive Polars plan the
     /// canvas uses, and values stay raw — ISO dates and plain numbers rather
     /// than display formatting.
-    pub fn export_frame_csv(&self, frame_id: &str, path: &Path) -> Result<(), CoreError> {
-        self.document().export_frame_csv(frame_id, path)
+    pub fn export_frame_file(&self, frame_id: &str, path: &Path) -> Result<(), CoreError> {
+        let frame = self.document().frame(frame_id)?;
+        let source = frame
+            .file_origin
+            .as_ref()
+            .map(|origin| origin.path.as_str())
+            .or(frame.source_file.as_deref())
+            .or_else(|| match &frame.connector {
+                Some(ConnectorRecipe::File { source_path }) => Some(source_path.as_str()),
+                _ => None,
+            });
+        if let Some(source) = source
+            && let (Ok(source), Ok(destination)) =
+                (std::fs::canonicalize(source), std::fs::canonicalize(path))
+            && source == destination
+        {
+            return Err(CoreError::Export(
+                "Export creates a new file. Choose a different filename from this table's input."
+                    .into(),
+            ));
+        }
+        self.document().export_frame_file(frame_id, path)
     }
 
     /// Write selected frames and every named scalar answer to an Excel

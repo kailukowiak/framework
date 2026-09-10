@@ -1,4 +1,4 @@
-import { $, browser } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
 import { Key } from "webdriverio";
 import { columnCellTexts, openContextMenuOn, pointAtColumnCell, resetAndOpenTutorial } from "../lib/helpers";
 
@@ -17,18 +17,16 @@ describe("dictionaries", () => {
     await browser.setWindowSize(1700, 1100);
     await resetAndOpenTutorial("Month-over-month formulas by pointing — Start");
     await $("div.cell-display*=142,000").waitForExist();
-    await browser.execute(() => {
-      const canvas = document.querySelector('[aria-label="Free-form data canvas"]')!;
-      canvas.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 1100, clientY: 550 }));
-    });
-    await $("button*=Add dictionary here").click();
+    await openContextMenuOn('[aria-label="Sort by Region"]');
+    await $("summary=Map values…").click();
+    await $("button=Create mapping frame…").click();
     await $('[aria-label="Sort by Key"]').waitForExist();
     await pointAtColumnCell("Key", 0);
     await pasteEntries("East\tEastern\nWest\tWestern");
     await browser.waitUntil(async () => (await columnCellTexts("Value")).includes("Eastern"));
     await openContextMenuOn('[aria-label="Sort by Region"]');
     await $("summary*=Map values…").click();
-    await $("button*=Using Dictionary").click();
+    await $("button*=Using Region map").click();
     await browser.waitUntil(async () => (await columnCellTexts("Region")).includes("Eastern"), { timeoutMsg: "mapping did not reach the source column" });
   });
 
@@ -44,4 +42,19 @@ describe("dictionaries", () => {
     await browser.keys([Key.Command, "z"]);
     await browser.waitUntil(async () => (await columnCellTexts("Region")).includes("Eastern"));
   });
+  it("renames headers from a mapping frame and undoes the whole batch", async () => {
+    await browser.execute(() => (document.activeElement as HTMLElement | null)?.blur());
+    await pointAtColumnCell("Key", 0);
+    await pasteEntries("Revenue\tSales\nCost\tExpenses");
+    await browser.waitUntil(async () => (await columnCellTexts("Value")).includes("Expenses"));
+    await openContextMenuOn('[aria-label="Sort by Revenue"]');
+    await $("summary=Rename columns…").click();
+    await $("summary=Rename columns…").$("..").$("button=Using Region map").click();
+    await $('[aria-label="Sort by Sales"]').waitForExist();
+    await expect($('[aria-label="Sort by Expenses"]')).toExist();
+    await browser.keys([Key.Command, "z"]);
+    await $('[aria-label="Sort by Revenue"]').waitForExist();
+    await expect($('[aria-label="Sort by Cost"]')).toExist();
+  });
+
 });

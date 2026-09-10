@@ -3,6 +3,43 @@ import { useEffect, useRef } from "react";
 
 type MenuHandlers = Record<string, () => void>;
 
+export function ownsTextHistory(target: Element | null): boolean {
+  if (target instanceof HTMLInputElement) {
+    return ![
+      "button",
+      "checkbox",
+      "color",
+      "file",
+      "image",
+      "radio",
+      "range",
+      "reset",
+      "submit",
+    ].includes(target.type);
+  }
+  return Boolean(
+    target instanceof HTMLTextAreaElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
+
+/**
+ * A native menu accelerator reaches the application before WebKit can give
+ * the focused field its ordinary editing shortcut. Route history back into
+ * that field while it owns the keyboard; workbook history begins only once
+ * the draft has been committed.
+ */
+export function runFocusedTextHistory(
+  command: string,
+  scope: Pick<Document, "activeElement" | "execCommand"> = document
+): boolean {
+  if (command !== "undo" && command !== "redo") return false;
+  const target = scope.activeElement;
+  if (!ownsTextHistory(target)) return false;
+  scope.execCommand(command);
+  return true;
+}
+
 /** Keeps native menu plumbing separate from the document actions it names. */
 export function useApplicationMenu(
   enabled: boolean,
@@ -24,7 +61,8 @@ export function useApplicationMenu(
     // workbook. Listening through this webview window gives the listener the
     // exact WebviewWindow target that menu::forward emits to.
     void getCurrentWebviewWindow().listen<string>("framework-menu-command", (event) => {
-      handlersRef.current[event.payload]?.();
+      if (!runFocusedTextHistory(event.payload))
+        handlersRef.current[event.payload]?.();
     })
       .then((unlisten) => {
         if (disposed) unlisten();

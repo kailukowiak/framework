@@ -67,6 +67,19 @@ function CanvasHarness({ children }: { children: ReactNode }) {
 afterEach(cleanup);
 
 describe("ScratchworkFormulaBar", () => {
+  it("keeps multiline drafts compact until explicitly expanded", () => {
+    render(<ActiveFormulaEditorProvider>{bar(null)}</ActiveFormulaEditorProvider>);
+    const input = screen.getByRole("textbox", { name: "Add formula to Scratchwork" }) as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: "(1 +\n2)" } });
+    expect(input.rows).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: "Expand formula bar" }));
+    expect(input.rows).toBe(2);
+    expect(input.value).toBe("(1 +\n2)");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse formula bar" }));
+    expect(input.rows).toBe(1);
+    expect(input.value).toBe("(1 +\n2)");
+  });
+
   it("commits a formatted active formula through its owning editor", async () => {
     const onCommit = vi.fn(async () => undefined);
     render(

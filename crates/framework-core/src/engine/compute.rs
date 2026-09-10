@@ -358,6 +358,8 @@ pub struct ComputedFrame {
     /// that shows them does not need to care which it is looking at.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub steps: Vec<RenderedFrameStep>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub disconnected_steps: Vec<RenderedFrameStep>,
     /// How many leading entries of `steps` are plumbing rather than
     /// transformation: the identity projection a linked frame carries so it
     /// owns its own column ids, and the select that adopts them.
@@ -539,6 +541,12 @@ impl FrameEditing {
         let overrides = !paged;
         let mend = if overrides {
             " Edit the chain, or set a one-off override on a cell."
+        } else if paged {
+            // Paging is a remedy fact, not an origin fact, which is why it
+            // belongs here and not in `origin` below: every artifact-backed
+            // import is paged, so an arm there shadows both the file name and
+            // the refresh warning for the ordinary imported frame.
+            " They are paged rather than stored in this workbook, so add a calculated column or use Wrangle to edit the table."
         } else if live {
             " Add a calculated column, or edit the source and refresh."
         } else {

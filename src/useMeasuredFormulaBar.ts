@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 
 /**
  * Keep the canvas edge attached to the formula bar's real lower edge. The
- * editor grows with deliberately broken-up formulas until its scroll limit;
+ * editor can be explicitly expanded for multiline formulas;
  * a fixed guessed offset lets later lines paint over the canvas and leaves
  * the context row sitting on top of the expression.
  */

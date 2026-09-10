@@ -49,16 +49,97 @@ fn scalar_lineage_rows(records: &[ScalarRecord]) -> Vec<lineage::LineageRow> {
         .collect()
 }
 
+/// The formats a frame can be written to, in the order a chooser should offer
+/// them. It lives beside the writer so a dialog cannot present a format the
+/// writer would then refuse.
+pub const EXPORT_FILE_EXTENSIONS: [&str; 4] = ["csv", "tsv", "parquet", "ndjson"];
+
+/// Chosen from the destination's own extension rather than passed as a
+/// separate argument. One call site therefore serves both the export dialog
+/// and the in-place update, and an update cannot write a format its own source
+/// is not: the path it replaces decides the writer.
+enum ExportFormat {
+    /// Delimited text, holding its separator.
+    Delimited(u8),
+    Parquet,
+    /// One JSON object per line. `.jsonl` is accepted as the same thing, since
+    /// both spellings are in wide use for the same bytes; `.ndjson` is the one
+    /// the chooser suggests.
+    JsonLines,
+}
+
+impl ExportFormat {
+    fn for_path(path: &Path) -> Result<Self, CoreError> {
+        match path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(str::to_ascii_lowercase)
+            .as_deref()
+        {
+            Some("csv") => Ok(Self::Delimited(b',')),
+            Some("tsv") => Ok(Self::Delimited(b'\t')),
+            Some("parquet") => Ok(Self::Parquet),
+            Some("ndjson" | "jsonl") => Ok(Self::JsonLines),
+            _ => Err(CoreError::Export(
+                "FrameWork writes .csv, .tsv, .parquet and .ndjson files. Give the output one of \
+                 those extensions."
+                    .into(),
+            )),
+        }
+    }
+}
+
 impl Document {
-    /// Write `frame_id`'s materialized values to `path` as CSV with one
-    /// header row of column names. Values stay raw: ISO `YYYY-MM-DD` dates
-    /// and plain numbers without currency or percentage decoration.
-    pub(crate) fn export_frame_csv(&self, frame_id: &str, path: &Path) -> Result<(), CoreError> {
+    /// Write `frame_id`'s materialized values to `path`, as delimited text or
+    /// Parquet according to its extension. One header row of column names;
+    /// values stay raw: ISO `YYYY-MM-DD` dates and plain numbers without
+    /// currency or percentage decoration.
+    ///
+    /// Parquet receives the data layer's own Polars types, which is the whole
+    /// reason it is a separate destination and not a CSV with a different
+    /// suffix. It is a fresh file, so there is no source schema to preserve
+    /// and nothing to lose — unlike replacing an existing Parquet in place,
+    /// which needs a schema contract this deliberately does not imply.
+    ///
+    /// NDJSON carries each row as one self-describing line, which is what makes
+    /// a result appendable to an object store and readable by a tool that never
+    /// saw the header. Its types are JSON's own, so a quoted identifier stays a
+    /// string without needing any of the delimited path's inference rules.
+    pub(crate) fn export_frame_file(&self, frame_id: &str, path: &Path) -> Result<(), CoreError> {
+        let format = ExportFormat::for_path(path)?;
+        let mut data_frame = self.export_frame_values(frame_id)?;
+        if let Some(parent) = path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            fs::create_dir_all(parent).map_err(|error| CoreError::Export(error.to_string()))?;
+        }
+        let file = fs::File::create(path).map_err(|error| CoreError::Export(error.to_string()))?;
+        let export_error = |error: pl::PolarsError| CoreError::Export(error.to_string());
+        match format {
+            ExportFormat::Delimited(separator) => pl::CsvWriter::new(file)
+                .include_header(true)
+                .with_separator(separator)
+                .finish(&mut data_frame)
+                .map_err(export_error),
+            ExportFormat::Parquet => pl::ParquetWriter::new(file)
+                .with_row_group_size(Some(65_536))
+                .finish(&mut data_frame)
+                .map(|_| ())
+                .map_err(export_error),
+            ExportFormat::JsonLines => pl::JsonWriter::new(file)
+                .with_json_format(pl::JsonFormat::JsonLines)
+                .finish(&mut data_frame)
+                .map_err(export_error),
+        }
+    }
+
+    /// The computed values under their display names, which is what every file
+    /// handoff writes regardless of the format carrying them.
+    fn export_frame_values(&self, frame_id: &str) -> Result<pl::DataFrame, CoreError> {
         let frame = self.frame(frame_id)?;
-        let data_frame = self
-            .materialize_frame_frame(frame_id, Layer::Data, &mut HashSet::new())
-            .map_err(CoreError::Export)?;
-        let mut data_frame = data_frame
+        self.materialize_frame_frame(frame_id, Layer::Data, &mut HashSet::new())
+            .map_err(CoreError::Export)?
             .lazy()
             .select(
                 frame
@@ -68,17 +149,6 @@ impl Document {
                     .collect::<Vec<_>>(),
             )
             .collect()
-            .map_err(|error| CoreError::Export(error.to_string()))?;
-        if let Some(parent) = path
-            .parent()
-            .filter(|parent| !parent.as_os_str().is_empty())
-        {
-            fs::create_dir_all(parent).map_err(|error| CoreError::Export(error.to_string()))?;
-        }
-        let file = fs::File::create(path).map_err(|error| CoreError::Export(error.to_string()))?;
-        pl::CsvWriter::new(file)
-            .include_header(true)
-            .finish(&mut data_frame)
             .map_err(|error| CoreError::Export(error.to_string()))
     }
 

@@ -80,20 +80,9 @@ impl Document {
             let object_id = id();
             ReplicatedOperation::AddObject {
                 object: DataObject::Frame(FrameObject {
-                    comment: None,
                     id: object_id.clone(),
                     name,
                     columns,
-                    rows: Vec::new(),
-                    steps: Vec::new(),
-                    display: FrameDisplay::default(),
-                    base_columns: Vec::new(),
-                    source_file: None,
-                    artifact: None,
-                    connector: None,
-                    generator: None,
-                    entry_columns: Vec::new(),
-                    materialization: None,
                     derivation: Some(FrameDerivation {
                         source_frame_id,
                         join: None,
@@ -103,8 +92,7 @@ impl Document {
                             maintain_order,
                         }],
                     }),
-                    unique_keys: Vec::new(),
-                    summaries: Vec::new(),
+                    ..FrameObject::default()
                 }),
                 view: CanvasView {
                     id: id(),
@@ -161,20 +149,9 @@ impl Document {
             let object_id = id();
             ReplicatedOperation::AddObject {
                 object: DataObject::Frame(FrameObject {
-                    comment: None,
                     id: object_id.clone(),
                     name,
                     columns,
-                    rows: Vec::new(),
-                    steps: Vec::new(),
-                    display: FrameDisplay::default(),
-                    base_columns: Vec::new(),
-                    source_file: None,
-                    artifact: None,
-                    connector: None,
-                    generator: None,
-                    entry_columns: Vec::new(),
-                    materialization: None,
                     derivation: Some(FrameDerivation {
                         source_frame_id,
                         join: None,
@@ -191,8 +168,7 @@ impl Document {
                             FrameStep::Select { column_ids },
                         ],
                     }),
-                    unique_keys: Vec::new(),
-                    summaries: Vec::new(),
+                    ..FrameObject::default()
                 }),
                 view: CanvasView {
                     id: id(),
@@ -430,7 +406,6 @@ impl Document {
             let object_id = id();
             ReplicatedOperation::AddObject {
                 object: DataObject::Frame(FrameObject {
-                    comment: None,
                     id: object_id.clone(),
                     name,
                     // The join is the immutable input to any Wrangle steps
@@ -439,17 +414,9 @@ impl Document {
                     // a later Select, Summarize, or calculated column.
                     base_columns: columns.clone(),
                     columns,
-                    rows: Vec::new(),
-                    steps: Vec::new(),
-                    display: FrameDisplay::default(),
-                    source_file: None,
-                    artifact: None,
-                    connector: None,
-                    generator: None,
-                    entry_columns: Vec::new(),
-                    materialization: None,
                     derivation: Some(FrameDerivation {
                         source_frame_id: primary_frame_id,
+                        steps: Vec::new(),
                         join: Some(FrameJoin {
                             lookup_frame_id,
                             primary_key_column_ids,
@@ -457,10 +424,8 @@ impl Document {
                             join_type,
                             outputs,
                         }),
-                        steps: Vec::new(),
                     }),
-                    unique_keys: Vec::new(),
-                    summaries: Vec::new(),
+                    ..FrameObject::default()
                 }),
                 view: CanvasView {
                     id: id(),
@@ -1620,23 +1585,10 @@ pub(crate) struct PipelineWalk {
 /// is being built.
 fn step_scope(frame_id: &str, name: &str, visible: &[Column]) -> FrameObject {
     FrameObject {
-        comment: None,
         id: frame_id.to_string(),
         name: name.to_string(),
         columns: visible.to_vec(),
-        rows: Vec::new(),
-        steps: Vec::new(),
-        display: FrameDisplay::default(),
-        base_columns: Vec::new(),
-        source_file: None,
-        artifact: None,
-        connector: None,
-        derivation: None,
-        generator: None,
-        entry_columns: Vec::new(),
-        materialization: None,
-        unique_keys: Vec::new(),
-        summaries: Vec::new(),
+        ..FrameObject::default()
     }
 }
 

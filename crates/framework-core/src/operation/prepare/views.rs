@@ -221,33 +221,6 @@ impl Document {
         Ok(ReplicatedOperation::SetActiveTab { view_id, object_id })
     }
 
-    pub(crate) fn prepare_set_frame_display_filter(
-        &self,
-        frame_id: Id,
-        filters: Vec<String>,
-        filter_match_all: bool,
-    ) -> Result<ReplicatedOperation, CoreError> {
-        let frame = self.frame(&frame_id)?;
-        let mut parsed = Vec::new();
-        for formula in filters {
-            let expression = self.prepare_formula_for_frame(&frame.id, &formula)?;
-            let data_type = frame
-                .infer_polars_expression_type(self, &expression)
-                .map_err(CoreError::Formula)?;
-            if data_type != DataType::Boolean {
-                return Err(CoreError::InvalidOperation(
-                    "A display filter must produce true or false".into(),
-                ));
-            }
-            parsed.push(Formula { expression });
-        }
-        Ok(ReplicatedOperation::SetFrameDisplayFilter {
-            frame_id,
-            filters: parsed,
-            filter_match_all,
-        })
-    }
-
     pub(crate) fn prepare_set_frame_display_sort(
         &self,
         frame_id: Id,

@@ -83,7 +83,7 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
       ) : contextFrame ? (
         <>
           <DictionaryMenuItems document={props.document} frame={contextFrame} column={contextColumn}
-            run={props.run} close={() => props.setContextMenu(null)}
+            run={props.run} close={() => props.setContextMenu(null)} position={{ x: contextMenu.canvasX, y: contextMenu.canvasY }}
             onMap={(formula) => contextColumn && props.requestColumnTransformation(contextFrame, contextColumn, formula, true, contextMenu.viewId)} />
           <ContextMenuColumnItems {...props} contextFrame={contextFrame} />
           <ContextMenuColumnDisplayItems {...props} contextFrame={contextFrame} />
