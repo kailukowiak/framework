@@ -92,8 +92,56 @@ pub struct FrameObject {
     /// for the row to come back.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub entry_columns: Vec<EntryColumn>,
+    /// Values typed over a base this document reads rather than holds.
+    ///
+    /// The alternative was rewriting that base: a cell edit on a parquet-backed
+    /// frame used to read the whole file in, splice one value, and write a new
+    /// one, so correcting three cells in a large table cost three full rewrites
+    /// and left two orphans behind. A patch costs what it says instead, and the
+    /// artifact stays the content-addressed file the import wrote, which is
+    /// what lets two people read the same one.
+    ///
+    /// Keyed by the row's ordinal in that base, which is addressable exactly
+    /// when [`Self::carries_base_row_index`] holds. Positional keys cannot
+    /// survive the base being replaced, so nothing may refresh over a frame
+    /// that carries these — an entry column is the keyed answer for that case.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub cell_overlay: Vec<CellOverlay>,
     #[serde(default)]
     pub summaries: Vec<Summary>,
+}
+
+/// One column's worth of typed-over values, sparse in the rows it names.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CellOverlay {
+    pub column_id: Id,
+    pub entries: Vec<OverlayEntry>,
+}
+
+/// One typed-over value: the row it belongs to, by ordinal in the base read,
+/// and the text entered, in the document's own writing.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct OverlayEntry {
+    #[ts(as = "u32")]
+    pub row_ordinal: u32,
+    pub raw: String,
+}
+
+impl FrameObject {
+    /// The text typed over one cell of the base read, if any.
+    pub(crate) fn overlay_value(&self, column_id: &str, row_ordinal: u32) -> Option<&str> {
+        self.cell_overlay
+            .iter()
+            .find(|overlay| overlay.column_id == column_id)?
+            .entries
+            .iter()
+            .find(|entry| entry.row_ordinal == row_ordinal)
+            .map(|entry| entry.raw.as_str())
+    }
 }
 
 impl FrameObject {

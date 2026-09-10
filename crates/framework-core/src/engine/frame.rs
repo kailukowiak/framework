@@ -898,6 +898,7 @@ impl FrameObject {
         } else {
             self.base_polars_lazy()?
         };
+        plan = document.apply_cell_overlay(plan, self)?;
         for layer in self.calculated_column_layers()? {
             let expressions = layer
                 .iter()

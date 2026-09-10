@@ -187,6 +187,12 @@ impl Document {
                 column_id,
                 raw,
             } => self.apply_set_artifact_cell(frame_id, row_ordinal, column_id, raw)?,
+            ReplicatedOperation::SetOverlayCell {
+                frame_id,
+                row_ordinal,
+                column_id,
+                raw,
+            } => self.apply_set_overlay_cell(frame_id, row_ordinal, column_id, raw)?,
             ReplicatedOperation::PasteCells {
                 frame_id,
                 cells,

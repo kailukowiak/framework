@@ -414,6 +414,7 @@ impl FrameObject {
             disconnected_read: None,
             artifact: None,
             connector: None,
+            cell_overlay: Vec::new(),
             derivation: Some(FrameDerivation {
                 source_frame_id: self.id.clone(),
                 join: None,

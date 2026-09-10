@@ -542,6 +542,24 @@ impl Document {
                 ..
             } => self.invert_set_artifact_cell(frame_id, *row_ordinal, column_id)?,
 
+            // Its own inverse, which is the point of letting `raw` be absent:
+            // undoing a correction either puts back the correction that stood
+            // before it or returns the cell to what the base read says.
+            ReplicatedOperation::SetOverlayCell {
+                frame_id,
+                row_ordinal,
+                column_id,
+                ..
+            } => vec![ReplicatedOperation::SetOverlayCell {
+                frame_id: frame_id.clone(),
+                row_ordinal: *row_ordinal,
+                column_id: column_id.clone(),
+                raw: self
+                    .frame(frame_id)?
+                    .overlay_value(column_id, *row_ordinal)
+                    .map(str::to_owned),
+            }],
+
             // A restore is already a prior state, so inverting one is
             // capturing the state it is about to replace.
             ReplicatedOperation::RestoreFrame { frame } => {

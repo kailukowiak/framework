@@ -62,6 +62,7 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
         disconnected_read: None,
         artifact: None,
         connector: None,
+        cell_overlay: Vec::new(),
         derivation: None,
         generator: None,
         materialization: None,

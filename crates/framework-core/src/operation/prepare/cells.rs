@@ -69,13 +69,19 @@ impl Document {
         column_id: Id,
         raw: String,
     ) -> Result<ReplicatedOperation, CoreError> {
-        // A frame whose values live in a parquet it owns is edited by
-        // rewriting that parquet. Same gesture in the grid, different write
-        // underneath, which is why the branch is here rather than in the
-        // interface: the interface should not have to know where a frame
-        // keeps its values in order to set one.
+        // A frame whose values live in a base it reads is edited by recording
+        // a patch against that base, not by rewriting it. Same gesture in the
+        // grid, different write underneath, which is why the branch is here
+        // rather than in the interface: the interface should not have to know
+        // where a frame keeps its values in order to set one.
         if !self.frame(&frame_id)?.owns_its_rows() {
             self.ensure_rows_are_editable(&frame_id)?;
+            // A calculation has no cell in the base to patch. The rewrite this
+            // replaced refused such a column only by accident -- the column is
+            // absent from the parquet, so the write failed when it looked for
+            // it -- and a patch would be recorded happily and then ask the plan
+            // to coalesce over a column the base read does not produce.
+            self.ensure_column_is_editable(&frame_id, &column_id)?;
             let frame = self.frame(&frame_id)?;
             let column = frame
                 .columns
@@ -85,11 +91,15 @@ impl Document {
             validate_cell_raw(column, &raw)?;
             let row_ordinal =
                 Self::artifact_row_ordinal(&frame_id, &row_id).ok_or(CoreError::RowNotFound)?;
-            return Ok(ReplicatedOperation::SetArtifactCell {
+            return Ok(ReplicatedOperation::SetOverlayCell {
                 frame_id,
-                row_ordinal,
+                row_ordinal: u32::try_from(row_ordinal).map_err(|_| {
+                    CoreError::InvalidOperation(
+                        "This table has more rows than a cell edit can address".into(),
+                    )
+                })?,
                 column_id,
-                raw,
+                raw: Some(raw),
             });
         }
         Ok({

@@ -8,6 +8,12 @@ use std::collections::HashSet;
 /// Column name for the row index a page read carries between the data and
 /// display layers. Not a column id, so it cannot collide with one.
 pub(crate) const ROW_INDEX: &str = "__framework_row";
+/// Private to the overlay merge, so it cannot be confused with [`ROW_INDEX`]:
+/// that one is carried out to the page, this one is minted and dropped inside
+/// one base read.
+const OVERLAY_ROW: &str = "__framework_overlay_row";
+const OVERLAY_PATCH: &str = "__framework_patch_";
+const OVERLAY_PRESENT: &str = "__framework_patched_";
 
 /// A page never exceeds 1,000 rows and never runs past the end.
 fn page_limit(offset: usize, limit: usize, total_rows: usize) -> usize {
@@ -498,6 +504,99 @@ impl Document {
             plan = matched_plan.join(lookup, keys.clone(), keys, arguments);
         }
         Ok(plan)
+    }
+
+    /// Merge typed-over values into a base read, by the ordinal of the row
+    /// each was entered against.
+    ///
+    /// Applied here, at the base, rather than on the page: an export, a chart
+    /// and a derived frame all read the data layer, and a patch the grid could
+    /// see but a sum could not would be worse than no patch at all. It runs
+    /// before the calculated columns for the same reason — a calculation that
+    /// reads a corrected cell should read the correction.
+    ///
+    /// One left join per edited column, against a frame holding only the edited
+    /// rows, so the cost is the number of corrections rather than the size of
+    /// what is being corrected.
+    pub(crate) fn apply_cell_overlay(
+        &self,
+        plan: pl::LazyFrame,
+        frame: &FrameObject,
+    ) -> Result<pl::LazyFrame, String> {
+        if frame.cell_overlay.is_empty() {
+            return Ok(plan);
+        }
+        use polars::prelude::{IntoLazy, NamedFrom};
+        let mut plan = plan.with_row_index(OVERLAY_ROW, None);
+        for overlay in &frame.cell_overlay {
+            if overlay.entries.is_empty() {
+                continue;
+            }
+            let column = frame
+                .columns
+                .iter()
+                .find(|column| column.id == overlay.column_id)
+                .ok_or("A typed-over column is missing from this frame")?;
+            let patch = format!("{OVERLAY_PATCH}{}", column.id);
+            let marker = format!("{OVERLAY_PRESENT}{}", column.id);
+            let ordinals = pl::Series::new(
+                pl::PlSmallStr::from(OVERLAY_ROW),
+                overlay
+                    .entries
+                    .iter()
+                    .map(|entry| entry.row_ordinal)
+                    .collect::<Vec<pl::IdxSize>>(),
+            );
+            let values = typed_series(
+                &patch,
+                column.data_type,
+                overlay.entries.iter().map(|entry| entry.raw.as_str()),
+            )?;
+            // A patch has to carry the fact that it exists separately from the
+            // value it carries. Clearing a cell is a patch *to* nothing, and
+            // `coalesce` cannot tell that apart from no patch at all -- it
+            // would read the base value straight back, so an emptied cell
+            // refilled itself.
+            let present = pl::Series::new(
+                pl::PlSmallStr::from(marker.as_str()),
+                vec![true; overlay.entries.len()],
+            );
+            let lookup = pl::DataFrame::new(
+                overlay.entries.len(),
+                vec![ordinals.into(), values.into(), present.into()],
+            )
+            .map_err(|error| error.to_string())?
+            .lazy();
+            let mut arguments = pl::JoinArgs::new(pl::JoinType::Left);
+            arguments.validation = pl::JoinValidation::ManyToOne;
+            arguments.maintain_order = pl::MaintainOrderJoin::Left;
+            plan = plan
+                .join(
+                    lookup,
+                    vec![pl::col(OVERLAY_ROW)],
+                    vec![pl::col(OVERLAY_ROW)],
+                    arguments,
+                )
+                // The patch wins where there is one; `coalesce` is what makes
+                // the unedited rows keep the value the base read gave them.
+                .with_column(
+                    pl::when(pl::col(marker).is_not_null())
+                        .then(pl::col(patch))
+                        .otherwise(pl::col(column.id.clone()))
+                        .alias(column.id.clone()),
+                );
+        }
+        // Naming what survives leaves the patch columns and the ordinal behind
+        // without a selector, and says out loud that no scaffolding escapes
+        // this function.
+        Ok(plan.select(
+            frame
+                .input_columns()
+                .iter()
+                .filter(|column| column.formula.is_none())
+                .map(|column| pl::col(column.id.clone()))
+                .collect::<Vec<_>>(),
+        ))
     }
 
     pub(crate) fn materialize_frame_frame(

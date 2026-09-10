@@ -1098,6 +1098,18 @@ pub enum ReplicatedOperation {
         column_id: Id,
         raw: String,
     },
+    /// A value typed over one cell of a base this document reads rather than
+    /// holds, recorded as a patch instead of rewriting that base.
+    ///
+    /// `raw: None` removes the patch, which is what makes this its own inverse:
+    /// undoing a correction either restores the correction that was there
+    /// before or takes the cell back to what the base says.
+    SetOverlayCell {
+        frame_id: Id,
+        row_ordinal: u32,
+        column_id: Id,
+        raw: Option<String>,
+    },
     RenameDocument {
         name: String,
     },

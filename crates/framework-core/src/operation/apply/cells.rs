@@ -179,6 +179,54 @@ impl Document {
         Ok(())
     }
 
+    /// Record — or withdraw — one typed-over value.
+    ///
+    /// Entries are kept in ordinal order so the document serializes the same
+    /// way twice; a patch list that reordered itself on every edit would make
+    /// every save a diff.
+    pub(crate) fn apply_set_overlay_cell(
+        &mut self,
+        frame_id: Id,
+        row_ordinal: u32,
+        column_id: Id,
+        raw: Option<String>,
+    ) -> Result<(), CoreError> {
+        let frame = self.frame_mut(&frame_id)?;
+        let existing = frame
+            .cell_overlay
+            .iter()
+            .position(|overlay| overlay.column_id == column_id);
+        let Some(raw) = raw else {
+            // Withdrawing the last patch on a column takes the column's entry
+            // with it, so an emptied overlay leaves nothing behind in the file.
+            if let Some(index) = existing {
+                frame.cell_overlay[index]
+                    .entries
+                    .retain(|entry| entry.row_ordinal != row_ordinal);
+                if frame.cell_overlay[index].entries.is_empty() {
+                    frame.cell_overlay.remove(index);
+                }
+            }
+            return Ok(());
+        };
+        let index = match existing {
+            Some(index) => index,
+            None => {
+                frame.cell_overlay.push(CellOverlay {
+                    column_id,
+                    entries: Vec::new(),
+                });
+                frame.cell_overlay.len() - 1
+            }
+        };
+        let entries = &mut frame.cell_overlay[index].entries;
+        match entries.binary_search_by_key(&row_ordinal, |entry| entry.row_ordinal) {
+            Ok(found) => entries[found].raw = raw,
+            Err(insert_at) => entries.insert(insert_at, OverlayEntry { row_ordinal, raw }),
+        }
+        Ok(())
+    }
+
     pub(crate) fn apply_paste_cells(
         &mut self,
         frame_id: Id,

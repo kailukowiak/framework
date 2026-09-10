@@ -626,7 +626,7 @@ fn ndjson_exports_one_object_per_line_and_opens_again() {
         reopened
             .columns
             .iter()
-            .map(|column| (column.name.as_str(), column.data_type.clone()))
+            .map(|column| (column.name.as_str(), column.data_type))
             .collect::<Vec<_>>(),
         [("SKU", DataType::String), ("Quantity", DataType::Number)]
     );
@@ -820,5 +820,86 @@ fn a_calculated_column_over_a_parquet_frame_refuses_a_typed_value() {
     assert!(
         store.view().computed_frames[&frame.id].editing.cells,
         "the frame itself still accepts typed values"
+    );
+}
+
+/// The point of the whole exercise: correcting a cell costs the correction.
+///
+/// The write this replaced read the entire parquet in, spliced one value, and
+/// wrote a new content-addressed file, so three corrections to a large table
+/// meant three full rewrites and two orphans. Here the file is not touched at
+/// all — byte for byte the one the import wrote — and the document grows by one
+/// entry.
+#[test]
+fn typing_over_a_parquet_cell_leaves_the_file_untouched() {
+    let dir = temporary_test_directory("overlay-efficiency");
+    let path = dir.join("ledger.csv");
+    let mut csv = String::from("Ref,Amount\n");
+    for index in 0..5_000 {
+        csv.push_str(&format!("R{index:05},{index}\n"));
+    }
+    fs::write(&path, &csv).unwrap();
+    let mut store = demo_store();
+    let artifact = create_data_artifact(&path, &dir.join("data")).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Ledger".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Ledger").clone();
+    let amount = frame.columns[1].id.clone();
+    let before = frame
+        .artifact
+        .clone()
+        .expect("an imported frame has a file");
+    let bytes_before = fs::read(&before.path).unwrap();
+
+    let page = store.get_frame_page(&frame.id, 0, 3).unwrap();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: page.row_ids[1].clone(),
+            column_id: amount.clone(),
+            raw: "777".into(),
+        })
+        .unwrap();
+
+    let after = frame_named(store.document(), "Ledger");
+    let artifact_after = after.artifact.as_ref().expect("still file-backed");
+    assert_eq!(
+        artifact_after.id, before.id,
+        "the data file is content-addressed and its content did not change"
+    );
+    assert_eq!(
+        fs::read(&artifact_after.path).unwrap(),
+        bytes_before,
+        "byte for byte the file the import wrote"
+    );
+    assert_eq!(
+        after.cell_overlay.len(),
+        1,
+        "one column carries a patch, holding only the rows that were touched"
+    );
+    assert_eq!(after.cell_overlay[0].entries.len(), 1);
+
+    let edited = store.get_frame_page(&frame.id, 0, 3).unwrap();
+    assert_eq!(edited.rows[1][1], "777");
+    assert_eq!(edited.rows[0][1], "0", "and only that cell");
+    assert_eq!(edited.rows[2][1], "2");
+
+    // The patch is also what undo removes, rather than a second full rewrite.
+    store.undo();
+    let undone = frame_named(store.document(), "Ledger");
+    assert!(
+        undone.cell_overlay.is_empty(),
+        "undoing the only correction takes the patch list with it"
+    );
+    assert_eq!(
+        store.get_frame_page(&frame.id, 0, 3).unwrap().rows[1][1],
+        "1"
     );
 }

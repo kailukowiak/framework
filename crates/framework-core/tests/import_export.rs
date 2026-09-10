@@ -1598,7 +1598,8 @@ fn packaging_a_document_cuts_its_links_and_the_sweep_reclaims_what_is_left() {
     assert!(frame_named(store.document(), "Ledger").connector.is_some());
     store.redo();
 
-    // Editing rewrites the artifact, leaving the version it replaced behind.
+    // Editing records a patch against the artifact rather than rewriting it,
+    // so the file the import wrote is still the only one here.
     let debit = frame_named(store.document(), "Ledger").columns[1]
         .id
         .clone();
@@ -1618,34 +1619,38 @@ fn packaging_a_document_cuts_its_links_and_the_sweep_reclaims_what_is_left() {
     };
     assert_eq!(
         files(&data),
-        2,
-        "the version before the edit is still there"
+        1,
+        "a typed-over value leaves no second copy of the data behind"
     );
 
     let journal = EventJournal::open(&document_path, &store.document().id).unwrap();
-    let held = store
-        .collect_unreferenced_artifacts(&journal, &data)
-        .unwrap();
     assert_eq!(
-        held.files, 0,
-        "undo can still reach the old version, so it stays"
+        store
+            .collect_unreferenced_artifacts(&journal, &data)
+            .unwrap()
+            .files,
+        0,
+        "and nothing for the sweep to reclaim, because nothing was replaced"
     );
 
-    // Reopening is what lets go: the history goes with the session.
+    // The patch lives in the document rather than in the data file, so
+    // reopening is what proves it was written down and not merely held.
     store.save(&document_path).unwrap();
     let reopened = Store::load(&document_path).unwrap();
-    let swept = reopened
-        .collect_unreferenced_artifacts(&journal, &data)
-        .unwrap();
-    assert_eq!(swept.files, 1, "and now the old version is collectable");
-    assert!(swept.bytes > 0);
+    assert_eq!(
+        reopened
+            .collect_unreferenced_artifacts(&journal, &data)
+            .unwrap()
+            .files,
+        0
+    );
     assert_eq!(files(&data), 1);
     assert_eq!(
         reopened.get_frame_page(&ledger_id, 0, 10).unwrap().rows[0][1]
             .parse::<f64>()
             .unwrap(),
         555.0,
-        "the file it still reads was not the one swept"
+        "the typed value came back as a patch over the file nobody rewrote"
     );
     fs::remove_dir_all(directory).unwrap();
 }
