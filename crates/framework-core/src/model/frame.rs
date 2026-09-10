@@ -132,17 +132,30 @@ impl FrameObject {
     /// steps (projecting only the columns that survive each Select), and
     /// the latter writes only columns that remain literal inputs.
     pub(crate) fn preserves_own_row_identity(&self) -> bool {
-        self.owns_its_rows()
-            && self.steps.iter().all(|step| {
-                matches!(
-                    step,
-                    FrameStep::Filter { .. }
-                        | FrameStep::WithColumns { .. }
-                        | FrameStep::Select { .. }
-                        | FrameStep::Sort { .. }
-                        | FrameStep::Comment { .. }
-                )
-            })
+        self.owns_its_rows() && self.chain_preserves_row_identity()
+    }
+
+    /// Whether this frame's chain alone leaves each input row addressable as
+    /// the same row afterwards, said without reference to where those rows are
+    /// kept.
+    ///
+    /// Split out from [`Self::preserves_own_row_identity`] because the two
+    /// questions it was fusing have different answers for a frame whose rows
+    /// live in a parquet: the chain can preserve identity while the document
+    /// does not own a single cell. A reader that needs to name the row a
+    /// result came from wants this half; a writer deciding whether it may
+    /// type into a stored cell wants both.
+    pub(crate) fn chain_preserves_row_identity(&self) -> bool {
+        self.steps.iter().all(|step| {
+            matches!(
+                step,
+                FrameStep::Filter { .. }
+                    | FrameStep::WithColumns { .. }
+                    | FrameStep::Select { .. }
+                    | FrameStep::Sort { .. }
+                    | FrameStep::Comment { .. }
+            )
+        })
     }
 
     /// Whether a visible column is still a stored input rather than the

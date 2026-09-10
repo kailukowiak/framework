@@ -687,3 +687,56 @@ fn nested_json_records_are_refused_with_the_field_named() {
     assert!(message.contains("customer"), "{message}");
     assert!(message.contains("flatten"), "{message}");
 }
+
+/// Today's gate, recorded before the overlay work relaxes it: a frame whose
+/// rows live in a parquet it owns may be typed into only while its chain is
+/// empty. The reason is the page's row index, which for such a frame is minted
+/// *after* the chain runs — so with a Filter or Sort in the way, the ordinal a
+/// page reports is a position in the chain's output, while the write splices
+/// that position in the file. The two agree only when nothing stands between
+/// them. Relaxing this therefore has to move the index to the base first.
+#[test]
+fn an_adopted_frame_with_a_chain_refuses_cell_edits_for_now() {
+    let dir = temporary_test_directory("adopted-chain-gate");
+    let path = dir.join("stock.csv");
+    fs::write(&path, b"SKU,Count\nA,1\nB,2\nC,3\n").unwrap();
+    let mut store = demo_store();
+    let artifact = create_data_artifact(&path, &dir.join("data")).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Stock".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Stock").clone();
+
+    // Chainless, not live: editable today, and the ordinal is the file's own.
+    assert!(store.view().computed_frames[&frame.id].editing.cells);
+
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![FrameStepInput::Filter {
+                predicates: vec!["`Count` > 1".into()],
+                match_all: true,
+            }],
+        })
+        .unwrap();
+
+    // A Filter preserves row identity, so this refusal is the index's fault
+    // rather than the chain's: nothing about the rows stopped being addressable.
+    assert!(
+        !store.view().computed_frames[&frame.id].editing.cells,
+        "a chained artifact frame is not cell-editable while the page index is minted after the chain"
+    );
+    // And the chain is a lone Filter, which is identity-preserving by
+    // inspection — which is what makes this a gap rather than a rule.
+    let chained = frame_named(store.document(), "Stock");
+    assert!(matches!(
+        chained.steps.as_slice(),
+        [FrameStep::Filter { .. }]
+    ));
+}
