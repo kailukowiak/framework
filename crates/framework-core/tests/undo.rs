@@ -409,6 +409,7 @@ fn artifact_backed_pipeline_fixture(
             name: "Rows".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })

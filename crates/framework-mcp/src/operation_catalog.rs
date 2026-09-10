@@ -50,8 +50,9 @@ mod tests {
         let catalog = operation_typescript();
         assert!(catalog.contains(r#""type": "renameColumn""#));
         assert!(catalog.contains(r#""type": "renameColumns""#));
-        assert!(catalog.contains(r#""type": "openDelimitedFile""#));
-        assert!(catalog.contains(r#""type": "bakeFrame""#));
+        assert!(catalog.contains(r#""type": "importFrameFromFile""#));
+        assert!(catalog.contains(r#""type": "importFrameFromArtifact""#));
+        assert!(catalog.contains(r#""type": "foldRowPatches""#));
         assert!(catalog.contains(r#""type": "setFramePipeline""#));
         assert!(catalog.contains("type FrameStepInput ="));
         assert!(catalog.contains(r#""kind": "expand""#));

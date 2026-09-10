@@ -428,6 +428,7 @@ fn artifacts_are_content_addressed_paged_and_copied_on_save_as() {
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -485,6 +486,7 @@ fn a_copied_document_reads_its_own_artifacts() {
             name: "Orders".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -550,6 +552,7 @@ fn artifact_refresh_preserves_identity_and_reconciles_schema_changes() {
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -649,6 +652,7 @@ fn a_frame_can_be_repointed_at_another_file_that_matches_its_columns() {
             connector: Some(ConnectorRecipe::File {
                 source_path: january.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -717,6 +721,7 @@ fn repointing_reconciles_a_file_whose_columns_differ() {
             connector: Some(ConnectorRecipe::File {
                 source_path: orders.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -763,6 +768,7 @@ fn renaming_an_imported_column_does_not_rename_its_source_field() {
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -807,6 +813,7 @@ fn a_missing_source_field_keeps_its_id_when_downstream_reads_it() {
             connector: Some(ConnectorRecipe::File {
                 source_path: original.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -874,6 +881,7 @@ fn source_additions_flow_through_a_chain_that_does_not_select_them_away() {
             connector: Some(ConnectorRecipe::File {
                 source_path: original.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -1169,6 +1177,7 @@ fn a_frame_reports_what_can_be_edited_by_hand_and_why_not() {
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 400.0,
             y: 0.0,
         })
@@ -1279,6 +1288,7 @@ fn liveness_travels_down_the_lineage_and_shapes_what_an_edit_would_mean() {
                 name: name.into(),
                 artifact,
                 connector,
+                file_origin: None,
                 x: 0.0,
                 y: 0.0,
             })
@@ -1381,6 +1391,7 @@ fn an_adopted_frame_is_the_documents_own_data_and_takes_hand_edits() {
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -1494,6 +1505,7 @@ fn an_edit_to_owned_data_is_checked_against_the_column_type() {
             name: "Ledger".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -1562,6 +1574,7 @@ fn packaging_a_document_cuts_its_links_and_the_sweep_reclaims_what_is_left() {
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })

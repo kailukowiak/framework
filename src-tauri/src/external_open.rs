@@ -32,7 +32,7 @@ where
         .collect()
 }
 
-fn data_session(path: &Path) -> Result<(DocumentSession, DocumentView, Option<String>), String> {
+fn data_session(path: &Path) -> Result<(DocumentSession, DocumentView), String> {
     let path = path.canonicalize().map_err(|error| error.to_string())?;
     let mut session = scratch_session()?;
     let writer = Uuid::new_v4().to_string();
@@ -66,7 +66,7 @@ fn data_session(path: &Path) -> Result<(DocumentSession, DocumentView, Option<St
     // `session.store.view()`. Hand it up instead of making callers recompute
     // it -- `flush_session` only serializes `store` to disk below, it never
     // mutates it, so this view does not go stale between here and there.
-    Ok((session, outcome.document, outcome.notice))
+    Ok((session, outcome.document))
 }
 
 fn open_data_window(app: &AppHandle, path: &Path) -> Result<(), String> {
@@ -103,11 +103,8 @@ fn open_data_window(app: &AppHandle, path: &Path) -> Result<(), String> {
     // This caller builds a plain window, which reads only the document's
     // name off `store` directly (see `build_document_window`); the
     // evaluated view `data_session` produced has no reader here.
-    let (session, _view, notice) = data_session(&path)?;
+    let (session, _view) = data_session(&path)?;
     let _window = build_document_window(app, session, false)?;
-    if let Some(notice) = notice {
-        log::info!("{}: {notice}", path.display());
-    }
     Ok(())
 }
 
@@ -122,7 +119,7 @@ fn open_data_in_startup_window(app: &AppHandle, path: &Path) -> Result<(), Strin
     // `data_session` already evaluated this view as the last step of the
     // import; re-deriving it with a second `store.view()` would repeat that
     // whole evaluation over the document this call just populated.
-    let (session, document, notice) = data_session(&path)?;
+    let (session, document) = data_session(&path)?;
     app.state::<AppState>().replace_document("main", session)?;
     scratchwork_window::set_workbook_titles(app, "main", &document.document.name);
     if let Some(window) = app.get_webview_window("main") {
@@ -137,9 +134,6 @@ fn open_data_in_startup_window(app: &AppHandle, path: &Path) -> Result<(), Strin
         path: String::new(),
     };
     let _ = app.emit_to("main", DOCUMENT_OPENED_EVENT, &payload);
-    if let Some(notice) = notice {
-        log::info!("{}: {notice}", path.display());
-    }
     Ok(())
 }
 
@@ -205,8 +199,10 @@ pub(super) fn initial_session() -> Result<(DocumentSession, bool, Option<String>
         .next()
     {
         if is_data_file(&path) {
-            let (session, _view, notice) = data_session(&path)?;
-            return Ok((session, false, notice));
+            // Only a saved workbook can arrive with something wrong enough
+            // to warn about; opening a data file either works or fails.
+            let (session, _view) = data_session(&path)?;
+            return Ok((session, false, None));
         }
         if path.exists() {
             let (session, warning) = load_session(path)?;
@@ -250,8 +246,7 @@ mod tests {
         let path = directory.join("Orders.CSV");
         let bytes = "ID,Quantity\n0002,3\n";
         fs::write(&path, bytes).unwrap();
-        let (session, view, notice) = data_session(&path).unwrap();
-        assert!(notice.is_none());
+        let (session, view) = data_session(&path).unwrap();
         assert!(session.scratch);
         assert_ne!(session.path, path);
         assert_eq!(session.external_source, Some(path.canonicalize().unwrap()));
@@ -269,15 +264,27 @@ mod tests {
             })
             .unwrap();
         assert!(frame.file_origin.is_some());
-        assert!(frame.owns_its_rows());
+        assert!(
+            frame.artifact.is_some() && frame.rows.is_empty(),
+            "the file's values stay in the file; the workbook records where to put a result back"
+        );
         assert_eq!(fs::read_to_string(&path).unwrap(), bytes);
         assert!(Store::load(&session.path).is_ok());
         fs::remove_dir_all(session.path.parent().unwrap()).unwrap();
         fs::remove_dir_all(directory).unwrap();
     }
 
+    /// A file past the old twenty-thousand-row ceiling opens the same way a
+    /// small one does.
+    ///
+    /// There used to be two openings: a small file was copied into the
+    /// document as literal cells and could be typed into, and a large one was
+    /// read from a parquet and could not. The ceiling was about what a
+    /// document could carry, not about anything the person was doing, so the
+    /// two paths are one now — every file is read where it lies, and a
+    /// correction is a note against it rather than a second copy of the table.
     #[test]
-    fn large_csv_open_uses_the_same_paged_fallback_as_import() {
+    fn a_large_csv_opens_the_same_way_a_small_one_does() {
         let directory = env::temp_dir().join(format!("framework-large-open-{}", Uuid::new_v4()));
         fs::create_dir_all(&directory).unwrap();
         let path = directory.join("large.csv");
@@ -286,8 +293,7 @@ mod tests {
             csv.push_str(&format!("{index:07},3\n"));
         }
         fs::write(&path, &csv).unwrap();
-        let (mut session, view, notice) = data_session(&path).unwrap();
-        assert!(notice.is_none());
+        let (mut session, view) = data_session(&path).unwrap();
         let frame = view
             .document
             .objects
@@ -300,14 +306,12 @@ mod tests {
                 }
             })
             .unwrap();
-        assert!(frame.artifact.is_some());
-        assert!(frame.file_origin.is_none());
-        let editing = &view.computed_frames[&frame.id].editing;
-        assert!(!editing.cells);
-        let reason = editing.reason.as_deref().unwrap_or_default();
-        assert!(reason.contains("paged"), "{reason}");
-        assert!(reason.contains("calculated column"), "{reason}");
-        assert!(reason.contains("Wrangle"), "{reason}");
+        assert!(frame.artifact.is_some() && frame.rows.is_empty());
+        assert!(
+            frame.file_origin.is_some(),
+            "size no longer decides whether a result can go back to the file"
+        );
+        assert!(view.computed_frames[&frame.id].editing.cells);
         let frame_id = frame.id.clone();
         session
             .store
@@ -321,7 +325,7 @@ mod tests {
                     }],
                 }],
             })
-            .expect("paged frames still accept calculated columns");
+            .expect("a frame reading a file still accepts calculated columns");
         assert_eq!(fs::read_to_string(&path).unwrap(), csv);
         fs::remove_dir_all(session.path.parent().unwrap()).unwrap();
         fs::remove_dir_all(directory).unwrap();

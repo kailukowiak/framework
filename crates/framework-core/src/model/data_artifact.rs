@@ -115,15 +115,24 @@ mod tests {
     }
 }
 
-/// Row and column identities map original CSV tokens back to cells after
-/// sorting, filtering, and renaming. The hash guards an external write; it
-/// does not grant the workbook an unattended right to change that file.
+/// The delimited file a frame was read from and may be written back to.
+///
+/// `column_ids` names this document's column for each physical field of the
+/// file, in the file's own order, which is what lets a renamed header still
+/// find the tokens under it. There is deliberately no row list: a row is
+/// named by its ordinal in the base read, which is the same ordinal a patch
+/// is keyed by and the same one the page carries out, so the source line is
+/// `ordinal + 1` and nothing has to be stored to say so. Carrying a UUID per
+/// row was what made an opened file cost the size of the file rather than
+/// the size of the corrections.
+///
+/// The hash guards an external write; it does not grant the workbook an
+/// unattended right to change that file.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct DelimitedFileOrigin {
     pub path: String,
     pub sha256: String,
-    pub row_ids: Vec<String>,
     pub column_ids: Vec<String>,
 }

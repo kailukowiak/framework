@@ -20,13 +20,6 @@ pub const FRAMEWORK_TUTORIAL_VERSION: u32 = 2;
 
 pub const MAX_IMPORT_ROWS: usize = 5_000_000;
 
-/// The most rows an editable CSV/TSV copy may hold. Its rows live in the
-/// document as literal cells, so every autosave serializes them and every
-/// operation rebuilds a view over them: a 300k-row file measured 117 MB of
-/// JSON and close to nine seconds per view. Above this, a file imports the
-/// ordinary paged way and is not editable in place.
-pub const MAX_EDITABLE_ROWS: usize = 20_000;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct FrameworkDocumentFile {

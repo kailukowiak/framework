@@ -650,7 +650,7 @@ impl FrameObject {
         let editing = FrameEditing::for_frame(
             self,
             document.frame_cells_are_editable(&self.id),
-            self.preserves_own_row_identity(),
+            document.frame_rows_are_editable(&self.id),
             live,
             paged,
         );

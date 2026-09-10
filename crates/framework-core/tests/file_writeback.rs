@@ -2,19 +2,42 @@ use crate::common::*;
 use framework_core::*;
 use std::{fs, path::Path};
 
-fn open(path: &Path, text: &[u8]) -> (Store, FrameObject) {
-    fs::write(path, text).unwrap();
-    let mut store = demo_store();
+/// Opening a file the way the desktop does: stage it into a parquet the
+/// document reads, and record where it came from so a result can go back.
+///
+/// The rows are deliberately not in the document. That is the whole of this
+/// change: a frame reading a file costs what the corrections cost, and the
+/// file it names is what somebody typed into.
+fn open_into(store: &mut Store, name: &str, path: &Path) -> FrameObject {
+    let data = path
+        .parent()
+        .expect("test file has a directory")
+        .join("data");
+    let artifact = create_data_artifact(path, &data).unwrap();
     store
-        .apply(Operation::OpenDelimitedFile {
-            name: "Editing".into(),
-            path: path.display().to_string(),
+        .apply(Operation::ImportFrameFromArtifact {
+            name: name.into(),
+            artifact,
+            connector: None,
+            file_origin: Some(path.display().to_string()),
             x: 0.0,
             y: 0.0,
         })
         .unwrap();
-    let frame = frame_named(store.document(), "Editing").clone();
+    frame_named(store.document(), name).clone()
+}
+
+fn open(path: &Path, text: &[u8]) -> (Store, FrameObject) {
+    fs::write(path, text).unwrap();
+    let mut store = demo_store();
+    let frame = open_into(&mut store, "Editing", path);
     (store, frame)
+}
+
+/// The identity of each row on the page, which for a frame reading a file is
+/// the ordinal it was read at. There are no stored rows to take ids from.
+fn row_ids(store: &Store, frame_id: &str) -> Vec<Id> {
+    store.get_frame_page(frame_id, 0, 1000).unwrap().row_ids
 }
 
 fn write(store: &mut Store, frame: &FrameObject, recovery: &Path) {
@@ -28,7 +51,10 @@ fn editable_csv_preserves_identifiers_dates_quotes_and_noop_bytes() {
     let path = dir.join("customers.csv");
     let text = b"\xef\xbb\xbfID,Long,Date,Amount,Note\r\n00123,123456789012345678,1/2/2023,12.00,\"a,b\"\r\n007,987654321098765432,2/3/2023,2.50,\"two\nlines\"";
     let (mut store, frame) = open(&path, text);
-    assert!(frame.owns_its_rows());
+    assert!(
+        !frame.owns_its_rows() && frame.rows.is_empty(),
+        "the values are in the file, and the document holds none of them"
+    );
     assert_eq!(
         frame
             .columns
@@ -66,7 +92,7 @@ fn renamed_headers_and_manual_edits_write_back_and_undo_can_be_written_again() {
         .apply(Operation::SetCell {
             frame_id: frame.id.clone(),
             column_id: frame.columns[1].id.clone(),
-            row_id: frame.rows[1].id.clone(),
+            row_id: row_ids(&store, &frame.id)[1].clone(),
             raw: "Bobby, Jr.".into(),
         })
         .unwrap();
@@ -163,15 +189,17 @@ fn sorting_and_filtering_keep_tokens_attached_to_stable_rows() {
             ],
         })
         .unwrap();
-    let authored = frame_named(store.document(), "Editing").clone();
+    let sorted = row_ids(&store, &frame.id);
     write(&mut store, &frame, &dir.join("recovery"));
     assert_eq!(
         fs::read_to_string(&path).unwrap(),
-        "ID\tQty\r\n001\t1.00\r\n\"002\"\t2.00\r\n"
+        "ID\tQty\r\n001\t1.00\r\n\"002\"\t2.00\r\n",
+        "each token followed its own row through the filter and the sort"
     );
     assert_eq!(
-        frame_named(store.document(), "Editing").rows[0].id,
-        authored.rows[0].id
+        row_ids(&store, &frame.id),
+        sorted,
+        "and a row is still named by where it was read, not by where it landed"
     );
 }
 
@@ -225,33 +253,59 @@ fn failed_write_state_keeps_file_and_pipeline_and_rollback_restores_receipt() {
     assert_eq!(fs::read_to_string(&path).unwrap(), "Amount\n24\n");
 }
 
+/// A file far past the old twenty-thousand-row ceiling opens, is typed into,
+/// and is written back — while the document holds not one of its cells.
+///
+/// The ceiling existed because an opened file used to be copied into the
+/// document as literal rows, so every autosave serialized the whole table and
+/// every operation rebuilt a view over it. Reading it where it lies removes
+/// the reason for the limit rather than raising it.
 #[test]
-fn only_a_file_copy_can_be_baked_and_only_up_to_the_editable_cap() {
-    let dir = temporary_test_directory("file-gates");
-    let mut store = demo_store();
-    let orders = frame_named(store.document(), "Orders").id.clone();
-    let refused = store.apply(Operation::BakeFrame { frame_id: orders });
-    assert!(
-        refused.is_err(),
-        "a hand-entered frame has no file to bake toward"
-    );
-
+fn a_file_past_the_old_editable_ceiling_opens_and_is_still_editable() {
+    let dir = temporary_test_directory("file-large");
     let path = dir.join("big.csv");
-    let mut text = String::from("ID\n");
-    for i in 0..=MAX_EDITABLE_ROWS {
-        text.push_str(&format!("{i}\n"));
+    let mut text = String::from("ID,Note\n");
+    for i in 0..25_000 {
+        text.push_str(&format!("{i},row {i}\n"));
     }
     fs::write(&path, &text).unwrap();
-    let error = store
-        .apply(Operation::OpenDelimitedFile {
-            name: "Big".into(),
-            path: path.display().to_string(),
-            x: 0.0,
-            y: 0.0,
+    let (mut store, frame) = open(&path, text.as_bytes());
+    assert!(
+        frame.rows.is_empty(),
+        "the file's rows stay in the file, not in the document"
+    );
+    assert_eq!(
+        store.get_frame_page(&frame.id, 0, 5).unwrap().total_rows,
+        25_000
+    );
+
+    let last = store.get_frame_page(&frame.id, 24_999, 1).unwrap();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: last.row_ids[0].clone(),
+            column_id: frame.columns[1].id.clone(),
+            raw: "corrected".into(),
         })
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("at most"), "{error}");
+        .unwrap();
+    let settled = frame_named(store.document(), "Editing");
+    assert_eq!(
+        settled.cell_overlay.len(),
+        1,
+        "one correction is one note, whatever the size of the table"
+    );
+    assert!(settled.rows.is_empty());
+
+    write(&mut store, &frame, &dir.join("recovery"));
+    let written = fs::read_to_string(&path).unwrap();
+    assert!(
+        written.ends_with("24999,corrected\n"),
+        "the last line moved"
+    );
+    assert!(
+        written.starts_with("ID,Note\n0,row 0\n1,row 1\n"),
+        "and nothing else did"
+    );
 }
 
 #[cfg(unix)]
@@ -299,7 +353,14 @@ fn update_keeps_active_recipe_and_replacement_reuses_it_once() {
     let saved = frame_named(store.document(), "Editing");
     assert_eq!(saved.steps.len(), 1);
     assert!(saved.disconnected_read.is_none());
-    assert_eq!(saved.rows[0].cells[&frame.columns[1].id].raw, "10");
+    let saved = saved.clone();
+    // Ten in the file, doubled by the chain, is twenty on the page — which is
+    // also the check that writing the result back did not fold the doubling
+    // into the base. If it had, this would read forty by now.
+    assert_eq!(
+        store.get_frame_page(&saved.id, 0, 10).unwrap().rows[0][1],
+        "20"
+    );
     // Serialization is the notebook boundary, independent of the CSV.
     let document: Document =
         serde_json::from_str(&serde_json::to_string(store.document()).unwrap()).unwrap();
@@ -353,21 +414,19 @@ fn updated_file_returns_as_a_clean_frame_without_changing_the_recipe() {
         .unwrap();
 
     write(&mut store, &frame, &dir.join("write-state"));
-    store
-        .apply(Operation::OpenDelimitedFile {
-            name: "Saved result".into(),
-            path: path.display().to_string(),
-            x: 28.0,
-            y: 28.0,
-        })
-        .unwrap();
+    let result = open_into(&mut store, "Saved result", &path);
 
-    let recipe = frame_named(store.document(), "Editing");
+    let recipe = frame_named(store.document(), "Editing").clone();
     assert_eq!(recipe.steps.len(), 1);
-    assert_eq!(recipe.rows[0].cells[&frame.columns[1].id].raw, "10");
-    let result = frame_named(store.document(), "Saved result");
+    assert_eq!(
+        store.get_frame_page(&recipe.id, 0, 10).unwrap().rows[0][1],
+        "10"
+    );
     assert!(result.steps.is_empty());
-    assert_eq!(result.rows[0].cells[&result.columns[2].id].raw, "20");
+    assert_eq!(
+        store.get_frame_page(&result.id, 0, 10).unwrap().rows[0][2],
+        "20"
+    );
     assert_eq!(
         fs::read_to_string(path).unwrap(),
         "Item,Price,Total\nDesk,10,20\n"
@@ -423,6 +482,7 @@ fn paged_csv_inference_preserves_late_identifiers_and_ambiguous_text() {
             name: "Safe".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -461,15 +521,19 @@ fn replacing_an_editable_csv_keeps_the_new_writeback_destination() {
         })
         .unwrap();
     let replaced = frame_named(store.document(), "Editing").clone();
-    assert!(replaced.owns_its_rows());
     assert_eq!(
         replaced.file_origin.as_ref().unwrap().path,
-        fs::canonicalize(&next).unwrap().display().to_string()
+        fs::canonicalize(&next).unwrap().display().to_string(),
+        "the destination follows the frame to the file it now reads"
+    );
+    assert!(
+        replaced.connector.is_none(),
+        "and a frame somebody can write back to is not one a refresh may overwrite"
     );
     store
         .apply(Operation::SetCell {
             frame_id: frame.id.clone(),
-            row_id: replaced.rows[0].id.clone(),
+            row_id: row_ids(&store, &frame.id)[0].clone(),
             column_id: replaced.columns[1].id.clone(),
             raw: "3".into(),
         })
@@ -507,6 +571,7 @@ fn conservative_paged_types_do_not_collapse_duplicate_headers() {
             name: "Duplicates".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -527,10 +592,7 @@ fn export_writes_the_format_its_name_promises() {
     let (store, frame) = open(&dir.join("sales.csv"), b"Item,Price\nDesk,10\n");
     let tsv = dir.join("sales.tsv");
     store.export_frame_file(&frame.id, &tsv).unwrap();
-    assert_eq!(
-        fs::read_to_string(&tsv).unwrap(),
-        "Item\tPrice\nDesk\t10.0\n"
-    );
+    assert_eq!(fs::read_to_string(&tsv).unwrap(), "Item\tPrice\nDesk\t10\n");
     assert!(
         store
             .export_frame_file(&frame.id, &dir.join("sales.xlsx"))
@@ -566,6 +628,7 @@ fn exporting_parquet_carries_types_a_csv_would_have_to_respell() {
             name: "Round trip".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -581,16 +644,13 @@ fn exporting_parquet_carries_types_a_csv_would_have_to_respell() {
         "display names travel as the file's own header"
     );
     // The point of a typed destination: the identifier is still text on the
-    // far side of the file, with no inference rule needed to recover it.
-    //
-    // The counts arrive back as Number rather than Integer because an editable
-    // copy types every numeric column as one (`conservative_type`), which the
-    // paged path does not — it reads whole numbers as Int64. So the same file
-    // exports a double schema when it is small and an integer schema when it
-    // is large. Harmless in CSV, where `3.0` is just a spelling; recorded here
-    // because a Parquet schema states it as fact.
+    // far side of the file, with no inference rule needed to recover it — and
+    // a whole number is an integer on both sides now that a file has one read
+    // path rather than a small one and a large one. The same file used to
+    // export a double schema when it fitted in the document and an integer
+    // schema when it did not.
     assert_eq!(reopened.columns[0].data_type, DataType::String);
-    assert_eq!(reopened.columns[1].data_type, DataType::Number);
+    assert_eq!(reopened.columns[1].data_type, DataType::Integer);
     let page = store.get_frame_page(&reopened.id, 0, 50).unwrap();
     assert_eq!(page.rows[0], vec!["0002", "3", "6"]);
     assert_eq!(page.rows[1], vec!["0010", "4", "8"]);
@@ -604,7 +664,7 @@ fn ndjson_exports_one_object_per_line_and_opens_again() {
     store.export_frame_file(&frame.id, &ndjson).unwrap();
     let written = fs::read_to_string(&ndjson).unwrap();
     assert_eq!(
-        written, "{\"SKU\":\"0007\",\"Quantity\":2.0}\n{\"SKU\":\"0008\",\"Quantity\":5.0}\n",
+        written, "{\"SKU\":\"0007\",\"Quantity\":2}\n{\"SKU\":\"0008\",\"Quantity\":5}\n",
         "one self-describing object per line, with the identifier still quoted"
     );
 
@@ -617,6 +677,7 @@ fn ndjson_exports_one_object_per_line_and_opens_again() {
             name: "Reopened".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -628,7 +689,7 @@ fn ndjson_exports_one_object_per_line_and_opens_again() {
             .iter()
             .map(|column| (column.name.as_str(), column.data_type))
             .collect::<Vec<_>>(),
-        [("SKU", DataType::String), ("Quantity", DataType::Number)]
+        [("SKU", DataType::String), ("Quantity", DataType::Integer)]
     );
     let page = store.get_frame_page(&reopened.id, 0, 50).unwrap();
     assert_eq!(page.rows[0], vec!["0007", "2"]);
@@ -655,6 +716,7 @@ fn json_lines_typing_waits_for_the_whole_file() {
             name: "Events".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -707,6 +769,7 @@ fn a_chained_parquet_frame_edits_the_row_the_value_came_from() {
             name: "Stock".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -783,6 +846,7 @@ fn a_calculated_column_over_a_parquet_frame_refuses_a_typed_value() {
             name: "Stock".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -846,6 +910,7 @@ fn typing_over_a_parquet_cell_leaves_the_file_untouched() {
             name: "Ledger".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -921,6 +986,7 @@ fn replacing_the_source_drops_patches_rather_than_moving_them() {
             name: "Ledger".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -987,6 +1053,7 @@ fn rows_can_be_struck_out_and_added_without_touching_the_file() {
             name: "Stock".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -1099,6 +1166,7 @@ fn patched_stock(dir: &Path) -> (Store, FrameObject, Vec<Vec<String>>) {
             name: "Stock".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -1267,6 +1335,7 @@ fn a_folded_file_holds_the_corrections_and_the_rows_a_filter_was_hiding() {
             name: "Folded".into(),
             artifact: folded,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -1277,5 +1346,161 @@ fn a_folded_file_holds_the_corrections_and_the_rows_a_filter_was_hiding() {
         [["A", "9"], ["C", "3"], ["D", "0"], ["E", "5"],],
         "the typed-over value and the added row are in the file; the struck-out \
          row is gone and the filtered-out one is not"
+    );
+}
+
+/// Settling corrections and then putting the result back still writes the
+/// right file.
+///
+/// The fold moves rows: a struck-out row leaves the base, so every ordinal
+/// after it shifts and the source line an ordinal names is no longer the line
+/// that row was read from. That costs spelling, never correctness — a token is
+/// reused only when it still spells the value the plan holds, so a misaligned
+/// line simply fails that test and the cell is encoded fresh. The values are
+/// the plan's either way. This is the crossing of the two halves of this work,
+/// and the place a silently wrong CSV could otherwise hide.
+#[test]
+fn a_folded_table_still_writes_the_right_file_back() {
+    let dir = temporary_test_directory("fold-then-write");
+    let path = dir.join("stock.csv");
+    let (mut store, frame) = open(&path, b"SKU,Count\nA,1.00\nB,2.00\nC,3.00\n");
+    let page = row_ids(&store, &frame.id);
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: page[2].clone(),
+            column_id: frame.columns[1].id.clone(),
+            raw: "9".into(),
+        })
+        .unwrap();
+    store
+        .apply(Operation::DeleteRow {
+            frame_id: frame.id.clone(),
+            row_id: page[0].clone(),
+        })
+        .unwrap();
+    let before = store.get_frame_page(&frame.id, 0, 10).unwrap().rows;
+
+    let folded = store
+        .write_folded_frame_data(&frame.id, &dir.join("data"))
+        .unwrap();
+    store
+        .apply(Operation::FoldRowPatches {
+            folded: vec![(frame.id.clone(), folded)],
+        })
+        .unwrap();
+    assert_eq!(store.get_frame_page(&frame.id, 0, 10).unwrap().rows, before);
+
+    write(&mut store, &frame, &dir.join("recovery"));
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        "SKU,Count\nB,2\nC,9\n",
+        "every value is the one on screen; the trailing zeros are gone because \
+         after a fold no row is looking at the line it was read from any more"
+    );
+}
+
+/// A correction moves the frame's lineage fingerprint.
+///
+/// The fingerprint is what tells a cached page it is out of date, so a
+/// correction that does not move it is a correction nobody sees: the value
+/// is in the document, every read is answered from a page fetched before it,
+/// and the grid goes on showing the file. That is exactly what happened —
+/// the digest listed the fields that decide a frame's rows and the patches
+/// were not among them.
+#[test]
+fn a_correction_moves_the_fingerprint_that_invalidates_a_cached_page() {
+    let dir = temporary_test_directory("overlay-fingerprint");
+    let path = dir.join("stock.csv");
+    let (mut store, frame) = open(&path, b"SKU,Count\nA,1\nB,2\n");
+    let fingerprint = |store: &Store| store.view().computed_frames[&frame.id].fingerprint.clone();
+
+    let opened = fingerprint(&store);
+    let page = row_ids(&store, &frame.id);
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: page[0].clone(),
+            column_id: frame.columns[1].id.clone(),
+            raw: "9".into(),
+        })
+        .unwrap();
+    let typed = fingerprint(&store);
+    assert_ne!(typed, opened, "a typed-over value is a different table");
+
+    store
+        .apply(Operation::DeleteRow {
+            frame_id: frame.id.clone(),
+            row_id: page[1].clone(),
+        })
+        .unwrap();
+    let struck = fingerprint(&store);
+    assert_ne!(struck, typed, "so is a struck-out row");
+
+    store
+        .apply(Operation::AddRow {
+            frame_id: frame.id.clone(),
+            values: Default::default(),
+        })
+        .unwrap();
+    assert_ne!(fingerprint(&store), struck, "and so is an added one");
+
+    store.undo();
+    store.undo();
+    store.undo();
+    assert_eq!(fingerprint(&store), opened, "and undo puts the table back");
+}
+
+/// Adding and removing rows is offered wherever it actually works.
+///
+/// The grid reads this flag to decide whether to show the new-row line and
+/// the delete gesture, and `prepare` decides whether to accept them. They
+/// were separate answers, and the file-backed frame is where they disagreed:
+/// a row added past the end of a base read has been supported since patches
+/// landed, while the view went on reporting that this table could not grow.
+#[test]
+fn a_file_backed_table_offers_the_row_gestures_it_accepts() {
+    let dir = temporary_test_directory("overlay-row-affordance");
+    let (mut store, frame) = open(&dir.join("stock.csv"), b"SKU,Count\nA,1\n");
+    let editing = store.view().computed_frames[&frame.id].editing.clone();
+    assert!(editing.cells);
+    assert!(editing.rows, "a file-backed table can grow by a patch");
+    assert!(
+        store
+            .apply(Operation::AddRow {
+                frame_id: frame.id.clone(),
+                values: Default::default(),
+            })
+            .is_ok(),
+        "and the operation agrees"
+    );
+
+    // A reshaping chain leaves no row to name, and then neither answers yes.
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![FrameStepInput::Summarize {
+                group_keys: vec![ExistingFormulaInput {
+                    output_column_id: frame.columns[0].id.clone(),
+                    name: "SKU".into(),
+                    formula: "`SKU`".into(),
+                }],
+                aggregates: vec![ExistingFormulaInput {
+                    output_column_id: "total~affordance".into(),
+                    name: "Total".into(),
+                    formula: "`Count`.sum()".into(),
+                }],
+                maintain_order: true,
+            }],
+        })
+        .unwrap();
+    assert!(!store.view().computed_frames[&frame.id].editing.rows);
+    assert!(
+        store
+            .apply(Operation::AddRow {
+                frame_id: frame.id.clone(),
+                values: Default::default(),
+            })
+            .is_err()
     );
 }

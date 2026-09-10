@@ -521,8 +521,9 @@ impl FrameEditing {
                 rows,
                 overrides: !paged,
                 reason: (!frame.owns_its_rows()).then(|| {
-                    "These rows are the document's own copy — type into them freely. \
-                     Each edit rewrites the file they live in."
+                    "These rows are read from a file. Type into them freely — each \
+                     correction is recorded against that file, which is left exactly \
+                     as it is until you write a result back to it."
                         .to_string()
                 }),
             };
@@ -1504,6 +1505,15 @@ impl Document {
                 serde_json::to_string(&frame.derivation).ok(),
                 serde_json::to_string(&frame.generator).ok(),
                 serde_json::to_string(&frame.entry_columns).ok(),
+                // The corrections typed over the base read decide rows as
+                // directly as a step does — a value replaced, a row struck
+                // out, a row added past the end. Leaving them out left every
+                // cached page, and every stale-snapshot check, answering for
+                // the file as it was before somebody fixed it: the grid kept
+                // showing the old value until something else moved the hash.
+                serde_json::to_string(&frame.cell_overlay).ok(),
+                serde_json::to_string(&frame.deleted_rows).ok(),
+                serde_json::to_string(&frame.appended_rows).ok(),
             ];
             if frame.derivation.is_none() && frame.generator.is_none() {
                 // A derived frame's `rows` are a cache of its own output,
@@ -1745,6 +1755,23 @@ impl Document {
                     .columns
                     .iter()
                     .any(|column| frame.column_is_stored_input(&column.id))
+        })
+    }
+
+    /// Whether rows can be added to or struck out of this frame by hand.
+    ///
+    /// Either the document holds the rows, or it can name one by its ordinal
+    /// in a base it reads and record a note against that base — which is the
+    /// same pair of conditions `prepare_add_row` and `prepare_delete_row`
+    /// branch on. It lives here rather than being spelled a third time in the
+    /// view, because an affordance the grid offers and the operation refuses
+    /// (or the reverse, which is what happened: the engine grew the ability
+    /// to add a row to a file-backed frame and the grid went on hiding it) is
+    /// exactly the disagreement one shared answer prevents.
+    pub(crate) fn frame_rows_are_editable(&self, frame_id: &str) -> bool {
+        self.frame(frame_id).is_ok_and(|frame| {
+            frame.preserves_own_row_identity()
+                || (frame.carries_base_row_index() && self.frame_cells_are_editable(frame_id))
         })
     }
 

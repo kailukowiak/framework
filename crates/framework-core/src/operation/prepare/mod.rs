@@ -128,8 +128,6 @@ impl Document {
             operation @ (Operation::RenameColumn { .. }
             | Operation::RenameColumnsUsingMapping { .. }
             | Operation::RenameColumns { .. }
-            | Operation::OpenDelimitedFile { .. }
-            | Operation::BakeFrame { .. }
             | Operation::ImportFrameFromFile { .. }
             | Operation::ImportFrameFromArtifact { .. }
             | Operation::RefreshFrameArtifact { .. }

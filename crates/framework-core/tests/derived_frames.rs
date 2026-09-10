@@ -1049,6 +1049,7 @@ fn materializing_a_grouped_frame_caches_it_and_reports_staleness() {
             name: "Ledger".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })
@@ -2563,6 +2564,7 @@ fn staleness_inherits_and_refreshing_walks_the_lineage_from_the_top() {
             name: "Ledger".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })

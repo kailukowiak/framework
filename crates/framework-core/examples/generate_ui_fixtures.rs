@@ -203,6 +203,7 @@ fn write_imported_fixture(
         connector: Some(ConnectorRecipe::File {
             source_path: "monthly-sales.csv".into(),
         }),
+        file_origin: None,
         x: 80.0,
         y: 80.0,
     })?;

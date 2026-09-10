@@ -671,12 +671,19 @@ impl Document {
         name: String,
         artifact: DataArtifact,
         connector: Option<ConnectorRecipe>,
+        file_origin: Option<String>,
         x: f64,
         y: f64,
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             let name = self.unique_frame_name(&name, None);
-            let (frame, view) = Self::build_artifact_frame(name, artifact, connector, x, y)?;
+            let (mut frame, view) = Self::build_artifact_frame(name, artifact, connector, x, y)?;
+            // Resolved here rather than by the caller because the binding it
+            // records is between the file's fields and *this frame's* columns,
+            // and those column ids were minted one line ago.
+            if let Some(path) = file_origin {
+                frame.file_origin = Some(Self::delimited_file_origin(&path, &frame.columns)?);
+            }
             ReplicatedOperation::AddObject {
                 object: DataObject::Frame(frame),
                 view,

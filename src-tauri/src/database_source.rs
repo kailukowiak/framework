@@ -49,6 +49,7 @@ pub(super) async fn import_database_source(
                 name: source_name,
                 artifact,
                 connector: Some(connector),
+                file_origin: None,
                 x: input.x,
                 y: input.y,
             },

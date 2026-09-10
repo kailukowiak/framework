@@ -88,6 +88,7 @@ fn import_range(
         name: spec.name.into(),
         artifact,
         connector: None,
+        file_origin: None,
         x: spec.x,
         y: spec.y,
     })?;

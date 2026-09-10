@@ -275,8 +275,6 @@ export async function saveDocumentAsDialog(): Promise<{
  */
 export interface ImportOutcome {
   document: DocumentView;
-  /** Set when a stored CSV/TSV uses paged rows while retaining frame edits. */
-  notice: string | null;
 }
 
 export async function importDatasetFile(

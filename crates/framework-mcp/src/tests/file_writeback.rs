@@ -1,14 +1,31 @@
 use super::*;
 
+/// A file read through the generic operation surface, and what an agent can
+/// and cannot do to it.
+///
+/// The MCP server has no data directory to stage a parquet into, so the
+/// operation it can reach is the one that reads a path directly. What it
+/// deliberately never gets is a write-back destination: a `file_origin` is
+/// recorded by the desktop, which owns the staging, the confirmation and the
+/// file receipt. An agent editing a workbook must not silently acquire the
+/// authority to overwrite somebody's CSV.
 #[test]
-fn editable_file_and_bake_are_available_through_the_generated_operation_surface() {
+fn a_file_read_through_the_operation_surface_never_gains_authority_over_it() {
     let (server, path) = test_server();
     let csv = path.with_extension("csv");
     std::fs::write(&csv, "ID,Amount\n001,12.00\n").unwrap();
-    let opened = server.apply_operation(Parameters(ApplyOperationArgs {
-        operation: serde_json::json!({ "type": "openDelimitedFile", "name": "Editable", "path": csv, "x": 0, "y": 0 }),
-        expected_revision: None,
-    })).unwrap().0;
+    server
+        .apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({
+                "type": "importFrameFromFile",
+                "name": "Editable",
+                "path": csv.display().to_string(),
+                "x": 0.0,
+                "y": 0.0,
+            }),
+            expected_revision: None,
+        }))
+        .unwrap();
     let snapshot = server
         .get_frame(Parameters(GetFrameArgs {
             frame: "Editable".into(),
@@ -17,15 +34,6 @@ fn editable_file_and_bake_are_available_through_the_generated_operation_surface(
         .unwrap()
         .0;
     assert_eq!(snapshot.rows[0].cells[0].display, "001");
-    let frame_id = snapshot.id;
-    server
-        .apply_operation(Parameters(ApplyOperationArgs {
-            operation: serde_json::json!({ "type": "bakeFrame", "frameId": frame_id }),
-            expected_revision: Some(opened.revision),
-        }))
-        .unwrap();
-    // The generic operation only bakes the workbook. It cannot silently
-    // acquire the desktop action's authority to overwrite an external file.
     assert_eq!(
         std::fs::read_to_string(&csv).unwrap(),
         "ID,Amount\n001,12.00\n"
@@ -38,10 +46,19 @@ fn batch_rename_uses_the_canonical_operation_and_revision_guard() {
     let (server, path) = test_server();
     let csv = path.with_extension("csv");
     std::fs::write(&csv, "A,B\n1,2\n").unwrap();
-    let opened = server.apply_operation(Parameters(ApplyOperationArgs {
-        operation: serde_json::json!({"type":"openDelimitedFile","name":"Batch","path":csv,"x":0,"y":0}),
-        expected_revision: None,
-    })).unwrap().0;
+    let opened = server
+        .apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({
+                "type": "importFrameFromFile",
+                "name": "Batch",
+                "path": csv.display().to_string(),
+                "x": 0.0,
+                "y": 0.0,
+            }),
+            expected_revision: None,
+        }))
+        .unwrap()
+        .0;
     let snapshot = server
         .get_frame(Parameters(GetFrameArgs {
             frame: "Batch".into(),

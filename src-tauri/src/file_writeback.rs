@@ -1,12 +1,17 @@
 //! Explicit file editing is separate from workbook autosave and live imports.
 use super::*;
 
-/// What an import produced, and anything the person should hear about how.
+/// What an import produced.
+///
+/// It used to carry a notice as well, for the one thing an import could have
+/// to say: that this file was too large to open as an editable copy and had
+/// come in read-only instead. There is no such fork any more — every file is
+/// read where it lies — so there is nothing left to say and no field to say
+/// it in.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct ImportOutcome {
     pub document: DocumentView,
-    pub notice: Option<String>,
 }
 
 #[tauri::command]
@@ -63,47 +68,28 @@ pub(super) fn import_file_into_session(
         .extension()
         .and_then(|s| s.to_str())
         .is_some_and(|s| s.eq_ignore_ascii_case("csv") || s.eq_ignore_ascii_case("tsv"));
-    // A stored CSV/TSV holds literal rows when it is small and regular enough
-    // to do so. Otherwise it imports the paged way it always has. That is not
-    // an import warning: explain the narrower direct-cell boundary only if
-    // somebody actually tries that gesture.
-    let notice = None;
-    let mut paged_source = false;
-    if !linked && delimited {
-        match apply_session_operation_inner(
-            session,
-            writer_id,
-            Operation::OpenDelimitedFile {
-                name: name.clone(),
-                path: path.display().to_string(),
-                x,
-                y,
-            },
-        ) {
-            Ok(document) => {
-                return Ok(ImportOutcome {
-                    document,
-                    notice: None,
-                });
-            }
-            Err(reason) => {
-                log::info!("using paged import for {}: {reason}", path.display());
-                paged_source = true;
-            }
-        }
-    }
+    // Every import is staged the same way now: one read of the file into a
+    // parquet the document owns, however large it is. What a stored CSV/TSV
+    // gets on top is a write-back destination — the file it came from, and
+    // which of its fields is which column — so "open it, fix it, put it back"
+    // costs the corrections rather than a second copy of the table inside the
+    // document. A linked import deliberately gets none: refreshing over
+    // somebody's corrections and writing their corrections back out are
+    // opposite promises, and a frame may only make one of them.
     let artifact = stage_import_file(&session.path, session.store.document_id(), path)?;
+    let source_path = path.display().to_string();
     let operation = Operation::ImportFrameFromArtifact {
         name,
         artifact,
-        connector: (linked || paged_source).then(|| ConnectorRecipe::File {
-            source_path: path.display().to_string(),
+        connector: linked.then(|| ConnectorRecipe::File {
+            source_path: source_path.clone(),
         }),
+        file_origin: (!linked && delimited).then_some(source_path),
         x,
         y,
     };
     let document = apply_session_operation_inner(session, writer_id, operation)?;
-    Ok(ImportOutcome { document, notice })
+    Ok(ImportOutcome { document })
 }
 
 /// The file a frame was read from, whatever records it. Used to place the

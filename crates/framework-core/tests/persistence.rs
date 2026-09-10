@@ -423,6 +423,7 @@ fn documents_carry_their_data_by_relative_path_and_save_as_copies_all_of_it() {
             name: "Ledger".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })

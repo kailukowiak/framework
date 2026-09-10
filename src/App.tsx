@@ -384,7 +384,6 @@ export default function App() {
     setSelection,
     setContextMenu,
     setError,
-    setNotice,
     setInspectorSection,
     setGridFocus,
     setDatasetLibrary,

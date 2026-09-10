@@ -290,7 +290,7 @@ impl Document {
             // transformation, and an added row would sit in the document
             // producing nothing, so saying no is the honest answer.
             if !frame.preserves_own_row_identity() {
-                if frame.carries_base_row_index() && self.frame_cells_are_editable(&frame_id) {
+                if self.frame_rows_are_editable(&frame_id) {
                     return Ok(ReplicatedOperation::SetRowPatches {
                         frame_id,
                         deleted_rows: frame.deleted_rows.clone(),
@@ -346,7 +346,7 @@ impl Document {
         if !frame.preserves_own_row_identity() {
             // Struck out rather than removed: the rows are in a file, and the
             // only thing that takes a row out of a file is writing one.
-            if frame.carries_base_row_index() && self.frame_cells_are_editable(&frame_id) {
+            if self.frame_rows_are_editable(&frame_id) {
                 let ordinal = Self::artifact_row_ordinal(&frame_id, &row_id)
                     .and_then(|ordinal| u32::try_from(ordinal).ok())
                     .ok_or(CoreError::RowNotFound)?;

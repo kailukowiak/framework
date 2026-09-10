@@ -11,6 +11,17 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Opening a CSV or TSV no longer has a size limit, and no longer has two
+  behaviours. Every file — twenty rows or two million — opens the same way:
+  read where it lies, editable in place, and writable back to with *Update
+  original*. Files over 20,000 rows used to open read-only, because a smaller
+  one was copied into the workbook cell by cell and a large one could not be.
+  Nothing is copied now, so the limit had nothing left to protect: workbooks
+  that open a file are dramatically smaller, they save in a fraction of the
+  time, and a correction to a large table costs the same as a correction to a
+  small one. A whole number read from a file is now a whole number on the way
+  out, where a small file used to write `5` back as `5.0`.
+
 - **Settle and reclaim data files** in the Project panel now writes the
   corrections you have made to a table's data file into a file of their own,
   before it clears out the staged files nothing points at any more. Values on

@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { browser, $, expect } from "@wdio/globals";
+import { Key } from "webdriverio";
 import { columnCellTexts } from "../lib/helpers";
 
 describe("External CSV opening", () => {
@@ -104,7 +105,7 @@ describe("External CSV opening", () => {
       if (written.outputSteps === -1)
         throw new Error(`Output table missing: ${JSON.stringify(written.objects)}`);
       expect(written.outputSteps).toBe(0);
-      expect(readFileSync(output, "utf8")).toBe("SKU,Quantity\n0003,5.0\n");
+      expect(readFileSync(output, "utf8")).toBe("SKU,Quantity\n0003,5\n");
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
@@ -171,6 +172,51 @@ describe("External CSV opening", () => {
       expect(written.outputName).toBe("Parquet output");
       // The source is untouched by an export, whatever format it wrote.
       expect(readFileSync(path, "utf8")).toBe("SKU,Quantity\n0004,7\n");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  // The seam this spec exists for. An opened file's rows are not in the
+  // workbook any more — they are read from a staged copy of the file, and
+  // typing into one records a correction against that read. Every layer has
+  // to agree for the gesture to work at all: the grid must offer the cell,
+  // the page must name the row by the ordinal it was read at, the operation
+  // must land as a patch rather than a rewrite, and the recomputed page must
+  // show the correction over the file's own value. A unit test can prove any
+  // one of those; only the real app proves they agree.
+  it("types into an opened file and shows the correction over it", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "framework-csv-edit-"));
+    const path = join(directory, "Edited orders.csv");
+    const original = "SKU,Quantity\n0005,11\n0006,12\n";
+    writeFileSync(path, original);
+    try {
+      const previous = await browser.getWindowHandles();
+      const app = resolve("target/debug/bundle/macos/FrameWork.app");
+      execFileSync("open", ["-a", app, path]);
+      await browser.waitUntil(
+        async () => (await browser.getWindowHandles()).length > previous.length
+      );
+      const handles = await browser.getWindowHandles();
+      const opened = handles.find((handle) => !previous.includes(handle));
+      if (!opened) throw new Error("CSV window did not open");
+      await browser.switchToWindow(opened);
+      await $('button[aria-label="Sort by SKU"]').waitForExist();
+
+      const cell = $("div.cell-display=12");
+      await cell.waitForExist();
+      await cell.click();
+      await browser.keys(Key.F2);
+      const editor = $(".cell-editor");
+      await editor.waitForExist();
+      await editor.setValue("99");
+      await browser.keys(Key.Enter);
+      await $("div.cell-display=99").waitForExist();
+      expect((await columnCellTexts("Quantity")).slice(0, 2)).toEqual(["11", "99"]);
+
+      // The correction is a note against the file, so the file itself has not
+      // moved. Putting it back is a separate, confirmed gesture.
+      expect(readFileSync(path, "utf8")).toBe(original);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

@@ -1242,6 +1242,7 @@ async fn import_cli_source(
             name,
             artifact,
             connector: Some(connector),
+            file_origin: None,
             x: input.x,
             y: input.y,
         },
@@ -1328,6 +1329,7 @@ fn import_excel_range(
             name,
             artifact,
             connector: None,
+            file_origin: None,
             x,
             y,
         },
@@ -1413,6 +1415,7 @@ fn import_and_append_file(
         connector: linked.then(|| ConnectorRecipe::File {
             source_path: source_path.display().to_string(),
         }),
+        file_origin: None,
         x,
         y,
     };
@@ -1888,6 +1891,7 @@ fn freeze_frame_copy(
             name,
             artifact,
             connector: None,
+            file_origin: None,
             x,
             y,
         },
@@ -3003,6 +3007,7 @@ mod tests {
                 name: "Inventory".into(),
                 artifact,
                 connector: None,
+                file_origin: None,
                 x: 0.0,
                 y: 0.0,
             })

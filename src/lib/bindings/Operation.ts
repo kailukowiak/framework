@@ -149,14 +149,6 @@ export type Operation =
     valueColumnId: string;
   }
   | {
-    "type": "openDelimitedFile";
-    name: string;
-    path: string;
-    x: number;
-    y: number;
-  }
-  | { "type": "bakeFrame"; frameId: string }
-  | {
     "type": "importFrameFromFile";
     name: string;
     path: string;
@@ -168,6 +160,23 @@ export type Operation =
     name: string;
     artifact: DataArtifact;
     connector: ConnectorRecipe | null;
+    /**
+     * The delimited file this artifact was staged from, when the
+     * document should be able to write a result back to it.
+     *
+     * A path rather than a resolved origin because the record an update
+     * needs — which column of this document each physical field of the
+     * file is — cannot exist until the frame does, and the frame is
+     * built here. Preparation reads the header, hashes the file, and
+     * binds the two together.
+     *
+     * Set for a stored CSV or TSV and nothing else. A connector says
+     * this frame can be *refreshed* from somewhere; this says it can be
+     * *written back* to somewhere, which is a different permission and
+     * a different file format contract — see `separator`, which is why
+     * no other format ever gets one.
+     */
+    fileOrigin?: string | null;
     x: number;
     y: number;
   }

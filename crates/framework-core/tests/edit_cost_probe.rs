@@ -91,6 +91,7 @@ fn probe_edit_cost() {
             name: "Big".into(),
             artifact,
             connector: None,
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })

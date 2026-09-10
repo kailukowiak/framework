@@ -512,6 +512,7 @@ fn write_excel_import_sample(
             name: name.into(),
             artifact,
             connector: None,
+            file_origin: None,
             x,
             y,
         })?;

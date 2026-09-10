@@ -269,18 +269,6 @@ pub enum Operation {
         key_column_id: Id,
         value_column_id: Id,
     },
-    /// Open a CSV/TSV as an editable copy, preserving cell spellings.
-    OpenDelimitedFile {
-        name: String,
-        path: String,
-        x: f64,
-        y: f64,
-    },
-    /// Capture the current data result as literal rows. This changes only
-    /// the workbook; external write-back is an explicit desktop action.
-    BakeFrame {
-        frame_id: Id,
-    },
     ImportFrameFromFile {
         name: String,
         path: String,
@@ -291,6 +279,23 @@ pub enum Operation {
         name: String,
         artifact: DataArtifact,
         connector: Option<ConnectorRecipe>,
+        /// The delimited file this artifact was staged from, when the
+        /// document should be able to write a result back to it.
+        ///
+        /// A path rather than a resolved origin because the record an update
+        /// needs — which column of this document each physical field of the
+        /// file is — cannot exist until the frame does, and the frame is
+        /// built here. Preparation reads the header, hashes the file, and
+        /// binds the two together.
+        ///
+        /// Set for a stored CSV or TSV and nothing else. A connector says
+        /// this frame can be *refreshed* from somewhere; this says it can be
+        /// *written back* to somewhere, which is a different permission and
+        /// a different file format contract — see `separator`, which is why
+        /// no other format ever gets one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
+        file_origin: Option<String>,
         x: f64,
         y: f64,
     },

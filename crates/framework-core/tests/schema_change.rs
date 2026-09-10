@@ -27,6 +27,7 @@ fn imported(name: &str, contents: &str) -> (Store, Id, std::path::PathBuf, std::
             connector: Some(ConnectorRecipe::File {
                 source_path: source.display().to_string(),
             }),
+            file_origin: None,
             x: 0.0,
             y: 0.0,
         })

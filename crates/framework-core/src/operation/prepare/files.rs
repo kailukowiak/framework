@@ -52,12 +52,6 @@ impl Document {
                 }
                 ReplicatedOperation::RestoreFrame { frame }
             }
-            Operation::OpenDelimitedFile { name, path, x, y } => {
-                self.prepare_open_delimited(name, path, x, y)?
-            }
-            Operation::BakeFrame { frame_id } => ReplicatedOperation::RestoreFrame {
-                frame: self.bake_frame(&frame_id)?,
-            },
             Operation::ImportFrameFromFile { name, path, x, y } => {
                 self.prepare_import_frame_from_file(name, path, x, y)?
             }
@@ -65,9 +59,17 @@ impl Document {
                 name,
                 artifact,
                 connector,
+                file_origin,
                 x,
                 y,
-            } => self.prepare_import_frame_from_artifact(name, artifact, connector, x, y)?,
+            } => self.prepare_import_frame_from_artifact(
+                name,
+                artifact,
+                connector,
+                file_origin,
+                x,
+                y,
+            )?,
             Operation::RefreshFrameArtifact { frame_id, artifact } => {
                 self.prepare_refresh_frame_artifact(frame_id, artifact)?
             }
