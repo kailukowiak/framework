@@ -624,7 +624,7 @@ fn save_document_as_dialog_inner(
         if session.scratch {
             format!(
                 "{}.fw",
-                session.store.view().document.name.replace(['/', '\\'], "-")
+                session.store.document().name.replace(['/', '\\'], "-")
             )
         } else {
             session
@@ -2171,7 +2171,11 @@ fn build_document_window(
     started_blank: bool,
 ) -> Result<tauri::WebviewWindow, String> {
     let label = format!("document-{}", Uuid::new_v4());
-    let title = format!("{} — FrameWork", session.store.view().document.name);
+    // The title only needs the document's name, not a fully evaluated
+    // `DocumentView` (every derivation materialized, every formula run) --
+    // on a freshly imported multi-thousand-row sheet that evaluation is the
+    // most expensive thing this function could do for one string.
+    let title = format!("{} — FrameWork", session.store.document().name);
     app.state::<AppState>()
         .sessions
         .lock()
@@ -2618,7 +2622,10 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let app_data_directory = app.path().app_data_dir()?;
     let (session, started_blank, warning) = initial_session().map_err(std::io::Error::other)?;
     let writer_id = load_or_create_writer_id(&app_data_directory).map_err(std::io::Error::other)?;
-    let title = format!("{} — FrameWork", session.store.view().document.name);
+    // Named from the document, not from an evaluated view of it: this runs on
+    // the cold-start path, where `initial_session` may have just imported a
+    // file, and a title is one string.
+    let title = format!("{} — FrameWork", session.store.document().name);
     app.manage(AppState {
         sessions: Mutex::new(HashMap::from([(
             "main".to_string(),

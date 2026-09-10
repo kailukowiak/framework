@@ -32,12 +32,19 @@ where
         .collect()
 }
 
-fn data_session(path: &Path) -> Result<(DocumentSession, Option<String>), String> {
+fn data_session(path: &Path) -> Result<(DocumentSession, DocumentView, Option<String>), String> {
     let path = path.canonicalize().map_err(|error| error.to_string())?;
     let mut session = scratch_session()?;
     let writer = Uuid::new_v4().to_string();
-    let outcome =
-        file_writeback::import_file_into_session(&mut session, &writer, &path, false, 80.0, 80.0)?;
+    // Rename before importing, while the document is still the empty one
+    // `scratch_session` just made. Applying an operation clones the whole
+    // document to compute its inverse and then evaluates a fresh view of
+    // it; against an empty document both are nearly free. Importing first
+    // and renaming after would do that same work against the megabytes of
+    // rows the import just landed, for no benefit: nothing on the import
+    // path reads the document's name back (the frame name comes from the
+    // file stem and is passed separately), so the two operations have no
+    // order dependency to respect.
     apply_session_operation_inner(
         &mut session,
         &writer,
@@ -49,9 +56,17 @@ fn data_session(path: &Path) -> Result<(DocumentSession, Option<String>), String
                 .into_owned(),
         },
     )?;
+    let outcome =
+        file_writeback::import_file_into_session(&mut session, &writer, &path, false, 80.0, 80.0)?;
     session.external_source = Some(path);
     flush_session(&mut session)?;
-    Ok((session, outcome.notice))
+    // `outcome.document` is the `DocumentView` the import's own last applied
+    // operation already computed; it reflects the rename above plus the
+    // import, so it is already the answer a caller would get back from
+    // `session.store.view()`. Hand it up instead of making callers recompute
+    // it -- `flush_session` only serializes `store` to disk below, it never
+    // mutates it, so this view does not go stale between here and there.
+    Ok((session, outcome.document, outcome.notice))
 }
 
 fn open_data_window(app: &AppHandle, path: &Path) -> Result<(), String> {
@@ -85,7 +100,10 @@ fn open_data_window(app: &AppHandle, path: &Path) -> Result<(), String> {
             return Ok(());
         }
     }
-    let (session, notice) = data_session(&path)?;
+    // This caller builds a plain window, which reads only the document's
+    // name off `store` directly (see `build_document_window`); the
+    // evaluated view `data_session` produced has no reader here.
+    let (session, _view, notice) = data_session(&path)?;
     let _window = build_document_window(app, session, false)?;
     if let Some(notice) = notice {
         log::info!("{}: {notice}", path.display());
@@ -101,8 +119,10 @@ fn open_data_window(app: &AppHandle, path: &Path) -> Result<(), String> {
 /// an actual working scratch canvas is never silently replaced.
 fn open_data_in_startup_window(app: &AppHandle, path: &Path) -> Result<(), String> {
     let path = path.canonicalize().map_err(|error| error.to_string())?;
-    let (session, notice) = data_session(&path)?;
-    let document = session.store.view();
+    // `data_session` already evaluated this view as the last step of the
+    // import; re-deriving it with a second `store.view()` would repeat that
+    // whole evaluation over the document this call just populated.
+    let (session, document, notice) = data_session(&path)?;
     app.state::<AppState>().replace_document("main", session)?;
     scratchwork_window::set_workbook_titles(app, "main", &document.document.name);
     if let Some(window) = app.get_webview_window("main") {
@@ -185,7 +205,7 @@ pub(super) fn initial_session() -> Result<(DocumentSession, bool, Option<String>
         .next()
     {
         if is_data_file(&path) {
-            let (session, notice) = data_session(&path)?;
+            let (session, _view, notice) = data_session(&path)?;
             return Ok((session, false, notice));
         }
         if path.exists() {
@@ -230,12 +250,11 @@ mod tests {
         let path = directory.join("Orders.CSV");
         let bytes = "ID,Quantity\n0002,3\n";
         fs::write(&path, bytes).unwrap();
-        let (session, notice) = data_session(&path).unwrap();
+        let (session, view, notice) = data_session(&path).unwrap();
         assert!(notice.is_none());
         assert!(session.scratch);
         assert_ne!(session.path, path);
         assert_eq!(session.external_source, Some(path.canonicalize().unwrap()));
-        let view = session.store.view();
         assert_eq!(view.document.name, "Orders.CSV");
         let frame = view
             .document
@@ -267,9 +286,8 @@ mod tests {
             csv.push_str(&format!("{index:07},3\n"));
         }
         fs::write(&path, &csv).unwrap();
-        let (mut session, notice) = data_session(&path).unwrap();
+        let (mut session, view, notice) = data_session(&path).unwrap();
         assert!(notice.is_none());
-        let view = session.store.view();
         let frame = view
             .document
             .objects
