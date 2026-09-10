@@ -117,6 +117,16 @@ and the output table contains their current values.
   column — is work somebody can see, so it stays their decision. NDJSON is an
   export and import format only; it has no in-place update, for the same reason
   Parquet does not.
+- A value typed over a frame whose rows live in a parquet is recorded as a
+  patch against that file rather than by rewriting it: the row's ordinal in the
+  base read, the column, and the text. Striking out a row and adding one past
+  the end are the same kind of note, in the same ordinal space, so an added row
+  is one whose every value is a patch. The file stays byte for byte as written,
+  which is both what makes an edit cost the edit and what lets a
+  content-addressed artifact be the thing two people read. Patches are dropped
+  when the base is replaced — they name rows by position, and position does not
+  survive a new file. An identity-preserving chain may stand between the grid
+  and the file; a reshaping one may not, because then there is no row to name.
 - Parquet is an export destination, not an update destination. A new file has
   no source schema to preserve, so writing one needs no contract beyond the
   data layer's own types. Replacing an existing Parquet in place does: the

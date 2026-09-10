@@ -11,6 +11,19 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Correcting a value in a table whose rows live in a data file no longer
+  rewrites that file. A typed-over cell, a struck-out row and a row added at
+  the end are recorded as small notes against the file instead, so an edit costs
+  the edit rather than a full read and rewrite of everything around it — and the
+  file is left exactly as it was. Tables that have a filter or a sort in Wrangle
+  can now be typed into as well, and a correction lands on the row it was made
+  on rather than the position that row happened to be at. Notes are dropped if
+  the underlying file is replaced, since they name rows by position.
+
+- Documents are smaller: a cell with no formula of its own no longer writes one
+  out as an empty field, which was roughly a quarter of a document holding
+  literal rows.
+
 - Open a CSV or TSV, fix it, and put the result back, without building a
   reusable pipeline first. A stored CSV/TSV of up to 20,000 rows opens as an
   editable table: type into cells, rename columns, insert and delete rows, and

@@ -396,6 +396,11 @@ pub struct Row {
 #[ts(export)]
 pub struct Cell {
     pub raw: String,
+    /// Absent rather than null when there is none, which is almost every cell.
+    /// Written out, `"overrideFormula":null` was about a quarter of the bytes
+    /// of a document holding literal rows -- on a 2 MB CSV opened as an
+    /// editable copy, some 7 MB of the 19 it serialized to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub override_formula: Option<Formula>,
 }
 
