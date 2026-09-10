@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.9
+
 - Opening a CSV or TSV no longer has a size limit, and no longer has two
   behaviours. Every file — twenty rows or two million — opens the same way:
   read where it lies, editable in place, and writable back to with *Update
@@ -45,9 +47,9 @@ tagged and opens a fresh `## Unreleased` above it.
   literal rows.
 
 - Open a CSV or TSV, fix it, and put the result back, without building a
-  reusable pipeline first. A stored CSV/TSV of up to 20,000 rows opens as an
-  editable table: type into cells, rename columns, insert and delete rows, and
-  add calculated columns, filters and sorts. The table's right-click menu then
+  reusable pipeline first. A stored CSV/TSV opens as an editable table: type
+  into cells, rename columns, insert and delete rows, and add calculated
+  columns, filters and sorts. The table's right-click menu then
   offers **Update original CSV…**, which confirms the path once and then
   atomically replaces the source file, without leaving a recovery copy. It
   always writes the format that file already is. Either way the result joins the
@@ -99,12 +101,12 @@ tagged and opens a fresh `## Unreleased` above it.
   is an unambiguous finite number. Explicit conversions stay where you can see
   them, in Read or in Wrangle.
 
-- A large or irregularly quoted CSV/TSV no longer opens behind a read-only
-  warning. It arrives as a source-backed paged table, where column names,
-  calculated columns, filters, sorts and the rest of Wrangle work normally; the
-  narrower boundary is explained only if you try to type directly into a source
-  cell, and that explanation still names the file the rows are read from and
-  says what the next refresh will do to them.
+- A linked import — one you asked to keep a connection to — is still read-only
+  in its cells, because the next refresh replaces them. The boundary is
+  explained only if you try to type into one, and the explanation names the
+  file the rows are read from and says what a refresh will do to them. Column
+  names, calculated columns, filters, sorts and the rest of Wrangle work on it
+  normally.
 
 - **Map values** and **Rename columns** both create or choose a mapping frame
   from the column menu. A mapping frame is an ordinary two-column table: blank
