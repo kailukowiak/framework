@@ -498,14 +498,25 @@ export async function packageDocument(): Promise<DocumentView> {
   return invoke("package_document");
 }
 
+/** What settling a document's data changed and reclaimed. */
+export interface DataCompaction {
+  document: DocumentView;
+  sweep: ArtifactSweep;
+  /** How many tables had corrections written into a file of their own. */
+  folded: number;
+}
+
 /**
- * Deletes the data files nothing points at any more.
+ * Settles the corrections typed over files, then deletes the data files
+ * nothing points at any more.
  *
- * Not an edit and not undoable: it removes versions already unreachable from
- * the document, from its undo history, and from any event still waiting to be
- * merged.
+ * Folding is an undoable edit — a correction stops being a note beside the
+ * file and becomes the file. The sweep that follows is neither: it removes
+ * versions already unreachable from the document, from its undo history, and
+ * from any event still waiting to be merged, which is why the file a fold
+ * just replaced survives until its undo entry does not.
  */
-export async function compactDocumentData(): Promise<ArtifactSweep> {
+export async function compactDocumentData(): Promise<DataCompaction> {
   return invoke("compact_document_data");
 }
 

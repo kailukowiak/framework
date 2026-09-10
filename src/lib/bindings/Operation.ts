@@ -380,6 +380,7 @@ export type Operation =
   | { "type": "activateScenario"; scenarioId?: string | null }
   | { "type": "packageDocument"; adopted: Array<[string, DataArtifact]> }
   | { "type": "adoptFrameRows"; frameId: string; artifact: DataArtifact }
+  | { "type": "foldRowPatches"; folded: Array<[string, DataArtifact]> }
   | { "type": "promoteDisplayToSteps"; frameId: string }
   | {
     "type": "setUniqueKey";

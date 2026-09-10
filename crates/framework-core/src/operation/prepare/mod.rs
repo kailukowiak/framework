@@ -330,6 +330,7 @@ impl Document {
                 self.prepare_adopt_frame_rows(frame_id, artifact)?
             }
             Operation::PackageDocument { adopted } => self.prepare_package_document(adopted)?,
+            Operation::FoldRowPatches { folded } => self.prepare_fold_row_patches(folded)?,
             Operation::PromoteDisplayToSteps { frame_id } => {
                 self.prepare_promote_display_to_steps(frame_id)?
             }

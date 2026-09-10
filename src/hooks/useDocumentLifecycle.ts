@@ -121,21 +121,32 @@ export function useDocumentLifecycle({
     }
   }, [setDataRefreshRevision, setDocument, setError, setNotice]);
 
+  // Two sentences because two things happened, and a person who folded
+  // corrections should hear that before they hear about bytes: the fold
+  // changed what their tables read, and the sweep only tidied up after it.
   const compactData = useCallback(async () => {
     try {
-      const swept = await compactDocumentData();
+      const { document, sweep, folded } = await compactDocumentData();
+      setDocument(document);
+      setDataRefreshRevision((revision) => revision + 1);
       setError(null);
-      setNotice(
-        swept.files === 0
+      const settled =
+        folded === 0
+          ? null
+          : `Wrote the corrections on ${folded} ${
+              folded === 1 ? "table" : "tables"
+            } into ${folded === 1 ? "a file of its own" : "files of their own"}.`;
+      const reclaimed =
+        sweep.files === 0
           ? "Nothing to reclaim — every data file here is still in use."
-          : `Reclaimed ${formatBytes(swept.bytes)} from ${swept.files} data ${
-              swept.files === 1 ? "file" : "files"
-            }.`
-      );
+          : `Reclaimed ${formatBytes(sweep.bytes)} from ${sweep.files} data ${
+              sweep.files === 1 ? "file" : "files"
+            }.`;
+      setNotice(settled ? `${settled} ${reclaimed}` : reclaimed);
     } catch (reason) {
       setError(String(reason).replace(/^Error:\s*/, ""));
     }
-  }, [setError, setNotice]);
+  }, [setDataRefreshRevision, setDocument, setError, setNotice]);
 
   const freezeCopy = useCallback(
     async (frameId: string, position: { x: number; y: number }) => {

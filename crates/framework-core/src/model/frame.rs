@@ -164,7 +164,11 @@ impl FrameObject {
 
     /// Whether anything has been typed over, struck out of, or added to the
     /// base this frame reads.
-    pub(crate) fn has_row_patches(&self) -> bool {
+    ///
+    /// Public because compaction is asked from outside the model: the host
+    /// finds the frames carrying corrections, writes each a fresh file, and
+    /// hands the results back as one edit.
+    pub fn has_row_patches(&self) -> bool {
         !self.cell_overlay.is_empty() || !self.deleted_rows.is_empty() || self.appended_rows > 0
     }
 

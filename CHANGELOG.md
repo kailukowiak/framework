@@ -11,6 +11,15 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- **Settle and reclaim data files** in the Project panel now writes the
+  corrections you have made to a table's data file into a file of their own,
+  before it clears out the staged files nothing points at any more. Values on
+  the canvas do not change — a correction just stops being a note beside the
+  file and becomes the file. It happens only when you ask for it, never on
+  save: saving records what you did, and folding corrections in would throw
+  away the difference between what the file said and what you changed. Undo
+  puts the notes back.
+
 - Correcting a value in a table whose rows live in a data file no longer
   rewrites that file. A typed-over cell, a struck-out row and a row added at
   the end are recorded as small notes against the file instead, so an edit costs

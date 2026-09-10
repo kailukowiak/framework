@@ -1080,3 +1080,202 @@ fn rows_can_be_struck_out_and_added_without_touching_the_file() {
         "the added row is gone again"
     );
 }
+
+/// A frame reading a parquet, with one of each kind of patch on it and a
+/// chain above them.
+///
+/// Shared by the two tests below because building it is most of what either
+/// one costs, and both need exactly the same starting point: a correction
+/// typed over a cell, a row struck out, a row added past the end, and a
+/// filter and a calculated column reading the result.
+fn patched_stock(dir: &Path) -> (Store, FrameObject, Vec<Vec<String>>) {
+    let data = dir.join("data");
+    let path = dir.join("stock.csv");
+    fs::write(&path, b"SKU,Count\nA,1\nB,2\nC,3\nD,0\n").unwrap();
+    let mut store = demo_store();
+    let artifact = create_data_artifact(&path, &data).unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Stock".into(),
+            artifact,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Stock").clone();
+    let (sku, count) = (frame.columns[0].id.clone(), frame.columns[1].id.clone());
+
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: page.row_ids[0].clone(),
+            column_id: count.clone(),
+            raw: "9".into(),
+        })
+        .unwrap();
+    store
+        .apply(Operation::DeleteRow {
+            frame_id: frame.id.clone(),
+            row_id: page.row_ids[1].clone(),
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddRow {
+            frame_id: frame.id.clone(),
+            values: Default::default(),
+        })
+        .unwrap();
+    // A, C, D and the new blank one: B was struck out, and the added row is
+    // last because its ordinal continues past the end of the base.
+    let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(page.rows.len(), 4);
+    let added = page.row_ids[3].clone();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: added.clone(),
+            column_id: sku,
+            raw: "E".into(),
+        })
+        .unwrap();
+    store
+        .apply(Operation::SetCell {
+            frame_id: frame.id.clone(),
+            row_id: added,
+            column_id: count,
+            raw: "5".into(),
+        })
+        .unwrap();
+
+    // The chain goes on last only so the added row is fillable while it is
+    // still visible: a row added past the end arrives empty, and this filter
+    // would hide it until it had a number in it.
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![
+                FrameStepInput::Filter {
+                    predicates: vec!["`Count` > 0".into()],
+                    match_all: true,
+                },
+                FrameStepInput::WithColumns {
+                    columns: vec![ExistingFormulaInput {
+                        output_column_id: "doubled~test".into(),
+                        name: "Doubled".into(),
+                        formula: "`Count` * 2".into(),
+                    }],
+                },
+            ],
+        })
+        .unwrap();
+    let before = store.get_frame_page(&frame.id, 0, 10).unwrap();
+    assert_eq!(
+        before
+            .rows
+            .iter()
+            .map(|row| (row[0].as_str(), row[1].as_str(), row[2].as_str()))
+            .collect::<Vec<_>>(),
+        [("A", "9", "18"), ("C", "3", "6"), ("E", "5", "10")]
+    );
+    assert!(frame_named(store.document(), "Stock").has_row_patches());
+    (store, frame, before.rows)
+}
+
+/// Folding settles the corrections and changes nothing anybody can see.
+///
+/// The patches are what the fold is for, and they are all it takes: the
+/// wrangle chain still runs over the new file exactly as it ran over the old,
+/// which is why the calculated column still recomputes rather than arriving
+/// baked, and why undo can still put the notes back.
+#[test]
+fn folding_patches_settles_them_and_leaves_the_view_alone() {
+    let dir = temporary_test_directory("overlay-fold");
+    let (mut store, frame, before) = patched_stock(&dir);
+    let previous = frame_named(store.document(), "Stock")
+        .artifact
+        .as_ref()
+        .unwrap()
+        .id
+        .clone();
+
+    let folded = store
+        .write_folded_frame_data(&frame.id, &dir.join("data"))
+        .unwrap();
+    assert_ne!(folded.id, previous, "the fold is a different file");
+    store
+        .apply(Operation::FoldRowPatches {
+            folded: vec![(frame.id.clone(), folded)],
+        })
+        .unwrap();
+
+    let settled = frame_named(store.document(), "Stock");
+    assert!(
+        !settled.has_row_patches(),
+        "the corrections are the file now, not notes beside it"
+    );
+    assert_eq!(settled.steps.len(), 2, "the chain is not part of the fold");
+    assert_eq!(
+        store.get_frame_page(&frame.id, 0, 10).unwrap().rows,
+        before,
+        "and nothing anybody was looking at moved"
+    );
+
+    // A second fold has nothing to settle, from either direction.
+    assert!(
+        store
+            .write_folded_frame_data(&frame.id, &dir.join("data"))
+            .is_err(),
+        "a frame with no corrections has nothing to write"
+    );
+    let settled = frame_named(store.document(), "Stock")
+        .artifact
+        .clone()
+        .unwrap();
+    assert!(
+        store
+            .apply(Operation::FoldRowPatches {
+                folded: vec![(frame.id.clone(), settled)],
+            })
+            .is_err(),
+        "and the operation refuses it too, so a replay cannot repoint a frame \
+         at a file computed from a state it is no longer in"
+    );
+
+    store.undo();
+    let restored = frame_named(store.document(), "Stock");
+    assert!(restored.has_row_patches());
+    assert_eq!(restored.artifact.as_ref().unwrap().id, previous);
+    assert_eq!(store.get_frame_page(&frame.id, 0, 10).unwrap().rows, before);
+}
+
+/// What the folded file itself holds, read with nothing on top of it.
+///
+/// The corrections are in it, and so is the row the filter was only hiding:
+/// a step is a plan over the base, and folding one in would delete rows
+/// nobody asked to lose.
+#[test]
+fn a_folded_file_holds_the_corrections_and_the_rows_a_filter_was_hiding() {
+    let dir = temporary_test_directory("overlay-fold-file");
+    let (mut store, frame, _) = patched_stock(&dir);
+    let folded = store
+        .write_folded_frame_data(&frame.id, &dir.join("data"))
+        .unwrap();
+    store
+        .apply(Operation::ImportFrameFromArtifact {
+            name: "Folded".into(),
+            artifact: folded,
+            connector: None,
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let written = frame_named(store.document(), "Folded").id.clone();
+    assert_eq!(
+        store.get_frame_page(&written, 0, 10).unwrap().rows,
+        [["A", "9"], ["C", "3"], ["D", "0"], ["E", "5"],],
+        "the typed-over value and the added row are in the file; the struck-out \
+         row is gone and the filtered-out one is not"
+    );
+}

@@ -117,11 +117,12 @@ export function ProjectPanel({
         needs lives anywhere else.
       </p>
       <button className="secondary-action project-action" onClick={() => void onCompact()}>
-        <Trash2 size={14} /> Reclaim unused data files
+        <Trash2 size={14} /> Settle and reclaim data files
       </button>
       <p className="project-note">
-        Deletes staged data no frame points at any more. Nothing on the canvas
-        changes.
+        Writes the corrections made to opened files into files of their own,
+        then deletes staged data no table points at any more. Values on the
+        canvas do not change.
       </p>
       {excelExport && (
         <ExcelExportDialog

@@ -405,6 +405,45 @@ impl Store {
         write_frame_artifact(data_frame, data_directory, &source_name)
     }
 
+    /// Writes a frame's base read with its corrections folded into it.
+    ///
+    /// The counterpart to typing over a file rather than rewriting it: an
+    /// edit costs one patch, and the patches accumulate until somebody asks
+    /// for them to be settled. This is that request. What comes back is the
+    /// base as corrected — see [`Document::folded_base_plan`] for why the
+    /// chain above it is deliberately not part of the fold — and pointing
+    /// the frame at it is what clears the patches, so the caller must write
+    /// the file before it replaces the artifact, never after.
+    ///
+    /// File work, so it happens here rather than inside an operation, the
+    /// same way a snapshot and an adoption do.
+    pub fn write_folded_frame_data(
+        &self,
+        frame_id: &str,
+        data_directory: &Path,
+    ) -> Result<DataArtifact, CoreError> {
+        let frame = self.document.frame(frame_id)?;
+        if !frame.has_row_patches() {
+            return Err(CoreError::InvalidOperation(
+                "This table has no corrections of its own to fold in".into(),
+            ));
+        }
+        // The name a person reads on the lineage of this frame belongs to the
+        // source it came from, not to the fold: folding is bookkeeping, and
+        // it should not rename where the data is from.
+        let source_name = frame
+            .artifact
+            .as_ref()
+            .map(|artifact| artifact.source_name.clone())
+            .unwrap_or_else(|| frame.name.clone());
+        let data_frame = self
+            .document
+            .folded_base_plan(frame)
+            .and_then(|plan| plan.collect().map_err(|error| error.to_string()))
+            .map_err(CoreError::Persistence)?;
+        write_frame_artifact(data_frame, data_directory, &source_name)
+    }
+
     /// Computes the frame and writes the snapshot without recording
     /// anything, leaving the caller to apply
     /// [`Operation::SetFrameMaterialization`] however it records history —

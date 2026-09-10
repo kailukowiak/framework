@@ -1950,33 +1950,98 @@ fn package_document(
     )
 }
 
-/// Deletes the data files nothing points at any more.
+/// What settling a document's data changed and reclaimed.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DataCompaction {
+    document: DocumentView,
+    sweep: ArtifactSweep,
+    folded: usize,
+}
+
+/// Settles the corrections typed over files, then deletes the data files
+/// nothing points at any more.
 ///
-/// Not journaled and not undoable, because it changes nothing about the
-/// document — it removes versions of files that were already unreachable
-/// from it, from its history, and from any event still waiting to be merged.
+/// Two halves of one request, in this order because the second finishes what
+/// the first starts: folding a frame's patches into a fresh file leaves the
+/// file it was reading behind, and the sweep is what takes it away — once
+/// nothing reaches it any more, which for a fold means once the undo entry
+/// that would put the patches back has fallen off the end of history.
+///
+/// The fold is a document edit and is journaled like any other; the sweep is
+/// not, because it changes nothing about the document — it removes versions
+/// already unreachable from it, from its history, and from any event still
+/// waiting to be merged.
+///
+/// This is the one place a fold happens, and it happens only when somebody
+/// asks. It is deliberately not bound to saving: autosave is debounced to one
+/// write per idle pause, so a fold on save would rewrite the whole file every
+/// time the typing stopped; it would break undo across a save, since a patch
+/// is the only place the value before the correction still exists; it would
+/// give a content-addressed artifact a new id every few seconds, which ends
+/// two people being able to read the same file; and saving a workbook means
+/// writing down what you did, where a fold discards the distinction between
+/// what the file said and what you changed.
 #[tauri::command]
 fn compact_document_data(
     window: tauri::WebviewWindow,
     state: State<'_, AppState>,
-) -> Result<ArtifactSweep, String> {
+) -> Result<DataCompaction, String> {
     let session = state.document_for(window.label())?;
     let mut session = session.lock().map_err(|error| error.to_string())?;
-    // A file this sweep is about to delete could still be the only copy the
-    // on-disk snapshot references, if that snapshot has not caught up with
-    // an in-memory edit yet. Flush first so "unreferenced" is judged against
-    // the same state that is actually sitting on disk.
-    flush_session(&mut session)?;
     ensure_live(&session)?;
     let data_directory =
         CollaborationPaths::for_document(&session.path, session.store.document_id())
             .map_err(|error| error.to_string())?
             .root
             .join("data");
-    session
+    let patched = session
+        .store
+        .document()
+        .objects
+        .iter()
+        .filter_map(|object| match object {
+            DataObject::Frame(frame) if frame.has_row_patches() => Some(frame.id.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let folded = patched.len();
+    // Every file first, then one edit. Pointing a frame at its folded file is
+    // what clears the patches, so a write that fails after some frames had
+    // already been repointed would leave the rest with nothing left to fold
+    // from. Collecting the artifacts up front means the operation either
+    // lands whole or never starts.
+    let mut written = Vec::with_capacity(folded);
+    for frame_id in patched {
+        let artifact = session
+            .store
+            .write_folded_frame_data(&frame_id, &data_directory)
+            .map_err(|error| error.to_string())?;
+        written.push((frame_id, artifact));
+    }
+    if !written.is_empty() {
+        apply_session_operation(
+            &window,
+            &mut session,
+            &state.writer_id,
+            Operation::FoldRowPatches { folded: written },
+        )?;
+    }
+    // A file this sweep is about to delete could still be the only copy the
+    // on-disk snapshot references, if that snapshot has not caught up with
+    // an in-memory edit yet — the fold just above being the likeliest one.
+    // Flush first so "unreferenced" is judged against the same state that is
+    // actually sitting on disk.
+    flush_session(&mut session)?;
+    let sweep = session
         .store
         .collect_unreferenced_artifacts(&session.journal, &data_directory)
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    Ok(DataCompaction {
+        document: session.store.view(),
+        sweep,
+        folded,
+    })
 }
 
 /// Drops a frame's snapshot so it reads live again.

@@ -387,6 +387,33 @@ impl Document {
         Ok(ReplicatedOperation::AdoptFrameRows { frame_id, artifact })
     }
 
+    /// Checks every frame being folded actually has something to fold.
+    ///
+    /// The caller has already written a file per frame, so a frame that
+    /// turns out to carry no patches means the two disagree about what the
+    /// document says — a replay against a document where the fold already
+    /// happened, or an undo in between. Refusing is what keeps a frame from
+    /// being pointed at a file that was computed from a state it is no
+    /// longer in.
+    pub(crate) fn prepare_fold_row_patches(
+        &self,
+        folded: Vec<(Id, DataArtifact)>,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        if folded.is_empty() {
+            return Err(CoreError::InvalidOperation(
+                "Nothing in this document has corrections to fold in".into(),
+            ));
+        }
+        for (frame_id, _) in &folded {
+            if !self.frame(frame_id)?.has_row_patches() {
+                return Err(CoreError::InvalidOperation(
+                    "This table's corrections have already been folded in".into(),
+                ));
+            }
+        }
+        Ok(ReplicatedOperation::FoldRowPatches { folded })
+    }
+
     /// Works out what packaging this document would actually cut.
     ///
     /// The connectors come from the document; the artifacts for frames that

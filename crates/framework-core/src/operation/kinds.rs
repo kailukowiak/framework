@@ -661,6 +661,23 @@ pub enum Operation {
         frame_id: Id,
         artifact: DataArtifact,
     },
+    /// Settles the corrections typed over a frame's base read by writing a
+    /// file that already contains them.
+    ///
+    /// A typed-over cell, a struck-out row and a row added past the end are
+    /// notes against a file nobody rewrote, which is what makes an edit cost
+    /// the edit rather than the table. They accumulate, though, and this is
+    /// the request to fold them in: each frame is pointed at a fresh
+    /// artifact that reads the same as the base did with its patches
+    /// applied, and pointing it there is what drops them.
+    ///
+    /// One operation for every frame folded, so settling a document costs one
+    /// undo rather than one per table — the same reason `PackageDocument` is
+    /// one operation. The artifacts are written by the caller, like a
+    /// snapshot's: the document model does no file I/O of its own.
+    FoldRowPatches {
+        folded: Vec<(Id, DataArtifact)>,
+    },
     /// Moves a frame's display filter and sort into its wrangle chain, so
     /// what was presentation becomes lineage and every frame derived from
     /// this one starts seeing it. The one-way door between the View tab and
@@ -1073,6 +1090,12 @@ pub enum ReplicatedOperation {
     AdoptFrameRows {
         frame_id: Id,
         artifact: DataArtifact,
+    },
+    /// Every frame named here is pointed at the artifact written for it,
+    /// which is what clears the patches it was carrying. Resolved while
+    /// preparing, so each replica folds exactly the same set.
+    FoldRowPatches {
+        folded: Vec<(Id, DataArtifact)>,
     },
     /// Every frame named here loses its connector; every frame in `adopted`
     /// is given the artifact written for it. Resolved while preparing, so

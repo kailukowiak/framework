@@ -520,6 +520,16 @@ impl Document {
                 vec![Self::restore_frame(self.frame(frame_id)?)]
             }
 
+            // The patches are the thing being lost, and they live on the
+            // frame, so the frame as it stands is the whole of the way back.
+            // The artifact it was reading before stays on disk: the restored
+            // frame names it, which is also what keeps the sweep from
+            // deleting it while this entry is still reachable.
+            ReplicatedOperation::FoldRowPatches { folded } => folded
+                .iter()
+                .map(|(frame_id, _)| self.frame(frame_id).map(Self::restore_frame))
+                .collect::<Result<Vec<_>, _>>()?,
+
             // One entry in history, one frame restored per frame it touched.
             // Packaging a document with a dozen connections in it should cost
             // one undo, not a dozen — and with the stack bounded, a dozen

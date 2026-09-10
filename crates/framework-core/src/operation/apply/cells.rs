@@ -129,6 +129,23 @@ impl Document {
         Ok(())
     }
 
+    /// Points each frame at the file its corrections were written into.
+    ///
+    /// Repointing is the whole of the fold: [`FrameObject::replace_base_artifact`]
+    /// clears the patches, because they name rows by ordinal in the base and
+    /// a new base strands every one of them. Here that is exactly what is
+    /// wanted — the new base is the old one with those corrections already
+    /// in it, so dropping the notes loses nothing.
+    pub(crate) fn apply_fold_row_patches(
+        &mut self,
+        folded: Vec<(Id, DataArtifact)>,
+    ) -> Result<(), CoreError> {
+        for (frame_id, artifact) in folded {
+            self.frame_mut(&frame_id)?.replace_base_artifact(artifact);
+        }
+        Ok(())
+    }
+
     /// Cuts every outside dependency at once.
     ///
     /// Dropping a connector is all it takes for a frame that already has its

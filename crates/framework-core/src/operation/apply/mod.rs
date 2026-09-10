@@ -178,6 +178,9 @@ impl Document {
             ReplicatedOperation::AdoptFrameRows { frame_id, artifact } => {
                 self.apply_adopt_frame_rows(frame_id, artifact)?
             }
+            ReplicatedOperation::FoldRowPatches { folded } => {
+                self.apply_fold_row_patches(folded)?
+            }
             ReplicatedOperation::PackageDocument { unlinked, adopted } => {
                 self.apply_package_document(unlinked, adopted)?
             }

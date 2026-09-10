@@ -639,6 +639,38 @@ impl Document {
         Ok(plan.select(surviving))
     }
 
+    /// The base read a frame would have if its corrections were part of the
+    /// file rather than notes beside it, named the way the file names them.
+    ///
+    /// The fold stops at the base on purpose. A patch is a correction with
+    /// nowhere else to live, so writing it down is what makes it redundant;
+    /// a step and a calculated column are a *plan* over the base, and both
+    /// have to stay one. Folding a `Filter` in would delete the rows it was
+    /// only hiding, folding a `Sort` would make an ordering permanent that
+    /// was meant to be a view, and folding a calculation would leave behind
+    /// a column that no longer recomputes when the number it reads changes.
+    /// So the chain runs over the new file exactly as it ran over the old,
+    /// and everything on screen is what it was before the fold.
+    ///
+    /// Columns come back out under their physical source names rather than
+    /// the ids the plan works in, which is what makes the result a drop-in
+    /// successor: every `source_name` binding still resolves, so the frame
+    /// needs nothing changed about it but which file it points at.
+    pub(crate) fn folded_base_plan(&self, frame: &FrameObject) -> Result<pl::LazyFrame, String> {
+        let plan = self.apply_row_patches(frame.base_polars_lazy()?, frame, false)?;
+        Ok(plan.select(
+            frame
+                .input_columns()
+                .iter()
+                .filter(|column| column.formula.is_none())
+                .map(|column| {
+                    pl::col(column.id.clone())
+                        .alias(column.source_name.as_deref().unwrap_or(&column.name))
+                })
+                .collect::<Vec<_>>(),
+        ))
+    }
+
     pub(crate) fn materialize_frame_frame(
         &self,
         frame_id: &str,
