@@ -77,12 +77,16 @@ tagged and opens a fresh `## Unreleased` above it.
   correctly. A file with nested objects is refused with the field named, rather
   than imported into a table that cannot be displayed.
 
-- Opening a data file is now a way to start work. Double-click a CSV, TSV or
-  Parquet in Finder, or name one on the command line, and it opens into an
-  unsaved workbook — including when FrameWork was not already running, and
-  without leaving an empty Untitled window beside it. Opening the same file
-  again raises the window already showing it instead of starting a second,
-  competing draft of the same file.
+- Opening a data file is now a way to start work. Pick FrameWork from **Open
+  With** for a CSV, TSV, Parquet or JSON-lines file, or name one on the command
+  line, and it opens into an unsaved workbook — including when FrameWork was not
+  already running, and without leaving an empty Untitled window beside it.
+  Opening the same file again raises the window already showing it instead of
+  starting a second, competing draft of the same file. Installing FrameWork does
+  not change what a double-click on a CSV opens: it adds itself next to whatever
+  you already use, on Windows as well as macOS, and updating does not quietly
+  claim those files back. A `.fw` document is FrameWork's own format and still
+  opens on a double-click.
 
 - Wrangle now starts with **Read**, which names the input and makes it
   changeable. Replace a file with another file or with a database query; choose

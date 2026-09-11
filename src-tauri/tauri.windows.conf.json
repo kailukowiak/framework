@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "fileAssociations": [
+      {
+        "ext": ["csv"],
+        "name": "FrameWork.CSV",
+        "description": "CSV data",
+        "mimeType": "text/csv",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["tsv"],
+        "name": "FrameWork.TSV",
+        "description": "Tab-separated data",
+        "mimeType": "text/tab-separated-values",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["parquet"],
+        "name": "FrameWork.Parquet",
+        "description": "Parquet data",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["ndjson", "jsonl"],
+        "name": "FrameWork.NDJSON",
+        "description": "JSON lines data",
+        "mimeType": "application/x-ndjson",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["fw"],
+        "name": "FrameWork.Document",
+        "description": "FrameWork structured-data canvas",
+        "mimeType": "application/x-framework-document",
+        "role": "Editor",
+        "rank": "Owner"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installerHooks": "packaging/windows/associations.nsh"
+      }
+    }
+  }
+}
