@@ -74,13 +74,39 @@ npm install
 npm run tauri dev
 ```
 
-On macOS, `npm run build:dev-app` builds and registers **FrameWork Dev** in
-Finder’s **Open With** menu, separately from the installed release. It opens
-CSV/TSV/Parquet files into unsaved workbooks. This is a bundled debug build;
-rerun the command after code changes. `npm run tauri dev` remains the hot-reload
-workflow and does not register a Finder application.
+`npm run build:dev-app` builds **FrameWork Dev**, a debug build carrying its
+own product name and identifier so it sits beside the installed release rather
+than replacing it. It opens CSV/TSV/Parquet files into unsaved workbooks. This
+is a bundled build, so rerun the command after code changes; `npm run tauri dev`
+remains the hot-reload workflow and registers no application with the OS.
 
-FrameWork runs through Tauri; there is no browser-only preview. The application uses the canonical Rust core and opens ordinary, cross-platform `.fw` document files. Installed builds register `.fw` as a FrameWork document type, so a document can be opened from Explorer, Finder, or a Linux file manager.
+On macOS it signs the bundle with a local identity and registers it in
+Finder’s **Open With** menu. On Windows it builds an NSIS installer and runs
+it silently, which is what writes the Explorer associations. Linux has no
+dev-app form; the command says so and stops.
+
+Two things differ on Windows, and both are in `build-dev-app.mjs`. The build
+carries `--features dev-bundle`, which links the GUI subsystem that a debug
+build otherwise skips — without it an Explorer launch also opens a console
+window, and closing that window kills the app. And it merges
+`tauri.dev-bundle.windows.conf.json`, which gives the dev build its own
+`fileAssociations` names. Windows keys associations on a registry ProgId taken
+from that name, and a ProgId is a single global key: sharing the release’s
+names would mean whichever installed last owns `.fw`, and uninstalling it would
+remove the association outright. macOS keys on the bundle identifier instead
+and lists both apps, so it needs no equivalent.
+
+Both configs point NSIS at an installer hook in `src-tauri/packaging/windows/`,
+which hands each extension's default back and lists the ProgId under
+`OpenWithProgids` instead. `rank: "Alternate"` says FrameWork should be offered
+rather than reached by a double-click, and the NSIS template has no notion of
+rank -- it writes the default and nothing else, so an install would otherwise
+become what opens every CSV on the machine and retake that on every update. The
+release and dev hooks differ only in the ProgIds they own, sharing their macros
+through `associations-common.nsh`; the dev hook also demotes `.fw`, which the
+release keeps, because a debug build is not what should open a document.
+
+FrameWork runs through Tauri; there is no browser-only preview. The application uses the canonical Rust core and opens ordinary, cross-platform `.fw` document files. Installed builds register `.fw` as a FrameWork document type, so a document can be opened from Explorer, Finder, or a Linux file manager. Data files — CSV, TSV, Parquet, NDJSON — are registered as alternates instead: installing FrameWork adds it to **Open With** without changing what a double-click on a CSV already opens.
 
 A launch that is handed a document opens it. A launch that is not starts on an empty canvas in a temporary directory and raises the Data library, so nobody lands in a document they did not ask for — including under `tauri dev`, where every Rust edit relaunches the app. That scratch canvas is genuinely throwaway: Save As is what turns it into a document.
 

@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Launch Services indexes a bundle, not the unbundled hot-reload executable.
@@ -28,4 +30,41 @@ if (process.platform === "darwin") {
   );
   execFileSync("/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister", ["-f", bundle], { stdio: "inherit" });
   console.log(`Registered ${bundle} for Finder’s Open With menu.`);
+} else if (process.platform === "win32") {
+  // Nothing to mirror lsregister or the signing step with. The NSIS installer
+  // writes the file associations itself, and Windows has no designated
+  // requirement recording privacy grants against a signature, so a rebuilt
+  // binary is not a different app to it.
+  //
+  // Installing is safe here only because the Windows build carries its own
+  // `fileAssociations` names and its own installer hook (see
+  // `tauri.dev-bundle.windows.conf.json`): the registry ProgIds it claims are
+  // its own, and the hook hands every extension's default back, so it never
+  // takes `.fw` from the release and uninstalling it leaves the release's
+  // associations alone.
+  const directory = fileURLToPath(
+    new URL("../target/debug/bundle/nsis/", import.meta.url),
+  );
+  // Match this build's own product name rather than any installer: a plain
+  // `tauri build --bundles nsis` leaves the release's setup.exe in the same
+  // directory, and installing that would put a debug binary where the real
+  // FrameWork lives.
+  const { productName } = JSON.parse(
+    readFileSync(
+      new URL("../src-tauri/tauri.dev-bundle.conf.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const built = readdirSync(directory).find(
+    (entry) =>
+      entry.startsWith(`${productName}_`) && entry.endsWith("-setup.exe"),
+  );
+  if (!built) {
+    throw new Error(`No ${productName} installer under ${directory}.`);
+  }
+  const installer = join(directory, built);
+  // /S is the NSIS silent switch. The installer is per-user, so it neither
+  // prompts for elevation nor needs a window to click through.
+  execFileSync(installer, ["/S"], { stdio: "inherit" });
+  console.log(`Installed ${built} for Explorer’s Open With menu.`);
 }

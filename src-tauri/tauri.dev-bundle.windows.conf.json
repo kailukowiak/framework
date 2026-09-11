@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "fileAssociations": [
+      {
+        "ext": [
+          "csv"
+        ],
+        "name": "FrameWork.Dev.CSV",
+        "description": "CSV data (FrameWork Dev)",
+        "mimeType": "text/csv",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "tsv"
+        ],
+        "name": "FrameWork.Dev.TSV",
+        "description": "Tab-separated data (FrameWork Dev)",
+        "mimeType": "text/tab-separated-values",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "parquet"
+        ],
+        "name": "FrameWork.Dev.Parquet",
+        "description": "Parquet data (FrameWork Dev)",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "ndjson",
+          "jsonl"
+        ],
+        "name": "FrameWork.Dev.NDJSON",
+        "description": "JSON lines data (FrameWork Dev)",
+        "mimeType": "application/x-ndjson",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "fw"
+        ],
+        "name": "FrameWork.Dev.Document",
+        "description": "FrameWork structured-data canvas (FrameWork Dev)",
+        "mimeType": "application/x-framework-document",
+        "role": "Editor",
+        "rank": "Alternate"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installerHooks": "packaging/windows/associations-dev.nsh"
+      }
+    }
+  }
+}

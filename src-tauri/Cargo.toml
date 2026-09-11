@@ -25,6 +25,13 @@ tauri-build = { version = "2", features = [] }
 # without the feature never reference a permission they do not compile.
 e2e = ["dep:tauri-plugin-wdio-webdriver", "dep:tauri-plugin-wdio"]
 
+# A debug build meant to be installed and launched from Explorer or Finder
+# rather than from a shell -- `npm run build:dev-app` is the only thing that
+# passes it. Compiles no extra code; it only tells `main.rs` to link the
+# Windows GUI subsystem, which a debug build otherwise skips. `tauri dev` and
+# `cargo run` do not pass it and keep their console.
+dev-bundle = []
+
 [dependencies]
 framework-core = { path = "../crates/framework-core" }
 connectorx.workspace = true
