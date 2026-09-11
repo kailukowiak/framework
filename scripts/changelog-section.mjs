@@ -19,7 +19,11 @@ import { fileURLToPath } from "node:url";
 
 /** The section body under `## <version>`, up to the next `##`, or null. */
 export function changelogSection(markdown, version) {
-  const lines = markdown.split("\n");
+  // Split on either ending. A Windows working tree checks this file out
+  // with CRLF, which leaves a trailing carriage return on every line --
+  // and `.` does not match one, so the heading pattern below matches
+  // nothing at all and every version reads as missing.
+  const lines = markdown.split(/\r?\n/);
   const wanted = version.replace(/^v/, "").trim().toLowerCase();
   let collecting = false;
   const body = [];
