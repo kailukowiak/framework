@@ -1,9 +1,11 @@
 # Actual XGBoost packaging spike
 
-Status: **local fit and relocation proved; release integration undecided**.
+Status: **local fit and relocation proved; release integration implemented,
+with clean-machine verification remaining**.
 Measured 2026-09-11 on macOS 27.0 / arm64, Rust 1.97.1. This is evidence for
 the bounded spike in `MLConsensus.md`, not a production dependency decision.
-No application or workspace manifests were changed.
+The spike itself changed no application or workspace manifests. Production
+integration is now described in [ml-xgboost-packaging.md](ml-xgboost-packaging.md).
 
 ## What ran
 

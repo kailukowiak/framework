@@ -1,7 +1,5 @@
 #[path = "cases/forest.rs"]
 mod forest;
-#[path = "cases/xgboost_training.rs"]
-mod xgboost_training;
 #[path = "cases/import.rs"]
 mod import;
 #[path = "cases/pipeline.rs"]
@@ -10,3 +8,5 @@ mod pipeline;
 mod regression;
 #[path = "cases/statistics.rs"]
 mod statistics;
+#[path = "cases/xgboost_training.rs"]
+mod xgboost_training;

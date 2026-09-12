@@ -1,9 +1,9 @@
 //! Bounded native XGBoost training and typed XGBoost 3.0 numerical gbtree inference.
 mod raw;
-mod tree;
 mod training;
-pub(crate) use training::train;
+mod tree;
 use serde::{Deserialize, Serialize};
+pub(crate) use training::train;
 use ts_rs::TS;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -55,19 +55,15 @@ impl IterationRange {
 use tree::Tree;
 
 pub type Result<T> = std::result::Result<T, String>;
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 #[ts(rename = "XgboostObjective")]
 pub enum Objective {
+    #[default]
     Regression,
     Binary,
     Multiclass,
-}
-impl Default for Objective {
-    fn default() -> Self {
-        Self::Regression
-    }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]

@@ -2,6 +2,7 @@
 import type { CovarianceMethod } from "./CovarianceMethod";
 import type { ForestSettings } from "./ForestSettings";
 import type { Method } from "./Method";
+import type { Settings } from "./Settings";
 
 export type FitRequest = {
   method: Method;
@@ -11,4 +12,5 @@ export type FitRequest = {
   covariance: CovarianceMethod;
   maxIterations: number;
   forest: ForestSettings;
+  xgboost: Settings;
 };

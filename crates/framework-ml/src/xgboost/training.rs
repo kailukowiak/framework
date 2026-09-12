@@ -41,9 +41,8 @@ pub(crate) fn train(
     let classes = validate_targets(&labels, settings.objective)?;
     let mut matrix = DMatrix::from_dense(&values, rows).map_err(native_error)?;
     matrix.set_labels(&labels).map_err(native_error)?;
-    let mut booster =
-        Booster::new_with_cached_dmats(&BoosterParameters::default(), &[&matrix])
-            .map_err(native_error)?;
+    let mut booster = Booster::new_with_cached_dmats(&BoosterParameters::default(), &[&matrix])
+        .map_err(native_error)?;
     let objective = match settings.objective {
         Objective::Regression => "reg:squarederror",
         Objective::Binary => "binary:logistic",
@@ -68,11 +67,15 @@ pub(crate) fn train(
     let names: Vec<&str> = feature_names.iter().map(String::as_str).collect();
     booster.set_feature_names(&names).map_err(native_error)?;
     for round in 0..u32::from(settings.rounds) {
-        booster.update(&matrix, round as i32).map_err(native_error)?;
+        booster
+            .update(&matrix, round as i32)
+            .map_err(native_error)?;
     }
     let bytes = booster.save_buffer(false).map_err(native_error)?;
     let model = Model::from_json(&bytes).map_err(|error| {
-        MlError::Numerical(format!("XGBoost produced an unsupported saved model: {error}"))
+        MlError::Numerical(format!(
+            "XGBoost produced an unsupported saved model: {error}"
+        ))
     })?;
     model.validate().map_err(MlError::InvalidModel)?;
     Ok(model)
@@ -126,8 +129,7 @@ fn validate_targets(labels: &[f32], objective: Objective) -> Result<Option<usize
         .map(|&value| {
             if value < 0.0 || value.fract() != 0.0 || value >= 1000.0 {
                 Err(MlError::InvalidInput(
-                    "XGBoost classification needs whole-number class indices starting at 0"
-                        .into(),
+                    "XGBoost classification needs whole-number class indices starting at 0".into(),
                 ))
             } else {
                 Ok(value as usize)
@@ -136,7 +138,12 @@ fn validate_targets(labels: &[f32], objective: Objective) -> Result<Option<usize
         .collect::<Result<_>>()?;
     classes.sort_unstable();
     classes.dedup();
-    if classes.len() < 2 || classes.iter().enumerate().any(|(index, class)| index != *class) {
+    if classes.len() < 2
+        || classes
+            .iter()
+            .enumerate()
+            .any(|(index, class)| index != *class)
+    {
         return Err(MlError::InvalidInput(
             "XGBoost classification needs at least two classes numbered consecutively from 0"
                 .into(),

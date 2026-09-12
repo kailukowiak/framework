@@ -1,8 +1,8 @@
-use framework_ml::{
-    CovarianceMethod, FitRequest, Method, MlError, ModelPayload, NumericDataset,
-    XgboostSettings, evaluate, fit, predict,
-};
 use framework_ml::xgboost::Objective;
+use framework_ml::{
+    CovarianceMethod, FitRequest, Method, MlError, ModelPayload, NumericDataset, XgboostSettings,
+    evaluate, fit, predict,
+};
 
 fn request(objective: Objective) -> FitRequest {
     FitRequest {
@@ -69,7 +69,10 @@ fn trains_binary_and_multiclass_probabilities_with_shared_evaluation() {
                 && (row.iter().sum::<f64>() - 1.0).abs() < 1e-5
         }));
         assert!(evaluate(&model, &training).unwrap().accuracy.unwrap() > 0.95);
-        assert_eq!(model.training_class_probabilities.as_ref().unwrap().len(), classes);
+        assert_eq!(
+            model.training_class_probabilities.as_ref().unwrap().len(),
+            classes
+        );
     }
 }
 
