@@ -24,6 +24,7 @@ pub struct DocumentView {
     /// it is not the one stored, and an interface handed only the override
     /// could not tell an assumption apart from an edit.
     pub computed_values: HashMap<Id, ComputedValue>,
+    pub computed_models: HashMap<Id, ComputedModel>,
     pub formula_functions: Vec<FormulaFunction>,
     pub can_undo: bool,
     pub can_redo: bool,
@@ -1504,6 +1505,7 @@ impl Document {
                 serde_json::to_string(&placeless(frame.artifact.as_ref())).ok(),
                 serde_json::to_string(&frame.derivation).ok(),
                 serde_json::to_string(&frame.generator).ok(),
+                self.model_prediction_fingerprint(frame),
                 serde_json::to_string(&frame.entry_columns).ok(),
                 // The corrections typed over the base read decide rows as
                 // directly as a step does — a value replaced, a row struck

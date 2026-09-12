@@ -11,6 +11,16 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Fit linear, binary logistic, and random-forest models on the canvas, inspect
+  coefficient tables and evaluation results, and use their predictions in
+  ordinary frames. Predictions follow changes to their inputs; retraining is
+  explicit, with stale fits marked and previous fits preserved if retraining fails.
+- Import supported XGBoost JSON models and fitted sklearn ONNX pipelines for
+  local inference without Python, preserving supported fitted preprocessing.
+- Create mean confidence intervals, correlations, and Welch comparisons as
+  ordinary result frames that can be referenced in formulas.
+  Model operations and statistical summaries are also available through MCP.
+
 ## 0.1.9
 
 - Opening a CSV or TSV no longer has a size limit, and no longer has two

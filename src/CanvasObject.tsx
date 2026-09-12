@@ -1,6 +1,9 @@
+import { lineageSourceIds } from "./lib/lineageSources";
+import { CanvasCardResizeControls, type ResizeEdge } from "./CanvasCardResizeControls";
+import { ModelCard } from "./models/ModelCard";
 import { useCardGeometry } from "./hooks/useCardGeometry";
 import { CardOutline } from "./CardOutline";
-import { Plus } from "lucide-react";
+import { ContainerCard } from "./ContainerCard";
 import {
   useEffect,
   useSyncExternalStore,
@@ -39,7 +42,6 @@ import type {
   ComputedResult,
   ComputedText,
   ComputedValue,
-  ContainerObject,
   DataObject,
   DocumentView,
   FormulaFunction,
@@ -115,31 +117,6 @@ const liveViewGeometry = (() => {
  * travels. Two greys would be the honest ordering and the wrong encoding —
  * at eleven pixels they are the same mark twice.
  */
-/**
- * Every frame a chain's union steps stack onto, found by scanning a frame's
- * persisted steps.
- *
- * The steps array is typed `unknown[]` here, not `FrameStepInput[]` --
- * `FrameObject.steps`/`derivation.steps` hold parsed expressions in a shape
- * only the core writes, so the editor only ever reads them back rendered.
- * A union step's `frameId` survives serialization as a plain string
- * regardless, which is all a lineage cord needs.
- */
-function unionSourceFrameIds(steps: unknown[] | undefined): string[] {
-  if (!steps) return [];
-  return steps.flatMap((step) => {
-    if (
-      step &&
-      typeof step === "object" &&
-      (step as { kind?: unknown }).kind === "union" &&
-      typeof (step as { frameId?: unknown }).frameId === "string"
-    ) {
-      return [(step as { frameId: string }).frameId];
-    }
-    return [];
-  });
-}
-
 export function LineageCords({
   document,
   selection,
@@ -155,17 +132,7 @@ export function LineageCords({
   // to the card being dragged rather than snapping to it on release.
   useSyncExternalStore(liveViewGeometry.subscribe, liveViewGeometry.version);
   const edges = document.objects.flatMap((object) => {
-    const sourceFrameIds =
-      object.kind === "plot"
-        ? [object.sourceFrameId]
-        : object.kind === "frame"
-        ? [
-            object.derivation?.sourceFrameId,
-            object.derivation?.join?.lookupFrameId,
-            ...unionSourceFrameIds(object.derivation?.steps),
-            ...unionSourceFrameIds(object.steps),
-          ].filter((id): id is string => Boolean(id))
-        : [];
+    const sourceFrameIds = lineageSourceIds(object);
     return sourceFrameIds.flatMap((sourceFrameId, sourceIndex) => {
       const source = viewHolding(document, sourceFrameId);
       const targetView = viewHolding(document, object.id);
@@ -223,21 +190,6 @@ export function LineageCords({
   );
 }
 
-/** Which side of a card a resize gesture has hold of. */
-type ResizeEdge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
-
-/** Every edge but the south-east one, which is drawn as the grow box. */
-const RESIZE_EDGES: ResizeEdge[] = ["n", "s", "e", "w", "ne", "nw", "sw"];
-const RESIZE_EDGE_NAMES: Record<ResizeEdge, string> = {
-  n: "top edge",
-  s: "bottom edge",
-  e: "right edge",
-  w: "left edge",
-  ne: "top-right corner",
-  nw: "top-left corner",
-  se: "bottom-right corner",
-  sw: "bottom-left corner",
-};
 // The same floor the card's own CSS keeps, so a drag cannot shrink a card
 // past the size its contents are laid out for.
 const MIN_CARD_WIDTH = 360;
@@ -419,7 +371,7 @@ export function CanvasObject({
     const right = start.x + start.width;
     const bottom = start.y + start.height;
     const minWidth = standaloneVariable ? MIN_VARIABLE_WIDTH : MIN_CARD_WIDTH;
-    const minHeight = standaloneVariable ? MIN_VARIABLE_HEIGHT : MIN_CARD_HEIGHT;
+    const minHeight = standaloneVariable ? MIN_VARIABLE_HEIGHT : object.kind === "model" ? 100 : MIN_CARD_HEIGHT;
     let next = { x: start.x, y: start.y, width: start.width, height: start.height };
     const move = (moveEvent: PointerEvent) => {
       // Screen pixels into canvas units, as with a drag.
@@ -672,6 +624,7 @@ export function CanvasObject({
           onTakeOwnership={onTakeOwnership}
         />
       )}
+      {!isCollapsed && object.kind === "model" && <ModelCard model={object} />}
       {!isCollapsed && object.kind === "text" && (
         <TextCard
           text={object}
@@ -705,223 +658,8 @@ export function CanvasObject({
           one drawn — the grow box says the card is resizable at all, and
           having found it you can grab any other side. */}
       {!showOutline && !isCollapsed && (
-        <>
-          {RESIZE_EDGES.map((edge) => (
-            <button
-              key={edge}
-              className={`card-resize-edge card-resize-${edge}`}
-              aria-label={`Resize ${object.name} by its ${RESIZE_EDGE_NAMES[edge]}`}
-              tabIndex={-1}
-              onPointerDown={beginResize(edge)}
-            />
-          ))}
-          <button
-            className={standaloneVariable ? "variable-resize-handle" : "frame-resize-handle"}
-            aria-label={`Resize ${object.name}`}
-            title={standaloneVariable ? "Drag to resize variable" : `Drag to resize ${kindLabel}`}
-            onPointerDown={beginResize("se")}
-          />
-        </>
+        <CanvasCardResizeControls name={object.name} kind={kindLabel} variable={Boolean(standaloneVariable)} beginResize={beginResize} />
       )}
     </section>
   );
-}
-
-/**
- * A card seen from across the room.
- *
- * Four facts, in the order that answers "which one is this": what it is
- * called, what kind of thing it is, how much of it there is, and where it
- * came from. The kind is worth stating here even though the card's shape
- * usually says it — at this size the shape is a grey rectangle.
- *
- * The wording is the sources sidebar's, deliberately. "from Ledger" and
- * "ledger.csv" mean the same thing in both places, so zooming out is reading
- * the same document a different way rather than learning a second language
- * for it.
- */
-/**
- * A heading and what is kept under it.
- *
- * Members are drawn by the same cards they would get on the canvas, so a
- * value inside a container is edited exactly the way a value outside one
- * is — being in a container is about where it sits and what it is called,
- * not about what you can do to it.
- */
-function ContainerCard({
-  container,
-  objects,
-  computedFrames,
-  computedResults,
-  computedValues,
-  formulaFunctions,
-  onOperation,
-  onFreeze,
-  onAddList,
-  onSelectMember,
-}: {
-  container: ContainerObject;
-  objects: DataObject[];
-  computedFrames: Record<string, ComputedFrame>;
-  computedResults: Record<string, ComputedResult>;
-  computedValues: Record<string, ComputedValue>;
-  formulaFunctions: FormulaFunction[];
-  onOperation: OperationHandler;
-  onFreeze: (objectId: string) => Promise<void>;
-  onAddList: (containerId: string) => void;
-  /** A press on a member selects that member, not the container around it. */
-  onSelectMember: (memberId: string) => void;
-}) {
-  const members = container.memberIds
-    .map((memberId) => objects.find((object) => object.id === memberId))
-    .filter((member): member is DataObject => Boolean(member));
-  return (
-    <div className="container-card">
-      <input
-        className="object-name-input"
-        defaultValue={container.name}
-        key={container.name}
-        onBlur={(event) => {
-          if (event.target.value !== container.name)
-            onOperation({
-              type: "renameObject",
-              objectId: container.id,
-              name: event.target.value,
-            });
-        }}
-        // Return commits here too: a container's name is read by every
-        // formula that reaches through it, and leaving the rename pending
-        // in the field made those read stale.
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-          else if (event.key === "Escape") {
-            event.currentTarget.value = container.name;
-            event.currentTarget.blur();
-          }
-        }}
-      />
-      <div className="container-members">
-        {members.length === 0 && (
-          <p className="container-empty">
-            Nothing in here yet. Add a value or a vector below, or drop one in
-            from its own menu.
-          </p>
-        )}
-        {members.map((member) => (
-          <div
-            className="container-member"
-            data-object-id={member.id}
-            key={member.id}
-            // Before the card's own handler, which would widen the selection
-            // back to the container; a right-click already reached the member
-            // through the context menu, and a left-click should not do less.
-            onPointerDown={(event) => {
-              if (event.button !== 0) return;
-              event.stopPropagation();
-              onSelectMember(member.id);
-            }}
-          >
-            {member.kind === "value" && (
-              <ValueCard
-                value={member}
-                computed={computedValues[member.id]}
-                formula={objectFormulaToken(objects, member.id)}
-                onOperation={onOperation}
-              />
-            )}
-            {member.kind === "result" && (
-              <ResultCard
-                result={member}
-                formula={objectFormulaToken(objects, member.id)}
-                computed={computedResults[member.id]}
-                objects={objects}
-                computedFrames={computedFrames}
-                formulaFunctions={formulaFunctions}
-                onOperation={onOperation}
-                onFreeze={onFreeze}
-              />
-            )}
-            {member.kind === "series" && (
-              <SeriesCard
-                series={member}
-                formula={
-                  objectFormulaToken(objects, member.id) || `\`${member.name}\``
-                }
-                onOperation={onOperation}
-              />
-            )}
-            {member.kind === "container" && (
-              <ContainerCard
-                container={member}
-                objects={objects}
-                computedFrames={computedFrames}
-                computedResults={computedResults}
-                computedValues={computedValues}
-                formulaFunctions={formulaFunctions}
-                onOperation={onOperation}
-                onFreeze={onFreeze}
-                onAddList={onAddList}
-                onSelectMember={onSelectMember}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="container-actions">
-        <button
-          className="secondary-action"
-          onClick={() =>
-            onOperation({
-              type: "addValue",
-              name: nextMemberName(objects, container, "Value"),
-              raw: "0",
-              x: 0,
-              y: 0,
-              containerId: container.id,
-            })
-          }
-        >
-          <Plus size={13} />
-          Value
-        </button>
-        <button
-          className="secondary-action"
-          onClick={() =>
-            onOperation({
-              type: "addResult",
-              name: nextMemberName(objects, container, "Result"),
-              formula: "0",
-              x: 0,
-              y: 0,
-              containerId: container.id,
-            })
-          }
-        >
-          <Plus size={13} />
-          Result
-        </button>
-        <button className="secondary-action" onClick={() => onAddList(container.id)}>
-          <Plus size={13} />
-          Vector
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/** A name nothing in this container has taken yet. */
-function nextMemberName(
-  objects: DataObject[],
-  container: ContainerObject,
-  stem: string
-): string {
-  const taken = new Set(
-    container.memberIds
-      .map((memberId) => objects.find((object) => object.id === memberId)?.name)
-      .filter(Boolean)
-  );
-  if (!taken.has(stem)) return stem;
-  let suffix = 2;
-  while (taken.has(`${stem} ${suffix}`)) suffix += 1;
-  return `${stem} ${suffix}`;
 }

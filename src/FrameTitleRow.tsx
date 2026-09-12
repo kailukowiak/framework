@@ -74,6 +74,7 @@ function FrameNameField({
   return (
     <input
       className="frame-name"
+      aria-label="Frame name"
       size={Math.max(6, Math.min(30, name.length))}
       defaultValue={name}
       key={name}

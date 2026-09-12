@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "example-branched",
+  "name": "Illustrative branched pipeline",
+  "specification": {
+    "inputs": [
+      {
+        "slot": "numeric",
+        "name": "Amount",
+        "dtype": "number",
+        "role": "predictor",
+        "binding": {
+          "frameId": "training-frame",
+          "columnId": "numeric~stable"
+        }
+      },
+      {
+        "slot": "category",
+        "name": "Region",
+        "dtype": "string",
+        "role": "predictor",
+        "binding": {
+          "frameId": "training-frame",
+          "columnId": "category~stable"
+        }
+      },
+      {
+        "slot": "outcome",
+        "name": "Response",
+        "dtype": "number",
+        "role": "outcome",
+        "binding": {
+          "frameId": "training-frame",
+          "columnId": "outcome~stable"
+        }
+      }
+    ],
+    "recipe": {
+      "steps": [
+        {
+          "kind": "impute",
+          "input": "numeric",
+          "output": "numeric-filled",
+          "strategy": "mean",
+          "learned": null,
+          "missing": {
+            "kind": "nan"
+          }
+        },
+        {
+          "kind": "scale",
+          "input": "numeric-filled",
+          "output": "numeric-scaled",
+          "learned": null
+        },
+        {
+          "kind": "impute",
+          "input": "category",
+          "output": "category-filled",
+          "strategy": "mostFrequent",
+          "learned": null,
+          "missing": {
+            "kind": "string",
+            "value": ""
+          }
+        },
+        {
+          "kind": "oneHot",
+          "input": "category-filled",
+          "outputs": [
+            "region-east",
+            "region-west"
+          ],
+          "unknown": "allZero",
+          "learned": null
+        }
+      ],
+      "features": [
+        "numeric-scaled",
+        "region-east",
+        "region-west"
+      ],
+      "precision": "float64"
+    },
+    "estimator": {
+      "method": "linear",
+      "engine": "anofox-regression",
+      "intercept": true
+    }
+  },
+  "fitted": {
+    "id": "fit-branched-1",
+    "specificationFingerprint": "illustrative-spec-1",
+    "provenance": {
+      "kind": "native",
+      "sourceFrameId": "training-frame",
+      "sourceRevision": "revision-1",
+      "trainingFingerprint": "illustrative-training-partition",
+      "backendVersion": "0.5.13",
+      "trainedAt": "2026-09-12T00:00:00Z"
+    },
+    "recipe": {
+      "steps": [
+        {
+          "kind": "impute",
+          "input": "numeric",
+          "output": "numeric-filled",
+          "strategy": "mean",
+          "learned": {
+            "type": "number",
+            "value": 10
+          },
+          "missing": {
+            "kind": "nan"
+          }
+        },
+        {
+          "kind": "scale",
+          "input": "numeric-filled",
+          "output": "numeric-scaled",
+          "learned": {
+            "offset": 10,
+            "scale": 2,
+            "operation": "divide"
+          }
+        },
+        {
+          "kind": "impute",
+          "input": "category",
+          "output": "category-filled",
+          "strategy": "mostFrequent",
+          "learned": {
+            "type": "string",
+            "value": "east"
+          },
+          "missing": {
+            "kind": "string",
+            "value": ""
+          }
+        },
+        {
+          "kind": "oneHot",
+          "input": "category-filled",
+          "outputs": [
+            "region-east",
+            "region-west"
+          ],
+          "unknown": "allZero",
+          "learned": [
+            "east",
+            "west"
+          ]
+        }
+      ],
+      "features": [
+        "numeric-scaled",
+        "region-east",
+        "region-west"
+      ],
+      "precision": "float64"
+    },
+    "parameters": {
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "format": "example-linear-parameters",
+      "formatVersion": 1
+    },
+    "outputs": [
+      {
+        "kind": "prediction",
+        "name": "Predicted response"
+      }
+    ],
+    "summaries": [
+      {
+        "shape": "components",
+        "artifact": {
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "format": "example-coefficients",
+          "formatVersion": 1
+        },
+        "covariance": "hc3"
+      },
+      {
+        "shape": "model",
+        "artifact": {
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "format": "example-model-summary",
+          "formatVersion": 1
+        },
+        "covariance": null
+      }
+    ],
+    "prediction": {
+      "precision": "float64",
+      "iterationRange": null,
+      "threshold": null
+    }
+  }
+}

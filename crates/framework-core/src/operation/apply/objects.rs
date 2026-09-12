@@ -5,6 +5,9 @@
 
 use crate::*;
 
+#[path = "object_dependencies.rs"]
+mod object_dependencies;
+
 impl Document {
     pub(crate) fn apply_add_object(
         &mut self,
@@ -27,6 +30,7 @@ impl Document {
                 "an added object or view ID already exists".into(),
             ));
         }
+        self.validate_model_object(&object)?;
         let object_id = object.id().to_string();
         self.objects.push(object);
         self.views.push(view);
@@ -97,6 +101,7 @@ impl Document {
             DataObject::Text(text) => text.name = name,
             DataObject::Plot(plot) => plot.name = name,
             DataObject::CalculationMatrix(matrix) => matrix.name = name,
+            DataObject::Model(model) => model.name = name,
         }
         Ok(())
     }
@@ -107,87 +112,7 @@ impl Document {
             .iter()
             .position(|object| object.id() == object_id)
             .ok_or(CoreError::ObjectNotFound)?;
-        // A value, a result, a list, and a block's lines are all read by id
-        // from a formula, so all are held in place by one being written —
-        // whether the formula sits in a frame, a result, or a block. A block
-        // brings every line id it holds: deleting the card is deleting the
-        // lines, and a formula holds a line, never the block itself.
-        let referenced_ids: Vec<&str> = match &self.objects[object_index] {
-            DataObject::Value(_) | DataObject::Result(_) | DataObject::Series(_) => {
-                vec![object_id.as_str()]
-            }
-            DataObject::Block(block) => block.lines.iter().map(|line| line.id.as_str()).collect(),
-            _ => Vec::new(),
-        };
-        let going = as_named(self.objects[object_index].name());
-        let referenced_by = referenced_ids
-            .iter()
-            .find_map(|target| {
-                self.objects.iter().find_map(|object| {
-                    // The object being deleted does not hold itself in place:
-                    // a block's lines reading each other go out together.
-                    if object.id() == object_id {
-                        return None;
-                    }
-                    match object {
-                        DataObject::Frame(frame) => (frame.references_object(target)
-                            || frame.display.references_object(target))
-                        .then(|| as_named(&frame.name)),
-                        DataObject::Result(result) => result
-                            .formula
-                            .expression
-                            .references_object(target)
-                            .then(|| as_named(&result.name)),
-                        DataObject::Block(block) => block.lines.iter().find_map(|line| {
-                            line.expression()?
-                                .references_object(target)
-                                .then(|| as_line_named(block, line))
-                        }),
-                        _ => None,
-                    }
-                })
-            })
-            .map(|reader| {
-                format!("{reader} reads {going}, so it cannot be deleted. Change the formula that reads it first.")
-            });
-        let derived_from = self.objects.iter().find_map(|object| match object {
-            // A union in a source frame's own chain reads the stacked frame
-            // without any derivation existing, so both step lists answer
-            // for "built from", not just the derivation.
-            DataObject::Frame(frame) => (frame
-                .derivation
-                .as_ref()
-                .is_some_and(|derivation| derivation.references_frame(&object_id))
-                || frame
-                    .steps
-                    .iter()
-                    .filter_map(FrameStep::lookup_frame_id)
-                    .any(|lookup_id| *lookup_id == object_id))
-            .then(|| {
-                format!(
-                    "{} is built from {going}, so it cannot be deleted. Delete that frame first.",
-                    as_named(&frame.name)
-                )
-            }),
-            _ => None,
-        });
-        let drawn_from = self.objects.iter().find_map(|object| match object {
-            DataObject::Plot(plot) if plot.source_frame_id == object_id => Some(format!(
-                "{} is drawn from {going}, so it cannot be deleted. Delete that plot first.",
-                as_named(&plot.name)
-            )),
-            _ => None,
-        });
-        let read_across = matches!(&self.objects[object_index], DataObject::Frame(_))
-            .then(|| self.frame_read_by(&object_id))
-            .flatten()
-            .map(|reader| {
-                format!("{reader} reads {going}, so it cannot be deleted. Change the formula that reads it first.")
-            });
-        if let Some(refusal) = referenced_by
-            .or(derived_from)
-            .or(drawn_from)
-            .or(read_across)
+        if let Some(refusal) = object_dependencies::deletion_refusal(self, object_index, &object_id)
         {
             return Err(CoreError::ReferencedByFormula(refusal));
         }

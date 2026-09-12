@@ -1,0 +1,467 @@
+{
+  "versions": {
+    "numpy": "2.2.6",
+    "scipy": "1.18.1",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.6.1",
+    "onnx": "1.18.0",
+    "skl2onnx": "1.19.1",
+    "onnxruntime": "1.22.1",
+    "xgboost": "3.0.2"
+  },
+  "cases": {
+    "branched-linear": {
+      "status": "ortParityPassed",
+      "opsets": {
+        "ai.onnx.ml": 2,
+        "": 18
+      },
+      "nodes": [
+        {
+          "domain": "",
+          "op": "Concat",
+          "inputs": [
+            "age",
+            "income"
+          ],
+          "outputs": [
+            "merged_columns"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "LabelEncoder",
+          "inputs": [
+            "zero"
+          ],
+          "outputs": [
+            "fillvalue"
+          ],
+          "attributes": [
+            "default_string",
+            "keys_int64s",
+            "values_strings"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "ArrayFeatureExtractor",
+          "inputs": [
+            "city",
+            "zero"
+          ],
+          "outputs": [
+            "impi0"
+          ],
+          "attributes": []
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "Imputer",
+          "inputs": [
+            "merged_columns"
+          ],
+          "outputs": [
+            "variable4"
+          ],
+          "attributes": [
+            "imputed_value_floats",
+            "replaced_value_float"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "LabelEncoder",
+          "inputs": [
+            "impi0"
+          ],
+          "outputs": [
+            "impc0"
+          ],
+          "attributes": [
+            "default_int64",
+            "keys_strings",
+            "values_int64s"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "Scaler",
+          "inputs": [
+            "variable4"
+          ],
+          "outputs": [
+            "variable1"
+          ],
+          "attributes": [
+            "offset",
+            "scale"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Cast",
+          "inputs": [
+            "impc0"
+          ],
+          "outputs": [
+            "impc01"
+          ],
+          "attributes": [
+            "to"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Where",
+          "inputs": [
+            "impc01",
+            "fillvalue",
+            "impi0"
+          ],
+          "outputs": [
+            "nomiss0"
+          ],
+          "attributes": []
+        },
+        {
+          "domain": "",
+          "op": "Concat",
+          "inputs": [
+            "nomiss0"
+          ],
+          "outputs": [
+            "variable2"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Gather",
+          "inputs": [
+            "variable2",
+            "zero"
+          ],
+          "outputs": [
+            "variable201"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "OneHotEncoder",
+          "inputs": [
+            "variable201"
+          ],
+          "outputs": [
+            "variable201out"
+          ],
+          "attributes": [
+            "cats_strings",
+            "zeros"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Reshape",
+          "inputs": [
+            "variable201out",
+            "shape_tensor"
+          ],
+          "outputs": [
+            "variable3"
+          ],
+          "attributes": []
+        },
+        {
+          "domain": "",
+          "op": "Concat",
+          "inputs": [
+            "variable1",
+            "variable3"
+          ],
+          "outputs": [
+            "transformed_column"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "LinearRegressor",
+          "inputs": [
+            "transformed_column"
+          ],
+          "outputs": [
+            "variable"
+          ],
+          "attributes": [
+            "coefficients",
+            "intercepts"
+          ]
+        }
+      ]
+    },
+    "branched-logistic": {
+      "status": "ortParityPassed",
+      "opsets": {
+        "ai.onnx.ml": 2,
+        "": 18
+      },
+      "nodes": [
+        {
+          "domain": "",
+          "op": "Concat",
+          "inputs": [
+            "age",
+            "income"
+          ],
+          "outputs": [
+            "merged_columns"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "LabelEncoder",
+          "inputs": [
+            "zero"
+          ],
+          "outputs": [
+            "fillvalue"
+          ],
+          "attributes": [
+            "default_string",
+            "keys_int64s",
+            "values_strings"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "ArrayFeatureExtractor",
+          "inputs": [
+            "city",
+            "zero"
+          ],
+          "outputs": [
+            "impi0"
+          ],
+          "attributes": []
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "Imputer",
+          "inputs": [
+            "merged_columns"
+          ],
+          "outputs": [
+            "variable"
+          ],
+          "attributes": [
+            "imputed_value_floats",
+            "replaced_value_float"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "LabelEncoder",
+          "inputs": [
+            "impi0"
+          ],
+          "outputs": [
+            "impc0"
+          ],
+          "attributes": [
+            "default_int64",
+            "keys_strings",
+            "values_int64s"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "Scaler",
+          "inputs": [
+            "variable"
+          ],
+          "outputs": [
+            "variable1"
+          ],
+          "attributes": [
+            "offset",
+            "scale"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Cast",
+          "inputs": [
+            "impc0"
+          ],
+          "outputs": [
+            "impc01"
+          ],
+          "attributes": [
+            "to"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Where",
+          "inputs": [
+            "impc01",
+            "fillvalue",
+            "impi0"
+          ],
+          "outputs": [
+            "nomiss0"
+          ],
+          "attributes": []
+        },
+        {
+          "domain": "",
+          "op": "Concat",
+          "inputs": [
+            "nomiss0"
+          ],
+          "outputs": [
+            "variable2"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Gather",
+          "inputs": [
+            "variable2",
+            "zero"
+          ],
+          "outputs": [
+            "variable201"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "OneHotEncoder",
+          "inputs": [
+            "variable201"
+          ],
+          "outputs": [
+            "variable201out"
+          ],
+          "attributes": [
+            "cats_strings",
+            "zeros"
+          ]
+        },
+        {
+          "domain": "",
+          "op": "Reshape",
+          "inputs": [
+            "variable201out",
+            "shape_tensor"
+          ],
+          "outputs": [
+            "variable3"
+          ],
+          "attributes": []
+        },
+        {
+          "domain": "",
+          "op": "Concat",
+          "inputs": [
+            "variable1",
+            "variable3"
+          ],
+          "outputs": [
+            "transformed_column"
+          ],
+          "attributes": [
+            "axis"
+          ]
+        },
+        {
+          "domain": "ai.onnx.ml",
+          "op": "LinearClassifier",
+          "inputs": [
+            "transformed_column"
+          ],
+          "outputs": [
+            "label",
+            "probabilities"
+          ],
+          "attributes": [
+            "classlabels_strings",
+            "coefficients",
+            "intercepts",
+            "multi_class",
+            "post_transform"
+          ]
+        }
+      ]
+    },
+    "xgboost-regression": {
+      "status": "savedBoosterRangeParityPassed",
+      "objective": "reg:squarederror",
+      "bestIteration": 0,
+      "savedRounds": 4,
+      "iterationRange": [
+        0,
+        1
+      ],
+      "classes": null,
+      "atol": 1e-07,
+      "rtol": 1e-06,
+      "allTreesMaxDifference": 0.6212278604507446
+    },
+    "xgboost-binary": {
+      "status": "savedBoosterRangeParityPassed",
+      "objective": "binary:logistic",
+      "bestIteration": 0,
+      "savedRounds": 4,
+      "iterationRange": [
+        0,
+        1
+      ],
+      "classes": [
+        0,
+        1
+      ],
+      "atol": 1e-07,
+      "rtol": 1e-06,
+      "allTreesMaxDifference": 0.18123725056648254
+    },
+    "xgboost-multiclass": {
+      "status": "savedBoosterRangeParityPassed",
+      "objective": "multi:softprob",
+      "bestIteration": 0,
+      "savedRounds": 4,
+      "iterationRange": [
+        0,
+        1
+      ],
+      "classes": [
+        0,
+        1,
+        2
+      ],
+      "atol": 1e-07,
+      "rtol": 1e-06,
+      "allTreesMaxDifference": 0.22321578860282898
+    }
+  }
+}

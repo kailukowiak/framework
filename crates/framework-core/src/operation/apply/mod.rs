@@ -7,6 +7,7 @@ pub mod blocks;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
+mod ml;
 pub mod objects;
 pub mod scenarios;
 pub mod views;
@@ -19,6 +20,12 @@ impl Document {
         operation: ReplicatedOperation,
     ) -> Result<(), CoreError> {
         match operation {
+            ReplicatedOperation::SetModelSpec { model_id, spec } => {
+                self.apply_model_spec(model_id, spec)?
+            }
+            ReplicatedOperation::SetModelFit { model_id, fitted } => {
+                self.apply_model_fit(model_id, fitted)?
+            }
             ReplicatedOperation::AddObject {
                 object,
                 view,

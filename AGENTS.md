@@ -205,6 +205,10 @@ a live-frame cell click is refused without disabling any non-cell operation.
 
 ## Working conventions
 
+- When delegating authorized work, default new subagents to `gpt-5.6-sol`.
+  Use `gpt-5.6-luna` for straightforward, bounded tasks; reserve Astra for
+  work whose difficulty warrants it. Kai prefers capable cheaper agents
+  rather than having every subagent inherit the parent model.
 - Structural lint warnings are design feedback, not background noise. Run
   `npm run lint` for TypeScript and React work and `npm run lint:rust` for Rust
   work. Do not add or worsen a warning. In particular, a file-size or

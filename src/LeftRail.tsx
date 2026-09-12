@@ -1,3 +1,4 @@
+import { ModelCreateButton } from "./models/ModelCreateButton";
 import {
   Database,
   FileCog,
@@ -105,6 +106,8 @@ export function LeftRail({
       <div className="rail-rule" />
       <div className="rail-group">
         <span className="rail-group-label">Add</span>
+        <ModelCreateButton rail />
+        <ModelCreateButton rail statistics />
         <button
           className="rail-button"
           onClick={() => void addVariable()}
@@ -163,6 +166,13 @@ export function LeftRail({
       <div className="rail-spacer" />
       {/* Pinned to the foot, below everything it acts on: this one arranges
           the canvas rather than opening or adding to it. */}
+      <ArrangeButton viewCount={viewCount} onOperation={onOperation} />
+    </aside>
+  );
+}
+
+function ArrangeButton({ viewCount, onOperation }: { viewCount: number; onOperation: OperationHandler }) {
+  return (
       <button
         className="rail-button"
         disabled={viewCount < 2}
@@ -173,6 +183,5 @@ export function LeftRail({
         <Network size={19} />
         <span>Arrange</span>
       </button>
-    </aside>
   );
 }

@@ -368,6 +368,9 @@ impl Document {
             // `Layer::Data`, always: this is the one line that keeps a
             // display filter from leaking into everything downstream.
             let mut plan = self.materialize_data_layer(&derivation.source_frame_id, visiting)?;
+            if frame.prediction.is_some() {
+                plan = self.model_prediction_plan(frame, plan)?;
+            }
             let steps = derivation.steps();
             let joins_lookup = steps
                 .iter()
@@ -524,7 +527,7 @@ impl Document {
         use polars::prelude::{IntoLazy, NamedFrom};
         let inputs: Vec<&Column> = frame
             .input_columns()
-            .into_iter()
+            .iter()
             .filter(|column| column.formula.is_none())
             .collect();
         // Added rows come first, before the ordinals are minted, so they land
@@ -1163,6 +1166,11 @@ impl Document {
                 Cow::Borrowed(frame.steps.as_slice()),
             ),
         };
+        if frame.prediction.is_some() {
+            plan = self
+                .model_prediction_plan(frame, plan)
+                .map_err(CoreError::Import)?;
+        }
         for step in steps.iter().take(step_index) {
             plan = self
                 .apply_step(plan, step, &mut visiting)

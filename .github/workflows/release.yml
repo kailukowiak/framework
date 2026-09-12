@@ -94,11 +94,11 @@ jobs:
           # add x86_64-apple-darwin to the rustup step below.
           - platform: macos-latest
             label: macOS (Apple Silicon .dmg)
-            args: --target aarch64-apple-darwin --config src-tauri/tauri.release.conf.json
+            args: --target aarch64-apple-darwin --config src-tauri/tauri.release.conf.json --config src-tauri/tauri.macos-release.conf.json
 
           - platform: windows-latest
             label: Windows (.exe + .msi)
-            args: --config src-tauri/tauri.release.conf.json
+            args: --config src-tauri/tauri.release.conf.json --config src-tauri/tauri.windows-release.conf.json
 
           # Built on the oldest supported Ubuntu on purpose: glibc is
           # backwards compatible, so a 22.04 build runs on 24.04 and later,
@@ -173,6 +173,15 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      # xgb 3.0.6 links the prebuilt XGBoost 3.0.5 native runtime dynamically.
+      # Fetch it independently of Cargo so both the linker and Tauri bundler
+      # consume the same checksum-pinned files. On macOS this also supplies a
+      # pinned LLVM OpenMP runtime and rewrites both copied dylibs to @rpath;
+      # Tauri signs the nested copies with the app below.
+      - name: Prepare native XGBoost runtime
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        run: node scripts/prepare-xgboost-native.mjs
+
       - name: Build and bundle installers
         uses: tauri-apps/tauri-action@v0
         env:
@@ -206,6 +215,10 @@ jobs:
           # with a real identity plus notarization credentials to remove the
           # warning entirely.
           APPLE_SIGNING_IDENTITY: '-'
+          XGBOOST_LIB_DIR: ${{ github.workspace }}/src-tauri/native/${{ runner.os == 'macOS' && 'macos' || 'windows' }}
+          # xgboost_lib-sys derives its macOS OpenMP link search from this
+          # prefix. The preparation script deliberately creates that layout.
+          HOMEBREW_PREFIX: ${{ github.workspace }}/src-tauri/native/macos
         with:
           args: ${{ matrix.args }}
           tagName: ${{ inputs.tag || github.ref_name }}

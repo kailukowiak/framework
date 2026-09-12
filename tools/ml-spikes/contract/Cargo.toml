@@ -1,0 +1,17 @@
+[package]
+name = "framework-ml-contract-spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Keep the design spike out of the application dependency graph until its
+# import and statistical acceptance cases establish the production contract.
+[workspace]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[lints.clippy]
+too_many_lines = "warn"
+large_enum_variant = "warn"

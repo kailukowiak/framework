@@ -69,4 +69,33 @@ mod tests {
             assert!(catalog.contains(scenario_operation), "{scenario_operation}");
         }
     }
+
+    #[test]
+    fn models_use_the_canonical_nested_operation_contract() {
+        let catalog = operation_typescript();
+        for operation in [
+            "addModel",
+            "setModelSpec",
+            "fitModel",
+            "importModel",
+            "importOnnxModel",
+            "addModelPredictions",
+            "addModelSummary",
+            "addStatisticalAnalysis",
+        ] {
+            assert!(
+                catalog.contains(&format!(r#""type": "{operation}""#)),
+                "{operation}"
+            );
+        }
+        for declaration in [
+            "type ModelSpec =",
+            "type Method =",
+            "type CovarianceMethod =",
+            "type IterationRange =",
+            "type StatsRequest =",
+        ] {
+            assert!(catalog.contains(declaration), "{declaration}");
+        }
+    }
 }

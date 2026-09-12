@@ -3,6 +3,7 @@ import type { BlockObject } from "./BlockObject";
 import type { CalculationMatrixObject } from "./CalculationMatrixObject";
 import type { ContainerObject } from "./ContainerObject";
 import type { FrameObject } from "./FrameObject";
+import type { ModelObject } from "./ModelObject";
 import type { PlotObject } from "./PlotObject";
 import type { ResultObject } from "./ResultObject";
 import type { SeriesObject } from "./SeriesObject";
@@ -34,4 +35,5 @@ export type DataObject =
   | { "kind": "frame" } & FrameObject
   | { "kind": "text" } & TextObject
   | { "kind": "plot" } & PlotObject
-  | { "kind": "calculationMatrix" } & CalculationMatrixObject;
+  | { "kind": "calculationMatrix" } & CalculationMatrixObject
+  | { "kind": "model" } & ModelObject;

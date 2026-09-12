@@ -1,0 +1,40 @@
+[
+  {
+    "fittedRevisionId": "fit-linear-1",
+    "splitId": "assessment-1",
+    "sourceRevision": "revision-1",
+    "membership": {
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "format": "example-partition-membership",
+      "formatVersion": 1
+    },
+    "role": "test",
+    "metrics": [
+      {
+        "name": "rmse",
+        "estimate": null,
+        "unavailableReason": "Contract example only; evaluation has not run",
+        "eventClass": null
+      }
+    ]
+  },
+  {
+    "fittedRevisionId": "fit-branched-1",
+    "splitId": "assessment-1",
+    "sourceRevision": "revision-1",
+    "membership": {
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "format": "example-partition-membership",
+      "formatVersion": 1
+    },
+    "role": "test",
+    "metrics": [
+      {
+        "name": "rmse",
+        "estimate": null,
+        "unavailableReason": "Contract example only; evaluation has not run",
+        "eventClass": null
+      }
+    ]
+  }
+]

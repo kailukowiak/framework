@@ -3,6 +3,7 @@ import type { CanvasView } from "./CanvasView";
 import type { ComputedBlock } from "./ComputedBlock";
 import type { ComputedCalculationMatrix } from "./ComputedCalculationMatrix";
 import type { ComputedFrame } from "./ComputedFrame";
+import type { ComputedModel } from "./ComputedModel";
 import type { ComputedResult } from "./ComputedResult";
 import type { ComputedText } from "./ComputedText";
 import type { ComputedValue } from "./ComputedValue";
@@ -27,6 +28,7 @@ export type DocumentView = {
    * could not tell an assumption apart from an edit.
    */
   computedValues: { [key in string]: ComputedValue };
+  computedModels: { [key in string]: ComputedModel };
   formulaFunctions: Array<FormulaFunction>;
   canUndo: boolean;
   canRedo: boolean;

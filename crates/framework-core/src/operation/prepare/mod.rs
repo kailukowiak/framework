@@ -10,10 +10,14 @@ pub mod columns;
 pub mod derivation;
 pub mod dictionary;
 mod files;
+mod ml;
+mod model_import;
+mod model_summary;
 pub mod objects;
 pub mod pass_through;
 mod rename_mapping;
 pub mod scenarios;
+mod statistics;
 pub mod views;
 
 mod header_filter;
@@ -26,6 +30,16 @@ impl Document {
         operation: Operation,
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok(match operation {
+            operation @ Operation::AddStatisticalAnalysis { .. } => {
+                self.prepare_statistical_analysis(operation)?
+            }
+            operation @ (Operation::AddModel { .. }
+            | Operation::SetModelSpec { .. }
+            | Operation::FitModel { .. }
+            | Operation::ImportModel { .. }
+            | Operation::ImportOnnxModel { .. }
+            | Operation::AddModelPredictions { .. }
+            | Operation::AddModelSummary { .. }) => self.prepare_model_operation(operation)?,
             Operation::AddVariable {
                 name,
                 formula,

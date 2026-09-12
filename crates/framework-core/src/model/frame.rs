@@ -61,6 +61,11 @@ pub struct FrameObject {
     pub connector: Option<ConnectorRecipe>,
     #[serde(default)]
     pub derivation: Option<FrameDerivation>,
+    /// An ordinary derived frame whose rows are scored with a saved model.
+    /// Its derivation names the scoring input; learned state lives on the model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub prediction: Option<crate::ModelPrediction>,
     /// Rows spelled as a rule instead of written down or read from a file:
     /// `sequence(0, 16)`, or a date range whose bounds name a value on the
     /// canvas. The document evaluates the rule on every read, so editing the

@@ -1,0 +1,24 @@
+[package]
+name = "framework-ml"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+anofox-regression = "=0.5.13"
+faer = "=0.23.2"
+microlp = "=0.6.0"
+num-rational = "=0.4.2"
+num-traits = "=0.2.19"
+serde.workspace = true
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+thiserror.workspace = true
+ts-rs.workspace = true
+smartcore = { version = "=0.6.14", features = ["serde"] }
+prost = "=0.13.5"
+
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+xgb = "=3.0.6"

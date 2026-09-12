@@ -26,6 +26,8 @@ use external_open::{initial_session, try_open_from_arguments, try_open_startup_a
 mod file_writeback;
 use database_source::import_database_source;
 mod menu;
+mod model_files;
+mod operations;
 mod persist;
 mod save_guard;
 mod scratchwork_window;
@@ -1129,17 +1131,6 @@ fn copy_sample_document(source_path: &Path, working_path: &Path) -> Result<(), S
         .map_err(|error| error.to_string())
 }
 
-#[tauri::command]
-fn apply_operation(
-    window: tauri::WebviewWindow,
-    operation: Operation,
-    state: State<'_, AppState>,
-) -> Result<DocumentView, String> {
-    let session = state.document_for(window.label())?;
-    let mut session = session.lock().map_err(|error| error.to_string())?;
-    apply_session_operation(&window, &mut session, &state.writer_id, operation)
-}
-
 /// Refuses an ingest or evaluation request while a document is open in safe
 /// mode. Safe mode's promise is that nothing scans a source or runs the
 /// engine, so paging, refreshing, importing and materializing all wait until
@@ -2136,11 +2127,11 @@ fn apply_session_operation_inner(
 /// Applies one operation and, in the same step, pushes the resulting
 /// undo/redo availability to the native Edit menu.
 ///
-/// This is the choke point: every `#[tauri::command]` that mutates the
-/// document through an `Operation` calls this rather than
-/// `apply_session_operation_inner` directly, so the menu push is not
-/// something each command has to remember on its own — it happens wherever
-/// a store mutation turns into the `DocumentView` a command hands back.
+/// Synchronous commands use this wrapper to keep mutation and menu updates
+/// together. The asynchronous generic command in `operations` uses the same
+/// inner mutation and notifications, but releases the session lock between
+/// them: querying native focus from its worker must not hold a lock that a
+/// synchronous command on the window thread may be waiting to acquire.
 ///
 /// Before this existed, the only push came from the webview: it watched
 /// `DocumentView.canUndo`/`canRedo` and, on a change, made a *second*,
@@ -2784,7 +2775,7 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         list_tutorial_documents,
         create_tutorial_documents,
         reset_tutorial_documents,
-        apply_operation,
+        operations::apply_operation,
         exit_safe_mode,
         file_writeback::import_dataset_file,
         file_writeback::export_frame_as,
@@ -2796,6 +2787,7 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         import_excel_range,
         import_and_append_dataset_file,
         pick_data_file,
+        model_files::pick_model_file,
         refresh_frame_connector,
         set_frame_source,
         materialize_frame,

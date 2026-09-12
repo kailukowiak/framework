@@ -11,6 +11,7 @@ import type { FrameDisplay } from "./FrameDisplay";
 import type { FrameGenerator } from "./FrameGenerator";
 import type { FrameStep } from "./FrameStep";
 import type { Materialization } from "./Materialization";
+import type { ModelPrediction } from "./ModelPrediction";
 import type { Row } from "./Row";
 import type { Summary } from "./Summary";
 import type { UniqueKeyConstraint } from "./UniqueKeyConstraint";
@@ -58,6 +59,11 @@ export type FrameObject = {
   artifact?: DataArtifact | null;
   connector?: ConnectorRecipe | null;
   derivation: FrameDerivation | null;
+  /**
+   * An ordinary derived frame whose rows are scored with a saved model.
+   * Its derivation names the scoring input; learned state lives on the model.
+   */
+  prediction?: ModelPrediction | null;
   /**
    * Rows spelled as a rule instead of written down or read from a file:
    * `sequence(0, 16)`, or a date range whose bounds name a value on the

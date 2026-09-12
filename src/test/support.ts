@@ -7,6 +7,7 @@ import salesBeforeJson from "./fixtures/sales-before-formula.json";
 import salesDeleteRegionJson from "./fixtures/sales-margin-delete-region.json";
 import salesWithJson from "./fixtures/sales-with-formula.json";
 import salesWithMarginJson from "./fixtures/sales-with-margin.json";
+import mlModelsJson from "./fixtures/ml-models.json";
 
 // ---------------------------------------------------------------------------
 // Support for mounted interaction tests.
@@ -21,6 +22,7 @@ import salesWithMarginJson from "./fixtures/sales-with-margin.json";
 // ---------------------------------------------------------------------------
 
 export const fixtures = {
+  mlModels: mlModelsJson as unknown as DocumentView,
   dictionaries: dictionariesJson as unknown as DocumentView,
   blank: blankJson as unknown as DocumentView,
   salesBeforeFormula: salesBeforeJson as unknown as DocumentView,

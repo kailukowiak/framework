@@ -1,0 +1,18 @@
+[package]
+name = "framework-ml-onnx-spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+framework-ml-contract-spike = { path = "../contract" }
+prost = "=0.13.5"
+
+[dev-dependencies]
+serde_json = "1"
+
+[lints.clippy]
+too_many_lines = "warn"
+large_enum_variant = "warn"

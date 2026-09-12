@@ -9,7 +9,9 @@ impl FrameObject {
         match &self.derivation {
             Some(derivation) => {
                 let chain = derivation.steps();
-                if derivation.join.is_some() {
+                if self.prediction.is_some() {
+                    (self.render_steps(document, &self.base_columns, &chain), 0)
+                } else if derivation.join.is_some() {
                     // The join is configured in its own compact summary and
                     // is the fixed input to Wrangle. Only the steps after it
                     // are editable there, starting from the join's retained

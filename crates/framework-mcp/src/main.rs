@@ -17,7 +17,10 @@ use std::{
 };
 use uuid::Uuid;
 
+mod document_summary;
+mod model_snapshot;
 mod operation_catalog;
+use document_summary::document_summary;
 
 const DEFAULT_DOCUMENT: &str = "framework.fw";
 const FRAMEWORK_APP_IDENTIFIER: &str = "com.framework.canvas";
@@ -543,6 +546,12 @@ struct CreateFrameArgs {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct GetModelArgs {
+    /// Model name or stable model ID from inspect_document.
+    model: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 struct SetValueArgs {
     /// Value-object name or stable object ID.
@@ -769,6 +778,19 @@ impl FrameworkMcp {
     fn inspect_document(&self) -> Result<Json<DocumentSummary>, String> {
         let session = self.lock()?;
         Ok(Json(document_summary(&session.store.view(), &session.path)))
+    }
+
+    /// Read a model's specification, fitted coefficients, evaluation and staleness without its large parameter payload.
+    #[tool(
+        name = "get_model",
+        annotations(title = "Read a FrameWork model", read_only_hint = true)
+    )]
+    fn get_model(
+        &self,
+        Parameters(args): Parameters<GetModelArgs>,
+    ) -> Result<Json<serde_json::Value>, String> {
+        let session = self.lock()?;
+        model_snapshot::snapshot(&session.store.view(), &args.model).map(Json)
     }
 
     /// Read a frame with stable row/column IDs, raw values, formulas, computed results, and errors.
@@ -1869,172 +1891,6 @@ impl FrameworkMcp {
 )]
 impl ServerHandler for FrameworkMcp {}
 
-fn document_summary(view: &DocumentView, path: &Path) -> DocumentSummary {
-    let objects = view
-        .document
-        .objects
-        .iter()
-        .map(|object| match object {
-            DataObject::Value(value) => ObjectSummary {
-                id: value.id.clone(),
-                name: value.name.clone(),
-                kind: "value".into(),
-                value: Some(value.raw.clone()),
-                data_type: Some(data_type_name(value.data_type)),
-                row_count: None,
-                columns: Vec::new(),
-            },
-            DataObject::Result(result) => ObjectSummary {
-                id: result.id.clone(),
-                name: result.name.clone(),
-                kind: "result".into(),
-                // The formula and the answer as it stands, both: what a
-                // result is and what it says are equally the point of one.
-                value: Some(
-                    view.computed_results
-                        .get(&result.id)
-                        .map(|computed| {
-                            format!("= {} → {}", computed.formula, computed.cell.display)
-                        })
-                        .unwrap_or_default(),
-                ),
-                data_type: view
-                    .computed_results
-                    .get(&result.id)
-                    .map(|computed| data_type_name(computed.data_type)),
-                row_count: None,
-                columns: Vec::new(),
-            },
-            DataObject::Block(block) => ObjectSummary {
-                id: block.id.clone(),
-                name: block.name.clone(),
-                kind: "block".into(),
-                // Every line as it was typed with its answer after it, in
-                // order: a block is a worked calculation, and the working is
-                // the content. Blank lines carry nothing and are left out.
-                value: Some(
-                    view.computed_blocks
-                        .get(&block.id)
-                        .map(|computed| {
-                            computed
-                                .lines
-                                .iter()
-                                .filter(|line| !line.blank)
-                                .map(|line| match (&line.cell.error, line.comment) {
-                                    (_, true) => line.text.clone(),
-                                    (Some(error), _) => format!("{} → {error}", line.text),
-                                    (None, _) => {
-                                        format!("{} → {}", line.text, line.cell.display)
-                                    }
-                                })
-                                .collect::<Vec<_>>()
-                                .join("; ")
-                        })
-                        .unwrap_or_default(),
-                ),
-                data_type: None,
-                row_count: Some(block.lines.len()),
-                columns: Vec::new(),
-            },
-            DataObject::Series(series) => ObjectSummary {
-                id: series.id.clone(),
-                name: series.name.clone(),
-                kind: "series".into(),
-                // The values themselves, joined, rather than a count: a list
-                // is small by nature and knowing what is in it is the whole
-                // reason to ask about one.
-                value: Some(series.values.join(", ")),
-                data_type: Some(data_type_name(series.data_type)),
-                row_count: Some(series.values.len()),
-                columns: Vec::new(),
-            },
-            DataObject::Container(container) => ObjectSummary {
-                id: container.id.clone(),
-                name: container.name.clone(),
-                kind: "container".into(),
-                // The names it holds, so a reader can write
-                // `Finance`.`Interest rate` without a second lookup.
-                value: Some(
-                    container
-                        .member_ids
-                        .iter()
-                        .filter_map(|member_id| view.document.object(member_id).ok())
-                        .map(|member| member.name())
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                ),
-                data_type: None,
-                row_count: Some(container.member_ids.len()),
-                columns: Vec::new(),
-            },
-            DataObject::Frame(frame) => ObjectSummary {
-                id: frame.id.clone(),
-                name: frame.name.clone(),
-                kind: "frame".into(),
-                value: None,
-                data_type: None,
-                // The literal rows are the count only when the frame's rows
-                // *are* its data. A computed or file-backed frame stores
-                // none here, and reporting its zero as a count told agents
-                // an imported frame was empty; the honest answer is the
-                // engine's, or nothing — get_frame counts what this cannot.
-                row_count: if frame.owns_its_rows() && frame.steps.is_empty() {
-                    Some(frame.rows.len())
-                } else {
-                    view.computed_frames
-                        .get(&frame.id)
-                        .and_then(|computed| computed.total_rows)
-                },
-                columns: column_summaries(view, frame),
-            },
-            DataObject::Text(text) => ObjectSummary {
-                id: text.id.clone(),
-                name: text.name.clone(),
-                kind: "text".into(),
-                value: Some(text.text.clone()),
-                data_type: Some("text".into()),
-                row_count: None,
-                columns: Vec::new(),
-            },
-            DataObject::Plot(plot) => ObjectSummary {
-                id: plot.id.clone(),
-                name: plot.name.clone(),
-                kind: "plot".into(),
-                value: None,
-                data_type: Some("vega-lite".into()),
-                row_count: None,
-                columns: Vec::new(),
-            },
-            DataObject::CalculationMatrix(matrix) => {
-                let computed = view.computed_calculation_matrices.get(&matrix.id);
-                ObjectSummary {
-                    id: matrix.id.clone(),
-                    name: matrix.name.clone(),
-                    kind: "calculationMatrix".into(),
-                    value: computed.and_then(|result| result.error.clone()),
-                    data_type: None,
-                    row_count: computed
-                        .and_then(|result| result.output.as_ref())
-                        .map(|output| output.rows.len()),
-                    columns: Vec::new(),
-                }
-            }
-        })
-        .collect();
-    DocumentSummary {
-        id: view.document.id.clone(),
-        name: view.document.name.clone(),
-        revision: view.document.revision,
-        document_path: path.display().to_string(),
-        can_undo: view.can_undo,
-        can_redo: view.can_redo,
-        objects,
-        formula_reference: "Search formula functions with the search_functions tool — \
-                            aliases cover Excel and Polars vocabulary."
-            .into(),
-    }
-}
-
 fn rendered_pipeline_inputs(
     frame: &FrameObject,
     rendered: &[RenderedFrameStep],
@@ -2716,6 +2572,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     mod file_writeback;
+    mod ml;
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 

@@ -549,7 +549,17 @@ impl Document {
                 let mut source_plan = self
                     .materialize_frame_lazy(source_frame_id, Layer::Data, &mut HashSet::new())
                     .map_err(CoreError::Import)?;
-                if let Some(join) = &fixed_join {
+                if frame.prediction.is_some() {
+                    source_plan = self
+                        .model_prediction_plan(frame, source_plan)
+                        .map_err(CoreError::Import)?;
+                    (
+                        frame_id.to_string(),
+                        frame.name.clone(),
+                        frame.base_columns.clone(),
+                        source_plan,
+                    )
+                } else if let Some(join) = &fixed_join {
                     source_plan = self
                         .apply_step(
                             source_plan,

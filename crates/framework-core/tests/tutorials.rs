@@ -140,7 +140,8 @@ fn tutorial_computation_errors(store: &Store) -> Vec<String> {
             DataObject::Value(_)
             | DataObject::Series(_)
             | DataObject::Container(_)
-            | DataObject::Plot(_) => {}
+            | DataObject::Plot(_)
+            | DataObject::Model(_) => {}
         }
     }
     errors

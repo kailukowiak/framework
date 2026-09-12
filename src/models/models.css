@@ -1,0 +1,26 @@
+.model-dialog-backdrop { position: fixed; inset: 0; z-index: 80; background: light-dark(#20221f25, #0005); display: grid; place-items: center; }
+.model-dialog { width: min(510px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow: auto; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 14px; box-shadow: 0 8px 35px #0002; }
+.model-dialog header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.model-dialog h2 { font-size: var(--text-base); margin: 0; }
+.model-dialog fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.model-dialog label { display: grid; gap: 3px; margin: 9px 0; font-size: var(--text-sm); }
+.model-dialog input, .model-dialog select, .model-dialog textarea { width: 100%; box-sizing: border-box; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 3px; padding: 5px 6px; }
+.model-dialog textarea { resize: vertical; line-height: 1.5; font-family: var(--font-mono, monospace); }
+.model-settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.model-mapping { font-size: var(--text-sm); margin: 5px 0; overflow-wrap: anywhere; }
+.model-error { color: var(--error, light-dark(#9c342b, #f2988c)); font-size: var(--text-sm); margin: 6px 0; }
+.model-card { height: calc(100% - 29px); overflow: auto; padding: 8px 10px 16px; box-sizing: border-box; font-size: var(--text-sm); }
+.model-card .object-name-input { font-size: var(--text-base); font-weight: 600; }
+.model-status { font-size: var(--text-sm); margin: 3px 0 6px; }
+.model-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 7px 0; }
+.model-actions button, .model-summary-actions summary { font-size: var(--text-sm); }
+.model-summary-actions { position: relative; }
+.model-summary-actions summary { cursor: pointer; }
+.model-summary-actions > div { position: absolute; left: 0; top: 100%; z-index: 2; min-width: 140px; background: var(--paper); border: 1px solid var(--line); display: grid; padding: 4px; }
+.model-summary-actions button { border: 0; text-align: left; padding: 5px; background: none; color: var(--ink); cursor: pointer; }
+.model-summary-actions button:hover { background: var(--accent-soft); }
+.model-results { width: 100%; border-collapse: collapse; font-size: var(--text-sm); margin: 8px 0; font-variant-numeric: tabular-nums; }
+.model-results caption { text-align: left; font-weight: 600; padding-bottom: 3px; }
+.model-results th, .model-results td { padding: 3px 5px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.model-results th:first-child { text-align: left; }
+.model-results th { color: var(--ink); font-weight: 500; }

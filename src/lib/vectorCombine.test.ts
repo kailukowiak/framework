@@ -12,6 +12,7 @@ function document(overrides: Partial<DocumentView> = {}): DocumentView {
     safeMode: false,
     formulaFunctions: [],
     computedResults: {},
+    computedModels: {},
     computedBlocks: {},
     computedTexts: {},
     computedValues: {},

@@ -1,3 +1,4 @@
+import { ModelCreateButton } from "./models/ModelCreateButton";
 import { DictionaryMenuItems } from "./DictionaryMenuItems";
 import { Frame, Trash2 } from "lucide-react";
 import { ContextMenuGroup, ContextMenuSurface } from "./ContextMenuSurface";
@@ -76,6 +77,7 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
           </strong>
         )}
       </div>
+      {(!contextObject || contextFrame) && <ModelCreateButton sourceFrameId={contextFrame?.id} x={contextMenu.canvasX + 28} y={contextMenu.canvasY + 28} onChoose={() => props.setContextMenu(null)} />}
       <ContextMenuGridItems {...props} />
       <ContextMenuContainerItems {...props} />
       {!contextObject ? (

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "macOS": {
+      "minimumSystemVersion": "26.0",
+      "frameworks": [
+        "native/macos/libxgboost.dylib",
+        "native/macos/opt/libomp/lib/libomp.dylib"
+      ]
+    }
+  }
+}

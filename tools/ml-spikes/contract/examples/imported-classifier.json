@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "id": "example-imported",
+  "name": "Illustrative imported classifier",
+  "specification": {
+    "inputs": [
+      {
+        "slot": "numeric",
+        "name": "Measurement",
+        "dtype": "number",
+        "role": "predictor",
+        "binding": null
+      }
+    ],
+    "recipe": {
+      "steps": [],
+      "features": [
+        "numeric"
+      ],
+      "precision": "float64"
+    },
+    "estimator": {
+      "method": "logistic",
+      "engine": "sklearn",
+      "intercept": true
+    }
+  },
+  "fitted": {
+    "id": "fit-imported-1",
+    "specificationFingerprint": "illustrative-spec-1",
+    "provenance": {
+      "kind": "imported",
+      "source": {
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "format": "onnx",
+        "formatVersion": 1
+      },
+      "exporterVersion": "example-only"
+    },
+    "recipe": {
+      "steps": [],
+      "features": [
+        "numeric"
+      ],
+      "precision": "float64"
+    },
+    "parameters": {
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "format": "example-logistic-parameters",
+      "formatVersion": 1
+    },
+    "outputs": [
+      {
+        "kind": "class",
+        "name": "Predicted class",
+        "labels": [
+          {
+            "type": "string",
+            "value": "no"
+          },
+          {
+            "type": "string",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "kind": "probability",
+        "name": "Probability no",
+        "label": {
+          "type": "string",
+          "value": "no"
+        }
+      },
+      {
+        "kind": "probability",
+        "name": "Probability yes",
+        "label": {
+          "type": "string",
+          "value": "yes"
+        }
+      }
+    ],
+    "summaries": [],
+    "prediction": {
+      "precision": "float64",
+      "iterationRange": null,
+      "threshold": null
+    }
+  }
+}

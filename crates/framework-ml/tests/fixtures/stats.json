@@ -1,0 +1,157 @@
+{
+  "scipy": "1.18.1",
+  "cases": [
+    {
+      "method": "meanConfidence",
+      "x": [
+        3.2,
+        1.1,
+        4.7,
+        2.8,
+        5.9,
+        2.4,
+        6.1,
+        4.0
+      ],
+      "y": null,
+      "confidenceLevel": 0.9,
+      "estimate": 3.775,
+      "standardError": 0.6146282267703438,
+      "degreesOfFreedom": 7.0,
+      "confidenceLower": 2.6105385114764976,
+      "confidenceUpper": 4.939461488523501
+    },
+    {
+      "method": "pearsonCorrelation",
+      "x": [
+        3.2,
+        1.1,
+        4.7,
+        2.8,
+        5.9,
+        2.4,
+        6.1,
+        4.0
+      ],
+      "y": [
+        8.2,
+        2.5,
+        7.1,
+        4.2,
+        8.0,
+        6.3,
+        7.6,
+        5.2
+      ],
+      "confidenceLevel": 0.9,
+      "estimate": 0.7408269083498016,
+      "pValue": 0.03550078489255253,
+      "confidenceLower": 0.21337890791025962,
+      "confidenceUpper": 0.9338805641255643
+    },
+    {
+      "method": "welchDifference",
+      "x": [
+        3.2,
+        1.1,
+        4.7,
+        2.8,
+        5.9,
+        2.4,
+        6.1,
+        4.0
+      ],
+      "y": [
+        1.8,
+        2.2,
+        3.5,
+        1.1,
+        4.4,
+        2.9
+      ],
+      "confidenceLevel": 0.9,
+      "estimate": 1.125,
+      "statistic": 1.432296680403091,
+      "degreesOfFreedom": 11.958629712829957,
+      "pValue": 0.17767627461335694,
+      "confidenceLower": -0.27530458167539673,
+      "confidenceUpper": 2.525304581675396
+    },
+    {
+      "method": "meanConfidence",
+      "x": [
+        3.2,
+        1.1,
+        4.7,
+        2.8,
+        5.9,
+        2.4,
+        6.1,
+        4.0
+      ],
+      "y": null,
+      "confidenceLevel": 0.95,
+      "estimate": 3.775,
+      "standardError": 0.6146282267703438,
+      "degreesOfFreedom": 7.0,
+      "confidenceLower": 2.3216351892653755,
+      "confidenceUpper": 5.228364810734624
+    },
+    {
+      "method": "pearsonCorrelation",
+      "x": [
+        3.2,
+        1.1,
+        4.7,
+        2.8,
+        5.9,
+        2.4,
+        6.1,
+        4.0
+      ],
+      "y": [
+        8.2,
+        2.5,
+        7.1,
+        4.2,
+        8.0,
+        6.3,
+        7.6,
+        5.2
+      ],
+      "confidenceLevel": 0.95,
+      "estimate": 0.7408269083498016,
+      "pValue": 0.03550078489255253,
+      "confidenceLower": 0.07564237669499985,
+      "confidenceUpper": 0.9497117049194336
+    },
+    {
+      "method": "welchDifference",
+      "x": [
+        3.2,
+        1.1,
+        4.7,
+        2.8,
+        5.9,
+        2.4,
+        6.1,
+        4.0
+      ],
+      "y": [
+        1.8,
+        2.2,
+        3.5,
+        1.1,
+        4.4,
+        2.9
+      ],
+      "confidenceLevel": 0.95,
+      "estimate": 1.125,
+      "statistic": 1.432296680403091,
+      "degreesOfFreedom": 11.958629712829957,
+      "pValue": 0.17767627461335694,
+      "confidenceLower": -0.5870093011522328,
+      "confidenceUpper": 2.837009301152233
+    }
+  ]
+}

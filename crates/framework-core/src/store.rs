@@ -790,6 +790,7 @@ impl Store {
             computed_texts: document.compute_texts(),
             computed_calculation_matrices: document.compute_calculation_matrices(),
             computed_values: document.compute_values(),
+            computed_models: document.compute_models(),
             document,
             formula_functions: formula_function_catalog(),
             can_undo: !self.undo.is_empty(),
@@ -813,6 +814,7 @@ impl Store {
             computed_texts: HashMap::new(),
             computed_calculation_matrices: HashMap::new(),
             computed_values: HashMap::new(),
+            computed_models: HashMap::new(),
             formula_functions: formula_function_catalog(),
             can_undo: !self.undo.is_empty(),
             can_redo: !self.redo.is_empty(),
@@ -879,6 +881,19 @@ impl Store {
         &self,
         operation: Operation,
     ) -> Result<ReplicatedOperation, CoreError> {
+        if self.safe_mode
+            && matches!(
+                operation,
+                Operation::FitModel { .. }
+                    | Operation::ImportModel { .. }
+                    | Operation::ImportOnnxModel { .. }
+                    | Operation::AddStatisticalAnalysis { .. }
+            )
+        {
+            return Err(CoreError::InvalidOperation(
+                "Enable evaluation before fitting or importing a model".into(),
+            ));
+        }
         self.document.prepare_operation(operation)
     }
 

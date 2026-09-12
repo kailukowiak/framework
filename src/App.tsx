@@ -1,3 +1,5 @@
+import { CanvasHeading } from "./CanvasHeading";
+import { ModelWorkbench } from "./models/ModelWorkbench";
 import { useHistoryMenuState } from "./hooks/useHistoryMenuState";
 import { CircleAlert, Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useReducer, useState } from "react";
@@ -1232,6 +1234,7 @@ export default function App() {
   });
 
   return (
+    <ModelWorkbench key={document.id} document={document} onOperation={run} position={() => insertPosition({ width: 560, height: 420 })}>
     <NumberDisplayContext.Provider value={useThousandsSeparators}>
       <div
         className={`app-shell${formulaEditorActive ? " formula-pick-active" : ""}`}
@@ -1472,19 +1475,7 @@ export default function App() {
               transformOrigin: "0 0",
             }}
           >
-            <div className="canvas-heading">
-              <span>ANALYSIS CANVAS</span>
-              <h1>{document.name}</h1>
-              <p>
-                {document.objects.length === 0
-                  ? "Nothing here yet. Press ⌘J to start writing, open a document or a sample from the Data library, import a file, or add a frame."
-                  : `${document.objects.length} object${
-                      document.objects.length === 1 ? "" : "s"
-                    } · ${document.views.length} window${
-                      document.views.length === 1 ? "" : "s"
-                    }`}
-              </p>
-            </div>
+            <CanvasHeading document={document} />
 
             <LineageCords
               document={document}
@@ -2087,5 +2078,6 @@ export default function App() {
         )}
       </div>
     </NumberDisplayContext.Provider>
+    </ModelWorkbench>
   );
 }

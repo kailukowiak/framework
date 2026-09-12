@@ -1321,21 +1321,62 @@ The dashboard is the null feature: everything a dashboard is made of — multipl
 
 Sequencing: the chrome-less read-only mode is display-layer work and can ship early — it is the demo of the whole product. Controls ride on computed values.
 
-### Machine learning on tabular data (2026-08-13)
+### Machine learning on tabular data (revised 2026-09-12)
 
-The convergence target: diverse sources in, Polars wrangling, plots, predictions, all live on a presented canvas. The reason it hangs together is that every piece is the same primitive — a node in one dependency graph with stable IDs and visible lineage. A model is one more node kind, not a new architecture. Decision reasoning in the [decision log entry](#ml-training-is-native-rust-onnx-at-the-boundary-2026-08-13); this section is the design.
+The purpose is useful statistics and ML above Excel's basic tools without trying
+to replace R or Python. A novice can fit and assess a useful model; someone who
+works in Python can bring a supported fitted pipeline into a working workbook.
+The consensus and evidence are recorded in [MLConsensus.md](MLConsensus.md) and
+[the build plan](docs/ml-build-plan.md). Those documents distinguish working
+spikes from shipped behavior; this section describes the intended product.
 
-**The boundary: train natively or import, persist as ONNX, infer natively.**
+- **One model object, several outputs.** A model belongs in the same dependency
+  graph as frames and Scratchwork. Source/feature columns use stable IDs. The
+  model owns its specification, fitted revision, provenance, and references to
+  fitted payloads; predictions and statistical summaries are usable as ordinary
+  frames and downstream calculations. Large payloads belong in content-addressed
+  artifacts, with the original import retained for provenance.
+- **Take the architecture from tidymodels.** Separate method/task from engine,
+  an editable preprocessing recipe from its learned steps, the fitted workflow
+  from evaluation, and component/model/observation result frames. The same compact
+  card displays native and imported fits. No R runtime or arbitrary script
+  execution is implied by this inspiration.
+- **Fit deliberately, score live.** Retraining is an explicit action that creates
+  a fitted revision. Predictions recompute from the saved fit when scoring data
+  changes; training-source changes mark it stale. A failed retrain preserves the
+  last fit. Collaboration replicates the fitted result, not a training command.
+- **Fitted preprocessing is inside the model.** General feature engineering may
+  remain in Wrangle, but learned imputation/scaling/category state must be fitted
+  on training rows and preserved with the model. An ordered typed plan carries
+  branches, explicit missing sentinels, numeric precision, feature order, and
+  class labels. Resampling fits preprocessing independently inside each fold.
+- **A focused native surface.** Linear and logistic regression include useful
+  coefficients, uncertainty and failure handling. Robust OLS covariance is an
+  inference choice; Huber is a different fit. Pinned anofox is acceptance-tested
+  against independent references, including degenerate and nonconvergent cases.
+  A short ML catalog and non-predictive statistics extend the same output path.
+- **Actual XGBoost is investigated explicitly.** Import means supported real
+  XGBoost models, not a substitute booster. In-app training is measured against
+  packaging and supported-platform requirements; any deferral is an explicit
+  scope decision. An alternative booster is offered under its own identity.
+- **Import compatibility is a tested contract.** Supported sklearn ONNX pipelines
+  and XGBoost model JSON are translated into typed data and scored natively.
+  Unsupported operators, objectives, versions, and malformed artifacts fail
+  explicitly. ONNX Runtime remains a measured option for supported tree execution,
+  not an automatic fallback for arbitrary graphs. ONNX is interchange, not a
+  mandatory internal representation or a promise of immediate model export.
+  Pickles and embedded executable training code are not accepted.
+- **Show honest results densely.** Model and stats output cards use ordinary
+  table type, with names at least as prominent as values. Fit summaries and
+  held-out evaluation are distinct; baseline comparisons use training-derived
+  baselines. Confidence methods, unavailable results, and model failures are
+  explicit. Significance stars may supplement estimates and intervals, not
+  replace them. Twenty coefficients must remain twenty readable rows.
 
-- **A fitted model is an artifact plus an object.** The weights live as an ONNX file, content-addressed beside the parquets in `.framework/<id>/`. The `ModelObject` carries what the artifact cannot: feature columns *by stable ID*, target, hyperparameters, seed, trained-at date, and the **lineage fingerprint of the training data**. Renames stay safe; lineage cords render from the model card to every input.
-- **Predict is a derived-column node.** Inference runs in Rust via `tract` (pure Rust, no system dependencies) as an ordinary recalc-graph node: deterministic, live, cacheable, safe in a shared document — running an ONNX file is interpreting data, not executing code, so the "opening a document executes nothing beyond the Rust engine" line holds for documents containing models.
-- **Training is native, seeded, and in-graph.** The estimator surface is deliberately short and decades-stable: OLS/ridge/lasso, logistic regression, k-means, PCA, decision trees, random forest, gradient boosting, and classical forecasting (ETS/ARIMA/seasonal naive). Libraries: **linfa** primary, **smartcore** where it fills gaps, **augurs** for forecasting, **perpetual**/**forust** for pure-Rust gradient boosting — all cargo-packageable, no C++ toolchain, no Python runtime. Deep-learning frameworks (burn, candle) are explicitly out: wrong tool for tabular, wrong maintenance bet.
-- **Preprocessing is the wrangle chain, not a pipeline object.** Encoding, imputation, scaling, and train/test splits are derived-frame steps — visible, lineage-tracked, editable — which is most of what sklearn's `Pipeline` exists to bolt on after the fact. This is why the native estimator core is smaller than it looks: the hard 80% of "an ML library" is already built and is better here than there.
-- **Import and export are the same format.** ONNX in from anywhere — sklearn via `skl2onnx`, LightGBM, XGBoost — dragged into a document like a CSV, no Python shipped or invoked. Native-trained models export ONNX back out, so models roundtrip between FrameWork and the Python world in both directions with one interchange format. **Pickles are never accepted**: unpickling is code execution, the exact vector the trust model exists to block.
-- **Model staleness is a first-class signal.** Because the object records its training-data lineage fingerprint, the existing staleness machinery badges it — *"trained on data 3 refreshes old"* — with retrain as the adjacent action. Native training makes retrain-on-refresh possible in principle; it should still be a deliberate gesture, not automatic, for the same reason caching is offered rather than imposed.
-- **The data plane** is Polars → ndarray (`to_ndarray`) at the training boundary only. ndarray is engine plumbing, never user-facing surface (see the [scratchpad decision](#the-scratchpad-stays-one-semantics--ndarray-rejected-2026-08-13)).
-
-The long tail — anything not in the native list — arrives later through the Python plugin runtime under its existing consent rules, and hands its result back the same way: an ONNX artifact and a model object. The tiers differ in where training runs, never in what a model *is*.
+Specialist estimators can later arrive through explicitly installed plugins.
+Their outputs use the same fitted model contract; the execution origin does not
+create a second kind of model card. Forecasting and plot trend lines are separately
+scoped features, not prerequisites for the first model path.
 
 ### TODOs from the 2026-08-25 field audit
 
@@ -1448,6 +1489,9 @@ What this buys, beyond correctness:
 **Build the file, not the tool.** The missing readable identifiers described here have since landed. External git can therefore work for anyone comfortable with it, while internal versioning remains a UI over a format that is already reviewable rather than a rescue of one that is not. Embedding gix or libgit2 buys merge, history, remotes and auth outright; the application owns commit, pull, log and diff, and a terminal escape hatch owns rebase and bisect.
 
 ### ML training is native Rust, ONNX at the boundary (2026-08-13)
+
+Historical decision: the 2026-09-12 ML section above supersedes its ONNX-only
+storage, pure-Rust-only dependency, and preprocessing placement decisions.
 
 **Model training runs in the Rust engine; ONNX is the only model interchange format, in both directions; the Python plugin runtime is the long tail, not the core.** The design is in [§34 Machine learning](#machine-learning-on-tabular-data-2026-08-13); this entry holds why, because the first instinct was the opposite.
 

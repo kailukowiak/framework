@@ -1,0 +1,348 @@
+{
+  "syntheticData": true,
+  "rawInputs": [
+    {
+      "name": "age",
+      "dtype": "float32"
+    },
+    {
+      "name": "income",
+      "dtype": "float32"
+    },
+    {
+      "name": "city",
+      "dtype": "string",
+      "missingSentinel": ""
+    }
+  ],
+  "probes": [
+    {
+      "age": null,
+      "income": 2.0,
+      "city": ""
+    },
+    {
+      "age": 30.0,
+      "income": null,
+      "city": "unseen"
+    },
+    {
+      "age": 80.0,
+      "income": 8.0,
+      "city": "c"
+    },
+    {
+      "age": 20.0,
+      "income": 1.0,
+      "city": "a"
+    }
+  ],
+  "fittedRecipe": {
+    "numeric": {
+      "inputs": [
+        "age",
+        "income"
+      ],
+      "impute": [
+        42.142857142857146,
+        3.4285714285714284
+      ],
+      "mean": [
+        42.14285714285714,
+        3.428571428571429
+      ],
+      "scale": [
+        16.174274106034648,
+        1.7928429140015905
+      ]
+    },
+    "categorical": {
+      "inputs": [
+        "city"
+      ],
+      "impute": [
+        "a"
+      ],
+      "categories": [
+        [
+          "a",
+          "b",
+          "c"
+        ]
+      ],
+      "unknown": "allZero"
+    },
+    "outputSlots": [
+      "numeric__age",
+      "numeric__income",
+      "categorical__city_a",
+      "categorical__city_b",
+      "categorical__city_c"
+    ]
+  },
+  "transformedProbes": [
+    [
+      4.3930425013323815e-16,
+      -0.7968190728895959,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      -0.7507512895633826,
+      -2.4770112673110004e-16,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      2.3405775498152526,
+      2.5498210332467064,
+      0.0,
+      0.0,
+      1.0
+    ],
+    [
+      -1.3690170574391096,
+      -1.3545924239123128,
+      1.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "expected": [
+    3.2042928505412136,
+    5.906102564974891,
+    13.175960944188976,
+    1.4857356701802527
+  ],
+  "coefficients": [
+    0.4125176787953846,
+    2.06860625284319,
+    -1.3632029771928744,
+    0.6431481281977142,
+    0.7200548489951593
+  ],
+  "intercept": 6.215800744298219,
+  "tolerance": {
+    "atol": 2e-05,
+    "rtol": 2e-05,
+    "dtype": "float32"
+  },
+  "onnxExpected": [
+    [
+      [
+        3.2042930126190186
+      ],
+      [
+        5.906102657318115
+      ],
+      [
+        13.175960540771484
+      ],
+      [
+        1.4857358932495117
+      ]
+    ]
+  ],
+  "onnx": {
+    "status": "ortParityPassed",
+    "opsets": {
+      "ai.onnx.ml": 2,
+      "": 18
+    },
+    "nodes": [
+      {
+        "domain": "",
+        "op": "Concat",
+        "inputs": [
+          "age",
+          "income"
+        ],
+        "outputs": [
+          "merged_columns"
+        ],
+        "attributes": [
+          "axis"
+        ]
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "LabelEncoder",
+        "inputs": [
+          "zero"
+        ],
+        "outputs": [
+          "fillvalue"
+        ],
+        "attributes": [
+          "default_string",
+          "keys_int64s",
+          "values_strings"
+        ]
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "ArrayFeatureExtractor",
+        "inputs": [
+          "city",
+          "zero"
+        ],
+        "outputs": [
+          "impi0"
+        ],
+        "attributes": []
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "Imputer",
+        "inputs": [
+          "merged_columns"
+        ],
+        "outputs": [
+          "variable4"
+        ],
+        "attributes": [
+          "imputed_value_floats",
+          "replaced_value_float"
+        ]
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "LabelEncoder",
+        "inputs": [
+          "impi0"
+        ],
+        "outputs": [
+          "impc0"
+        ],
+        "attributes": [
+          "default_int64",
+          "keys_strings",
+          "values_int64s"
+        ]
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "Scaler",
+        "inputs": [
+          "variable4"
+        ],
+        "outputs": [
+          "variable1"
+        ],
+        "attributes": [
+          "offset",
+          "scale"
+        ]
+      },
+      {
+        "domain": "",
+        "op": "Cast",
+        "inputs": [
+          "impc0"
+        ],
+        "outputs": [
+          "impc01"
+        ],
+        "attributes": [
+          "to"
+        ]
+      },
+      {
+        "domain": "",
+        "op": "Where",
+        "inputs": [
+          "impc01",
+          "fillvalue",
+          "impi0"
+        ],
+        "outputs": [
+          "nomiss0"
+        ],
+        "attributes": []
+      },
+      {
+        "domain": "",
+        "op": "Concat",
+        "inputs": [
+          "nomiss0"
+        ],
+        "outputs": [
+          "variable2"
+        ],
+        "attributes": [
+          "axis"
+        ]
+      },
+      {
+        "domain": "",
+        "op": "Gather",
+        "inputs": [
+          "variable2",
+          "zero"
+        ],
+        "outputs": [
+          "variable201"
+        ],
+        "attributes": [
+          "axis"
+        ]
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "OneHotEncoder",
+        "inputs": [
+          "variable201"
+        ],
+        "outputs": [
+          "variable201out"
+        ],
+        "attributes": [
+          "cats_strings",
+          "zeros"
+        ]
+      },
+      {
+        "domain": "",
+        "op": "Reshape",
+        "inputs": [
+          "variable201out",
+          "shape_tensor"
+        ],
+        "outputs": [
+          "variable3"
+        ],
+        "attributes": []
+      },
+      {
+        "domain": "",
+        "op": "Concat",
+        "inputs": [
+          "variable1",
+          "variable3"
+        ],
+        "outputs": [
+          "transformed_column"
+        ],
+        "attributes": [
+          "axis"
+        ]
+      },
+      {
+        "domain": "ai.onnx.ml",
+        "op": "LinearRegressor",
+        "inputs": [
+          "transformed_column"
+        ],
+        "outputs": [
+          "variable"
+        ],
+        "attributes": [
+          "coefficients",
+          "intercepts"
+        ]
+      }
+    ]
+  }
+}

@@ -41,6 +41,7 @@ function documentOf(
     views: [],
     computedFrames,
     computedResults: {},
+    computedModels: {},
     computedBlocks: {},
     computedTexts: {},
     computedCalculationMatrices: {},

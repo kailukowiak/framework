@@ -14,11 +14,64 @@ import type { FrameStyleRuleInput } from "./FrameStyleRuleInput";
 import type { FrameStyleTarget } from "./FrameStyleTarget";
 import type { FrameViewOrientation } from "./FrameViewOrientation";
 import type { FrozenValue } from "./FrozenValue";
+import type { IterationRange } from "./IterationRange";
 import type { JoinColumnInput } from "./JoinColumnInput";
+import type { ModelSpec } from "./ModelSpec";
+import type { ModelSummaryKind } from "./ModelSummaryKind";
 import type { NamedFormulaInput } from "./NamedFormulaInput";
+import type { StatsRequest } from "./StatsRequest";
 import type { SummaryOperation } from "./SummaryOperation";
 
 export type Operation =
+  | {
+    "type": "addStatisticalAnalysis";
+    name: string;
+    sourceFrameId: string;
+    xColumnId: string;
+    yColumnId?: string | null;
+    request: StatsRequest;
+    x: number;
+    y: number;
+  }
+  | { "type": "addModel"; name: string; spec: ModelSpec; x: number; y: number }
+  | { "type": "setModelSpec"; modelId: string; spec: ModelSpec }
+  | { "type": "fitModel"; modelId: string }
+  | {
+    "type": "importOnnxModel";
+    name: string;
+    sourceFrameId: string;
+    featureColumnIds: Array<string>;
+    bytes: Array<number>;
+    x: number;
+    y: number;
+  }
+  | {
+    "type": "importModel";
+    name: string;
+    sourceFrameId: string;
+    featureColumnIds: Array<string>;
+    json: string;
+    iterationRange?: IterationRange | null;
+    x: number;
+    y: number;
+  }
+  | {
+    "type": "addModelSummary";
+    modelId: string;
+    kind: ModelSummaryKind;
+    name: string;
+    x: number;
+    y: number;
+  }
+  | {
+    "type": "addModelPredictions";
+    modelId: string;
+    sourceFrameId: string;
+    featureColumnIds: Array<string>;
+    name: string;
+    x: number;
+    y: number;
+  }
   | {
     "type": "addVariable";
     name: string;

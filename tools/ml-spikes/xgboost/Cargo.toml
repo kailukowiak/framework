@@ -1,0 +1,14 @@
+[package]
+name = "framework-xgboost-spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Isolated on purpose: this experiment must not add a native runtime to FrameWork.
+[workspace]
+
+[dependencies]
+xgb = "=3.0.6"
+
+[profile.release]
+strip = true

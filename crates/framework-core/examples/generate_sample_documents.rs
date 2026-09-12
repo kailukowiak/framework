@@ -66,6 +66,7 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
         deleted_rows: Vec::new(),
         appended_rows: 0,
         derivation: None,
+        prediction: None,
         generator: None,
         materialization: None,
         entry_columns: Vec::new(),
