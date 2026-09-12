@@ -11,6 +11,11 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Three finance lessons join the tutorial library: **Price a deal**,
+  **Driver-based forecast**, and **Scenarios, sensitivity and goal seek**.
+  Each builds the job with today's FrameWork, says where that is harder than
+  it should be, and ends with what the same job becomes once the finance work
+  lands. Each has a Start workbook and an Answer key.
 - Fit models by choosing a frame and target; all other columns become predictors. Use a narrower derived frame to choose fewer inputs.
 - Undo and Redo from the native menu now restore grid edits when the grid has keyboard focus.
 - Keep the app responsive while checking recent files that may be waiting on
