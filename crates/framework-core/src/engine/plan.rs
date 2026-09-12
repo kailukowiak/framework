@@ -196,7 +196,7 @@ impl Document {
     ) -> Result<pl::LazyFrame, String> {
         let mut plan = plan;
         for step in &frame.display.steps {
-            plan = self.apply_step(plan, step, &mut HashSet::new())?;
+            plan = self.apply_step(&frame.id, plan, step, &mut HashSet::new())?;
         }
         Ok(plan)
     }
@@ -232,7 +232,7 @@ impl Document {
                     cols.push(pl::col(ROW_INDEX));
                     plan.select(cols)
                 }
-                _ => self.apply_step(plan, step, &mut visiting)?,
+                _ => self.apply_step(&frame.id, plan, step, &mut visiting)?,
             };
         }
         // The projection must be the columns that survive the chain, not the
@@ -376,7 +376,7 @@ impl Document {
                 .iter()
                 .any(|step| matches!(step, FrameStep::Join { .. }));
             for step in steps.iter() {
-                plan = self.apply_step(plan, step, visiting)?;
+                plan = self.apply_step(frame_id, plan, step, visiting)?;
             }
             // Entered values join on after the chain: the chain makes the
             // rows, the entries decorate them by key.
@@ -410,7 +410,7 @@ impl Document {
                 }
                 let mut plan = plan;
                 for step in &frame.steps {
-                    plan = self.apply_step(plan, step, visiting)?;
+                    plan = self.apply_step(&frame.id, plan, step, visiting)?;
                 }
                 let plan = self.apply_entry_columns(plan, frame)?;
                 Ok(plan.select(
@@ -693,6 +693,7 @@ impl Document {
     /// aggregates rather than the source rows.
     fn apply_broadcast_step(
         &self,
+        frame_id: &str,
         plan: pl::LazyFrame,
         step: &FrameStep,
     ) -> Result<pl::LazyFrame, String> {
@@ -736,7 +737,7 @@ impl Document {
                 })
             })
             .collect::<Result<Vec<_>, String>>()?;
-        self.apply_with_columns_step(plan, &columns)
+        self.apply_with_columns_step(frame_id, plan, &columns)
     }
 
     fn apply_zip_vector_step(
@@ -765,6 +766,7 @@ impl Document {
 
     pub(crate) fn apply_step(
         &self,
+        frame_id: &str,
         plan: pl::LazyFrame,
         step: &FrameStep,
         visiting: &mut HashSet<Id>,
@@ -805,8 +807,10 @@ impl Document {
                 });
                 Ok(plan.filter(predicate))
             }
-            FrameStep::WithColumns { columns } => self.apply_with_columns_step(plan, columns),
-            FrameStep::Broadcast { .. } => self.apply_broadcast_step(plan, step),
+            FrameStep::WithColumns { columns } => {
+                self.apply_with_columns_step(frame_id, plan, columns)
+            }
+            FrameStep::Broadcast { .. } => self.apply_broadcast_step(frame_id, plan, step),
             FrameStep::ZipVector { .. } => self.apply_zip_vector_step(plan, step),
             FrameStep::Select { column_ids } => Ok(plan.select(
                 column_ids
@@ -1173,7 +1177,7 @@ impl Document {
         }
         for step in steps.iter().take(step_index) {
             plan = self
-                .apply_step(plan, step, &mut visiting)
+                .apply_step(frame_id, plan, step, &mut visiting)
                 .map_err(CoreError::Import)?;
         }
         let schema = plan

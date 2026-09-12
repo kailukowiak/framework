@@ -9,6 +9,23 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use ts_rs::TS;
 
+/// Which column says what time a row belongs to, and which columns restart
+/// that timeline. A declaration, not a transformation: it names the Date
+/// column whose values order the frame for period-relative reads (`prior`,
+/// `period_index`), the way a unique key names the columns that identify a
+/// row for lookups. The calendar — what counts as a period — stays an
+/// argument on the functions themselves, so this never has to change when
+/// a fiscal year does. Validated in `validate.rs` and read by the engine
+/// when a formula asks for a neighbouring period rather than the row above.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct FramePeriod {
+    pub column_id: Id,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub partition_column_ids: Vec<Id>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -84,6 +101,10 @@ pub struct FrameObject {
     pub materialization: Option<Materialization>,
     #[serde(default)]
     pub unique_keys: Vec<UniqueKeyConstraint>,
+    /// The declared period column, if any. See [`FramePeriod`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub period: Option<FramePeriod>,
     /// Hand-entered values living on a computed frame, keyed by row identity
     /// rather than row position.
     ///

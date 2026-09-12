@@ -17,6 +17,7 @@ use std::fmt::Write;
 impl Document {
     pub(crate) fn apply_with_columns_step(
         &self,
+        frame_id: &str,
         mut plan: pl::LazyFrame,
         columns: &[DerivedExpression],
     ) -> Result<pl::LazyFrame, String> {
@@ -30,12 +31,20 @@ impl Document {
                     .into(),
             );
         }
+        // A prior-period read joins the frame to itself on the declared
+        // period column, so it is lifted out before anything compiles —
+        // the same shape as a mapping call below, and first so a lookup
+        // around a prior (or the reverse) resolves in the second pass.
+        let (joined, columns, mut answers) =
+            crate::formula::financial_period::join_prior_periods(self, frame_id, plan, columns)?;
+        plan = joined;
         // A mapping call reads another frame, so it joins that frame into
         // the plan here rather than compiling to a literal; the columns
         // below are the same step with each call pointing at its answer.
-        let (joined, columns, answers) =
-            crate::formula::dictionary::join_mappings(self, plan, columns)?;
+        let (joined, columns, mapping_answers) =
+            crate::formula::dictionary::join_mappings(self, plan, &columns)?;
         plan = joined;
+        answers.extend(mapping_answers);
         let mut ordinary = Vec::new();
         for column in &columns {
             match column.expression.recurrence_parts()? {

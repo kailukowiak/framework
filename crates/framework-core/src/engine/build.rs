@@ -432,6 +432,7 @@ impl FrameObject {
             entry_columns: Vec::new(),
             materialization: None,
             unique_keys: Vec::new(),
+            period: None,
             summaries: Vec::new(),
         }
     }

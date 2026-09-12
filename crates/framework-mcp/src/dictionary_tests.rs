@@ -128,3 +128,26 @@
         drop(session);
         if path.exists() { std::fs::remove_file(path).unwrap(); }
     }
+
+    #[test]
+    fn period_declaration_is_discoverable_and_uses_the_canonical_operation() {
+        let (server, path) = test_server();
+        assert!(server.describe_operations().unwrap().0.type_script.contains(r#""type": "setFramePeriod""#));
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({"type":"addFrame","name":"Actuals","grid":[["Month","Revenue"],["2025-01-01","100"],["2025-02-01","104"]],"x":0,"y":0}), expected_revision: None,
+        })).unwrap();
+        let frame = {
+            let session = server.lock().unwrap();
+            session.store.document().objects.iter().find_map(|object| match object {
+                DataObject::Frame(frame) if frame.name == "Actuals" => Some(frame.clone()), _ => None,
+            }).unwrap()
+        };
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({"type":"setFramePeriod","frameId":frame.id,"period":{"columnId":frame.columns[0].id,"partitionColumnIds":[]}}), expected_revision: None,
+        })).unwrap();
+        let session = server.lock().unwrap();
+        let declared = session.store.document().frame(&frame.id).unwrap();
+        assert_eq!(declared.period.as_ref().unwrap().column_id, frame.columns[0].id);
+        drop(session);
+        if path.exists() { std::fs::remove_file(path).unwrap(); }
+    }

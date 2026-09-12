@@ -346,6 +346,9 @@ impl Document {
                 column_ids,
                 enabled,
             } => self.prepare_set_unique_key(frame_id, column_ids, enabled)?,
+            Operation::SetFramePeriod { frame_id, period } => {
+                self.prepare_set_frame_period(frame_id, period)?
+            }
             Operation::AddJoinFrame {
                 primary_frame_id,
                 lookup_frame_id,

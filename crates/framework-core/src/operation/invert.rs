@@ -468,6 +468,13 @@ impl Document {
                 }]
             }
 
+            ReplicatedOperation::SetFramePeriod { frame_id, .. } => {
+                vec![ReplicatedOperation::SetFramePeriod {
+                    frame_id: frame_id.clone(),
+                    period: self.frame(frame_id)?.period.clone(),
+                }]
+            }
+
             ReplicatedOperation::AddEntryColumn {
                 frame_id,
                 column,

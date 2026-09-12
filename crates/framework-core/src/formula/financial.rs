@@ -8,7 +8,30 @@ pub(crate) fn is_financial(name: &str) -> bool {
     let name = name.to_ascii_lowercase();
     matches!(
         name.strip_prefix("finance.").unwrap_or(&name),
-        "pv" | "fv" | "pmt" | "ipmt" | "ppmt" | "nper" | "npv" | "xnpv" | "irr" | "xirr"
+        "pv" | "fv"
+            | "pmt"
+            | "ipmt"
+            | "ppmt"
+            | "nper"
+            | "npv"
+            | "xnpv"
+            | "irr"
+            | "xirr"
+            | "effect"
+            | "nominal"
+            | "sln"
+            | "db"
+            | "ddb"
+            | "rate"
+            | "mirr"
+            | "period_index"
+            | "prior"
+            | "fiscal_year"
+            | "fiscal_quarter"
+            | "fiscal_period"
+            | "period_start"
+            | "period_end"
+            | "add_periods"
     )
 }
 
@@ -20,12 +43,47 @@ pub(crate) fn compile(
 ) -> Result<pl::Expr, String> {
     let lower = name.to_ascii_lowercase();
     let name = lower.strip_prefix("finance.").unwrap_or(&lower).to_string();
+    if name == "period_index" {
+        // Integer literals cannot survive argument binding (it compiles to
+        // Polars), so this resolves its month numbers before binding.
+        return super::financial_period::compile_period_index(arguments, keywords, document);
+    }
+    if matches!(
+        name.as_str(),
+        "fiscal_year"
+            | "fiscal_quarter"
+            | "fiscal_period"
+            | "period_start"
+            | "period_end"
+            | "add_periods"
+    ) {
+        // Date-typed arguments cannot survive the Float64 binding below, and
+        // `fy_start` is a plan-time month number, so these bind their own.
+        return super::financial_fiscal::compile(&name, arguments, keywords, document);
+    }
     let args = bind_arguments(&name, arguments, keywords, document)?;
     if matches!(name.as_str(), "irr" | "xirr") {
         return super::financial_return::compile(&name, args);
     }
-    if matches!(name.as_str(), "npv" | "xnpv") {
+    if matches!(name.as_str(), "npv" | "xnpv" | "mirr") {
         return super::financial_discount::compile(&name, args);
+    }
+    if matches!(name.as_str(), "sln" | "db" | "ddb") {
+        return super::financial_depreciation::compile(&name, args);
+    }
+    if matches!(name.as_str(), "effect" | "nominal" | "rate") {
+        return super::financial_yield::compile(&name, args);
+    }
+    if name == "prior" {
+        // A `prior` call never compiles to a standalone expression: the
+        // engine lifts it into a self-join in `apply_with_columns_step`,
+        // where the frame's plan and its declared period column exist.
+        // Reaching here means there is no plan to join into — Scratchwork,
+        // a filter, a summary — so the error says where it belongs.
+        return Err(
+            "prior reads a neighbouring period, so it needs a frame with a declared period column. Use it in a calculated column."
+                .into(),
+        );
     }
     let args: Vec<_> = args
         .into_iter()
@@ -104,6 +162,11 @@ fn bind_arguments(
         "npv" => 2,
         "irr" => 1,
         "xirr" => 2,
+        "effect" | "nominal" => 2,
+        "sln" | "mirr" | "rate" => 3,
+        "db" | "ddb" => 4,
+        "period_index" => 1,
+        "prior" => 1,
         _ => 3,
     };
     let mut slots = vec![None; parameters.len()];
@@ -128,10 +191,20 @@ fn bind_arguments(
         .map(|(i, argument)| match argument {
             Some(argument) => argument.to_polars(document),
             None if i < required => Err(format!("{name} expects {}", parameters[i])),
-            None if matches!(name, "irr" | "xirr") => Ok(pl::lit(0.1)),
-            None => Ok(pl::lit(0.0)),
+            None => Ok(default_argument(name, parameters[i])),
         })
         .collect::<Result<Vec<_>, _>>()
+}
+
+fn default_argument(name: &str, parameter: &str) -> pl::Expr {
+    match (name, parameter) {
+        ("db", "month") => pl::lit(12.0),
+        ("ddb", "factor") => pl::lit(2.0),
+        (_, "guess") => pl::lit(0.1),
+        (_, "n") => pl::lit(1.0),
+        (_, "fy_start") => pl::lit(1.0),
+        _ => pl::lit(0.0),
+    }
 }
 
 pub(super) fn parameter_names(name: &str) -> &'static [&'static str] {
@@ -145,6 +218,18 @@ pub(super) fn parameter_names(name: &str) -> &'static [&'static str] {
         "xnpv" => &["rate", "values", "dates"],
         "irr" => &["values", "guess"],
         "xirr" => &["values", "dates", "guess"],
+        "effect" => &["nominal_rate", "npery"],
+        "nominal" => &["effect_rate", "npery"],
+        "sln" => &["cost", "salvage", "life"],
+        "db" => &["cost", "salvage", "life", "period", "month"],
+        "ddb" => &["cost", "salvage", "life", "period", "factor"],
+        "rate" => &["nper", "pmt", "pv", "fv", "type", "guess"],
+        "mirr" => &["values", "finance_rate", "reinvest_rate"],
+        "period_index" => &["date", "fy_start"],
+        "prior" => &["expr", "n", "fy_start"],
+        "fiscal_year" | "fiscal_quarter" | "fiscal_period" => &["date", "fy_start"],
+        "period_start" | "period_end" => &["date"],
+        "add_periods" => &["date", "n"],
         _ => unreachable!(),
     }
 }

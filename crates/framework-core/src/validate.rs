@@ -385,6 +385,105 @@ impl Document {
         Ok(())
     }
 
+    pub(crate) fn validate_period_declarations(&self) -> Result<(), CoreError> {
+        for frame in self.objects.iter().filter_map(|object| match object {
+            DataObject::Frame(frame) if frame.period.is_some() => Some(frame),
+            _ => None,
+        }) {
+            let period = frame.period.as_ref().expect("filtered period");
+            let name = |column_id: &Id| {
+                frame
+                    .columns
+                    .iter()
+                    .find(|column| column.id == *column_id)
+                    .map(|column| column.name.clone())
+                    .unwrap_or_else(|| column_id.clone())
+            };
+            // Cheap checks first, before materializing anything.
+            match frame
+                .columns
+                .iter()
+                .find(|column| column.id == period.column_id)
+            {
+                None => {
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ declares a period column that no longer exists. Declare another column or clear the declaration.",
+                        frame.name
+                    )));
+                }
+                Some(column) if column.data_type != DataType::Date => {
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ cannot use ‘{}’ as its period column because it no longer holds dates. Declare a Date column instead.",
+                        frame.name, column.name
+                    )));
+                }
+                _ => {}
+            }
+            if period
+                .partition_column_ids
+                .iter()
+                .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
+            {
+                return Err(CoreError::InvalidOperation(format!(
+                    "‘{}’ declares a partition column that no longer exists. Declare another column or clear the declaration.",
+                    frame.name
+                )));
+            }
+            let data_frame = self
+                .materialize_frame_frame(&frame.id, Layer::Data, &mut HashSet::new())
+                .map_err(CoreError::InvalidOperation)?;
+            // A row with no date belongs to no period, and a null would
+            // join against other nulls — so unlike a unique key, a period
+            // column refuses missing values outright.
+            let missing = data_frame
+                .column(&period.column_id)
+                .map_err(|error| CoreError::InvalidOperation(error.to_string()))?
+                .as_materialized_series()
+                .null_count();
+            if missing != 0 {
+                return Err(CoreError::InvalidOperation(format!(
+                    "‘{}’ declares ‘{}’ as its period column, but {} row{} ha{} no date. Fill {} or clear the declaration.",
+                    frame.name,
+                    name(&period.column_id),
+                    missing,
+                    if missing == 1 { "" } else { "s" },
+                    if missing == 1 { "s" } else { "ve" },
+                    if missing == 1 { "it" } else { "them" }
+                )));
+            }
+            let mut values = HashSet::with_capacity(data_frame.height());
+            for row_index in 0..data_frame.height() {
+                let row_key = period
+                    .partition_column_ids
+                    .iter()
+                    .chain(std::iter::once(&period.column_id))
+                    .map(|column_id| {
+                        data_frame
+                            .column(column_id)
+                            .map_err(|error| CoreError::InvalidOperation(error.to_string()))?
+                            .get(row_index)
+                            .map(|value| format!("{value:?}"))
+                            .map_err(|error| CoreError::InvalidOperation(error.to_string()))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                if !values.insert(row_key) {
+                    let names = period
+                        .partition_column_ids
+                        .iter()
+                        .chain(std::iter::once(&period.column_id))
+                        .map(name)
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ declares {} as its period, but two rows share the same period. Periods must be unique within each partition.",
+                        frame.name, names
+                    )));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub(crate) fn validate_join_derivations(&self) -> Result<(), CoreError> {
         for frame in self.objects.iter().filter_map(|object| match object {
             DataObject::Frame(frame)

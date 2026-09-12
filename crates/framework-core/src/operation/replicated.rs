@@ -285,6 +285,13 @@ pub enum ReplicatedOperation {
         frame_id: Id,
         unique_keys: Vec<UniqueKeyConstraint>,
     },
+    /// The resolved form of `SetFramePeriod`. The declaration carries no
+    /// minted ids, so prepare hands it through unchanged after validating
+    /// it; clearing is the same variant with `period: None`.
+    SetFramePeriod {
+        frame_id: Id,
+        period: Option<FramePeriod>,
+    },
     /// The resolved form of `SetFrameGenerator`: the parsed rule, and the
     /// frame's columns with the generated column's type already following
     /// it. Carried together so every replica re-types the column the same

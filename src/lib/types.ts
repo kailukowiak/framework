@@ -85,6 +85,7 @@ export type { EntryColumn } from "./bindings/EntryColumn";
 export type { FrameEditing } from "./bindings/FrameEditing";
 export type { FrameJoin } from "./bindings/FrameJoin";
 export type { FrameJoinType } from "./bindings/FrameJoinType";
+export type { FramePeriod } from "./bindings/FramePeriod";
 export type { FrameStepInput } from "./bindings/FrameStepInput";
 export type { FrameStyle } from "./bindings/FrameStyle";
 export type { FrameStyleCase } from "./bindings/FrameStyleCase";

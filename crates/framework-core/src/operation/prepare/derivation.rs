@@ -260,6 +260,42 @@ impl Document {
         })
     }
 
+    pub(crate) fn prepare_set_frame_period(
+        &self,
+        frame_id: Id,
+        period: Option<FramePeriod>,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        Ok({
+            let frame = self.frame(&frame_id)?;
+            if let Some(period) = &period {
+                let column = frame
+                    .columns
+                    .iter()
+                    .find(|column| column.id == period.column_id)
+                    .ok_or(CoreError::ColumnNotFound)?;
+                if column.data_type != DataType::Date {
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ cannot use ‘{}’ as its period column because it holds {:?} values, not dates. Declare a Date column instead.",
+                        frame.name, column.name, column.data_type
+                    )));
+                }
+                if period
+                    .partition_column_ids
+                    .iter()
+                    .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
+                {
+                    return Err(CoreError::ColumnNotFound);
+                }
+                if period.partition_column_ids.contains(&period.column_id) {
+                    return Err(CoreError::InvalidOperation(
+                        "A period column cannot partition itself".into(),
+                    ));
+                }
+            }
+            ReplicatedOperation::SetFramePeriod { frame_id, period }
+        })
+    }
+
     // The parameter list mirrors the operation's own fields; collapsing it
     // into a struct would just rename the variant.
     #[allow(clippy::too_many_arguments)]
@@ -562,6 +598,7 @@ impl Document {
                 } else if let Some(join) = &fixed_join {
                     source_plan = self
                         .apply_step(
+                            frame_id,
                             source_plan,
                             &FrameStep::Join { join: join.clone() },
                             &mut HashSet::new(),
@@ -662,7 +699,7 @@ impl Document {
             // before it becomes a document no plan can run.
             let mut visiting = HashSet::new();
             visiting.insert(frame_id.to_string());
-            plan = match self.apply_step(plan, &step, &mut visiting) {
+            plan = match self.apply_step(frame_id, plan, &step, &mut visiting) {
                 Ok(plan) => plan,
                 Err(error) => {
                     let error = CoreError::Transform(in_plain_words(error));

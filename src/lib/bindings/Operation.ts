@@ -9,6 +9,7 @@ import type { DataType } from "./DataType";
 import type { DerivedSort } from "./DerivedSort";
 import type { FrameCellStyle } from "./FrameCellStyle";
 import type { FrameJoinType } from "./FrameJoinType";
+import type { FramePeriod } from "./FramePeriod";
 import type { FrameStepInput } from "./FrameStepInput";
 import type { FrameStyleRuleInput } from "./FrameStyleRuleInput";
 import type { FrameStyleTarget } from "./FrameStyleTarget";
@@ -452,6 +453,7 @@ export type Operation =
     columnIds: Array<string>;
     enabled: boolean;
   }
+  | { "type": "setFramePeriod"; frameId: string; period?: FramePeriod | null }
   | {
     "type": "addJoinFrame";
     primaryFrameId: string;

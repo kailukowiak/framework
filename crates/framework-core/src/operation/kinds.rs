@@ -3,8 +3,8 @@ use crate::Id;
 use crate::model::data_artifact::{ConnectorRecipe, DataArtifact};
 use crate::model::derivation::{DerivedSort, FrameJoinType};
 use crate::model::frame::{
-    CellUpdate, CrosstabDisplay, FrameCellStyle, FrameStyleTarget, FrameViewOrientation,
-    SummaryOperation,
+    CellUpdate, CrosstabDisplay, FrameCellStyle, FramePeriod, FrameStyleTarget,
+    FrameViewOrientation, SummaryOperation,
 };
 use crate::model::value::{ColumnFormat, DataType, FrozenValue, ScalarValue};
 use crate::operation::input::{
@@ -747,6 +747,17 @@ pub enum Operation {
         frame_id: Id,
         column_ids: Vec<Id>,
         enabled: bool,
+    },
+    /// Declares which column says what time a row belongs to, so
+    /// period-relative formulas read the period before rather than the row
+    /// above. `None` clears the declaration. The column must hold dates;
+    /// uniqueness of each period within its partitions is enforced on
+    /// apply, the way a unique key's is.
+    SetFramePeriod {
+        frame_id: Id,
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        period: Option<FramePeriod>,
     },
     AddJoinFrame {
         primary_frame_id: Id,

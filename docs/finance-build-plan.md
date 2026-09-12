@@ -4,8 +4,10 @@ Status: proposed 2026-09-11, drafted from a design conversation with Kai.
 Implementation update 2026-09-12: the recurrence precision fix and phase 1a
 (`pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`) are implemented.
 Phase 1b adds `irr` and `xirr`, including namespace and receiver calls;
-Price a deal now solves its return and checks the XNPV residual. `rate`, `mirr`,
-the remaining closed forms, and grouped IRR remain planned. Iterations and
+Price a deal now solves its return and checks the XNPV residual.
+Implementation update 2026-09-12: phase 1 is complete with `rate`, `mirr`,
+`effect`, `nominal`, `sln`, `db` and `ddb`, including namespace and receiver
+calls. Only the grouped-IRR stretch remains planned. Iterations and
 brackets are retained internally, but exposing convergence diagnostics in the
 dependency trace is deferred: that trace has no runtime-result payload today.
 The bounded root-search policy is documented in the function reference; it
@@ -57,6 +59,10 @@ that lands it.
 | 5. Declared iterative solve | later | three-statement model, debt schedule |
 
 ### Phase 1: financial function pack
+
+Implemented 2026-09-12: the full pack below is in the catalog with
+`finance.` and receiver spellings, Excel argument order, and inline errors;
+only the grouped-IRR stretch remains future work.
 
 **Purpose.** Remove the day-one disqualifier. "Does it have XIRR" is the
 first question a finance person asks, and today the answer is no: nothing
@@ -122,6 +128,19 @@ tutorial under `tutorials/`, an MCP smoke scenario under `tools/mcp-smoke/`.
 
 ### Phase 2: period-aware time spine
 
+Slice 1 landed 2026-09-12 on the timespine branch: the frame-level period
+declaration (`FramePeriod` + `SetFramePeriod`, validated unique per
+partition with no missing dates), monthly `period_index(date, fy_start=1)`,
+and `prior(expr, n=1, fy_start=1)` as a left self-join on `index - n`
+within the declared partitions. `prior` outside a calculated column is
+refused naming the frame and the fix; a missing earlier period reads blank.
+Slice 2 landed 2026-09-12 on the same branch: the fiscal-calendar date
+functions `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`,
+`period_end` and `add_periods`, each with `finance.` and receiver spellings.
+They read the date itself, so they need no declaration and work in
+Scratchwork; `fy_start` follows the slice 1 literal-or-named-value rule, and
+`add_periods` accepts a per-row count with EDATE month-end clamping.
+Slices 3–4 (ytd/ttm/same-period, retail calendars and business days) remain.
 **Purpose.** Nearly every finance model is a monthly or quarterly series
 with period-relative logic, and a finance person's first FrameWork document
 is a forecast. Today the spine is a date `sequence` generator and the only

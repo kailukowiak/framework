@@ -17,6 +17,16 @@ impl Document {
         Ok(())
     }
 
+    pub(crate) fn apply_set_frame_period(
+        &mut self,
+        frame_id: Id,
+        period: Option<FramePeriod>,
+    ) -> Result<(), CoreError> {
+        let frame = self.frame_mut(&frame_id)?;
+        frame.period = period;
+        Ok(())
+    }
+
     pub(crate) fn apply_set_frame_generator(
         &mut self,
         frame_id: Id,

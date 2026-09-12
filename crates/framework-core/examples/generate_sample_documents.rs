@@ -70,6 +70,7 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
         generator: None,
         materialization: None,
         entry_columns: Vec::new(),
+        period: None,
         summaries: Vec::new(),
     }
 }

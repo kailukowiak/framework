@@ -33,7 +33,7 @@ The catalog returned by the core and MCP is also used for autocomplete.
 | Family | Current functions and methods |
 | --- | --- |
 | Horizontal | `sum_horizontal`, `mean_horizontal`, `min_horizontal`, `max_horizontal` |
-| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`, `irr`, `xirr` (uppercase Excel names also work) |
+| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db`, `ddb`, `period_index`, `prior`, `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`, `period_end`, `add_periods` (uppercase Excel names also work) |
 | Generators / row order | `sequence(stop)`, `sequence(start, stop, step)`, `table.len()`; `recur(first, next, restart_by=[columns])` with `previous()` inside `next` |
 | Conditional/null | `when().then()` — chained as many times as you like — `.otherwise()`, `coalesce`, `.is_null`, `.is_not_null`, `.fill_null`, `.filter(predicate)` → `.sum()` / `.mean()` / `.count()` |
 | Numeric | `.abs`, `.sign`, `.round`, `.round_sig_figs`, `.truncate`, `.floor`, `.ceil`, `.sqrt`, `.cbrt`, `.pow`, `.exp`, `.log`, `.log1p`, `.normalize`, `.clip`, `.clip_min`, `.clip_max`, `.floor_div` |
@@ -83,6 +83,21 @@ the original unqualified calls remain compatible. Names are case-insensitive.
 | `flows.finance.xnpv(rate, dates)` | cash flows |
 | `flows.finance.irr(guess=0.1)` | cash flows |
 | `flows.finance.xirr(dates, guess=0.1)` | cash flows |
+| `flows.finance.mirr(finance_rate, reinvest_rate)` | cash flows |
+| `nominal_rate.finance.effect(npery)` | nominal rate |
+| `effect_rate.finance.nominal(npery)` | effective rate |
+| `cost.finance.sln(salvage, life)` | initial cost |
+| `cost.finance.db(salvage, life, period, month=12)` | initial cost |
+| `cost.finance.ddb(salvage, life, period, factor=2)` | initial cost |
+| `principal.finance.rate(nper, pmt, fv=0, type=0, guess=0.1)` | present value |
+| `date.finance.period_index(fy_start=1)` | date |
+| `value.finance.prior(n=1, fy_start=1)` | value |
+| `date.finance.fiscal_year(fy_start=1)` | date |
+| `date.finance.fiscal_quarter(fy_start=1)` | date |
+| `date.finance.fiscal_period(fy_start=1)` | date |
+| `date.finance.period_start()` | date |
+| `date.finance.period_end()` | date |
+| `date.finance.add_periods(n)` | date |
 
 Use parentheses around a negative receiver: `(-principal).finance.pmt(rate, nper)`.
 The namespace form keeps the following original argument order.
@@ -118,7 +133,9 @@ also sampling zero and the guess when inside that range. Sign-change brackets
 are refined by bisection; an exact sampled zero is accepted only when nearby
 probes distinguish it from a flat zero curve. This is a bounded search, not
 an exhaustive polynomial solver: closely spaced roots and unsampled tangent
-roots can be missed, and rates outside the domain are not searched.
+roots can be missed, and rates outside the domain are not searched. `rate`
+reuses the same bounded search per row over the annuity equation, so a loan
+table can solve its own periodic rate beside its payments.
 
 When several roots are discovered, the nearest to the guess in log-rate space
 is selected, with the lower rate winning an exact tie. The default guess is
@@ -126,6 +143,52 @@ is selected, with the lower rate winning an exact tie. The default guess is
 when flows change sign repeatedly. Indeterminate curves, failure to find a
 root, and failure to converge are errors. Convergence details are internal
 for now; the tutorial checks the returned rate with a visible XNPV residual.
+
+`mirr(values, finance_rate, reinvest_rate)` discounts negatives at the
+finance rate and compounds positives at the reinvestment rate, then annualizes
+over the flow count. Flows must contain both signs; both rates are finite
+scalars greater than -1.
+
+`effect(nominal_rate, npery)` and `nominal(effect_rate, npery)` convert
+between nominal and effective annual rates. Npery is truncated to an integer
+as in Excel; the rate must be positive and npery at least 1.
+
+`sln(cost, salvage, life)` is straight-line depreciation per period.
+`db(cost, salvage, life, period, month=12)` is fixed-declining-balance with
+the rate rounded to three decimals and first/last periods prorated by month,
+matching Excel including the extra period when the first year is partial.
+`ddb(cost, salvage, life, period, factor=2)` caps each period so book value
+never drops below salvage. All three broadcast down a Period column, so a
+schedule frame reconciles: each column sums to cost minus salvage.
+
+`period_index(date, fy_start=1)` numbers a date's fiscal month from year
+zero, twelve to a year starting in month `fy_start` (1 is January). Offsets
+between two indexes are whole periods with no date math. `prior(expr, n=1,
+fy_start=1)` reads what `expr` held `n` periods before each row's own
+period, joined on the frame's declared period column within its partitions
+— the period before, never the row above. Declaring the column is a frame
+property (`SetFramePeriod`): the column must hold dates with no missing
+values, unique within each partition. A frame without one gets an error
+naming the frame and the fix when a step using `prior` is saved; `prior`
+anywhere else (Scratchwork, a filter, a summary) is refused the same way.
+A missing earlier period — the first row, or a deleted month — reads blank
+rather than failing, which is what separates "no such period" from "the row
+above". `n` and `fy_start` must be whole numbers written in the formula or
+held by a named value.
+
+`fiscal_year(date, fy_start=1)`, `fiscal_quarter(date, fy_start=1)` and
+`fiscal_period(date, fy_start=1)` read which fiscal year, quarter (1–4) and
+month (1–12) a date falls in when the year starts in month `fy_start`. With
+a February start, January 2025 is fiscal 2024, quarter 4, period 12; February
+1 opens fiscal 2025. `period_start(date)` and `period_end(date)` bound the
+calendar month holding a date — February 2024 ends on the 29th.
+`add_periods(date, n)` shifts by `n` calendar months with end-of-month
+clamping, so January 31 plus one month is February 28; this is Excel's EDATE
+arithmetic exactly, and `EDATE` works as an alias. The count may be a column;
+a missing count reads blank. These read the date itself, so they need no
+period declaration and work in Scratchwork; like `period_index`, `fy_start`
+must be a whole month number from 1 to 12 written in the formula or held by
+a named value.
 
 The loan functions compile to composed Polars expressions. Discounted totals
 use a native aggregate over the evaluated series so length, date and missing

@@ -268,6 +268,9 @@ impl Document {
                 frame_id,
                 unique_keys,
             } => self.apply_set_unique_keys(frame_id, unique_keys)?,
+            ReplicatedOperation::SetFramePeriod { frame_id, period } => {
+                self.apply_set_frame_period(frame_id, period)?
+            }
             ReplicatedOperation::SetFrameGenerator {
                 frame_id,
                 generator,
@@ -358,6 +361,7 @@ impl Document {
         }
         self.validate_unique_keys()?;
         self.validate_join_derivations()?;
+        self.validate_period_declarations()?;
         Ok(())
     }
 }

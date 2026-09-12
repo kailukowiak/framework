@@ -32,7 +32,7 @@ pub(super) fn reduces(path: &[String]) -> bool {
         [namespace, name] if namespace.eq_ignore_ascii_case("finance") => {
             matches!(
                 name.to_ascii_lowercase().as_str(),
-                "npv" | "xnpv" | "irr" | "xirr"
+                "npv" | "xnpv" | "irr" | "xirr" | "mirr"
             )
         }
         _ => false,
@@ -118,6 +118,34 @@ pub(super) fn declared_type(
                 ) =>
         {
             Some(DataType::Integer)
+        }
+        // A period index is a count by the same argument as `count` above:
+        // offsets between two of them are whole periods, which is what
+        // makes them join keys rather than dates. `prior` answers whatever
+        // it was asked for — the sum of money is money — so it reads its
+        // input's type instead of claiming Number for every receiver.
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "period_index" | "fiscal_year" | "fiscal_quarter" | "fiscal_period"
+                ) =>
+        {
+            Some(DataType::Integer)
+        }
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "period_start" | "period_end" | "add_periods"
+                ) =>
+        {
+            Some(DataType::Date)
+        }
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance") && name.eq_ignore_ascii_case("prior") =>
+        {
+            input.declared_type_among(document, scope)
         }
         [namespace, _] if namespace.eq_ignore_ascii_case("finance") => Some(DataType::Number),
         path if reduces(path) => input.declared_type_among(document, scope),

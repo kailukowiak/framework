@@ -1,6 +1,6 @@
 use framework_core::{
     DataObject, DataType, Document, DocumentView, EventJournal, ExistingFormulaInput, FrameObject,
-    FramePage, FrameStepInput, Operation, RenderedDerivedExpression, RenderedFrameStep,
+    FramePage, FramePeriod, FrameStepInput, Operation, RenderedDerivedExpression, RenderedFrameStep,
     ScalarValue, SortInput, Store, SummaryOperation, is_framework_document_path,
 };
 use rmcp::{
@@ -342,6 +342,21 @@ struct SetUniqueKeyArgs {
     /// Omit or true to declare the key; false clears a key over exactly
     /// these columns.
     enabled: Option<bool>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct SetFramePeriodArgs {
+    /// Frame name or stable frame ID.
+    frame: String,
+    /// Name or ID of the Date column that says what time a row belongs
+    /// to. Omit to clear the declaration.
+    period_column: Option<String>,
+    /// Names or IDs of columns that restart the timeline — one series per
+    /// account, region, or scenario.
+    partitions: Option<Vec<String>>,
     /// Reject the write if the document is no longer at this revision.
     expected_revision: Option<u64>,
 }
@@ -1339,6 +1354,49 @@ impl FrameworkMcp {
             },
             args.expected_revision,
             "Set the unique key".into(),
+            Some(frame_id),
+            None,
+            None,
+        )
+    }
+
+    /// Declare which column says what time a row belongs to, so
+    /// period-relative formulas read the period before rather than the row
+    /// above. The column must hold dates with no gaps per partition; prior
+    /// is what reads the declaration, and a missing earlier period reads
+    /// blank rather than failing.
+    #[tool(
+        name = "set_frame_period",
+        annotations(title = "Declare a frame's period column", read_only_hint = false)
+    )]
+    fn set_frame_period(
+        &self,
+        Parameters(args): Parameters<SetFramePeriodArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let view = self.lock()?.store.view();
+        let frame_id = resolve_frame_id(&view, &args.frame)?;
+        let frame = frame_by_id(&view, &frame_id)?;
+        let period = match args.period_column {
+            None => None,
+            Some(reference) => {
+                let column_id = resolve_column_id(frame, &reference)?;
+                let mut partition_column_ids = Vec::new();
+                for partition in args.partitions.unwrap_or_default() {
+                    partition_column_ids.push(resolve_column_id(frame, &partition)?);
+                }
+                Some(FramePeriod {
+                    column_id,
+                    partition_column_ids,
+                })
+            }
+        };
+        self.mutate(
+            Operation::SetFramePeriod {
+                frame_id: frame_id.clone(),
+                period,
+            },
+            args.expected_revision,
+            "Declare the period column".into(),
             Some(frame_id),
             None,
             None,

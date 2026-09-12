@@ -126,6 +126,41 @@ fn financial_column_expressions_broadcast_and_reconcile_a_loan() {
     assert!((interest - 63987.2367).abs() < 0.01);
 }
 
+#[test]
+fn depreciation_schedules_broadcast_down_a_period_column() {
+    let mut store = Store::new(Document::blank("Depreciation"));
+    store
+        .apply(Operation::AddGeneratorFrame {
+            name: "Assets".into(),
+            formula: "sequence(1, 6)".into(),
+            column_name: Some("Period".into()),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame_id = frame_named(store.document(), "Assets").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![
+                calculation("Straight", "sln(10000, 1000, 5)"),
+                calculation("Declining", "db(10000, 1000, 5, `Period`)"),
+                calculation("Double", "ddb(10000, 1000, 5, `Period`)"),
+                calculation("Solved", "rate(5, -1880.0, 8000)"),
+            ],
+        })
+        .unwrap();
+    let page = store.get_frame_page(&frame_id, 0, 100).unwrap();
+    assert_eq!(page.rows.len(), 5);
+    let straight: f64 = page.rows.iter().map(|r| r[1].parse::<f64>().unwrap()).sum();
+    let declining: f64 = page.rows.iter().map(|r| r[2].parse::<f64>().unwrap()).sum();
+    let double: f64 = page.rows.iter().map(|r| r[3].parse::<f64>().unwrap()).sum();
+    // Each schedule expenses exactly cost minus salvage over its life.
+    assert!((straight - 9000.0).abs() < 0.01);
+    assert!((declining - 9000.0).abs() < 1.0);
+    assert!((double - 9000.0).abs() < 0.01);
+}
+
 fn calculation(name: &str, formula: &str) -> FrameStepInput {
     FrameStepInput::WithColumns {
         columns: vec![ExistingFormulaInput {
