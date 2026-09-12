@@ -46,6 +46,8 @@ fn finance_store() -> (Store, String) {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     let holder = a_container(&mut store);
     store

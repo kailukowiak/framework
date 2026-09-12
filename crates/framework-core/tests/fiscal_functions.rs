@@ -62,11 +62,12 @@ fn column_values(store: &Store, name: &str) -> Vec<String> {
 fn february_start_puts_boundary_dates_in_the_right_year_quarter_and_period() {
     let mut store = dated_store();
     add_column(&mut store, "FY", "fiscal_year(`Day`, fy_start=2)");
-    // January sits before the February start, so it belongs to the fiscal
-    // year that began the previous February; December closes that year.
+    // January sits before the February start, so it closes the fiscal
+    // year that began the previous February; years are numbered by the
+    // calendar year they end in, the way company accounts name them.
     assert_eq!(
         column_values(&store, "FY"),
-        vec!["2024", "2025", "2025", "2025", "2024", "2024", "2024"]
+        vec!["2025", "2026", "2026", "2026", "2025", "2025", "2025"]
     );
 
     add_column(&mut store, "FQ", "fiscal_quarter(`Day`, fy_start=2)");
@@ -288,5 +289,5 @@ fn scratchwork_reads_fiscal_dates_with_no_declaration() {
             line.cell.display.clone()
         })
         .collect();
-    assert_eq!(displays, vec!["2024", "2024-02-29", "2"]);
+    assert_eq!(displays, vec!["2025", "2024-02-29", "2"]);
 }

@@ -27,7 +27,9 @@ of those visible.
 
 - [`driver-forecast-start.fw`](driver-forecast-start.fw) — eighteen months
   of actual revenue typed as currency, and an `Assumptions` group holding
-  `Close date` and `Growth`.
+  `Close date` and `Growth`. It also carries the two calendars section 7
+  needs — `Company` as the default, `NRF 4-5-4` for the retail check —
+  and `Actuals`' declared period.
 - [`driver-forecast-finished.fw`](driver-forecast-finished.fw) — the answer
   key, built with today's catalog.
 
@@ -180,21 +182,44 @@ forecast months = `Forecast`.`Actual`.null_count()
 
 Checkpoint: `1475000.00`, `1706405.3738`, `6`.
 
-## 7. What changes when the time spine lands
+## 7. The time spine lands
 
-None of the following computes today. It is the acceptance target for
-phase 2 of the finance plan, and the checkpoints above are its expected
-numbers.
+The start file already carries what this section needs: a `Company`
+calendar (February, calendar months, years numbered by the calendar year
+they end in) set as the default, an `NRF 4-5-4` calendar for the retail
+check at the end, and `Actuals`' declared period. Right-click `Actuals`
+and open the frame menu: the Period column reads `Month`. That choice is
+what lets the formulas below read the period before instead of the row
+above. Creating a calendar is an MCP step for now — the start file carries
+both — while declaring is one choice in the frame menu.
 
-The document gets a calendar: fiscal year starting in February, calendar
-months. Section 4 becomes:
+Section 1's fragile column becomes:
+
+```text
+Prior month = prior(`Revenue`)
+```
+
+`Change` stays exactly as it is. Now repeat the deletion from section 1:
+delete November 2025 and look at December. Its Prior month reads empty,
+not October, because the period before December is November and November
+is gone. That is the test that matters. Undo the deletion before
+continuing.
+
+Select `Forecast` and declare `Month` as its period from the frame menu.
+Section 4 becomes:
 
 ```text
 Fiscal year = fiscal_year(`Month`)
 Fiscal quarter = fiscal_quarter(`Month`)
 ```
 
-`Forecast` declares `Month` as its period column. Section 5 becomes:
+No year start is written anywhere: the bare calls read the default
+Company calendar. January 2026 is still Fiscal year `2026`, quarter `4`;
+February 2026 is still `2027`, quarter `1`. The formula now says which
+company it belongs to, because the calendar is a named object on the
+document rather than arithmetic in the column.
+
+Section 5 becomes, in one step:
 
 ```text
 Prior month = prior(`Revenue`)
@@ -208,18 +233,24 @@ and a trailing-twelve-months column is one more word:
 TTM = ttm(`Revenue`)
 ```
 
-Section 1's fragile column on `Actuals` becomes `prior(`Revenue`)` as well,
-after declaring Month as its period. Then repeat the deletion from section 1:
-December's prior month must read empty, not October, because the period
-before December is November and November is gone. That is the test that
-matters. A period-relative function that returns the row above is the bug
-this phase exists to remove.
+Checkpoint: January 2027 TTM reads `1,706,405.37`, the FY2027 total —
+twelve months ending here, whatever months are missing. Every checkpoint
+in sections 3 to 6 is unchanged: January 2026 YTD still reads `1,475,000`,
+August 2026 YoY still reads `16.3%`. `prior` and its siblings refuse to
+run on a frame with no period declaration, naming the frame and the fix,
+without refusing any other operation on it.
 
-Expected: every checkpoint in sections 3 to 6 unchanged. `prior` and its
-siblings must refuse to run on a frame with no period declaration, naming
-the frame and the fix, without refusing any other operation on it. The
-fiscal functions must accept a 4-4-5 calendar with a 53-week year and match a
-published retail calendar for every week.
+Finally the retail check. Add one column:
+
+```text
+Retail week = fiscal_week(`Month`, calendar="NRF 4-5-4")
+```
+
+Checkpoint: February 1 2025 is week `52` — the last week of the 53-week
+fiscal 2023 — and January 1 2026 is week `48`. The NRF 4-5-4 calendar puts
+every week of fiscal 2023, 2024 and 2025 where the published calendar
+puts it, including the 53rd week of 2023 stretching January 2024 to five
+weeks.
 
 ## Smoke-test notes
 
@@ -228,8 +259,11 @@ differs, record it with the template in the parent tutorial README rather
 than working around it. Expected awkwardness that is product feedback, not
 a lesson error:
 
-- the quarter formula in section 4, and the fact that a generated table and
-  a join are needed before `shift` is safe;
+- creating a calendar is an MCP step for now; the start file carries both
+  calendars section 7 needs, and declaring a period is one choice in the
+  frame menu;
+- a generated table and a join are still needed before the forecast has
+  somewhere to put its months;
 - a recurrence keeps the type of its first value, which is why the start
   workbook types Revenue as currency: seeded from an integer column, section
   3 would truncate every forecast month to whole dollars;

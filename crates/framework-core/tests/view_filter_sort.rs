@@ -306,6 +306,8 @@ fn a_filter_predicate_composes_boolean_logic_the_match_mode_cannot() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -375,6 +377,8 @@ fn a_filter_compares_dates_with_the_date_constructor_and_dt_methods() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {

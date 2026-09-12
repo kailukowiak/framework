@@ -262,6 +262,78 @@ fn driver_forecast_answer_key_switches_from_actuals_to_drivers() {
         1706405.37,
         "fy2027",
     );
+    assert_close(
+        cell(&store, "Forecast", "2027-01-01", "TTM"),
+        1706405.37,
+        "trailing twelve months",
+    );
+    assert_close(
+        cell(&store, "Forecast", "2026-01-01", "Retail week"),
+        48.0,
+        "nrf week",
+    );
+}
+
+#[test]
+fn driver_forecast_deletion_reads_the_period_before() {
+    let mut store = Store::load(&tutorial_path(&[
+        "driver-forecast",
+        "driver-forecast-finished.fw",
+    ]))
+    .unwrap();
+    // Section 7's deletion, performed on the loaded answer key: November
+    // gone means December's prior month reads empty, not October.
+    let actuals = store
+        .document()
+        .objects
+        .iter()
+        .find_map(|object| match object {
+            DataObject::Frame(frame) if frame.name == "Actuals" => Some(frame.clone()),
+            _ => None,
+        })
+        .expect("the answer key carries Actuals");
+    let month = actuals
+        .columns
+        .iter()
+        .find(|column| column.name == "Month")
+        .expect("Actuals carries Month")
+        .id
+        .clone();
+    let prior = actuals
+        .columns
+        .iter()
+        .position(|column| column.name == "Prior month")
+        .expect("Actuals carries Prior month");
+    let november = actuals
+        .rows
+        .iter()
+        .find(|row| {
+            row.cells
+                .get(&month)
+                .is_some_and(|cell| cell.raw == "2025-11-01")
+        })
+        .expect("Actuals carries November 2025")
+        .id
+        .clone();
+    store
+        .apply(Operation::DeleteRow {
+            frame_id: actuals.id.clone(),
+            row_id: november,
+        })
+        .unwrap();
+    let id = object_id(&store, "Actuals");
+    let december = store
+        .get_frame_page(&id, 0, 100)
+        .unwrap()
+        .rows
+        .into_iter()
+        .find(|row| row[0] == "2025-12-01")
+        .expect("December survives the deletion");
+    assert!(
+        december[prior].is_empty(),
+        "December Prior month shows {:?} instead of blank",
+        december[prior]
+    );
 }
 
 #[test]

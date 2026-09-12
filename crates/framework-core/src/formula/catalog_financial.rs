@@ -204,50 +204,50 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         "fiscal_year",
         ["FISCAL_YEAR", "fiscal year", "financial year"],
         "Financial",
-        "fiscal_year(date, fy_start=1)",
-        "The fiscal year a date falls in, where the year starts in month fy_start (1 is January). With a February start, January 2025 is fiscal 2024.",
+        "fiscal_year(date, fy_start=1, calendar=None)",
+        "The fiscal year a date falls in, numbered by its start or its end according to the calendar. With a February start under end-labelling, January 2025 is fiscal 2025 and February opens 2026. A named calendar supplies both the year start and the labelling; an explicit fy_start wins over the calendar's.",
         1,
-        2
+        3
     ),
     formula_function!(
         "root.fiscal_quarter",
         "fiscal_quarter",
         ["FISCAL_QUARTER", "fiscal quarter", "financial quarter"],
         "Financial",
-        "fiscal_quarter(date, fy_start=1)",
-        "The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start. Needs no period declaration; it reads the date, not the frame.",
+        "fiscal_quarter(date, fy_start=1, calendar=None)",
+        "The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start or three retail blocks under a week-pattern calendar. Needs no period declaration; it reads the date, not the frame.",
         1,
-        2
+        3
     ),
     formula_function!(
         "root.fiscal_period",
         "fiscal_period",
         ["FISCAL_PERIOD", "fiscal period", "fiscal month"],
         "Financial",
-        "fiscal_period(date, fy_start=1)",
-        "The fiscal month from 1 to 12 a date falls in, counting from fy_start. This is the one-date reading of the numbering period_index counts.",
+        "fiscal_period(date, fy_start=1, calendar=None)",
+        "The fiscal month from 1 to 12 a date falls in, counting from fy_start — or the retail block from 1 to 12 under a week-pattern calendar, where a 53rd week extends the last period. This is the one-date reading of the numbering period_index counts.",
         1,
-        2
+        3
     ),
     formula_function!(
         "root.period_start",
         "period_start",
         ["PERIOD_START", "period start", "month start"],
         "Financial",
-        "period_start(date)",
-        "The first day of the calendar month holding a date. Pair with period_end to bound a period without spelling month lengths.",
+        "period_start(date, calendar=None)",
+        "The first day of the calendar month holding a date, or of its retail block under a week-pattern calendar. Pair with period_end to bound a period without spelling month lengths.",
         1,
-        1
+        2
     ),
     formula_function!(
         "root.period_end",
         "period_end",
         ["PERIOD_END", "period end", "month end"],
         "Financial",
-        "period_end(date)",
-        "The last day of the calendar month holding a date: February 2024 ends on the 29th. The month-end reading of EDATE(date, 0).",
+        "period_end(date, calendar=None)",
+        "The last day of the calendar month holding a date — February 2024 ends on the 29th — or of its retail block under a week-pattern calendar. The month-end reading of EDATE(date, 0).",
         1,
-        1
+        2
     ),
     formula_function!(
         "root.add_periods",
@@ -292,5 +292,35 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         "The value expr held twelve periods ago — the same month last year — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
         1,
         1
+    ),
+    formula_function!(
+        "root.fiscal_week",
+        "fiscal_week",
+        ["FISCAL_WEEK", "fiscal week", "retail week"],
+        "Financial",
+        "fiscal_week(date, calendar=None)",
+        "The 1-based week of its fiscal year for a date: seven-day blocks from the year's start date, so a year starting on a Sunday has Sunday-to-Saturday weeks and a 53-week year reports week 53. Needs no period declaration.",
+        1,
+        2
+    ),
+    formula_function!(
+        "root.workday",
+        "workday",
+        ["WORKDAY", "add workdays", "business days"],
+        "Financial",
+        "workday(date, n, calendar=None)",
+        "The date n business days from a date, skipping the calendar's weekend and holidays. The start date is day zero and never counted, so shifting by zero returns the date itself; negative counts shift back, and the count may be a column. A missing date or count reads blank.",
+        2,
+        3
+    ),
+    formula_function!(
+        "root.networkdays",
+        "networkdays",
+        ["NETWORKDAYS", "net workdays", "business days between"],
+        "Financial",
+        "networkdays(start_date, end_date, calendar=None)",
+        "Business days from a start date through an end date inclusive under the calendar's weekend and holidays. Negated when the end precedes the start; a missing endpoint reads blank.",
+        2,
+        3
     ),
 ];

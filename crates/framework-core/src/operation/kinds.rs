@@ -1,5 +1,6 @@
 pub use super::replicated::ReplicatedOperation;
 use crate::Id;
+use crate::model::calendar::{WeekPattern, YearEndRule, YearLabel};
 use crate::model::data_artifact::{ConnectorRecipe, DataArtifact};
 use crate::model::derivation::{DerivedSort, FrameJoinType};
 use crate::model::frame::{
@@ -758,6 +759,45 @@ pub enum Operation {
         #[serde(default)]
         #[ts(optional = nullable)]
         period: Option<FramePeriod>,
+    },
+    /// Adds a fiscal calendar to the document: the month its year starts
+    /// on, the week pattern its periods follow, the rule ending its year,
+    /// and the days the business counts. Names are unique; formulas name
+    /// calendars, and the default supplies the year start when a call
+    /// names none.
+    AddCalendar {
+        name: String,
+        fy_start: u8,
+        pattern: WeekPattern,
+        year_end: YearEndRule,
+        year_label: YearLabel,
+        weekend: Vec<u8>,
+        holidays: Vec<String>,
+    },
+    /// Replaces a calendar wholesale by id. Removing a holiday is an
+    /// update with a shorter list; renaming keeps formulas working
+    /// because they resolve names at plan time.
+    UpdateCalendar {
+        calendar_id: Id,
+        name: String,
+        fy_start: u8,
+        pattern: WeekPattern,
+        year_end: YearEndRule,
+        year_label: YearLabel,
+        weekend: Vec<u8>,
+        holidays: Vec<String>,
+    },
+    /// Removes a calendar by id. The default calendar cannot be removed;
+    /// set another default first.
+    RemoveCalendar {
+        calendar_id: Id,
+    },
+    /// Sets the calendar bare fiscal calls read, or `None` for calendar
+    /// months starting in January.
+    SetDefaultCalendar {
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        calendar_id: Option<Id>,
     },
     AddJoinFrame {
         primary_frame_id: Id,

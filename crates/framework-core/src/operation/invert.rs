@@ -475,6 +475,40 @@ impl Document {
                 }]
             }
 
+            ReplicatedOperation::AddCalendar { calendar } => {
+                vec![ReplicatedOperation::RemoveCalendar {
+                    calendar_id: calendar.id.clone(),
+                }]
+            }
+            ReplicatedOperation::UpdateCalendar { calendar } => {
+                let before = self
+                    .calendars
+                    .iter()
+                    .find(|existing| existing.id == calendar.id)
+                    .cloned()
+                    .ok_or(CoreError::InvalidOperation(format!(
+                        "There is no calendar with id ‘{}’.",
+                        calendar.id
+                    )))?;
+                vec![ReplicatedOperation::UpdateCalendar { calendar: before }]
+            }
+            ReplicatedOperation::RemoveCalendar { calendar_id } => {
+                let removed = self
+                    .calendars
+                    .iter()
+                    .find(|calendar| &calendar.id == calendar_id)
+                    .cloned()
+                    .ok_or(CoreError::InvalidOperation(format!(
+                        "There is no calendar with id ‘{calendar_id}’."
+                    )))?;
+                vec![ReplicatedOperation::AddCalendar { calendar: removed }]
+            }
+            ReplicatedOperation::SetDefaultCalendar { .. } => {
+                vec![ReplicatedOperation::SetDefaultCalendar {
+                    calendar_id: self.default_calendar_id.clone(),
+                }]
+            }
+
             ReplicatedOperation::AddEntryColumn {
                 frame_id,
                 column,

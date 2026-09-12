@@ -5,6 +5,7 @@
 
 pub mod blocks;
 pub mod calculation_matrix;
+pub mod calendar;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
@@ -348,6 +349,42 @@ impl Document {
             } => self.prepare_set_unique_key(frame_id, column_ids, enabled)?,
             Operation::SetFramePeriod { frame_id, period } => {
                 self.prepare_set_frame_period(frame_id, period)?
+            }
+            Operation::AddCalendar {
+                name,
+                fy_start,
+                pattern,
+                year_end,
+                year_label,
+                weekend,
+                holidays,
+            } => self.prepare_add_calendar(
+                name, fy_start, pattern, year_end, year_label, weekend, holidays,
+            )?,
+            Operation::UpdateCalendar {
+                calendar_id,
+                name,
+                fy_start,
+                pattern,
+                year_end,
+                year_label,
+                weekend,
+                holidays,
+            } => self.prepare_update_calendar(
+                calendar_id,
+                name,
+                fy_start,
+                pattern,
+                year_end,
+                year_label,
+                weekend,
+                holidays,
+            )?,
+            Operation::RemoveCalendar { calendar_id } => {
+                self.prepare_remove_calendar(calendar_id)?
+            }
+            Operation::SetDefaultCalendar { calendar_id } => {
+                self.prepare_set_default_calendar(calendar_id)?
             }
             Operation::AddJoinFrame {
                 primary_frame_id,

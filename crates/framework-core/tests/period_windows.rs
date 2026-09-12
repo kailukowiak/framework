@@ -254,6 +254,121 @@ fn windows_skip_nulls_and_blank_an_empty_window() {
 }
 
 #[test]
+fn ytd_reads_through_a_joined_frame() {
+    let mut store = Store::new(Document::blank("J"));
+    store
+        .apply(Operation::AddFrame {
+            name: "Actuals".into(),
+            grid: vec![
+                vec!["Month".into(), "Revenue".into()],
+                vec!["2025-01-01".into(), "100".into()],
+                vec!["2025-02-01".into(), "110".into()],
+                vec!["2025-03-01".into(), "120".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddGeneratorFrame {
+            name: "Spine".into(),
+            formula: "sequence(2025-01-01, 2025-04-01, 1mo)".into(),
+            column_name: Some("Month".into()),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let actuals = frame_named(store.document(), "Actuals").clone();
+    let spine = frame_named(store.document(), "Spine").clone();
+    let actuals_month = actuals
+        .columns
+        .iter()
+        .find(|c| c.name == "Month")
+        .unwrap()
+        .id
+        .clone();
+    let actuals_revenue = actuals
+        .columns
+        .iter()
+        .find(|c| c.name == "Revenue")
+        .unwrap()
+        .id
+        .clone();
+    let spine_month = spine
+        .columns
+        .iter()
+        .find(|c| c.name == "Month")
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetUniqueKey {
+            frame_id: actuals.id.clone(),
+            column_ids: vec![actuals_month.clone()],
+            enabled: true,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddJoinFrame {
+            primary_frame_id: spine.id.clone(),
+            lookup_frame_id: actuals.id.clone(),
+            primary_key_column_ids: vec![spine_month.clone()],
+            lookup_key_column_ids: vec![actuals_month],
+            join_type: FrameJoinType::Left,
+            columns: vec![
+                JoinColumnInput {
+                    source_frame_id: spine.id.clone(),
+                    source_column_id: spine_month,
+                    name: "Month".into(),
+                },
+                JoinColumnInput {
+                    source_frame_id: actuals.id.clone(),
+                    source_column_id: actuals_revenue,
+                    name: "Revenue".into(),
+                },
+            ],
+            name: "Joined".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let joined = frame_named(store.document(), "Joined").clone();
+    let joined_month = joined
+        .columns
+        .iter()
+        .find(|c| c.name == "Month")
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetFramePeriod {
+            frame_id: joined.id.clone(),
+            period: Some(FramePeriod {
+                column_id: joined_month,
+                partition_column_ids: Vec::new(),
+            }),
+        })
+        .unwrap();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: joined.id.clone(),
+            steps: vec![FrameStepInput::WithColumns {
+                columns: vec![ExistingFormulaInput {
+                    output_column_id: id(),
+                    name: "YTD".into(),
+                    formula: "ytd(`Revenue`, fy_start=2)".into(),
+                }],
+            }],
+        })
+        .unwrap();
+    let page = store.get_frame_page(&joined.id, 0, 10).unwrap();
+    let values: Vec<String> = page.rows.iter().map(|row| row[2].clone()).collect();
+    // February opens the fiscal year under fy_start=2, so it totals
+    // itself; March adds February. The join works on derived frames.
+    assert_eq!(values, vec!["100", "110", "230"]);
+}
+
+#[test]
 fn many_period_reads_in_one_step_stay_linear() {
     // Eight period-relative reads in a single step: every call derives
     // from the same input snapshot and joins back by natural keys, so the

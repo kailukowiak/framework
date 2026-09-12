@@ -152,6 +152,8 @@ pub(crate) fn polars_call_declared_type(
         "prior" | "ytd" | "ttm" | "same_period_last_year" => arguments
             .first()
             .and_then(|value| value.declared_type_among(document, scope)),
+        "fiscal_week" | "networkdays" => Some(DataType::Integer),
+        "workday" => Some(DataType::Date),
         "recur" => arguments
             .first()
             .and_then(|seed| seed.declared_type_among(document, scope))

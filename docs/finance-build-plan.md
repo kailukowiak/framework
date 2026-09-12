@@ -153,7 +153,25 @@ Slice 3 also closed two cross-surface gaps the slices exposed: the
 `finance.` namespace spelling lifts like the root call, and the grid's
 calculated column accepts period-relative formulas (typed from the value
 they read) with the same save-time declaration refusal as the chain.
-Slice 4 (retail calendars and business days) remains.
+Slice 4 landed 2026-09-12 on the same branch and closes the phase:
+document calendars (`Calendar` with year start, week pattern, year-end
+rule, year labelling, weekend and inline holidays; add, update, remove
+and set-default operations with exact undo; MCP tools), `fiscal_week`,
+`workday` and `networkdays` as native scalars, and a `calendar` keyword
+on the fiscal date functions that reads the week table under a retail
+pattern. Bare calls read the document default, and an explicit `fy_start`
+still wins over the calendar's. Years are numbered by the calendar year
+they end in unless the calendar says otherwise — the tutorial's answer
+key demanded it, and the NRF labels its calendars by the start, so the
+convention lives on the calendar rather than in the function. The
+Driver-based forecast tutorial walks the whole phase: its section 7
+replaces the hand arithmetic with the bare calls, adds the trailing
+twelve months, checks an NRF retail week, and repeats the deletion test
+against the answer key. Calendar creation stays MCP-only (the start file
+carries both calendars); declaring a period is one choice in the frame
+menu. Retail blocks do not yet reach the period declaration or
+`period_index` — `prior` and the windows stay monthly — and holidays stay
+an inline list rather than a frame.
 **Purpose.** Nearly every finance model is a monthly or quarterly series
 with period-relative logic, and a finance person's first FrameWork document
 is a forecast. Today the spine is a date `sequence` generator and the only

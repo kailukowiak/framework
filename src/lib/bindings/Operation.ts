@@ -23,6 +23,9 @@ import type { NamedFormulaInput } from "./NamedFormulaInput";
 import type { ScalarValue } from "./ScalarValue";
 import type { StatsRequest } from "./StatsRequest";
 import type { SummaryOperation } from "./SummaryOperation";
+import type { WeekPattern } from "./WeekPattern";
+import type { YearEndRule } from "./YearEndRule";
+import type { YearLabel } from "./YearLabel";
 
 export type Operation =
   | {
@@ -454,6 +457,29 @@ export type Operation =
     enabled: boolean;
   }
   | { "type": "setFramePeriod"; frameId: string; period?: FramePeriod | null }
+  | {
+    "type": "addCalendar";
+    name: string;
+    fyStart: number;
+    pattern: WeekPattern;
+    yearEnd: YearEndRule;
+    yearLabel: YearLabel;
+    weekend: Array<number>;
+    holidays: Array<string>;
+  }
+  | {
+    "type": "updateCalendar";
+    calendarId: string;
+    name: string;
+    fyStart: number;
+    pattern: WeekPattern;
+    yearEnd: YearEndRule;
+    yearLabel: YearLabel;
+    weekend: Array<number>;
+    holidays: Array<string>;
+  }
+  | { "type": "removeCalendar"; calendarId: string }
+  | { "type": "setDefaultCalendar"; calendarId?: string | null }
   | {
     "type": "addJoinFrame";
     primaryFrameId: string;

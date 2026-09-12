@@ -25,6 +25,8 @@ fn csv_imports_round_trip_through_typed_frames_and_export() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     let view = store
         .apply(Operation::ImportFrameFromFile {
@@ -269,6 +271,8 @@ fn tsv_imports_split_on_tabs() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -326,6 +330,8 @@ fn parquet_imports_keep_schema_types_instead_of_string_inference() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {
@@ -373,6 +379,8 @@ fn file_imports_support_large_files() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {

@@ -15,6 +15,8 @@ fn blank_store() -> Store {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     })
 }
 
@@ -400,6 +402,8 @@ fn a_legacy_text_card_reads_as_one_literal_and_survives_an_edit() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
 
     assert_eq!(computed_text(&store).source, "An old plain note");

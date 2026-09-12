@@ -1,6 +1,7 @@
 use crate::Id;
 use crate::error::CoreError;
 use crate::model::calculation_matrix::CalculationMatrixObject;
+use crate::model::calendar::Calendar;
 use crate::model::frame::FrameObject;
 use crate::model::plot::PlotObject;
 use crate::model::scenario::Scenario;
@@ -121,6 +122,16 @@ pub struct Document {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub active_scenario: Option<Id>,
+    /// Fiscal calendars named on the document, in the order they were
+    /// added. Formulas name one per call; the default supplies the year
+    /// start when a call names none.
+    #[serde(default)]
+    pub calendars: Vec<Calendar>,
+    /// The calendar bare fiscal calls read, or `None` for calendar months
+    /// starting in January.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub default_calendar_id: Option<Id>,
 }
 
 /// Measured: 704 bytes, all of it `FrameObject`. The other variants are
@@ -215,6 +226,8 @@ impl Document {
             frozen_values: BTreeMap::new(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         }
     }
 

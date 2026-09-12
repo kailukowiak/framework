@@ -108,6 +108,7 @@ export type { CalculationMatrixTuple } from "./bindings/CalculationMatrixTuple";
 // only by reaching into `bindings/` directly. These are the pieces the types
 // above are built out of.
 export type { ArtifactFormat } from "./bindings/ArtifactFormat";
+export type { Calendar } from "./bindings/Calendar";
 export type { ConnectorRecipe } from "./bindings/ConnectorRecipe";
 export type { DataArtifact } from "./bindings/DataArtifact";
 export type { DerivedExpression } from "./bindings/DerivedExpression";
@@ -123,6 +124,9 @@ export type { RenderedDerivedExpression } from "./bindings/RenderedDerivedExpres
 export type { RenderedFrameDerivation } from "./bindings/RenderedFrameDerivation";
 export type { SortInput } from "./bindings/SortInput";
 export type { SummaryOperation } from "./bindings/SummaryOperation";
+export type { WeekPattern } from "./bindings/WeekPattern";
+export type { YearEndRule } from "./bindings/YearEndRule";
+export type { YearLabel } from "./bindings/YearLabel";
 export type { FrameCellAlignment } from "./bindings/FrameCellAlignment";
 export type { FrameLineStyle } from "./bindings/FrameLineStyle";
 export type { FrameStep } from "./bindings/FrameStep";

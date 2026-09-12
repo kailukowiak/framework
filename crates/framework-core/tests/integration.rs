@@ -36,6 +36,7 @@ mod pipeline_refresh;
 mod recurrence_precision;
 mod reshape;
 mod results;
+mod retail_calendars;
 mod scenarios;
 mod schema_change;
 mod search;

@@ -1,7 +1,8 @@
 use framework_core::{
     DataObject, DataType, Document, DocumentView, EventJournal, ExistingFormulaInput, FrameObject,
-    FramePage, FramePeriod, FrameStepInput, Operation, RenderedDerivedExpression, RenderedFrameStep,
-    ScalarValue, SortInput, Store, SummaryOperation, is_framework_document_path,
+    FramePage, FramePeriod, FrameStepInput, Operation, RenderedDerivedExpression,
+    RenderedFrameStep, ScalarValue, SortInput, Store, SummaryOperation, WeekPattern, YearEndRule,
+    YearLabel, is_framework_document_path,
 };
 use rmcp::{
     ServerHandler, ServiceExt,
@@ -357,6 +358,92 @@ struct SetFramePeriodArgs {
     /// Names or IDs of columns that restart the timeline — one series per
     /// account, region, or scenario.
     partitions: Option<Vec<String>>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+enum CalendarPatternArg {
+    Months,
+    FourFourFive,
+    FourFiveFour,
+    FiveFourFour,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+enum CalendarYearEndArg {
+    LastDayOfMonth,
+    LastWeekday { weekday: u8 },
+    NearestWeekday { weekday: u8, month: u8, day: u8 },
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+enum CalendarYearLabelArg {
+    Start,
+    End,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct AddCalendarArgs {
+    /// Calendar name, unique on the document because formulas resolve it by name.
+    name: String,
+    /// Month the fiscal year starts on, 1 for January through 12.
+    fy_start: u8,
+    /// Twelve periods as calendar months or 4/5-week blocks per quarter.
+    pattern: CalendarPatternArg,
+    /// How a retail year ends; ignored for calendar months.
+    year_end: CalendarYearEndArg,
+    /// Which calendar year numbers the fiscal year: its start or its end.
+    year_label: CalendarYearLabelArg,
+    /// ISO weekday numbers worked, Monday 1 through Sunday 7. Omit for Saturday and Sunday.
+    weekend: Option<Vec<u8>>,
+    /// Holidays as YYYY-MM-DD dates. Omit for none.
+    holidays: Option<Vec<String>>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct UpdateCalendarArgs {
+    /// Calendar name or stable calendar ID.
+    calendar: String,
+    /// New name; uniqueness is checked excluding this calendar.
+    name: String,
+    /// Month the fiscal year starts on, 1 for January through 12.
+    fy_start: u8,
+    /// Twelve periods as calendar months or 4/5-week blocks per quarter.
+    pattern: CalendarPatternArg,
+    /// How a retail year ends; ignored for calendar months.
+    year_end: CalendarYearEndArg,
+    /// Which calendar year numbers the fiscal year: its start or its end.
+    year_label: CalendarYearLabelArg,
+    /// ISO weekday numbers worked, Monday 1 through Sunday 7.
+    weekend: Vec<u8>,
+    /// Holidays as YYYY-MM-DD dates.
+    holidays: Vec<String>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct RemoveCalendarArgs {
+    /// Calendar name or stable calendar ID. The default calendar cannot be removed.
+    calendar: String,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct SetDefaultCalendarArgs {
+    /// Calendar name or stable calendar ID. Omit to clear back to calendar months starting in January.
+    calendar: Option<String>,
     /// Reject the write if the document is no longer at this revision.
     expected_revision: Option<u64>,
 }
@@ -1398,6 +1485,191 @@ impl FrameworkMcp {
             args.expected_revision,
             "Declare the period column".into(),
             Some(frame_id),
+            None,
+            None,
+        )
+    }
+
+    fn resolve_calendar_id(store: &Store, reference: &str) -> Result<String, String> {
+        store
+            .document()
+            .calendars
+            .iter()
+            .find(|calendar| calendar.id == reference || calendar.name == reference)
+            .map(|calendar| calendar.id.clone())
+            .ok_or_else(|| {
+                let names: Vec<&str> = store
+                    .document()
+                    .calendars
+                    .iter()
+                    .map(|calendar| calendar.name.as_str())
+                    .collect();
+                if names.is_empty() {
+                    format!(
+                        "There is no calendar named ‘{reference}’. This document declares none yet."
+                    )
+                } else {
+                    format!(
+                        "There is no calendar named ‘{reference}’. Calendars on this document: {}.",
+                        names.join(", ")
+                    )
+                }
+            })
+    }
+
+    /// Add a fiscal calendar to the document: the month its year starts
+    /// on, the week pattern its periods follow, the rule ending its year,
+    /// and the days the business counts. Formulas name it per call; the
+    /// default supplies the year start when a call names none.
+    #[tool(
+        name = "add_calendar",
+        annotations(title = "Add a fiscal calendar", read_only_hint = false)
+    )]
+    fn add_calendar(
+        &self,
+        Parameters(args): Parameters<AddCalendarArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        self.mutate(
+            Operation::AddCalendar {
+                name: args.name,
+                fy_start: args.fy_start,
+                pattern: match args.pattern {
+                    CalendarPatternArg::Months => WeekPattern::Months,
+                    CalendarPatternArg::FourFourFive => WeekPattern::FourFourFive,
+                    CalendarPatternArg::FourFiveFour => WeekPattern::FourFiveFour,
+                    CalendarPatternArg::FiveFourFour => WeekPattern::FiveFourFour,
+                },
+                year_end: match args.year_end {
+                    CalendarYearEndArg::LastDayOfMonth => YearEndRule::LastDayOfMonth,
+                    CalendarYearEndArg::LastWeekday { weekday } => {
+                        YearEndRule::LastWeekday { weekday }
+                    }
+                    CalendarYearEndArg::NearestWeekday {
+                        weekday,
+                        month,
+                        day,
+                    } => YearEndRule::NearestWeekday {
+                        weekday,
+                        month,
+                        day,
+                    },
+                },
+                year_label: match args.year_label {
+                    CalendarYearLabelArg::Start => YearLabel::Start,
+                    CalendarYearLabelArg::End => YearLabel::End,
+                },
+                weekend: args.weekend.unwrap_or_else(|| vec![6, 7]),
+                holidays: args.holidays.unwrap_or_default(),
+            },
+            args.expected_revision,
+            "Add a fiscal calendar".into(),
+            None,
+            None,
+            None,
+        )
+    }
+
+    /// Replace a calendar wholesale by name or id. Removing a holiday is
+    /// an update with a shorter list.
+    #[tool(
+        name = "update_calendar",
+        annotations(title = "Update a fiscal calendar", read_only_hint = false)
+    )]
+    fn update_calendar(
+        &self,
+        Parameters(args): Parameters<UpdateCalendarArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let calendar_id = {
+            let session = self.lock()?;
+            Self::resolve_calendar_id(&session.store, &args.calendar)?
+        };
+        self.mutate(
+            Operation::UpdateCalendar {
+                calendar_id,
+                name: args.name,
+                fy_start: args.fy_start,
+                pattern: match args.pattern {
+                    CalendarPatternArg::Months => WeekPattern::Months,
+                    CalendarPatternArg::FourFourFive => WeekPattern::FourFourFive,
+                    CalendarPatternArg::FourFiveFour => WeekPattern::FourFiveFour,
+                    CalendarPatternArg::FiveFourFour => WeekPattern::FiveFourFour,
+                },
+                year_end: match args.year_end {
+                    CalendarYearEndArg::LastDayOfMonth => YearEndRule::LastDayOfMonth,
+                    CalendarYearEndArg::LastWeekday { weekday } => {
+                        YearEndRule::LastWeekday { weekday }
+                    }
+                    CalendarYearEndArg::NearestWeekday {
+                        weekday,
+                        month,
+                        day,
+                    } => YearEndRule::NearestWeekday {
+                        weekday,
+                        month,
+                        day,
+                    },
+                },
+                year_label: match args.year_label {
+                    CalendarYearLabelArg::Start => YearLabel::Start,
+                    CalendarYearLabelArg::End => YearLabel::End,
+                },
+                weekend: args.weekend,
+                holidays: args.holidays,
+            },
+            args.expected_revision,
+            "Update a fiscal calendar".into(),
+            None,
+            None,
+            None,
+        )
+    }
+
+    /// Remove a calendar by name or id. The default calendar cannot be
+    /// removed; set another default first.
+    #[tool(
+        name = "remove_calendar",
+        annotations(title = "Remove a fiscal calendar", read_only_hint = false)
+    )]
+    fn remove_calendar(
+        &self,
+        Parameters(args): Parameters<RemoveCalendarArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let calendar_id = {
+            let session = self.lock()?;
+            Self::resolve_calendar_id(&session.store, &args.calendar)?
+        };
+        self.mutate(
+            Operation::RemoveCalendar { calendar_id },
+            args.expected_revision,
+            "Remove a fiscal calendar".into(),
+            None,
+            None,
+            None,
+        )
+    }
+
+    /// Set the calendar bare fiscal calls read, or clear it back to
+    /// calendar months starting in January.
+    #[tool(
+        name = "set_default_calendar",
+        annotations(title = "Set the default calendar", read_only_hint = false)
+    )]
+    fn set_default_calendar(
+        &self,
+        Parameters(args): Parameters<SetDefaultCalendarArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let calendar_id = match args.calendar {
+            None => None,
+            Some(reference) => {
+                let session = self.lock()?;
+                Some(Self::resolve_calendar_id(&session.store, &reference)?)
+            }
+        };
+        self.mutate(
+            Operation::SetDefaultCalendar { calendar_id },
+            args.expected_revision,
+            "Set the default calendar".into(),
+            None,
             None,
             None,
         )

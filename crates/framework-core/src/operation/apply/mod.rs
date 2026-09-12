@@ -4,6 +4,7 @@
 //! module that owns it.
 
 pub mod blocks;
+pub mod calendar;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
@@ -270,6 +271,16 @@ impl Document {
             } => self.apply_set_unique_keys(frame_id, unique_keys)?,
             ReplicatedOperation::SetFramePeriod { frame_id, period } => {
                 self.apply_set_frame_period(frame_id, period)?
+            }
+            ReplicatedOperation::AddCalendar { calendar } => self.apply_add_calendar(calendar)?,
+            ReplicatedOperation::UpdateCalendar { calendar } => {
+                self.apply_update_calendar(calendar)?
+            }
+            ReplicatedOperation::RemoveCalendar { calendar_id } => {
+                self.apply_remove_calendar(calendar_id)?
+            }
+            ReplicatedOperation::SetDefaultCalendar { calendar_id } => {
+                self.apply_set_default_calendar(calendar_id)?
             }
             ReplicatedOperation::SetFrameGenerator {
                 frame_id,

@@ -153,6 +153,8 @@ impl Document {
             frozen_values: std::collections::BTreeMap::new(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
             objects: vec![
                 // The one assumption this playground makes, written where an
                 // assumption goes: a line of a block. A card holding `5%` and

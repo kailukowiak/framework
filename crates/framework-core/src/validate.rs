@@ -749,6 +749,8 @@ mod tests {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         });
         store
             .apply(Operation::AddFrame {

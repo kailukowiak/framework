@@ -1609,6 +1609,8 @@ mod tests {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         });
         // The desktop app imports through ImportFrameFromArtifact (it stages
         // a parquet artifact first), so measure that path, not the

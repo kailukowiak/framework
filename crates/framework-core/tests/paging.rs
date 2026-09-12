@@ -371,6 +371,8 @@ fn grouped_aggregates_over_an_imported_frame_read_back_through_pages() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::ImportFrameFromFile {

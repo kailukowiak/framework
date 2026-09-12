@@ -7,12 +7,18 @@
 //! The declaration-owning functions (`period_index`, `prior`) live in
 //! `financial_period`; the shared `fy_start` rule lives there too, so the
 //! calendar on these calls can never drift from the calendar on the index.
-//! `fy_start` names the month a fiscal year starts on, defaulting to
-//! January; a fuller calendar object will supply that default later.
+//!
+//! A `calendar` argument names a document calendar for the year start —
+//! and, for `fiscal_year`, for which calendar year numbers the year. An
+//! explicit `fy_start` still wins over the calendar's; without either,
+//! January starts the year. Under a retail week pattern the year, quarter
+//! and period come from the week table instead of month arithmetic, via
+//! the native path in `financial_calendar`.
 use crate::*;
 use polars::prelude as pl;
 
-use super::financial_period::fiscal_year_start;
+use super::financial_calendar::{fiscal_start, resolve_calendar};
+use crate::model::calendar::{WeekPattern, YearLabel};
 
 pub(super) fn compile(
     name: &str,
@@ -25,8 +31,8 @@ pub(super) fn compile(
     // first, then by name — the same shape as `period_arguments`.
     let parameters: &[&str] = match name {
         "add_periods" => &["date", "n"],
-        "period_start" | "period_end" => &["date"],
-        _ => &["date", "fy_start"],
+        "period_start" | "period_end" => &["date", "calendar"],
+        _ => &["date", "fy_start", "calendar"],
     };
     if arguments.len() > parameters.len() {
         return Err(format!(
@@ -47,14 +53,33 @@ pub(super) fn compile(
             return Err(format!("{name}: ‘{key}’ was supplied twice"));
         }
     }
+    let calendar = if parameters.contains(&"calendar") {
+        resolve_calendar(document, slots[parameters.len() - 1])?
+    } else {
+        // Pure month arithmetic reads no calendar at all — not even the
+        // default — so retail declarations elsewhere cannot move it.
+        super::financial_calendar::builtin_months_calendar()
+    };
     let date = slots[0]
         .ok_or_else(|| format!("{name} expects the date to read"))?
         .to_polars(document)?;
+    if calendar.pattern != WeekPattern::Months
+        && matches!(
+            name,
+            "fiscal_year" | "fiscal_quarter" | "fiscal_period" | "period_start" | "period_end"
+        )
+    {
+        // Retail weeks are not months, so month arithmetic cannot answer
+        // here; the week table does, one date at a time.
+        return Ok(super::financial_calendar::compile_retail(
+            name, date, calendar,
+        ));
+    }
     match name {
         "fiscal_year" | "fiscal_quarter" | "fiscal_period" => {
-            let start = fiscal_year_start(slots[1], document)?;
+            let start = fiscal_start(slots[1], &calendar, document)?;
             Ok(match name {
-                "fiscal_year" => fiscal_year_expr(date, start),
+                "fiscal_year" => fiscal_year_expr(date, start, calendar.year_label),
                 "fiscal_quarter" => fiscal_quarter_expr(date, start),
                 _ => fiscal_period_expr(date, start),
             })
@@ -91,13 +116,23 @@ fn fiscal_month_number(date: &pl::Expr, start: i64) -> pl::Expr {
     ((month - start + pl::lit(12)) % pl::lit(12) + pl::lit(1)).cast(pl::DataType::Int32)
 }
 
-fn fiscal_year_expr(date: pl::Expr, start: i64) -> pl::Expr {
+/// The calendar year numbering a date's fiscal year: its start year, or
+/// its end year. January-start years are their own year either way, so
+/// the convention only moves years that start later — by exactly one, for
+/// every date, which is why the period index underneath never notices.
+fn fiscal_year_expr(date: pl::Expr, start: i64, label: YearLabel) -> pl::Expr {
     let year = date.clone().dt().year().cast(pl::DataType::Int32);
     let month = date.dt().month().cast(pl::DataType::Int32);
-    pl::when(month.gt_eq(pl::lit(start as i32)))
-        .then(year.clone())
-        .otherwise(year - pl::lit(1))
-        .cast(pl::DataType::Int32)
+    let starts_later = month.gt_eq(pl::lit(start as i32));
+    let answer = match label {
+        YearLabel::Start => pl::when(starts_later)
+            .then(year.clone())
+            .otherwise(year - pl::lit(1)),
+        YearLabel::End => pl::when(starts_later.and(pl::lit(start > 1)))
+            .then(year.clone() + pl::lit(1))
+            .otherwise(year),
+    };
+    answer.cast(pl::DataType::Int32)
 }
 
 fn fiscal_quarter_expr(date: pl::Expr, start: i64) -> pl::Expr {

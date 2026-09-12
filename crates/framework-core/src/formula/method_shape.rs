@@ -138,7 +138,16 @@ pub(super) fn declared_type(
             if namespace.eq_ignore_ascii_case("finance")
                 && matches!(
                     name.to_ascii_lowercase().as_str(),
-                    "period_start" | "period_end" | "add_periods"
+                    "fiscal_week" | "networkdays"
+                ) =>
+        {
+            Some(DataType::Integer)
+        }
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "period_start" | "period_end" | "add_periods" | "workday"
                 ) =>
         {
             Some(DataType::Date)

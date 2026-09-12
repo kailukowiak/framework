@@ -12,6 +12,8 @@ fn join_diagnostics_scan_generated_rows_beyond_any_rendered_page() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     for (name, stop) in [("Orders", 2001), ("Customers", 1501)] {
         store
@@ -54,6 +56,8 @@ fn join_diagnostics_separate_blank_and_duplicate_lookup_keys() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -109,6 +113,8 @@ fn a_join_relationship_can_change_keys_without_replacing_its_outputs() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -193,6 +199,8 @@ fn joined_frames_require_unique_lookup_keys_and_refresh_both_inputs() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -428,6 +436,8 @@ fn anti_and_semi_joins_partition_rows_and_allow_duplicate_lookup_keys() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {

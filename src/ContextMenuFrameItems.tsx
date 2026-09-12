@@ -122,6 +122,38 @@ export function ContextMenuFrameActions({
         <GitBranch size={14} />
         <span>Create frame from this</span>
       </button>
+      {/* The period declaration is one choice from the frame's own date
+          columns — never free text — so it is a select like the column
+          type above rather than a dialog. Declaring is what lets prior
+          read the period before instead of the row above. */}
+      {contextFrame.columns.some((column) => column.dataType === "date") && (
+        <label className="context-menu-field">
+          <span>Period column</span>
+          <select
+            value={contextFrame.period?.columnId ?? ""}
+            onChange={(event) => {
+              setContextMenu(null);
+              const columnId = event.target.value;
+              run({
+                type: "setFramePeriod",
+                frameId: contextFrame.id,
+                period: columnId
+                  ? { columnId, partitionColumnIds: [] }
+                  : null,
+              });
+            }}
+          >
+            <option value="">None</option>
+            {contextFrame.columns
+              .filter((column) => column.dataType === "date")
+              .map((column) => (
+                <option key={column.id} value={column.id}>
+                  {column.name}
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
       {contextFrame.derivation && (
         <button
           onClick={() => {

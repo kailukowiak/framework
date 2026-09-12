@@ -177,6 +177,8 @@ fn filter_composes_excel_style_conditional_aggregates() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -260,6 +262,8 @@ fn string_to_date_is_a_strict_iso_cast_without_hidden_options() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -309,6 +313,8 @@ fn calculated_column_autofills_every_row_from_a_canvas_value() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     let holder = a_container(&mut store);
     store
@@ -383,6 +389,8 @@ fn polars_syntax_executes_arithmetic_namespaces_windows_and_conditionals() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {

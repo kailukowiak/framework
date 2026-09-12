@@ -525,16 +525,64 @@ fn generate_driver_forecast(output: &Path) -> Result<(), Box<dyn std::error::Err
     })?;
     add_value_in(&mut store, "Assumptions", "Close date", "2026-07-01")?;
     add_value_in(&mut store, "Assumptions", "Growth", "0.02")?;
+    // The start file already carries what section 7 needs: the Company
+    // calendar (February, calendar months, end-labelled) as the default,
+    // an NRF 4-5-4 calendar for the retail week check, and Actuals'
+    // declared period. Sections 1–6 never notice them — the old tools
+    // they teach do not read calendars or declarations.
+    store.apply(Operation::AddCalendar {
+        name: "Company".into(),
+        fy_start: 2,
+        pattern: framework_core::WeekPattern::Months,
+        year_end: framework_core::YearEndRule::LastDayOfMonth,
+        year_label: framework_core::YearLabel::End,
+        weekend: vec![6, 7],
+        holidays: Vec::new(),
+    })?;
+    let company = store
+        .document()
+        .calendars
+        .iter()
+        .find(|calendar| calendar.name == "Company")
+        .unwrap()
+        .id
+        .clone();
+    store.apply(Operation::SetDefaultCalendar {
+        calendar_id: Some(company),
+    })?;
+    store.apply(Operation::AddCalendar {
+        name: "NRF 4-5-4".into(),
+        fy_start: 2,
+        pattern: framework_core::WeekPattern::FourFiveFour,
+        year_end: framework_core::YearEndRule::NearestWeekday {
+            weekday: 6,
+            month: 1,
+            day: 31,
+        },
+        year_label: framework_core::YearLabel::Start,
+        weekend: vec![6, 7],
+        holidays: Vec::new(),
+    })?;
+    let actuals = frame(&store, "Actuals");
+    store.apply(Operation::SetFramePeriod {
+        frame_id: actuals.id.clone(),
+        period: Some(framework_core::FramePeriod {
+            column_id: column_id_named(&actuals, "Month"),
+            partition_column_ids: Vec::new(),
+        }),
+    })?;
     let start = output.join("driver-forecast-start.fw");
     store.save(&start)?;
 
-    // Section 1: the fragile positional prior.
+    // Section 1: the prior month, read from the declared period rather
+    // than the row above. Section 7 performs this replacement on the
+    // reader's own file; the answer key shows its end state.
     let actuals = frame(&store, "Actuals");
     store.apply(Operation::SetFramePipeline {
         frame_id: actuals.id.clone(),
         steps: vec![
             sort_by(&actuals, "Month"),
-            with_columns(&[("Prior month", "`Revenue`.shift(1)")]),
+            with_columns(&[("Prior month", "prior(`Revenue`)")]),
             with_columns(&[("Change", "`Revenue` / `Prior month` - 1")]),
         ],
     })?;
@@ -581,7 +629,18 @@ fn generate_driver_forecast(output: &Path) -> Result<(), Box<dyn std::error::Err
         y: 70.0,
     })?;
 
-    // Sections 3 to 5: cutover, hand-written calendar, positional windows.
+    // Sections 3 to 5: cutover, the fiscal calendar, period windows.
+    // The bare fiscal calls read the default Company calendar, so no
+    // year start is written anywhere; the windows join on Forecast's
+    // declared period, so no sort carries them.
+    let forecast = frame(&store, "Forecast");
+    store.apply(Operation::SetFramePeriod {
+        frame_id: forecast.id.clone(),
+        period: Some(framework_core::FramePeriod {
+            column_id: column_id_named(&forecast, "Month"),
+            partition_column_ids: Vec::new(),
+        }),
+    })?;
     let forecast = frame(&store, "Forecast");
     store.apply(Operation::SetFramePipeline {
         frame_id: forecast.id.clone(),
@@ -592,16 +651,18 @@ fn generate_driver_forecast(output: &Path) -> Result<(), Box<dyn std::error::Err
                 "recur(`Actual`, when(`Month` <= `Close date`).then(`Actual`).otherwise(previous() * (1 + `Growth`)))",
             )]),
             with_columns(&[
-                (
-                    "Fiscal year",
-                    "when(`Month`.dt.month() >= 2).then(`Month`.dt.year() + 1).otherwise(`Month`.dt.year())",
-                ),
-                ("Fiscal quarter", "((`Month`.dt.month() + 10) % 12) // 3 + 1"),
+                ("Fiscal year", "fiscal_year(`Month`)"),
+                ("Fiscal quarter", "fiscal_quarter(`Month`)"),
             ]),
             with_columns(&[
-                ("Prior month", "`Revenue`.shift(1)"),
-                ("YTD", "`Revenue`.cum_sum(False).over(`Fiscal year`)"),
-                ("Last year", "`Revenue`.shift(12)"),
+                ("Prior month", "prior(`Revenue`)"),
+                ("YTD", "ytd(`Revenue`)"),
+                ("Last year", "same_period_last_year(`Revenue`)"),
+                ("TTM", "ttm(`Revenue`)"),
+                (
+                    "Retail week",
+                    "fiscal_week(`Month`, calendar=\"NRF 4-5-4\")",
+                ),
             ]),
             with_columns(&[("YoY", "`Revenue` / `Last year` - 1")]),
         ],
@@ -609,7 +670,14 @@ fn generate_driver_forecast(output: &Path) -> Result<(), Box<dyn std::error::Err
     format_columns(
         &mut store,
         "Forecast",
-        &["Actual", "Revenue", "Prior month", "YTD", "Last year"],
+        &[
+            "Actual",
+            "Revenue",
+            "Prior month",
+            "YTD",
+            "Last year",
+            "TTM",
+        ],
         money_format(),
     )?;
     format_columns(&mut store, "Forecast", &["YoY"], percent_format())?;
@@ -675,6 +743,9 @@ fn generate_driver_forecast(output: &Path) -> Result<(), Box<dyn std::error::Err
     assert_cell_close(&forecast, "2026-07-01", "YTD", 767000.0);
     assert_cell_close(&forecast, "2026-08-01", "YoY", 0.163437);
     assert_cell_close(&forecast, "2027-01-01", "YoY", 0.081709);
+    assert_cell_close(&forecast, "2027-01-01", "TTM", 1706405.37);
+    assert_eq!(cell(&forecast, "2025-02-01", "Retail week"), "52");
+    assert_eq!(cell(&forecast, "2026-01-01", "Retail week"), "48");
     let quarters = page(&reloaded, "By quarter");
     let expected = [
         ("2026", "1", 314000.0),

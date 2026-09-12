@@ -33,7 +33,7 @@ The catalog returned by the core and MCP is also used for autocomplete.
 | Family | Current functions and methods |
 | --- | --- |
 | Horizontal | `sum_horizontal`, `mean_horizontal`, `min_horizontal`, `max_horizontal` |
-| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db`, `ddb`, `period_index`, `prior`, `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`, `period_end`, `add_periods`, `ytd`, `ttm`, `same_period_last_year` (uppercase Excel names also work) |
+| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db`, `ddb`, `period_index`, `prior`, `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`, `period_end`, `add_periods`, `ytd`, `ttm`, `same_period_last_year`, `fiscal_week`, `workday`, `networkdays` (uppercase Excel names also work) |
 | Generators / row order | `sequence(stop)`, `sequence(start, stop, step)`, `table.len()`; `recur(first, next, restart_by=[columns])` with `previous()` inside `next` |
 | Conditional/null | `when().then()` — chained as many times as you like — `.otherwise()`, `coalesce`, `.is_null`, `.is_not_null`, `.fill_null`, `.filter(predicate)` → `.sum()` / `.mean()` / `.count()` |
 | Numeric | `.abs`, `.sign`, `.round`, `.round_sig_figs`, `.truncate`, `.floor`, `.ceil`, `.sqrt`, `.cbrt`, `.pow`, `.exp`, `.log`, `.log1p`, `.normalize`, `.clip`, `.clip_min`, `.clip_max`, `.floor_div` |
@@ -101,6 +101,9 @@ the original unqualified calls remain compatible. Names are case-insensitive.
 | `value.finance.ytd(fy_start=1)` | value |
 | `value.finance.ttm()` | value |
 | `value.finance.same_period_last_year()` | value |
+| `date.finance.fiscal_week(calendar=None)` | date |
+| `date.finance.workday(n, calendar=None)` | date |
+| `start_date.finance.networkdays(end_date, calendar=None)` | start date |
 
 Use parentheses around a negative receiver: `(-principal).finance.pmt(rate, nper)`.
 The namespace form keeps the following original argument order.
@@ -179,11 +182,13 @@ rather than failing, which is what separates "no such period" from "the row
 above". `n` and `fy_start` must be whole numbers written in the formula or
 held by a named value.
 
-`fiscal_year(date, fy_start=1)`, `fiscal_quarter(date, fy_start=1)` and
-`fiscal_period(date, fy_start=1)` read which fiscal year, quarter (1–4) and
-month (1–12) a date falls in when the year starts in month `fy_start`. With
-a February start, January 2025 is fiscal 2024, quarter 4, period 12; February
-1 opens fiscal 2025. `period_start(date)` and `period_end(date)` bound the
+`fiscal_year(date, fy_start=1)` numbers a date's fiscal year by the
+calendar year it ends in — the way company accounts name theirs — so with
+a February start, January 2025 is fiscal 2025 and February opens fiscal
+2026. A calendar can instead number years by the year they start in, which
+is how the NRF labels its retail calendars. `fiscal_quarter(date,
+fy_start=1)` and `fiscal_period(date, fy_start=1)` count three-month
+quarters and months from `fy_start` without any labelling question. `period_start(date)` and `period_end(date)` bound the
 calendar month holding a date — February 2024 ends on the 29th.
 `add_periods(date, n)` shifts by `n` calendar months with end-of-month
 clamping, so January 31 plus one month is February 28; this is Excel's EDATE
@@ -206,6 +211,27 @@ three need the declaration (a frame without one gets an error naming the
 frame and the fix when the column is saved), work in calculated columns on
 both authoring surfaces, and are refused in Scratchwork, filters and
 summaries.
+
+A fiscal calendar names the month its year starts on, the week pattern
+its twelve periods follow (calendar months, or 4-4-5, 4-5-4, 5-4-4 blocks
+per quarter), the rule ending its year, which year number the year carries,
+and the days the business counts — weekend days plus dated holidays.
+Calendars live on the document with one default; the fiscal functions take
+an optional `calendar` naming one per call, and a call that names none
+reads the default. An explicit `fy_start` still wins over the calendar's,
+and a missing calendar is refused naming what is available. `fiscal_year`,
+`fiscal_quarter`, `fiscal_period`, `period_start` and `period_end` read a
+week-pattern calendar through its week table: quarters stay thirteen
+weeks, a 53rd week extends the last period, and period bounds are block
+bounds. `fiscal_week(date)` numbers the date's week from 1, in seven-day
+blocks from the year's start date — a year starting on a Sunday has
+Sunday-to-Saturday weeks, matching the published NRF calendar for every
+week of fiscal 2023, 2024 and 2025 including the 53rd week of 2023.
+`workday(date, n)` shifts by business days skipping the calendar's weekend
+and holidays, the start date uncounted; `networkdays(start, end)` counts
+the business days between inclusively, negated when the end precedes the
+start. Both take the date itself, need no declaration, and read blank on
+missing inputs.
 
 The loan functions compile to composed Polars expressions. Discounted totals
 use a native aggregate over the evaluated series so length, date and missing

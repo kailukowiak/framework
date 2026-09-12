@@ -35,6 +35,9 @@ pub(crate) fn is_financial(name: &str) -> bool {
             | "period_start"
             | "period_end"
             | "add_periods"
+            | "fiscal_week"
+            | "workday"
+            | "networkdays"
     )
 }
 
@@ -44,26 +47,11 @@ pub(crate) fn compile(
     keywords: &[(String, Expr)],
     document: &Document,
 ) -> Result<pl::Expr, String> {
+    if let Some(answer) = compile_own_binding(name, arguments, keywords, document)? {
+        return Ok(answer);
+    }
     let lower = name.to_ascii_lowercase();
     let name = lower.strip_prefix("finance.").unwrap_or(&lower).to_string();
-    if name == "period_index" {
-        // Integer literals cannot survive argument binding (it compiles to
-        // Polars), so this resolves its month numbers before binding.
-        return super::financial_period::compile_period_index(arguments, keywords, document);
-    }
-    if matches!(
-        name.as_str(),
-        "fiscal_year"
-            | "fiscal_quarter"
-            | "fiscal_period"
-            | "period_start"
-            | "period_end"
-            | "add_periods"
-    ) {
-        // Date-typed arguments cannot survive the Float64 binding below, and
-        // `fy_start` is a plan-time month number, so these bind their own.
-        return super::financial_fiscal::compile(&name, arguments, keywords, document);
-    }
     let args = bind_arguments(&name, arguments, keywords, document)?;
     if matches!(name.as_str(), "irr" | "xirr") {
         return super::financial_return::compile(&name, args);
@@ -93,10 +81,9 @@ pub(crate) fn compile(
         // either: the engine lifts it into a self-join in
         // `apply_with_columns_step` alongside `prior`. Reaching here means
         // there is no plan to join into, so the error says where it belongs.
-        return Err(
-            format!("{name} reads neighbouring periods, so it needs a frame with a declared period column. Use it in a calculated column.")
-                .into(),
-        );
+        return Err(format!(
+            "{name} reads neighbouring periods, so it needs a frame with a declared period column. Use it in a calculated column."
+        ));
     }
     let args: Vec<_> = args
         .into_iter()
@@ -161,6 +148,45 @@ pub(crate) fn compile(
         (answer, valid)
     };
     Ok(checked(&name, answer, valid))
+}
+
+/// The functions that bind their own arguments instead of floating
+/// everything to Float64: plan-time month numbers, date-typed inputs, and
+/// the native scalars. `None` means the shared binding below applies.
+fn compile_own_binding(
+    name: &str,
+    arguments: &[Expr],
+    keywords: &[(String, Expr)],
+    document: &Document,
+) -> Result<Option<pl::Expr>, String> {
+    let lower = name.to_ascii_lowercase();
+    let name = lower.strip_prefix("finance.").unwrap_or(&lower);
+    if name == "period_index" {
+        // Integer literals cannot survive argument binding (it compiles to
+        // Polars), so this resolves its month numbers before binding.
+        return super::financial_period::compile_period_index(arguments, keywords, document)
+            .map(Some);
+    }
+    if matches!(
+        name,
+        "fiscal_year"
+            | "fiscal_quarter"
+            | "fiscal_period"
+            | "period_start"
+            | "period_end"
+            | "add_periods"
+    ) {
+        // Date-typed arguments cannot survive the Float64 binding, and
+        // `fy_start` is a plan-time month number, so these bind their own.
+        return super::financial_fiscal::compile(name, arguments, keywords, document).map(Some);
+    }
+    if matches!(name, "fiscal_week" | "workday" | "networkdays") {
+        // Retail weeks and business days evaluate as native scalars over
+        // the collected series, the way the return solvers do: 52/53-week
+        // rules and holiday skipping are scalar iteration.
+        return super::financial_calendar::compile(name, arguments, keywords, document).map(Some);
+    }
+    Ok(None)
 }
 
 fn bind_arguments(
@@ -244,9 +270,12 @@ pub(super) fn parameter_names(name: &str) -> &'static [&'static str] {
         "prior" => &["expr", "n", "fy_start"],
         "ytd" => &["expr", "fy_start"],
         "ttm" | "same_period_last_year" => &["expr"],
-        "fiscal_year" | "fiscal_quarter" | "fiscal_period" => &["date", "fy_start"],
-        "period_start" | "period_end" => &["date"],
+        "fiscal_year" | "fiscal_quarter" | "fiscal_period" => &["date", "fy_start", "calendar"],
+        "period_start" | "period_end" => &["date", "calendar"],
         "add_periods" => &["date", "n"],
+        "fiscal_week" => &["date", "calendar"],
+        "workday" => &["date", "n", "calendar"],
+        "networkdays" => &["start_date", "end_date", "calendar"],
         _ => unreachable!(),
     }
 }
