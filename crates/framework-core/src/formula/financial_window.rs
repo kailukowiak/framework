@@ -126,9 +126,15 @@ fn window_call<'a>(expression: &'a Expr, document: &Document) -> Result<WindowCa
             "{name} counts twelve whole periods, so it takes no fy_start"
         ));
     }
+    // The year boundary comes from the document default when unwritten:
+    // a bare `ytd` in a February-start workbook counts from February, not
+    // January. Trailing windows are index-relative and need no calendar.
     let fy_start = match slots[1] {
-        None => 1,
         Some(argument) => fiscal_year_start(Some(argument), document)?,
+        None if matches!(kind, WindowKind::Ytd) => {
+            super::financial_calendar::resolve_calendar(document, None)?.fy_start as i64
+        }
+        None => 1,
     };
     Ok(WindowCall {
         expression,
