@@ -133,13 +133,21 @@ impl Document {
         Ok({
             let expression = self.prepare_formula_for_frame(&frame_id, &formula)?;
             let frame = self.frame(&frame_id)?;
+            // A period-relative call reads the declaration, so a missing
+            // one is refused here — when the column is saved — rather than
+            // when the frame is read. The Wrangle chain refuses the same
+            // way through the join; both surfaces name the frame and the fix.
+            if let Some(call) = crate::formula::financial_window::first_lift_name(&expression) {
+                crate::formula::financial_period::require_period(frame, &call)
+                    .map_err(CoreError::Formula)?;
+            }
             if after_column_id.as_ref().is_some_and(|column_id| {
                 !frame.columns.iter().any(|column| column.id == *column_id)
             }) {
                 return Err(CoreError::ColumnNotFound);
             }
             let data_type = frame
-                .infer_polars_expression_type(self, &expression)
+                .inferred_column_type(self, &expression)
                 .map_err(CoreError::Formula)?;
             ReplicatedOperation::AddColumn {
                 frame_id,
@@ -166,9 +174,14 @@ impl Document {
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             let expression = self.prepare_formula_for_frame(&frame_id, &formula)?;
+            if let Some(call) = crate::formula::financial_window::first_lift_name(&expression) {
+                let frame = self.frame(&frame_id)?;
+                crate::formula::financial_period::require_period(frame, &call)
+                    .map_err(CoreError::Formula)?;
+            }
             let data_type = self
                 .frame(&frame_id)?
-                .infer_polars_expression_type(self, &expression)
+                .inferred_column_type(self, &expression)
                 .map_err(CoreError::Formula)?;
             ReplicatedOperation::SetColumnFormula {
                 frame_id,

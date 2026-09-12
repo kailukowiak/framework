@@ -259,4 +259,38 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         2,
         2
     ),
+    formula_function!(
+        "root.ytd",
+        "ytd",
+        ["YTD", "year to date", "fiscal year to date"],
+        "Financial",
+        "ytd(expr, fy_start=1)",
+        "The sum of expr over the fiscal year so far, joined on the frame's declared period column within its partitions. Resets when the fiscal year turns under fy_start; sums the periods present, and only a window with no readable value reads blank.",
+        1,
+        2
+    ),
+    formula_function!(
+        "root.ttm",
+        "ttm",
+        ["TTM", "trailing twelve months", "last twelve months"],
+        "Financial",
+        "ttm(expr)",
+        "The sum of expr over the twelve periods ending here, joined on the frame's declared period column. Twelve indexes back is the same window under any year start, so it takes no fy_start. Needs a declared period like prior.",
+        1,
+        1
+    ),
+    formula_function!(
+        "root.same_period_last_year",
+        "same_period_last_year",
+        [
+            "SAME_PERIOD_LAST_YEAR",
+            "same month last year",
+            "previous year"
+        ],
+        "Financial",
+        "same_period_last_year(expr)",
+        "The value expr held twelve periods ago — the same month last year — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
+        1,
+        1
+    ),
 ];

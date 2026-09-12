@@ -140,7 +140,20 @@ functions `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`,
 They read the date itself, so they need no declaration and work in
 Scratchwork; `fy_start` follows the slice 1 literal-or-named-value rule, and
 `add_periods` accepts a per-row count with EDATE month-end clamping.
-Slices 3–4 (ytd/ttm/same-period, retail calendars and business days) remain.
+Slice 3 landed 2026-09-12 on the same branch: the declaration-gated window
+aggregates `ytd(expr, fy_start=1)`, `ttm(expr)` and
+`same_period_last_year(expr)` as self-joins on the period index — range
+joins with per-row sums for the first two, the prior machinery at offset
+twelve for the third. Only `ytd` takes `fy_start`; the twelve-period forms
+are index-relative and year-start-invariant. Windows sum the periods
+present and blank only a window with no readable value; every call in a
+step derives from the pre-pass input snapshot and joins back by the
+declaration's natural keys, keeping the cost linear in the number of calls.
+Slice 3 also closed two cross-surface gaps the slices exposed: the
+`finance.` namespace spelling lifts like the root call, and the grid's
+calculated column accepts period-relative formulas (typed from the value
+they read) with the same save-time declaration refusal as the chain.
+Slice 4 (retail calendars and business days) remains.
 **Purpose.** Nearly every finance model is a monthly or quarterly series
 with period-relative logic, and a finance person's first FrameWork document
 is a forecast. Today the spine is a date `sequence` generator and the only

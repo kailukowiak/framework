@@ -101,15 +101,21 @@ pub(super) fn integer_literal(expression: &Expr, document: &Document) -> Result<
 
 /// One `prior(...)` call: the value expression, the whole-period offset,
 /// and the fiscal year start it counts in.
-struct PriorCall<'a> {
-    expression: &'a Expr,
-    n: i64,
-    fy_start: i64,
+pub(super) struct PriorCall<'a> {
+    pub(super) expression: &'a Expr,
+    pub(super) n: i64,
+    pub(super) fy_start: i64,
 }
 
-fn is_prior_call(expression: &Expr) -> bool {
+pub(super) fn is_prior_call(expression: &Expr) -> bool {
     match expression {
-        Expr::PolarsCall { name, .. } => name.eq_ignore_ascii_case("prior"),
+        // The `finance.` namespace spells the same call; only that
+        // namespace lifts, so a dictionary method that happens to share
+        // the name keeps compiling where it always did.
+        Expr::PolarsCall { name, .. } => name
+            .strip_prefix("finance.")
+            .unwrap_or(name)
+            .eq_ignore_ascii_case("prior"),
         Expr::Method { path, .. } => {
             matches!(path.as_slice(), [namespace, name] if namespace.eq_ignore_ascii_case("finance") && name.eq_ignore_ascii_case("prior"))
         }
@@ -123,7 +129,11 @@ fn prior_call<'a>(expression: &'a Expr, document: &Document) -> Result<PriorCall
             name,
             arguments,
             keyword_arguments,
-        } if name.eq_ignore_ascii_case("prior") => {
+        } if name
+            .strip_prefix("finance.")
+            .unwrap_or(name)
+            .eq_ignore_ascii_case("prior") =>
+        {
             (None, arguments.as_slice(), keyword_arguments.as_slice())
         }
         Expr::Method {
@@ -197,8 +207,9 @@ fn prior_calls(columns: &[DerivedExpression]) -> Vec<&Expr> {
 
 /// `expression` with each prior call replaced by the column its join
 /// produced. Only the calls are lifted out; everything around them still
-/// compiles through `to_polars`.
-fn substitute(expression: &Expr, calls: &[&Expr], outputs: &[String]) -> Expr {
+/// compiles through `to_polars`. Window aggregates reuse this with their
+/// own call list, so a `prior` inside a `ytd` resolves first.
+pub(super) fn substitute(expression: &Expr, calls: &[&Expr], outputs: &[String]) -> Expr {
     if let Some(index) = calls.iter().position(|call| *call == expression) {
         return Expr::Column {
             column_id: outputs[index].clone(),
@@ -259,17 +270,23 @@ fn substitute(expression: &Expr, calls: &[&Expr], outputs: &[String]) -> Expr {
 }
 
 /// Joins each prior read in `columns` into `plan` and returns the columns
-/// rewritten to read the joined answers, plus the answer columns' names so
-/// the caller can drop them once the step has used them.
+/// rewritten to read the joined answers.
 ///
-/// Each side of the join is the same incoming plan: the left asks for
-/// `index - n`, the right offers each row's own index, and a left join
-/// keeps every row — a first period with nothing before it reads blank,
-/// which is what "that month is missing" means rather than an error.
+/// Every call derives its two sides from the pre-pass input snapshot and
+/// joins its answer back by the declaration's natural keys, so ten prior
+/// reads cost ten constant-size joins rather than ten doublings of the
+/// accumulated plan. The answers are the only columns that survive each
+/// join; the want/have helpers die inside it, so there is nothing left for
+/// the caller to drop.
+///
+/// Each side of the join asks the same question: the left wants `index -
+/// n`, the right offers each row's own index, and a left join keeps every
+/// row — a first period with nothing before it reads blank, which is what
+/// "that month is missing" means rather than an error.
 pub(crate) fn join_prior_periods(
     document: &Document,
     frame_id: &str,
-    plan: pl::LazyFrame,
+    mut plan: pl::LazyFrame,
     columns: &[DerivedExpression],
 ) -> Result<(pl::LazyFrame, Vec<DerivedExpression>, Vec<String>), String> {
     let calls = prior_calls(columns);
@@ -279,12 +296,16 @@ pub(crate) fn join_prior_periods(
     let frame = document
         .frame(frame_id)
         .map_err(|error| error.to_string())?;
-    let mut plan = plan;
+    let schema = plan.collect_schema().map_err(|error| error.to_string())?;
+    let base = plan;
+    let mut acc = base.clone();
     let mut outputs = Vec::with_capacity(calls.len());
     for (index, call) in calls.iter().enumerate() {
         let prior = prior_call(call, document)?;
+        let period = require_period(frame, "prior")?;
+        check_period_columns(frame, period, &schema)?;
         let output = format!("__framework_prior_{index}");
-        plan = join_prior(document, frame, plan, &prior, &output)?;
+        acc = join_prior(document, period, &base, acc, &prior, &output)?;
         outputs.push(output);
     }
     let rewritten = columns
@@ -294,22 +315,35 @@ pub(crate) fn join_prior_periods(
             expression: substitute(&column.expression, &calls, &outputs),
         })
         .collect();
-    Ok((plan, rewritten, outputs))
+    Ok((acc, rewritten, outputs))
 }
 
-fn join_prior(
-    document: &Document,
-    frame: &FrameObject,
-    mut plan: pl::LazyFrame,
-    prior: &PriorCall<'_>,
-    output: &str,
-) -> Result<pl::LazyFrame, String> {
-    let period = frame.period.as_ref().ok_or_else(|| {
+/// The frame's declared period, or an error naming the frame and the fix.
+/// Every period-relative function refuses the same way: the declaration is
+/// what makes "the previous period" mean anything, so without one there is
+/// nothing to compute rather than something to guess.
+pub(crate) fn require_period<'a>(
+    frame: &'a FrameObject,
+    name: &str,
+) -> Result<&'a FramePeriod, String> {
+    frame.period.as_ref().ok_or_else(|| {
         format!(
-            "‘{}’ has no declared period column, so prior cannot tell which row is the previous period. Declare a Date column as the period first.",
+            "‘{}’ has no declared period column, so {name} cannot tell which row is the previous period. Declare a Date column as the period first.",
             frame.name
         )
-    })?;
+    })
+}
+
+/// The declaration names stored columns; the chain may have dropped one
+/// upstream. A bare Polars "column not found" would not say which frame
+/// to fix, so check the schema while the frame is still in hand. The schema
+/// is collected once per pre-pass over the input snapshot every join below
+/// derives from.
+pub(super) fn check_period_columns(
+    frame: &FrameObject,
+    period: &FramePeriod,
+    schema: &pl::Schema,
+) -> Result<(), String> {
     let column_name = |column_id: &str| {
         frame
             .columns
@@ -318,10 +352,6 @@ fn join_prior(
             .map(|column| column.name.clone())
             .unwrap_or_else(|| column_id.to_string())
     };
-    // The declaration names stored columns; the chain may have dropped one
-    // upstream. A bare Polars "column not found" would not say which frame
-    // to fix, so check the schema while the frame is still in hand.
-    let schema = plan.collect_schema().map_err(|error| error.to_string())?;
     for column_id in period
         .partition_column_ids
         .iter()
@@ -335,6 +365,26 @@ fn join_prior(
             ));
         }
     }
+    Ok(())
+}
+
+/// One prior read as a self-join on `index - n` within the declared
+/// partitions. Both sides derive from the pre-pass snapshot, never from
+/// the accumulation, and the answer joins back onto the accumulation by
+/// the period and partition columns the declaration guarantees unique.
+///
+/// Many-to-one is the backstop behind the declaration's uniqueness check
+/// on both joins: duplicate periods cannot silently multiply rows here.
+/// Both keys are kept under their own names — unlike an equi-join on one
+/// name, nothing here coalesces — so only the answer is selected out.
+pub(super) fn join_prior(
+    document: &Document,
+    period: &FramePeriod,
+    base: &pl::LazyFrame,
+    acc: pl::LazyFrame,
+    prior: &PriorCall<'_>,
+    output: &str,
+) -> Result<pl::LazyFrame, String> {
     let want = format!("{output}_want");
     let have = format!("{output}_have");
     let value = format!("{output}_value");
@@ -343,10 +393,10 @@ fn join_prior(
     keys.push(pl::col(&want));
     let mut have_keys: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
     have_keys.push(pl::col(&have));
-    let left = plan
+    let left = base
         .clone()
         .with_columns([(index.clone() - pl::lit(prior.n as i32)).alias(want.as_str())]);
-    let right = plan.select(
+    let right = base.clone().select(
         period
             .partition_column_ids
             .iter()
@@ -357,16 +407,22 @@ fn join_prior(
             ])
             .collect::<Vec<_>>(),
     );
-    // Many-to-one is the backstop behind the declaration's uniqueness
-    // check: duplicate periods cannot silently multiply rows here. Both
-    // keys are kept under their own names — unlike an equi-join on one
-    // name, nothing here coalesces — so the helpers below can drop them.
     let mut arguments = pl::JoinArgs::new(pl::JoinType::Left);
     arguments.validation = pl::JoinValidation::ManyToOne;
     arguments.maintain_order = pl::MaintainOrderJoin::Left;
     arguments.coalesce = pl::JoinCoalesce::KeepColumns;
-    let joined = left.join(right, keys, have_keys, arguments);
-    Ok(joined
-        .with_columns([pl::col(value.as_str()).alias(output)])
-        .drop(pl::cols([want.as_str(), have.as_str(), value.as_str()])))
+    let paired = left.join(right, keys, have_keys, arguments);
+    let mut natural: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
+    natural.push(pl::col(&period.column_id));
+    let answer = paired.select(
+        natural
+            .iter()
+            .cloned()
+            .chain([pl::col(value.as_str()).alias(output)])
+            .collect::<Vec<_>>(),
+    );
+    let mut back = pl::JoinArgs::new(pl::JoinType::Left);
+    back.validation = pl::JoinValidation::ManyToOne;
+    back.maintain_order = pl::MaintainOrderJoin::Left;
+    Ok(acc.join(answer, natural.clone(), natural, back))
 }

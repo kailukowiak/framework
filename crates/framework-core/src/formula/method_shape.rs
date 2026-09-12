@@ -121,9 +121,10 @@ pub(super) fn declared_type(
         }
         // A period index is a count by the same argument as `count` above:
         // offsets between two of them are whole periods, which is what
-        // makes them join keys rather than dates. `prior` answers whatever
-        // it was asked for — the sum of money is money — so it reads its
-        // input's type instead of claiming Number for every receiver.
+        // makes them join keys rather than dates. `prior` and the window
+        // aggregates answer whatever they were asked for — the sum of money
+        // is money — so they read their input's type instead of claiming
+        // Number for every receiver.
         [namespace, name]
             if namespace.eq_ignore_ascii_case("finance")
                 && matches!(
@@ -143,7 +144,11 @@ pub(super) fn declared_type(
             Some(DataType::Date)
         }
         [namespace, name]
-            if namespace.eq_ignore_ascii_case("finance") && name.eq_ignore_ascii_case("prior") =>
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "prior" | "ytd" | "ttm" | "same_period_last_year"
+                ) =>
         {
             input.declared_type_among(document, scope)
         }

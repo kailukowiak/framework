@@ -33,7 +33,7 @@ The catalog returned by the core and MCP is also used for autocomplete.
 | Family | Current functions and methods |
 | --- | --- |
 | Horizontal | `sum_horizontal`, `mean_horizontal`, `min_horizontal`, `max_horizontal` |
-| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db`, `ddb`, `period_index`, `prior`, `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`, `period_end`, `add_periods` (uppercase Excel names also work) |
+| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db`, `ddb`, `period_index`, `prior`, `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`, `period_end`, `add_periods`, `ytd`, `ttm`, `same_period_last_year` (uppercase Excel names also work) |
 | Generators / row order | `sequence(stop)`, `sequence(start, stop, step)`, `table.len()`; `recur(first, next, restart_by=[columns])` with `previous()` inside `next` |
 | Conditional/null | `when().then()` — chained as many times as you like — `.otherwise()`, `coalesce`, `.is_null`, `.is_not_null`, `.fill_null`, `.filter(predicate)` → `.sum()` / `.mean()` / `.count()` |
 | Numeric | `.abs`, `.sign`, `.round`, `.round_sig_figs`, `.truncate`, `.floor`, `.ceil`, `.sqrt`, `.cbrt`, `.pow`, `.exp`, `.log`, `.log1p`, `.normalize`, `.clip`, `.clip_min`, `.clip_max`, `.floor_div` |
@@ -98,6 +98,9 @@ the original unqualified calls remain compatible. Names are case-insensitive.
 | `date.finance.period_start()` | date |
 | `date.finance.period_end()` | date |
 | `date.finance.add_periods(n)` | date |
+| `value.finance.ytd(fy_start=1)` | value |
+| `value.finance.ttm()` | value |
+| `value.finance.same_period_last_year()` | value |
 
 Use parentheses around a negative receiver: `(-principal).finance.pmt(rate, nper)`.
 The namespace form keeps the following original argument order.
@@ -189,6 +192,20 @@ a missing count reads blank. These read the date itself, so they need no
 period declaration and work in Scratchwork; like `period_index`, `fy_start`
 must be a whole month number from 1 to 12 written in the formula or held by
 a named value.
+
+`ytd(expr, fy_start=1)` sums `expr` over the fiscal year so far, `ttm(expr)`
+sums the twelve periods ending here, and `same_period_last_year(expr)` reads
+the value twelve periods ago — all joined on the frame's declared period
+column within its partitions, never shifted by row position. `ytd` resets
+when the fiscal year turns under `fy_start`; twelve indexes back is the same
+date last year under any year start, so `ttm` and `same_period_last_year`
+take no year start. Windows sum the periods present — a deleted month
+removes its value from every window holding it rather than failing — and
+only a window with no readable value at all reads blank. Like `prior`, all
+three need the declaration (a frame without one gets an error naming the
+frame and the fix when the column is saved), work in calculated columns on
+both authoring surfaces, and are refused in Scratchwork, filters and
+summaries.
 
 The loan functions compile to composed Polars expressions. Discounted totals
 use a native aggregate over the evaluated series so length, date and missing

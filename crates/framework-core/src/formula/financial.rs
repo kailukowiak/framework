@@ -26,6 +26,9 @@ pub(crate) fn is_financial(name: &str) -> bool {
             | "mirr"
             | "period_index"
             | "prior"
+            | "ytd"
+            | "ttm"
+            | "same_period_last_year"
             | "fiscal_year"
             | "fiscal_quarter"
             | "fiscal_period"
@@ -82,6 +85,16 @@ pub(crate) fn compile(
         // a filter, a summary — so the error says where it belongs.
         return Err(
             "prior reads a neighbouring period, so it needs a frame with a declared period column. Use it in a calculated column."
+                .into(),
+        );
+    }
+    if matches!(name.as_str(), "ytd" | "ttm" | "same_period_last_year") {
+        // A window aggregate never compiles to a standalone expression
+        // either: the engine lifts it into a self-join in
+        // `apply_with_columns_step` alongside `prior`. Reaching here means
+        // there is no plan to join into, so the error says where it belongs.
+        return Err(
+            format!("{name} reads neighbouring periods, so it needs a frame with a declared period column. Use it in a calculated column.")
                 .into(),
         );
     }
@@ -167,6 +180,8 @@ fn bind_arguments(
         "db" | "ddb" => 4,
         "period_index" => 1,
         "prior" => 1,
+        "ytd" => 1,
+        "ttm" | "same_period_last_year" => 1,
         _ => 3,
     };
     let mut slots = vec![None; parameters.len()];
@@ -227,6 +242,8 @@ pub(super) fn parameter_names(name: &str) -> &'static [&'static str] {
         "mirr" => &["values", "finance_rate", "reinvest_rate"],
         "period_index" => &["date", "fy_start"],
         "prior" => &["expr", "n", "fy_start"],
+        "ytd" => &["expr", "fy_start"],
+        "ttm" | "same_period_last_year" => &["expr"],
         "fiscal_year" | "fiscal_quarter" | "fiscal_period" => &["date", "fy_start"],
         "period_start" | "period_end" => &["date"],
         "add_periods" => &["date", "n"],

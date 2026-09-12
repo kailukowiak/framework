@@ -11,6 +11,7 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Sum fiscal windows straight from the period declaration: `ytd` totals the fiscal year so far and resets when it turns, `ttm` totals the twelve periods ending here, and `same_period_last_year` reads the same month last year. Windows sum the periods present after a deletion and read blank only when nothing readable remains; all three work in Wrangle steps and grid calculated columns, and refuse without a declaration naming the frame and the fix.
 - Read fiscal calendars straight from dates: `fiscal_year`, `fiscal_quarter` and `fiscal_period` place a date under any year start, `period_start` and `period_end` bound its month including leap-day February, and `add_periods` shifts by whole months with end-of-month clamping (`EDATE` works as its alias). They read the date itself, so they need no period declaration and work in Scratchwork.
 - Declare which column says what time a row belongs to, and read the period before with `prior` instead of the row above with `.shift`. A deleted or shuffled month changes which periods exist rather than silently misreading a neighbour; a missing earlier period reads blank. Monthly indexes come from `period_index`, counting fiscal months from a chosen year start.
 - Add shaded uncertainty bands or whiskers from lower and upper dataframe columns in the plot editor, with horizontal or vertical intervals.

@@ -26,4 +26,5 @@ mod financial_namespace;
 pub(crate) mod financial_period;
 mod financial_return;
 mod financial_root;
+pub(crate) mod financial_window;
 mod financial_yield;

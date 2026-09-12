@@ -35,9 +35,17 @@ impl Document {
         // period column, so it is lifted out before anything compiles —
         // the same shape as a mapping call below, and first so a lookup
         // around a prior (or the reverse) resolves in the second pass.
+        // Window aggregates lift second, off the prior-rewritten columns,
+        // so a `prior` inside a `ytd` already reads its joined column.
         let (joined, columns, mut answers) =
             crate::formula::financial_period::join_prior_periods(self, frame_id, plan, columns)?;
         plan = joined;
+        let (joined, columns, window_answers) =
+            crate::formula::financial_window::join_window_aggregates(
+                self, frame_id, plan, &columns,
+            )?;
+        plan = joined;
+        answers.extend(window_answers);
         // A mapping call reads another frame, so it joins that frame into
         // the plan here rather than compiling to a literal; the columns
         // below are the same step with each call pointing at its answer.

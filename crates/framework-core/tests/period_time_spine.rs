@@ -279,7 +279,6 @@ fn period_index_counts_calendar_and_fiscal_months() {
         );
     }
 }
-
 #[test]
 fn prior_reads_the_period_before_not_the_row_above() {
     let mut store = monthly_store();
@@ -294,6 +293,27 @@ fn prior_reads_the_period_before_not_the_row_above() {
     let rows = priors(&store);
     // No sort is declared anywhere: the join finds January for February by
     // date, not by position.
+    assert_eq!(rows[0][2], "");
+    assert_eq!(rows[1][2], "100000");
+    assert_eq!(rows[2][2], "104000");
+}
+
+#[test]
+fn finance_namespace_prior_lifts_like_the_root_call() {
+    let mut store = monthly_store();
+    declare_period(&mut store);
+    // The `finance.` spelling joins rather than compiling standalone, and
+    // the grid's calculated column accepts it the way the chain does.
+    let frame_id = frame_named(store.document(), "Actuals").id.clone();
+    store
+        .apply(Operation::AddComputedColumn {
+            frame_id,
+            name: "Prior month".into(),
+            formula: "finance.prior(`Revenue`, 1)".into(),
+            after_column_id: None,
+        })
+        .unwrap();
+    let rows = priors(&store);
     assert_eq!(rows[0][2], "");
     assert_eq!(rows[1][2], "100000");
     assert_eq!(rows[2][2], "104000");

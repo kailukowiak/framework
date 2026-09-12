@@ -13,6 +13,7 @@ pub(super) fn receiver_parameter(name: &str) -> &'static str {
         "sln" | "db" | "ddb" => "cost",
         "period_index" => "date",
         "prior" => "expr",
+        "ytd" | "ttm" | "same_period_last_year" => "expr",
         "fiscal_year" | "fiscal_quarter" | "fiscal_period" | "period_start" | "period_end"
         | "add_periods" => "date",
         _ => "pv",

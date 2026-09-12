@@ -917,6 +917,47 @@ impl FrameObject {
         };
         plan = document.apply_row_patches(plan, self, retain_index)?;
         for layer in self.calculated_column_layers()? {
+            let columns: Vec<DerivedExpression> = layer
+                .iter()
+                .map(|column| DerivedExpression {
+                    output_column_id: column.id.clone(),
+                    expression: column
+                        .formula
+                        .as_ref()
+                        .expect("calculated-column layer contains formulas")
+                        .expression
+                        .clone(),
+                })
+                .collect();
+            if columns.iter().any(|column| {
+                crate::formula::financial_window::lifts_period_join(&column.expression)
+            }) {
+                // A period-relative call lifts into a self-join at plan
+                // time, so these layers compile through the same pre-pass
+                // a Wrangle step uses. Compiling them straight to Polars
+                // would fail with no plan to join into — the error the
+                // grid's calculated column used to report.
+                let (joined, rewritten, mut answers) =
+                    crate::formula::financial_period::join_prior_periods(
+                        document, &self.id, plan, &columns,
+                    )?;
+                let (joined, rewritten, window_answers) =
+                    crate::formula::financial_window::join_window_aggregates(
+                        document, &self.id, joined, &rewritten,
+                    )?;
+                answers.extend(window_answers);
+                let expressions = rewritten
+                    .iter()
+                    .map(|column| {
+                        column
+                            .expression
+                            .to_polars(document)
+                            .map(|expression| expression.alias(column.output_column_id.clone()))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                plan = joined.with_columns(expressions).drop(pl::cols(answers));
+                continue;
+            }
             let expressions = layer
                 .iter()
                 .map(|column| {
@@ -1050,6 +1091,27 @@ impl FrameObject {
             }
         }
         Ok(output)
+    }
+
+    /// What a stored calculated column holds, without evaluating what
+    /// only the plan can answer.
+    ///
+    /// A period-relative call lifts into a self-join at plan time, so
+    /// compiling it here — with no plan to join into — fails by design.
+    /// Its declared type is the value it reads, the way the method shape
+    /// already answers for receiver spellings, which keeps the grid's
+    /// calculated column and the Wrangle chain accepting the same formulas.
+    pub(crate) fn inferred_column_type(
+        &self,
+        document: &Document,
+        expression: &Expr,
+    ) -> Result<DataType, String> {
+        if crate::formula::financial_window::lifts_period_join(expression) {
+            return expression.declared_type(document).ok_or_else(|| {
+                "FrameWork cannot tell what type this period-relative formula produces because the value it reads has no declared type".to_string()
+            });
+        }
+        self.infer_polars_expression_type(document, expression)
     }
 
     /// What a column of this expression holds, asked of Polars and then of

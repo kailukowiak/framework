@@ -30,6 +30,7 @@ mod matrix_sensitivity;
 mod paging;
 mod parameter_controls;
 mod period_time_spine;
+mod period_windows;
 mod persistence;
 mod pipeline_refresh;
 mod recurrence_precision;

@@ -18,7 +18,7 @@ impl Document {
         if let Some(formula) = &column.formula {
             let inferred_type = self
                 .frame(&frame_id)?
-                .infer_polars_expression_type(self, &formula.expression)
+                .inferred_column_type(self, &formula.expression)
                 .map_err(CoreError::Formula)?;
             if inferred_type != column.data_type {
                 return Err(CoreError::InvalidOperation(
@@ -252,7 +252,7 @@ impl Document {
         }
         let inferred_type = self
             .frame(&frame_id)?
-            .infer_polars_expression_type(self, &formula.expression)
+            .inferred_column_type(self, &formula.expression)
             .map_err(CoreError::Formula)?;
         if inferred_type != data_type {
             return Err(CoreError::InvalidOperation(
