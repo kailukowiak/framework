@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Add shaded uncertainty bands or whiskers from lower and upper dataframe columns in the plot editor, with horizontal or vertical intervals.
+
 - Calculation Matrix axes can now vary named control inputs or value objects, recalculating the existing model for each combination without changing its current inputs. One- and two-axis sensitivity use the same matrix formulas and grid.
 
 - Named variables can declare their own controls: `slider(0,1,0.1)`, `dropdown(["North","South"])`, and `date_input(date(2026,12,31))`. Scratchwork and compact variables show the control alongside the formula; changing it updates dependent formulas and filters, saves with the workbook, and supports undo.
