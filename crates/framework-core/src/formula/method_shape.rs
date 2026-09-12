@@ -30,7 +30,10 @@ pub(super) fn reduces(path: &[String]) -> bool {
     match path {
         [name] => REDUCING_METHODS.contains(&name.as_str()),
         [namespace, name] if namespace.eq_ignore_ascii_case("finance") => {
-            name.eq_ignore_ascii_case("npv") || name.eq_ignore_ascii_case("xnpv")
+            matches!(
+                name.to_ascii_lowercase().as_str(),
+                "npv" | "xnpv" | "irr" | "xirr"
+            )
         }
         _ => false,
     }

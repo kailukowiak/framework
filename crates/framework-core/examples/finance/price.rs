@@ -71,15 +71,15 @@ pub(super) fn generate_price_a_deal(output: &Path) -> Result<(), Box<dyn std::er
         &format!("{with_payment}\ntotal interest = `Schedule`.`Interest`.sum()"),
     )?;
 
-    // Dated discounting needs no helper columns; the rate scan uses the
-    // same function until a solver becomes available in phase 1b.
+    // Keep the rate scan as an independent way to inspect the solved return,
+    // and feed that return back to XNPV so the visible residual checks it.
     let deal_y = loan_y + view_height(&store, &object_id_named(&store, "Loan terms")) + 40.0;
     add_block(
         &mut store,
         "Deal",
         720.0,
         deal_y,
-        "rate = 0.10\nnpv = `Cash flows`.`Amount`.finance.xnpv(rate, `Cash flows`.`Date`)",
+        "rate = 0.10\nnpv = `Cash flows`.`Amount`.finance.xnpv(rate, `Cash flows`.`Date`)\nirr = `Cash flows`.`Amount`.finance.xirr(`Cash flows`.`Date`)\nresidual = `Cash flows`.`Amount`.finance.xnpv(irr, `Cash flows`.`Date`)",
     )?;
 
     let scan_y = deal_y + view_height(&store, &object_id_named(&store, "Deal")) + 40.0;
@@ -117,7 +117,13 @@ pub(super) fn generate_price_a_deal(output: &Path) -> Result<(), Box<dyn std::er
     assert_cell_close(&schedule, "1", "Closing", 394266.88);
     assert_cell_close(&schedule, "2", "Opening", 394266.88);
     assert_cell_close(&schedule, "60", "Closing", 0.0);
-    assert_block_close(&reloaded, "Deal", &[0.10, 41581.08]);
+    // Independent 60-digit Decimal bisection of the dated cash-flow equation
+    // gives 0.21347541804480068637; do not derive this target from the solver.
+    assert_block_close(
+        &reloaded,
+        "Deal",
+        &[0.10, 41581.08, 0.2134754180448007, 0.0],
+    );
     assert_block_close(
         &reloaded,
         "Rate scan",

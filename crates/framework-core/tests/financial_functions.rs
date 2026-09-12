@@ -73,6 +73,17 @@ fn published_and_hand_calculated_financial_examples() {
             "xnpv(0.09, [-10000, 2750, 4250, 3250, 2750], [date(2008,1,1), date(2008,3,1), date(2008,10,30), date(2009,2,15), date(2009,4,1)])",
             2086.64760203154,
         ),
+        (
+            "irr([-70000,12000,15000,18000,21000,26000])",
+            0.0866309480365,
+        ),
+        ("irr([-100,90])", -0.1),
+        ("irr([-100,100])", 0.0),
+        (
+            "xirr([-10000,2750,4250,3250,2750], [date(2008,1,1), date(2008,3,1), date(2008,10,30), date(2009,2,15), date(2009,4,1)])",
+            0.373362535,
+        ),
+        ("xirr([-100,110], [date(2025,1,1),date(2026,1,1)])", 0.1),
     ] {
         close(source, expected);
     }
@@ -94,6 +105,16 @@ fn financial_errors_are_visible_and_nulls_are_not_zero() {
         "xnpv(0.1, [10,20], [date(2026,1,1),date(2025,1,1)])",
         "xnpv(0.1, [10,20], [date(2026,1,1)])",
         "xnpv(0.1, [10,20], [1,2])",
+        "irr([10,20])",
+        "irr([-100,200,-150])",
+        "irr([-100,200,-100.000000000001])",
+        "irr([-100,110], guess=-1)",
+        "irr([-100,None,120])",
+        "xirr([-100,110], [date(2026,1,1),date(2025,1,1)])",
+        "xirr([-100,110], [date(2025,1,1)])",
+        "xirr([-100,110], [1,2])",
+        "xirr([-100,100], [date(2025,1,1),date(2025,1,1)])",
+        "irr([-1e300,1e-300])",
     ] {
         let cell = evaluate(formula);
         assert!(
@@ -122,7 +143,9 @@ fn financial_catalog_and_uppercase_calls_are_available() {
             }
         })
         .unwrap();
-    for name in ["pv", "fv", "pmt", "ipmt", "ppmt", "nper", "npv", "xnpv"] {
+    for name in [
+        "pv", "fv", "pmt", "ipmt", "ppmt", "nper", "npv", "xnpv", "irr", "xirr",
+    ] {
         let entry = catalog.iter().find(|f| f.name == name).unwrap();
         assert!(entry.aliases.contains(&name.to_uppercase()));
         let completion = complete_formula(&document, &frame_id, &name.to_uppercase(), name.len());
@@ -133,4 +156,22 @@ fn financial_catalog_and_uppercase_calls_are_available() {
     }
     close("PMT(0, 10, 100)", -10.0);
     close("NPV(0, [10,20])", 30.0);
+    close("IRR([-100,110])", 0.1);
+}
+
+#[test]
+fn return_solver_selects_multiple_roots_and_is_scale_invariant() {
+    close("irr([-100,230,-132], guess=0.09)", 0.1);
+    close("irr([-100,230,-132], guess=0.21)", 0.2);
+    close("irr([-100,200,-100])", 0.0);
+    close("irr([-100000000,230000000,-132000000], guess=0.21)", 0.2);
+    close(
+        "xirr([-100,100,-100,110], [date(2025,1,1),date(2025,1,1),date(2025,1,1),date(2026,1,1)])",
+        0.1,
+    );
+    let expected = (0.1_f64.ln_1p() * 365.0 / 73049.0).exp_m1();
+    close(
+        "xirr([-100,110], [date(2000,1,1),date(2200,1,1)])",
+        expected,
+    );
 }

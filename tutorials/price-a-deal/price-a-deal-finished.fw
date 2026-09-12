@@ -3,29 +3,29 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "283d2d60-37c9-4f0b-82e0-60a0071be1c8",
+    "id": "02fad85d-e586-40c1-ae0b-2fb31688a8e4",
     "name": "Price a deal",
     "revision": 21,
     "objects": [
       {
         "kind": "text",
-        "id": "95d1fabc-7d83-4355-b118-5f4ed8aaf57b",
+        "id": "cbe5500d-2ed7-4395-b2c0-e8bb0dd11756",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# Price a deal\n\nAbout 20 minutes. Open **Price a deal — Start** from **Data library →\nTutorials and examples**. The finished workbook is a separate answer key.\n\nThis lesson uses the first financial function pack: loan payments,\ninterest and principal, and dated net present value. IRR solving remains\nthe next increment of [the finance build plan](../../docs/finance-build-plan.md).\n\n## Files\n\n- [Start](price-a-deal-start.fw) — dated cash flows and loan assumptions.\n- [Finished](price-a-deal-finished.fw) — the working schedule and valuation.\n\n## 1. Calculate the loan payment\n\nThe `Loan terms` block starts with:\n\n```text\nprincipal = 400000\nrate = 0.06\nterm = 60\n```\n\nAdd:\n\n```text\nmonthly = rate / 12\npayment = (-principal).finance.pmt(monthly, term)\n```\n\nCheckpoint: monthly is `0.005`; payment is `7733.1206`.\nThe functions follow Excel's argument order and signs: money paid out\nis negative. Passing a negative principal makes the payment positive here.\nThe rate is per payment period. Optional `fv=0` sets the remaining balance;\n`type=0` pays at period end and `type=1` at period start.\n\n## 2. Build the amortisation schedule\n\nAdd a generated table named `Schedule`, formula `sequence(1, 61)`,\ncolumn `Period`. In **Wrangle**, sort by Period ascending, then add\neach calculated column as its own step:\n\n```text\nOpening = recur(`Loan terms`.principal, previous() * (1 + `Loan terms`.monthly) - `Loan terms`.payment)\nInterest = (-`Loan terms`.principal).finance.ipmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nPrincipal paid = (-`Loan terms`.principal).finance.ppmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nClosing = `Opening` - `Principal paid`\n```\n\nThe recurrence carries the balance forward in the declared order. Its integer\nseed now promotes to retain the fractional amounts in later rows.\nFormat the four money columns as USD Accounting.\n\nCheckpoint: period 1 shows Opening `400,000`, Interest `2,000`,\nPrincipal paid `5,733`, Closing `394,267`. Period 60 closes at `0`.\n\nAdd to `Loan terms`:\n\n```text\ntotal interest = `Schedule`.`Interest`.sum()\n```\n\nCheckpoint: `63987.2367`. Change the rate and watch the schedule\nrecompute; undo restores it.\n\n## 3. Discount the deal's cash flows\n\nAdd a block named `Deal`:\n\n```text\nrate = 0.10\nnpv = `Cash flows`.`Amount`.finance.xnpv(rate, `Cash flows`.`Date`)\n```\n\nCheckpoint: `41581.08`. No helper columns are needed.\nXNPV uses actual days divided by 365, with the first supplied date as time\nzero. Later rows can be out of order, but no date may precede that first date.\nAmounts and dates must match in length and contain no missing values.\n\nFor equally spaced flows, `npv(rate, values)` discounts the first flow by\none period, as Excel does. Add the initial investment separately if it occurs\ntoday. Both functions require a finite scalar rate greater than -1.\n\n## 4. Bracket the return with a rate scan\n\nAdd a `Rate scan` block:\n\n```text\n`NPV at 5%` = `Cash flows`.`Amount`.finance.xnpv(0.05, `Cash flows`.`Date`)\n`NPV at 10%` = `Cash flows`.`Amount`.finance.xnpv(0.10, `Cash flows`.`Date`)\n`NPV at 15%` = `Cash flows`.`Amount`.finance.xnpv(0.15, `Cash flows`.`Date`)\n`NPV at 20%` = `Cash flows`.`Amount`.finance.xnpv(0.20, `Cash flows`.`Date`)\n`NPV at 25%` = `Cash flows`.`Amount`.finance.xnpv(0.25, `Cash flows`.`Date`)\n`NPV at 30%` = `Cash flows`.`Amount`.finance.xnpv(0.30, `Cash flows`.`Date`)\n```\n\nCheckpoint: `64121.94`, `41581.08`, `21809.34`, `4355.85`,\n`-11141.06`, `-24974.32`. The return lies between 20% and 25%.\n\n## 5. Next: solve the return\n\nXIRR is not implemented yet. Phase 1b replaces the scan with:\n\n```text\nirr = xirr(`Cash flows`.`Amount`, `Cash flows`.`Date`)\n```\n\nIts acceptance target is approximately `21.35%`, with a convergence report\nand a clear failure reason when no root can be found.\n\n## Rebuilding and checking\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials price-a-deal\n```\n\nThe generator writes both workbooks through the normal operations and checks\nthe reloaded answer key against independent numerical checkpoints.\nReport a missing control or a different result using the parent tutorial's\nsmoke-test template.\n"
+            "text": "# Price a deal\n\nAbout 20 minutes. Open **Price a deal — Start** from **Data library →\nTutorials and examples**. The finished workbook is a separate answer key.\n\nThis lesson uses loan payments, interest and principal, dated net present\nvalue, and IRR solving from [the finance build plan](../../docs/finance-build-plan.md).\n\n## Files\n\n- [Start](price-a-deal-start.fw) — dated cash flows and loan assumptions.\n- [Finished](price-a-deal-finished.fw) — the working schedule and valuation.\n\n## 1. Calculate the loan payment\n\nThe `Loan terms` block starts with:\n\n```text\nprincipal = 400000\nrate = 0.06\nterm = 60\n```\n\nAdd:\n\n```text\nmonthly = rate / 12\npayment = (-principal).finance.pmt(monthly, term)\n```\n\nCheckpoint: monthly is `0.005`; payment is `7733.1206`.\nThe functions follow Excel's argument order and signs: money paid out\nis negative. Passing a negative principal makes the payment positive here.\nThe rate is per payment period. Optional `fv=0` sets the remaining balance;\n`type=0` pays at period end and `type=1` at period start.\n\n## 2. Build the amortisation schedule\n\nAdd a generated table named `Schedule`, formula `sequence(1, 61)`,\ncolumn `Period`. In **Wrangle**, sort by Period ascending, then add\neach calculated column as its own step:\n\n```text\nOpening = recur(`Loan terms`.principal, previous() * (1 + `Loan terms`.monthly) - `Loan terms`.payment)\nInterest = (-`Loan terms`.principal).finance.ipmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nPrincipal paid = (-`Loan terms`.principal).finance.ppmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nClosing = `Opening` - `Principal paid`\n```\n\nThe recurrence carries the balance forward in the declared order. Its integer\nseed now promotes to retain the fractional amounts in later rows.\nFormat the four money columns as USD Accounting.\n\nCheckpoint: period 1 shows Opening `400,000`, Interest `2,000`,\nPrincipal paid `5,733`, Closing `394,267`. Period 60 closes at `0`.\n\nAdd to `Loan terms`:\n\n```text\ntotal interest = `Schedule`.`Interest`.sum()\n```\n\nCheckpoint: `63987.2367`. Change the rate and watch the schedule\nrecompute; undo restores it.\n\n## 3. Discount the deal's cash flows\n\nAdd a block named `Deal`:\n\n```text\nrate = 0.10\nnpv = `Cash flows`.`Amount`.finance.xnpv(rate, `Cash flows`.`Date`)\n```\n\nCheckpoint: `41581.08`. No helper columns are needed.\nXNPV uses actual days divided by 365, with the first supplied date as time\nzero. Later rows can be out of order, but no date may precede that first date.\nAmounts and dates must match in length and contain no missing values.\n\nFor equally spaced flows, `npv(rate, values)` discounts the first flow by\none period, as Excel does. Add the initial investment separately if it occurs\ntoday. Both functions require a finite scalar rate greater than -1.\n\n## 4. Bracket the return with a rate scan\n\nAdd a `Rate scan` block:\n\n```text\n`NPV at 5%` = `Cash flows`.`Amount`.finance.xnpv(0.05, `Cash flows`.`Date`)\n`NPV at 10%` = `Cash flows`.`Amount`.finance.xnpv(0.10, `Cash flows`.`Date`)\n`NPV at 15%` = `Cash flows`.`Amount`.finance.xnpv(0.15, `Cash flows`.`Date`)\n`NPV at 20%` = `Cash flows`.`Amount`.finance.xnpv(0.20, `Cash flows`.`Date`)\n`NPV at 25%` = `Cash flows`.`Amount`.finance.xnpv(0.25, `Cash flows`.`Date`)\n`NPV at 30%` = `Cash flows`.`Amount`.finance.xnpv(0.30, `Cash flows`.`Date`)\n```\n\nCheckpoint: `64121.94`, `41581.08`, `21809.34`, `4355.85`,\n`-11141.06`, `-24974.32`. The return lies between 20% and 25%.\n\n## 5. Solve the return\n\nAdd to `Deal`:\n\n```text\nirr = `Cash flows`.`Amount`.finance.xirr(`Cash flows`.`Date`)\nresidual = `Cash flows`.`Amount`.finance.xnpv(irr, `Cash flows`.`Date`)\n```\n\nCheckpoint: `irr` is `0.213475418`, or about `21.35%`; the residual is\napproximately zero. Change an amount in Cash flows and both answers update;\nundo restores them. The rate scan remains useful for inspecting the result.\n\nFor equally spaced flows, use `[-100, 110].finance.irr()` to get `0.1`\n(10% per period). XIRR instead returns an annual rate on an actual/365 basis.\nBoth require positive and negative cash flows. Missing values, invalid dates,\nand failure to find a root produce an inline error, not a guessed return.\n\nCash flows that change sign repeatedly can have multiple returns. An optional\n`guess=0.1` selects among roots found by a bounded search; a returned value\ndoes not prove that the return is unique. See the\n[function reference](../../docs/formula-function-catalog.md#financial-functions)\nfor the search policy and limitations.\n\n## Rebuilding and checking\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials price-a-deal\n```\n\nThe generator writes both workbooks through the normal operations and checks\nthe reloaded answer key against independent numerical checkpoints.\nReport a missing control or a different result using the parent tutorial's\nsmoke-test template.\n"
           }
         ]
       },
       {
         "kind": "frame",
-        "id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
+        "id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
         "name": "Cash flows",
         "columns": [
           {
-            "id": "date~66z1g8",
+            "id": "date~srcs3b",
             "name": "Date",
             "sourceName": null,
             "dataType": "date",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "amount~a8kdhc",
+            "id": "amount~07kf3h",
             "name": "Amount",
             "sourceName": null,
             "dataType": "currency",
@@ -53,67 +53,67 @@
         ],
         "rows": [
           {
-            "id": "12ec1ac1-ef40-4580-832e-4c670e2bd445",
+            "id": "366df517-5bbb-40f5-938e-aa45b7f0abf1",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "-250000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2026-01-15"
               }
             }
           },
           {
-            "id": "1878064d-d4d0-4cce-86ca-dedec20eabc9",
+            "id": "e1138f94-4a50-44b2-ac85-921d2ad69dbf",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "40000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2026-06-30"
               }
             }
           },
           {
-            "id": "c4f21acd-1a7e-4a35-9e35-511eaa4de76a",
+            "id": "c44e5618-9f8a-4f50-9dfe-c58b7b98862b",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "60000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2026-12-31"
               }
             }
           },
           {
-            "id": "c8624e81-f35c-4c71-9c4e-ae7c9e156f71",
+            "id": "e766e519-60fd-488a-8b98-f672b8703f7d",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "70000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2027-06-30"
               }
             }
           },
           {
-            "id": "347466a7-5fad-4654-a9c9-9b7e19debf02",
+            "id": "b8d93827-7ba3-4353-83c6-9f2de937fbfc",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "80000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2027-12-31"
               }
             }
           },
           {
-            "id": "c170d7ef-4876-4672-a216-ba5eb6083d12",
+            "id": "ca086a37-f353-4e55-a010-8f6a2d440f6c",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "90000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2028-06-30"
               }
             }
@@ -129,11 +129,11 @@
       },
       {
         "kind": "block",
-        "id": "585704e1-4f62-4e63-be78-98d3ea9c6c63",
+        "id": "bec3180b-3926-48c2-8d53-4733c30264a8",
         "name": "Loan terms",
         "lines": [
           {
-            "id": "ee7fd27c-7865-44dc-84a4-c8d94590c3b9",
+            "id": "dd71a580-be67-4c28-a696-12d9db3f9fea",
             "name": "principal",
             "named": true,
             "nameQuoted": false,
@@ -147,7 +147,7 @@
             "error": null
           },
           {
-            "id": "cee08701-2c75-4514-af5e-7e36ad596f9c",
+            "id": "7cba9eb3-d5af-4f60-9ef6-4591a03e8646",
             "name": "rate",
             "named": true,
             "nameQuoted": false,
@@ -161,7 +161,7 @@
             "error": null
           },
           {
-            "id": "50b7b59d-88f4-4aa7-aa79-b0257c88fe52",
+            "id": "5bbe1178-7ddf-44cb-b8df-6217c9abe3b3",
             "name": "term",
             "named": true,
             "nameQuoted": false,
@@ -175,7 +175,7 @@
             "error": null
           },
           {
-            "id": "639dc912-864c-4c90-8e13-496b9be99af5",
+            "id": "57feaa52-4239-4598-8506-d2363cc38622",
             "name": "monthly",
             "named": true,
             "nameQuoted": false,
@@ -186,7 +186,7 @@
                 "operator": "divide",
                 "left": {
                   "kind": "value",
-                  "object_id": "cee08701-2c75-4514-af5e-7e36ad596f9c"
+                  "object_id": "7cba9eb3-d5af-4f60-9ef6-4591a03e8646"
                 },
                 "right": {
                   "kind": "integer",
@@ -197,7 +197,7 @@
             "error": null
           },
           {
-            "id": "ca69215d-0eae-4da4-9cbf-d4f0a92e6fdd",
+            "id": "f2f020e8-9672-47e0-a49a-c732cb0b98d3",
             "name": "payment",
             "named": true,
             "nameQuoted": false,
@@ -209,7 +209,7 @@
                   "kind": "negate",
                   "expression": {
                     "kind": "value",
-                    "object_id": "ee7fd27c-7865-44dc-84a4-c8d94590c3b9"
+                    "object_id": "dd71a580-be67-4c28-a696-12d9db3f9fea"
                   }
                 },
                 "path": [
@@ -219,11 +219,11 @@
                 "arguments": [
                   {
                     "kind": "value",
-                    "object_id": "639dc912-864c-4c90-8e13-496b9be99af5"
+                    "object_id": "57feaa52-4239-4598-8506-d2363cc38622"
                   },
                   {
                     "kind": "value",
-                    "object_id": "50b7b59d-88f4-4aa7-aa79-b0257c88fe52"
+                    "object_id": "5bbe1178-7ddf-44cb-b8df-6217c9abe3b3"
                   }
                 ],
                 "keyword_arguments": []
@@ -232,7 +232,7 @@
             "error": null
           },
           {
-            "id": "a360c7e3-13a6-4b71-bd86-796934953e49",
+            "id": "c4a3f75e-d6e2-4a93-9a02-31096a519f9f",
             "name": "total interest",
             "named": true,
             "nameQuoted": false,
@@ -242,8 +242,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "02ac57c6-df02-4f09-b1fe-af1436905a72",
-                  "column_id": "interest~r8km4e"
+                  "frame_id": "95672fdf-9ba1-45e3-8b25-593c06d564e3",
+                  "column_id": "interest~4k0ycg"
                 },
                 "path": [
                   "sum"
@@ -258,11 +258,11 @@
       },
       {
         "kind": "frame",
-        "id": "02ac57c6-df02-4f09-b1fe-af1436905a72",
+        "id": "95672fdf-9ba1-45e3-8b25-593c06d564e3",
         "name": "Schedule",
         "columns": [
           {
-            "id": "period~waxj4c",
+            "id": "period~ntb4ar",
             "name": "Period",
             "sourceName": null,
             "dataType": "integer",
@@ -271,7 +271,7 @@
             "formula": null
           },
           {
-            "id": "opening~c6de3e",
+            "id": "opening~rvtt7w",
             "name": "Opening",
             "sourceName": null,
             "dataType": "number",
@@ -288,7 +288,7 @@
             "formula": null
           },
           {
-            "id": "interest~r8km4e",
+            "id": "interest~4k0ycg",
             "name": "Interest",
             "sourceName": null,
             "dataType": "number",
@@ -305,7 +305,7 @@
             "formula": null
           },
           {
-            "id": "principal_paid~jmn2s3",
+            "id": "principal_paid~wcaec0",
             "name": "Principal paid",
             "sourceName": null,
             "dataType": "number",
@@ -322,7 +322,7 @@
             "formula": null
           },
           {
-            "id": "closing~1dwq2z",
+            "id": "closing~jp6ah4",
             "name": "Closing",
             "sourceName": null,
             "dataType": "number",
@@ -345,7 +345,7 @@
             "kind": "sort",
             "keys": [
               {
-                "columnId": "period~waxj4c",
+                "columnId": "period~ntb4ar",
                 "descending": false
               }
             ]
@@ -354,14 +354,14 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "opening~c6de3e",
+                "outputColumnId": "opening~rvtt7w",
                 "expression": {
                   "kind": "polarsCall",
                   "name": "recur",
                   "arguments": [
                     {
                       "kind": "value",
-                      "object_id": "ee7fd27c-7865-44dc-84a4-c8d94590c3b9"
+                      "object_id": "dd71a580-be67-4c28-a696-12d9db3f9fea"
                     },
                     {
                       "kind": "binary",
@@ -384,13 +384,13 @@
                           },
                           "right": {
                             "kind": "value",
-                            "object_id": "639dc912-864c-4c90-8e13-496b9be99af5"
+                            "object_id": "57feaa52-4239-4598-8506-d2363cc38622"
                           }
                         }
                       },
                       "right": {
                         "kind": "value",
-                        "object_id": "ca69215d-0eae-4da4-9cbf-d4f0a92e6fdd"
+                        "object_id": "f2f020e8-9672-47e0-a49a-c732cb0b98d3"
                       }
                     }
                   ],
@@ -403,14 +403,14 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "interest~r8km4e",
+                "outputColumnId": "interest~4k0ycg",
                 "expression": {
                   "kind": "method",
                   "input": {
                     "kind": "negate",
                     "expression": {
                       "kind": "value",
-                      "object_id": "ee7fd27c-7865-44dc-84a4-c8d94590c3b9"
+                      "object_id": "dd71a580-be67-4c28-a696-12d9db3f9fea"
                     }
                   },
                   "path": [
@@ -420,15 +420,15 @@
                   "arguments": [
                     {
                       "kind": "value",
-                      "object_id": "639dc912-864c-4c90-8e13-496b9be99af5"
+                      "object_id": "57feaa52-4239-4598-8506-d2363cc38622"
                     },
                     {
                       "kind": "column",
-                      "column_id": "period~waxj4c"
+                      "column_id": "period~ntb4ar"
                     },
                     {
                       "kind": "value",
-                      "object_id": "50b7b59d-88f4-4aa7-aa79-b0257c88fe52"
+                      "object_id": "5bbe1178-7ddf-44cb-b8df-6217c9abe3b3"
                     }
                   ],
                   "keyword_arguments": []
@@ -440,14 +440,14 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "principal_paid~jmn2s3",
+                "outputColumnId": "principal_paid~wcaec0",
                 "expression": {
                   "kind": "method",
                   "input": {
                     "kind": "negate",
                     "expression": {
                       "kind": "value",
-                      "object_id": "ee7fd27c-7865-44dc-84a4-c8d94590c3b9"
+                      "object_id": "dd71a580-be67-4c28-a696-12d9db3f9fea"
                     }
                   },
                   "path": [
@@ -457,15 +457,15 @@
                   "arguments": [
                     {
                       "kind": "value",
-                      "object_id": "639dc912-864c-4c90-8e13-496b9be99af5"
+                      "object_id": "57feaa52-4239-4598-8506-d2363cc38622"
                     },
                     {
                       "kind": "column",
-                      "column_id": "period~waxj4c"
+                      "column_id": "period~ntb4ar"
                     },
                     {
                       "kind": "value",
-                      "object_id": "50b7b59d-88f4-4aa7-aa79-b0257c88fe52"
+                      "object_id": "5bbe1178-7ddf-44cb-b8df-6217c9abe3b3"
                     }
                   ],
                   "keyword_arguments": []
@@ -477,17 +477,17 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "closing~1dwq2z",
+                "outputColumnId": "closing~jp6ah4",
                 "expression": {
                   "kind": "binary",
                   "operator": "subtract",
                   "left": {
                     "kind": "column",
-                    "column_id": "opening~c6de3e"
+                    "column_id": "opening~rvtt7w"
                   },
                   "right": {
                     "kind": "column",
-                    "column_id": "principal_paid~jmn2s3"
+                    "column_id": "principal_paid~wcaec0"
                   }
                 }
               }
@@ -496,7 +496,7 @@
         ],
         "baseColumns": [
           {
-            "id": "period~waxj4c",
+            "id": "period~ntb4ar",
             "name": "Period",
             "sourceName": null,
             "dataType": "integer",
@@ -534,11 +534,11 @@
       },
       {
         "kind": "block",
-        "id": "83c746ea-7339-49e3-b445-798cded3afb5",
+        "id": "5594996b-1955-4764-ae92-3c671a73819d",
         "name": "Deal",
         "lines": [
           {
-            "id": "06435e9a-bdab-46d9-8ff9-039eda7df21b",
+            "id": "8d168d73-0d70-4ed4-95b2-4bf75cd10ec7",
             "name": "rate",
             "named": true,
             "nameQuoted": false,
@@ -552,7 +552,7 @@
             "error": null
           },
           {
-            "id": "1932a3b7-2322-4ce3-a895-5e6c2bb19144",
+            "id": "f176d897-7afa-47b2-be24-5c840844dc71",
             "name": "npv",
             "named": true,
             "nameQuoted": false,
@@ -562,8 +562,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -572,12 +572,76 @@
                 "arguments": [
                   {
                     "kind": "value",
-                    "object_id": "06435e9a-bdab-46d9-8ff9-039eda7df21b"
+                    "object_id": "8d168d73-0d70-4ed4-95b2-4bf75cd10ec7"
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
+                  }
+                ],
+                "keyword_arguments": []
+              }
+            },
+            "error": null
+          },
+          {
+            "id": "32bec1e5-f270-4d21-b7f9-a9c84bf17d87",
+            "name": "irr",
+            "named": true,
+            "nameQuoted": false,
+            "source": "`Cash flows`.`Amount`.finance.xirr(`Cash flows`.`Date`)",
+            "formula": {
+              "expression": {
+                "kind": "method",
+                "input": {
+                  "kind": "foreignColumn",
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
+                },
+                "path": [
+                  "finance",
+                  "xirr"
+                ],
+                "arguments": [
+                  {
+                    "kind": "foreignColumn",
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
+                  }
+                ],
+                "keyword_arguments": []
+              }
+            },
+            "error": null
+          },
+          {
+            "id": "b6421721-6ec8-44aa-a263-5a9829b35d4e",
+            "name": "residual",
+            "named": true,
+            "nameQuoted": false,
+            "source": "`Cash flows`.`Amount`.finance.xnpv(irr, `Cash flows`.`Date`)",
+            "formula": {
+              "expression": {
+                "kind": "method",
+                "input": {
+                  "kind": "foreignColumn",
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
+                },
+                "path": [
+                  "finance",
+                  "xnpv"
+                ],
+                "arguments": [
+                  {
+                    "kind": "value",
+                    "object_id": "32bec1e5-f270-4d21-b7f9-a9c84bf17d87"
+                  },
+                  {
+                    "kind": "foreignColumn",
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -589,11 +653,11 @@
       },
       {
         "kind": "block",
-        "id": "16fd3482-85fc-49a2-ab80-61b52c089693",
+        "id": "66f426aa-0425-4c11-8b0f-1d696e4b2c8f",
         "name": "Rate scan",
         "lines": [
           {
-            "id": "a314d5c8-c3c7-4147-8ae7-3de1b9cef3bf",
+            "id": "fd8c9b73-e79b-4af0-a23b-47355bb73af9",
             "name": "NPV at 5%",
             "named": true,
             "nameQuoted": true,
@@ -603,8 +667,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -617,8 +681,8 @@
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -627,7 +691,7 @@
             "error": null
           },
           {
-            "id": "d184da9e-9c2a-4eaf-a828-f6ada61a3aad",
+            "id": "fb702cad-14b9-46fe-8d32-b5bd498bc3f3",
             "name": "NPV at 10%",
             "named": true,
             "nameQuoted": true,
@@ -637,8 +701,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -651,8 +715,8 @@
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -661,7 +725,7 @@
             "error": null
           },
           {
-            "id": "d5c2f9b2-8d0f-4066-bdc4-e009cf84c04d",
+            "id": "155ee1ca-0f1d-4b89-b1be-aac379dfd346",
             "name": "NPV at 15%",
             "named": true,
             "nameQuoted": true,
@@ -671,8 +735,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -685,8 +749,8 @@
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -695,7 +759,7 @@
             "error": null
           },
           {
-            "id": "6e40c1ca-6481-4c57-9ccb-cfe090f8feb1",
+            "id": "2415b164-78a9-4b2b-9f85-2bcd31521257",
             "name": "NPV at 20%",
             "named": true,
             "nameQuoted": true,
@@ -705,8 +769,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -719,8 +783,8 @@
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -729,7 +793,7 @@
             "error": null
           },
           {
-            "id": "ceedc968-f1f7-466f-9d59-3e21bcba06c0",
+            "id": "bf096ab1-850b-4a50-8c99-68d9922a75d3",
             "name": "NPV at 25%",
             "named": true,
             "nameQuoted": true,
@@ -739,8 +803,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -753,8 +817,8 @@
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -763,7 +827,7 @@
             "error": null
           },
           {
-            "id": "35e6ba6f-5e51-47b9-bd5c-cd057d832ebd",
+            "id": "a9a7745e-79a5-492a-9472-94fd766f0994",
             "name": "NPV at 30%",
             "named": true,
             "nameQuoted": true,
@@ -773,8 +837,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                  "column_id": "amount~a8kdhc"
+                  "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                  "column_id": "amount~07kf3h"
                 },
                 "path": [
                   "finance",
@@ -787,8 +851,8 @@
                   },
                   {
                     "kind": "foreignColumn",
-                    "frame_id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
-                    "column_id": "date~66z1g8"
+                    "frame_id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
+                    "column_id": "date~srcs3b"
                   }
                 ],
                 "keyword_arguments": []
@@ -801,8 +865,8 @@
     ],
     "views": [
       {
-        "id": "154e1f6e-ca5b-4000-ad77-7dff10e3a3bb",
-        "objectId": "95d1fabc-7d83-4355-b118-5f4ed8aaf57b",
+        "id": "0ab56134-6709-4e26-bae2-3920f5388bda",
+        "objectId": "cbe5500d-2ed7-4395-b2c0-e8bb0dd11756",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -810,8 +874,8 @@
         "collapsed": false
       },
       {
-        "id": "dcefebd9-b9da-4dba-a820-153317f54db3",
-        "objectId": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
+        "id": "5d3e75a8-af7e-4516-839c-18b2151351f7",
+        "objectId": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
         "x": 720.0,
         "y": 70.0,
         "width": 420.0,
@@ -819,8 +883,8 @@
         "collapsed": false
       },
       {
-        "id": "fca1bd8f-8508-4f64-8662-1e3e82178360",
-        "objectId": "585704e1-4f62-4e63-be78-98d3ea9c6c63",
+        "id": "b9e1c2d2-303b-4184-a6cb-d140ab3f187b",
+        "objectId": "bec3180b-3926-48c2-8d53-4733c30264a8",
         "x": 720.0,
         "y": 560.0,
         "width": 600.0,
@@ -828,8 +892,8 @@
         "collapsed": false
       },
       {
-        "id": "a349c1de-3b06-47a5-a39e-02158e738e71",
-        "objectId": "02ac57c6-df02-4f09-b1fe-af1436905a72",
+        "id": "057a091b-aa2c-46aa-acdd-1e9a094fc9c8",
+        "objectId": "95672fdf-9ba1-45e3-8b25-593c06d564e3",
         "x": 1410.0,
         "y": 70.0,
         "width": 260.0,
@@ -837,8 +901,8 @@
         "collapsed": false
       },
       {
-        "id": "0fb34583-d937-4e4f-b830-64637a504770",
-        "objectId": "83c746ea-7339-49e3-b445-798cded3afb5",
+        "id": "e60ea8d6-7b91-44c4-a0c5-5a67db476949",
+        "objectId": "5594996b-1955-4764-ae92-3c671a73819d",
         "x": 720.0,
         "y": 820.0,
         "width": 600.0,
@@ -846,8 +910,8 @@
         "collapsed": false
       },
       {
-        "id": "5903562e-49fe-4ad1-9bf0-4e833f3bdfd6",
-        "objectId": "16fd3482-85fc-49a2-ab80-61b52c089693",
+        "id": "3c3c3db7-18e0-40a8-a754-782ab49aa7eb",
+        "objectId": "66f426aa-0425-4c11-8b0f-1d696e4b2c8f",
         "x": 720.0,
         "y": 1080.0,
         "width": 600.0,

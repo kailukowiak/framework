@@ -65,12 +65,13 @@ fn dated_values_follow_derived_flows_and_survive_history_and_reload() {
     store
         .apply(Operation::SetBlockSource {
             block_id: block,
-            source: "npv = `Derived`.`Doubled`.finance.xnpv(0.1, `Derived`.`Date`)\ndownstream = npv + 10"
+            source: "npv = `Derived`.`Doubled`.finance.xnpv(0.1, `Derived`.`Date`)\nreturn = `Derived`.`Doubled`.finance.irr()\ndownstream = npv + 10"
                 .into(),
             editing: None,
         })
         .unwrap();
     assert!(answers(&store)[0].abs() < 1e-9);
+    assert!((answers(&store)[1] - 0.1).abs() < 1e-9);
     store
         .apply(Operation::SetCell {
             frame_id: frame.id.clone(),
@@ -80,7 +81,8 @@ fn dated_values_follow_derived_flows_and_survive_history_and_reload() {
         })
         .unwrap();
     assert!((answers(&store)[0] - 20.0).abs() < 1e-9);
-    assert!((answers(&store)[1] - 30.0).abs() < 1e-9);
+    assert!((answers(&store)[1] - 0.21).abs() < 1e-9);
+    assert!((answers(&store)[2] - 30.0).abs() < 1e-9);
     store.undo();
     assert!(answers(&store)[0].abs() < 1e-9);
     store.redo();
@@ -88,7 +90,9 @@ fn dated_values_follow_derived_flows_and_survive_history_and_reload() {
     std::fs::create_dir_all(&directory).unwrap();
     let path = directory.join("valuation.fw");
     store.save(&path).unwrap();
-    assert!((answers(&Store::load(&path).unwrap())[0] - 20.0).abs() < 1e-9);
+    let loaded = Store::load(&path).unwrap();
+    assert!((answers(&loaded)[0] - 20.0).abs() < 1e-9);
+    assert!((answers(&loaded)[1] - 0.21).abs() < 1e-9);
     std::fs::remove_dir_all(directory).unwrap();
 }
 
@@ -174,11 +178,12 @@ fn imported_flows_remain_referenceable_and_update_after_refresh() {
             block_id,
             // CSV artifacts retain text dates. Convert explicitly, as in a
             // Wrangle formula, rather than assuming an Excel date serial.
-            source: "`Flows`.`Amount`.finance.xnpv(0.1, `Flows`.`Date`.str.to_date())".into(),
+            source: "value = `Flows`.`Amount`.finance.xnpv(0.1, `Flows`.`Date`.str.to_date())\nreturn = `Flows`.`Amount`.finance.xirr(`Flows`.`Date`.str.to_date())".into(),
             editing: None,
         })
         .unwrap();
     assert!(answers(&store)[0].abs() < 1e-9);
+    assert!((answers(&store)[1] - 0.1).abs() < 1e-9);
     std::fs::write(&source, "Date,Amount\n2025-01-01,-100\n2026-01-01,121\n").unwrap();
     store
         .apply(Operation::RefreshFrameArtifact {
@@ -187,6 +192,7 @@ fn imported_flows_remain_referenceable_and_update_after_refresh() {
         })
         .unwrap();
     assert!((answers(&store)[0] - 10.0).abs() < 1e-9);
+    assert!((answers(&store)[1] - 0.21).abs() < 1e-9);
     assert!(!store.view().computed_frames[&frame_id].editing.cells);
     std::fs::remove_dir_all(directory).unwrap();
 }

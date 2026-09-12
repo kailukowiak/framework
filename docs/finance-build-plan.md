@@ -3,8 +3,14 @@
 Status: proposed 2026-09-11, drafted from a design conversation with Kai.
 Implementation update 2026-09-12: the recurrence precision fix and phase 1a
 (`pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`) are implemented.
-Price a deal now uses these functions. Phase 1b's solvers and the remaining
-function pack are still planned. The branch/worktree sequencing notes below
+Phase 1b adds `irr` and `xirr`, including namespace and receiver calls;
+Price a deal now solves its return and checks the XNPV residual. `rate`, `mirr`,
+the remaining closed forms, and grouped IRR remain planned. Iterations and
+brackets are retained internally, but exposing convergence diagnostics in the
+dependency trace is deferred: that trace has no runtime-result payload today.
+The bounded root-search policy is documented in the function reference; it
+does not promise to discover every root or beat Excel on every input.
+The branch/worktree sequencing notes below
 record the original plan; the plan and lessons have since merged to main.
 Lives on the `finance` branch in its own worktree so it can proceed beside
 the in-flight ML batch on `main`. Refines the *Target workflows

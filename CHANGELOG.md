@@ -11,6 +11,7 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Solve periodic and dated investment returns with `finance.irr` and `finance.xirr`, or cash-flow dot calls. Invalid inputs and unsuccessful searches report an inline error; an optional guess selects among discovered roots. The Price a deal lesson now solves and checks its return.
 - Financial functions are available under `finance`, including dot calls such as `principal.finance.pmt(rate, term)` and `flows.finance.xnpv(rate, dates)`, with autocomplete and argument hints. Existing unqualified formulas still work.
 - Calculate loan payments, present and future values, payment periods, interest and principal, and periodic or dated net present value with `pmt`, `pv`, `fv`, `nper`, `ipmt`, `ppmt`, `npv` and `xnpv`. The Price a deal lesson now uses these functions.
 - Calculate down rows retains fractional results when the starting value is an integer, so loan balances and compounding forecasts no longer lose cents at every step.

@@ -33,7 +33,7 @@ The catalog returned by the core and MCP is also used for autocomplete.
 | Family | Current functions and methods |
 | --- | --- |
 | Horizontal | `sum_horizontal`, `mean_horizontal`, `min_horizontal`, `max_horizontal` |
-| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv` (uppercase Excel names also work) |
+| Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`, `irr`, `xirr` (uppercase Excel names also work) |
 | Generators / row order | `sequence(stop)`, `sequence(start, stop, step)`, `table.len()`; `recur(first, next, restart_by=[columns])` with `previous()` inside `next` |
 | Conditional/null | `when().then()` — chained as many times as you like — `.otherwise()`, `coalesce`, `.is_null`, `.is_not_null`, `.fill_null`, `.filter(predicate)` → `.sum()` / `.mean()` / `.count()` |
 | Numeric | `.abs`, `.sign`, `.round`, `.round_sig_figs`, `.truncate`, `.floor`, `.ceil`, `.sqrt`, `.cbrt`, `.pow`, `.exp`, `.log`, `.log1p`, `.normalize`, `.clip`, `.clip_min`, `.clip_max`, `.floor_div` |
@@ -68,7 +68,7 @@ rounding each step; integer-only recurrences remain integers.
 ## Financial functions
 
 Use `finance.pmt(rate, nper, pv)` or the receiver form
-`principal.finance.pmt(rate, nper)`. All eight functions support both forms;
+`principal.finance.pmt(rate, nper)`. All financial functions support both forms;
 the original unqualified calls remain compatible. Names are case-insensitive.
 
 | Receiver call | Receiver supplies |
@@ -81,6 +81,8 @@ the original unqualified calls remain compatible. Names are case-insensitive.
 | `principal.finance.nper(rate, pmt, fv=0, type=0)` | present value |
 | `flows.finance.npv(rate)` | cash flows |
 | `flows.finance.xnpv(rate, dates)` | cash flows |
+| `flows.finance.irr(guess=0.1)` | cash flows |
+| `flows.finance.xirr(dates, guess=0.1)` | cash flows |
 
 Use parentheses around a negative receiver: `(-principal).finance.pmt(rate, nper)`.
 The namespace form keeps the following original argument order.
@@ -104,11 +106,34 @@ For an imported text date column, pass `dates.str.to_date()` explicitly.
 Unlike Excel's variadic NPV, pass all flows as one column or list; missing
 flows error rather than being silently skipped.
 
+`irr(values, guess=0.1)` returns a rate per supplied period, with the first
+flow at time zero. `xirr(values, dates, guess=0.1)` returns an annual rate on
+an actual/365 basis, using the same first-date convention as XNPV. Both accept
+a column or list and require finite, nonmissing flows with both signs; the
+guess must be a finite scalar greater than -1. XIRR requires matching Date
+values, with none earlier than the first. Live and derived columns are supported.
+
+Return solving searches `ln(1 + rate)` from -18 through 18 in 4,096 intervals,
+also sampling zero and the guess when inside that range. Sign-change brackets
+are refined by bisection; an exact sampled zero is accepted only when nearby
+probes distinguish it from a flat zero curve. This is a bounded search, not
+an exhaustive polynomial solver: closely spaced roots and unsampled tangent
+roots can be missed, and rates outside the domain are not searched.
+
+When several roots are discovered, the nearest to the guess in log-rate space
+is selected, with the lower rate winning an exact tie. The default guess is
+0.1. The answer does **not** establish uniqueness; inspect an NPV rate scan
+when flows change sign repeatedly. Indeterminate curves, failure to find a
+root, and failure to converge are errors. Convergence details are internal
+for now; the tutorial checks the returned rate with a visible XNPV residual.
+
 The loan functions compile to composed Polars expressions. Discounted totals
 use a native aggregate over the evaluated series so length, date and missing
 value checks happen before any aggregation can conceal them. Reference tests
 use [NumPy Financial's examples](https://numpy.org/numpy-financial/latest/)
 and [Microsoft's XNPV example](https://support.microsoft.com/en-us/excel/functions/xnpv-function).
+Return tests also use [NumPy Financial's IRR examples](https://numpy.org/numpy-financial/latest/irr.html)
+and [Microsoft's XIRR example](https://support.microsoft.com/en-us/excel/functions/xirr-function).
 
 Unsupported methods fail visibly instead of falling back to another evaluator. The catalog is a discoverability surface, not a separate formula language: names, arguments, and behavior are intended to track Polars.
 

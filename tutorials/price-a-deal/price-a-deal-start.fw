@@ -3,29 +3,29 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "283d2d60-37c9-4f0b-82e0-60a0071be1c8",
+    "id": "02fad85d-e586-40c1-ae0b-2fb31688a8e4",
     "name": "Price a deal",
     "revision": 9,
     "objects": [
       {
         "kind": "text",
-        "id": "95d1fabc-7d83-4355-b118-5f4ed8aaf57b",
+        "id": "cbe5500d-2ed7-4395-b2c0-e8bb0dd11756",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# Price a deal\n\nAbout 20 minutes. Open **Price a deal — Start** from **Data library →\nTutorials and examples**. The finished workbook is a separate answer key.\n\nThis lesson uses the first financial function pack: loan payments,\ninterest and principal, and dated net present value. IRR solving remains\nthe next increment of [the finance build plan](../../docs/finance-build-plan.md).\n\n## Files\n\n- [Start](price-a-deal-start.fw) — dated cash flows and loan assumptions.\n- [Finished](price-a-deal-finished.fw) — the working schedule and valuation.\n\n## 1. Calculate the loan payment\n\nThe `Loan terms` block starts with:\n\n```text\nprincipal = 400000\nrate = 0.06\nterm = 60\n```\n\nAdd:\n\n```text\nmonthly = rate / 12\npayment = (-principal).finance.pmt(monthly, term)\n```\n\nCheckpoint: monthly is `0.005`; payment is `7733.1206`.\nThe functions follow Excel's argument order and signs: money paid out\nis negative. Passing a negative principal makes the payment positive here.\nThe rate is per payment period. Optional `fv=0` sets the remaining balance;\n`type=0` pays at period end and `type=1` at period start.\n\n## 2. Build the amortisation schedule\n\nAdd a generated table named `Schedule`, formula `sequence(1, 61)`,\ncolumn `Period`. In **Wrangle**, sort by Period ascending, then add\neach calculated column as its own step:\n\n```text\nOpening = recur(`Loan terms`.principal, previous() * (1 + `Loan terms`.monthly) - `Loan terms`.payment)\nInterest = (-`Loan terms`.principal).finance.ipmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nPrincipal paid = (-`Loan terms`.principal).finance.ppmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nClosing = `Opening` - `Principal paid`\n```\n\nThe recurrence carries the balance forward in the declared order. Its integer\nseed now promotes to retain the fractional amounts in later rows.\nFormat the four money columns as USD Accounting.\n\nCheckpoint: period 1 shows Opening `400,000`, Interest `2,000`,\nPrincipal paid `5,733`, Closing `394,267`. Period 60 closes at `0`.\n\nAdd to `Loan terms`:\n\n```text\ntotal interest = `Schedule`.`Interest`.sum()\n```\n\nCheckpoint: `63987.2367`. Change the rate and watch the schedule\nrecompute; undo restores it.\n\n## 3. Discount the deal's cash flows\n\nAdd a block named `Deal`:\n\n```text\nrate = 0.10\nnpv = `Cash flows`.`Amount`.finance.xnpv(rate, `Cash flows`.`Date`)\n```\n\nCheckpoint: `41581.08`. No helper columns are needed.\nXNPV uses actual days divided by 365, with the first supplied date as time\nzero. Later rows can be out of order, but no date may precede that first date.\nAmounts and dates must match in length and contain no missing values.\n\nFor equally spaced flows, `npv(rate, values)` discounts the first flow by\none period, as Excel does. Add the initial investment separately if it occurs\ntoday. Both functions require a finite scalar rate greater than -1.\n\n## 4. Bracket the return with a rate scan\n\nAdd a `Rate scan` block:\n\n```text\n`NPV at 5%` = `Cash flows`.`Amount`.finance.xnpv(0.05, `Cash flows`.`Date`)\n`NPV at 10%` = `Cash flows`.`Amount`.finance.xnpv(0.10, `Cash flows`.`Date`)\n`NPV at 15%` = `Cash flows`.`Amount`.finance.xnpv(0.15, `Cash flows`.`Date`)\n`NPV at 20%` = `Cash flows`.`Amount`.finance.xnpv(0.20, `Cash flows`.`Date`)\n`NPV at 25%` = `Cash flows`.`Amount`.finance.xnpv(0.25, `Cash flows`.`Date`)\n`NPV at 30%` = `Cash flows`.`Amount`.finance.xnpv(0.30, `Cash flows`.`Date`)\n```\n\nCheckpoint: `64121.94`, `41581.08`, `21809.34`, `4355.85`,\n`-11141.06`, `-24974.32`. The return lies between 20% and 25%.\n\n## 5. Next: solve the return\n\nXIRR is not implemented yet. Phase 1b replaces the scan with:\n\n```text\nirr = xirr(`Cash flows`.`Amount`, `Cash flows`.`Date`)\n```\n\nIts acceptance target is approximately `21.35%`, with a convergence report\nand a clear failure reason when no root can be found.\n\n## Rebuilding and checking\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials price-a-deal\n```\n\nThe generator writes both workbooks through the normal operations and checks\nthe reloaded answer key against independent numerical checkpoints.\nReport a missing control or a different result using the parent tutorial's\nsmoke-test template.\n"
+            "text": "# Price a deal\n\nAbout 20 minutes. Open **Price a deal — Start** from **Data library →\nTutorials and examples**. The finished workbook is a separate answer key.\n\nThis lesson uses loan payments, interest and principal, dated net present\nvalue, and IRR solving from [the finance build plan](../../docs/finance-build-plan.md).\n\n## Files\n\n- [Start](price-a-deal-start.fw) — dated cash flows and loan assumptions.\n- [Finished](price-a-deal-finished.fw) — the working schedule and valuation.\n\n## 1. Calculate the loan payment\n\nThe `Loan terms` block starts with:\n\n```text\nprincipal = 400000\nrate = 0.06\nterm = 60\n```\n\nAdd:\n\n```text\nmonthly = rate / 12\npayment = (-principal).finance.pmt(monthly, term)\n```\n\nCheckpoint: monthly is `0.005`; payment is `7733.1206`.\nThe functions follow Excel's argument order and signs: money paid out\nis negative. Passing a negative principal makes the payment positive here.\nThe rate is per payment period. Optional `fv=0` sets the remaining balance;\n`type=0` pays at period end and `type=1` at period start.\n\n## 2. Build the amortisation schedule\n\nAdd a generated table named `Schedule`, formula `sequence(1, 61)`,\ncolumn `Period`. In **Wrangle**, sort by Period ascending, then add\neach calculated column as its own step:\n\n```text\nOpening = recur(`Loan terms`.principal, previous() * (1 + `Loan terms`.monthly) - `Loan terms`.payment)\nInterest = (-`Loan terms`.principal).finance.ipmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nPrincipal paid = (-`Loan terms`.principal).finance.ppmt(`Loan terms`.monthly, `Period`, `Loan terms`.term)\nClosing = `Opening` - `Principal paid`\n```\n\nThe recurrence carries the balance forward in the declared order. Its integer\nseed now promotes to retain the fractional amounts in later rows.\nFormat the four money columns as USD Accounting.\n\nCheckpoint: period 1 shows Opening `400,000`, Interest `2,000`,\nPrincipal paid `5,733`, Closing `394,267`. Period 60 closes at `0`.\n\nAdd to `Loan terms`:\n\n```text\ntotal interest = `Schedule`.`Interest`.sum()\n```\n\nCheckpoint: `63987.2367`. Change the rate and watch the schedule\nrecompute; undo restores it.\n\n## 3. Discount the deal's cash flows\n\nAdd a block named `Deal`:\n\n```text\nrate = 0.10\nnpv = `Cash flows`.`Amount`.finance.xnpv(rate, `Cash flows`.`Date`)\n```\n\nCheckpoint: `41581.08`. No helper columns are needed.\nXNPV uses actual days divided by 365, with the first supplied date as time\nzero. Later rows can be out of order, but no date may precede that first date.\nAmounts and dates must match in length and contain no missing values.\n\nFor equally spaced flows, `npv(rate, values)` discounts the first flow by\none period, as Excel does. Add the initial investment separately if it occurs\ntoday. Both functions require a finite scalar rate greater than -1.\n\n## 4. Bracket the return with a rate scan\n\nAdd a `Rate scan` block:\n\n```text\n`NPV at 5%` = `Cash flows`.`Amount`.finance.xnpv(0.05, `Cash flows`.`Date`)\n`NPV at 10%` = `Cash flows`.`Amount`.finance.xnpv(0.10, `Cash flows`.`Date`)\n`NPV at 15%` = `Cash flows`.`Amount`.finance.xnpv(0.15, `Cash flows`.`Date`)\n`NPV at 20%` = `Cash flows`.`Amount`.finance.xnpv(0.20, `Cash flows`.`Date`)\n`NPV at 25%` = `Cash flows`.`Amount`.finance.xnpv(0.25, `Cash flows`.`Date`)\n`NPV at 30%` = `Cash flows`.`Amount`.finance.xnpv(0.30, `Cash flows`.`Date`)\n```\n\nCheckpoint: `64121.94`, `41581.08`, `21809.34`, `4355.85`,\n`-11141.06`, `-24974.32`. The return lies between 20% and 25%.\n\n## 5. Solve the return\n\nAdd to `Deal`:\n\n```text\nirr = `Cash flows`.`Amount`.finance.xirr(`Cash flows`.`Date`)\nresidual = `Cash flows`.`Amount`.finance.xnpv(irr, `Cash flows`.`Date`)\n```\n\nCheckpoint: `irr` is `0.213475418`, or about `21.35%`; the residual is\napproximately zero. Change an amount in Cash flows and both answers update;\nundo restores them. The rate scan remains useful for inspecting the result.\n\nFor equally spaced flows, use `[-100, 110].finance.irr()` to get `0.1`\n(10% per period). XIRR instead returns an annual rate on an actual/365 basis.\nBoth require positive and negative cash flows. Missing values, invalid dates,\nand failure to find a root produce an inline error, not a guessed return.\n\nCash flows that change sign repeatedly can have multiple returns. An optional\n`guess=0.1` selects among roots found by a bounded search; a returned value\ndoes not prove that the return is unique. See the\n[function reference](../../docs/formula-function-catalog.md#financial-functions)\nfor the search policy and limitations.\n\n## Rebuilding and checking\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials price-a-deal\n```\n\nThe generator writes both workbooks through the normal operations and checks\nthe reloaded answer key against independent numerical checkpoints.\nReport a missing control or a different result using the parent tutorial's\nsmoke-test template.\n"
           }
         ]
       },
       {
         "kind": "frame",
-        "id": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
+        "id": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
         "name": "Cash flows",
         "columns": [
           {
-            "id": "date~66z1g8",
+            "id": "date~srcs3b",
             "name": "Date",
             "sourceName": null,
             "dataType": "date",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "amount~a8kdhc",
+            "id": "amount~07kf3h",
             "name": "Amount",
             "sourceName": null,
             "dataType": "currency",
@@ -53,67 +53,67 @@
         ],
         "rows": [
           {
-            "id": "12ec1ac1-ef40-4580-832e-4c670e2bd445",
+            "id": "366df517-5bbb-40f5-938e-aa45b7f0abf1",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "-250000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2026-01-15"
               }
             }
           },
           {
-            "id": "1878064d-d4d0-4cce-86ca-dedec20eabc9",
+            "id": "e1138f94-4a50-44b2-ac85-921d2ad69dbf",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "40000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2026-06-30"
               }
             }
           },
           {
-            "id": "c4f21acd-1a7e-4a35-9e35-511eaa4de76a",
+            "id": "c44e5618-9f8a-4f50-9dfe-c58b7b98862b",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "60000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2026-12-31"
               }
             }
           },
           {
-            "id": "c8624e81-f35c-4c71-9c4e-ae7c9e156f71",
+            "id": "e766e519-60fd-488a-8b98-f672b8703f7d",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "70000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2027-06-30"
               }
             }
           },
           {
-            "id": "347466a7-5fad-4654-a9c9-9b7e19debf02",
+            "id": "b8d93827-7ba3-4353-83c6-9f2de937fbfc",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "80000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2027-12-31"
               }
             }
           },
           {
-            "id": "c170d7ef-4876-4672-a216-ba5eb6083d12",
+            "id": "ca086a37-f353-4e55-a010-8f6a2d440f6c",
             "cells": {
-              "amount~a8kdhc": {
+              "amount~07kf3h": {
                 "raw": "90000"
               },
-              "date~66z1g8": {
+              "date~srcs3b": {
                 "raw": "2028-06-30"
               }
             }
@@ -129,11 +129,11 @@
       },
       {
         "kind": "block",
-        "id": "585704e1-4f62-4e63-be78-98d3ea9c6c63",
+        "id": "bec3180b-3926-48c2-8d53-4733c30264a8",
         "name": "Loan terms",
         "lines": [
           {
-            "id": "ee7fd27c-7865-44dc-84a4-c8d94590c3b9",
+            "id": "dd71a580-be67-4c28-a696-12d9db3f9fea",
             "name": "principal",
             "named": true,
             "nameQuoted": false,
@@ -147,7 +147,7 @@
             "error": null
           },
           {
-            "id": "cee08701-2c75-4514-af5e-7e36ad596f9c",
+            "id": "7cba9eb3-d5af-4f60-9ef6-4591a03e8646",
             "name": "rate",
             "named": true,
             "nameQuoted": false,
@@ -161,7 +161,7 @@
             "error": null
           },
           {
-            "id": "50b7b59d-88f4-4aa7-aa79-b0257c88fe52",
+            "id": "5bbe1178-7ddf-44cb-b8df-6217c9abe3b3",
             "name": "term",
             "named": true,
             "nameQuoted": false,
@@ -179,8 +179,8 @@
     ],
     "views": [
       {
-        "id": "154e1f6e-ca5b-4000-ad77-7dff10e3a3bb",
-        "objectId": "95d1fabc-7d83-4355-b118-5f4ed8aaf57b",
+        "id": "0ab56134-6709-4e26-bae2-3920f5388bda",
+        "objectId": "cbe5500d-2ed7-4395-b2c0-e8bb0dd11756",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -188,8 +188,8 @@
         "collapsed": false
       },
       {
-        "id": "dcefebd9-b9da-4dba-a820-153317f54db3",
-        "objectId": "da41b5e4-78dd-4b8c-9dfd-e333a1b97025",
+        "id": "5d3e75a8-af7e-4516-839c-18b2151351f7",
+        "objectId": "100b2d90-4381-4dde-a75c-fc364a7dc78e",
         "x": 720.0,
         "y": 70.0,
         "width": 420.0,
@@ -197,8 +197,8 @@
         "collapsed": false
       },
       {
-        "id": "fca1bd8f-8508-4f64-8662-1e3e82178360",
-        "objectId": "585704e1-4f62-4e63-be78-98d3ea9c6c63",
+        "id": "b9e1c2d2-303b-4184-a6cb-d140ab3f187b",
+        "objectId": "bec3180b-3926-48c2-8d53-4733c30264a8",
         "x": 720.0,
         "y": 560.0,
         "width": 600.0,

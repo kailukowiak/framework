@@ -81,4 +81,24 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         3,
         3
     ),
+    formula_function!(
+        "root.irr",
+        "irr",
+        ["IRR", "internal rate of return"],
+        "Financial",
+        "irr(values, guess=0.1)",
+        "Periodic internal rate of return for a nonempty cash-flow column in supplied order, with the first flow at time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+        1,
+        2
+    ),
+    formula_function!(
+        "root.xirr",
+        "xirr",
+        ["XIRR", "dated internal rate of return"],
+        "Financial",
+        "xirr(values, dates, guess=0.1)",
+        "Dated internal rate of return on an actual/365 basis, using the first supplied date as time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+        2,
+        3
+    ),
 ];

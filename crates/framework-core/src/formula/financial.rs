@@ -8,7 +8,7 @@ pub(crate) fn is_financial(name: &str) -> bool {
     let name = name.to_ascii_lowercase();
     matches!(
         name.strip_prefix("finance.").unwrap_or(&name),
-        "pv" | "fv" | "pmt" | "ipmt" | "ppmt" | "nper" | "npv" | "xnpv"
+        "pv" | "fv" | "pmt" | "ipmt" | "ppmt" | "nper" | "npv" | "xnpv" | "irr" | "xirr"
     )
 }
 
@@ -21,6 +21,9 @@ pub(crate) fn compile(
     let lower = name.to_ascii_lowercase();
     let name = lower.strip_prefix("finance.").unwrap_or(&lower).to_string();
     let args = bind_arguments(&name, arguments, keywords, document)?;
+    if matches!(name.as_str(), "irr" | "xirr") {
+        return super::financial_return::compile(&name, args);
+    }
     if matches!(name.as_str(), "npv" | "xnpv") {
         return super::financial_discount::compile(&name, args);
     }
@@ -99,6 +102,8 @@ fn bind_arguments(
     let required = match name {
         "ipmt" | "ppmt" => 4,
         "npv" => 2,
+        "irr" => 1,
+        "xirr" => 2,
         _ => 3,
     };
     let mut slots = vec![None; parameters.len()];
@@ -123,6 +128,7 @@ fn bind_arguments(
         .map(|(i, argument)| match argument {
             Some(argument) => argument.to_polars(document),
             None if i < required => Err(format!("{name} expects {}", parameters[i])),
+            None if matches!(name, "irr" | "xirr") => Ok(pl::lit(0.1)),
             None => Ok(pl::lit(0.0)),
         })
         .collect::<Result<Vec<_>, _>>()
@@ -137,6 +143,8 @@ pub(super) fn parameter_names(name: &str) -> &'static [&'static str] {
         "nper" => &["rate", "pmt", "pv", "fv", "type"],
         "npv" => &["rate", "values"],
         "xnpv" => &["rate", "values", "dates"],
+        "irr" => &["values", "guess"],
+        "xirr" => &["values", "dates", "guess"],
         _ => unreachable!(),
     }
 }

@@ -7,7 +7,7 @@ use polars::prelude as pl;
 pub(super) fn receiver_parameter(name: &str) -> &'static str {
     match name {
         "pv" => "pmt",
-        "npv" | "xnpv" => "values",
+        "npv" | "xnpv" | "irr" | "xirr" => "values",
         _ => "pv",
     }
 }

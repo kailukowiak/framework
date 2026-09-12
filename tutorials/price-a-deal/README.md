@@ -3,9 +3,8 @@
 About 20 minutes. Open **Price a deal — Start** from **Data library →
 Tutorials and examples**. The finished workbook is a separate answer key.
 
-This lesson uses the first financial function pack: loan payments,
-interest and principal, and dated net present value. IRR solving remains
-the next increment of [the finance build plan](../../docs/finance-build-plan.md).
+This lesson uses loan payments, interest and principal, dated net present
+value, and IRR solving from [the finance build plan](../../docs/finance-build-plan.md).
 
 ## Files
 
@@ -98,16 +97,29 @@ Add a `Rate scan` block:
 Checkpoint: `64121.94`, `41581.08`, `21809.34`, `4355.85`,
 `-11141.06`, `-24974.32`. The return lies between 20% and 25%.
 
-## 5. Next: solve the return
+## 5. Solve the return
 
-XIRR is not implemented yet. Phase 1b replaces the scan with:
+Add to `Deal`:
 
 ```text
-irr = xirr(`Cash flows`.`Amount`, `Cash flows`.`Date`)
+irr = `Cash flows`.`Amount`.finance.xirr(`Cash flows`.`Date`)
+residual = `Cash flows`.`Amount`.finance.xnpv(irr, `Cash flows`.`Date`)
 ```
 
-Its acceptance target is approximately `21.35%`, with a convergence report
-and a clear failure reason when no root can be found.
+Checkpoint: `irr` is `0.213475418`, or about `21.35%`; the residual is
+approximately zero. Change an amount in Cash flows and both answers update;
+undo restores them. The rate scan remains useful for inspecting the result.
+
+For equally spaced flows, use `[-100, 110].finance.irr()` to get `0.1`
+(10% per period). XIRR instead returns an annual rate on an actual/365 basis.
+Both require positive and negative cash flows. Missing values, invalid dates,
+and failure to find a root produce an inline error, not a guessed return.
+
+Cash flows that change sign repeatedly can have multiple returns. An optional
+`guess=0.1` selects among roots found by a bounded search; a returned value
+does not prove that the return is unique. See the
+[function reference](../../docs/formula-function-catalog.md#financial-functions)
+for the search policy and limitations.
 
 ## Rebuilding and checking
 

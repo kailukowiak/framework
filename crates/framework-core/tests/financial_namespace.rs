@@ -12,6 +12,15 @@ fn finance_namespace_and_receivers_share_the_financial_functions() {
         ("finance.ppmt(0, 1, 10, 1000)", -100.0),
         ("finance.npv(0.1, [110, 121])", 200.0),
         ("finance.npv(rate=0.1, values=[110, 121])", 200.0),
+        ("finance.irr([-100,110])", 0.1),
+        (
+            "finance.xirr([-100,110], [date(2025,1,1),date(2026,1,1)])",
+            0.1,
+        ),
+        (
+            "finance.xirr(values=[-100,110], dates=[date(2025,1,1),date(2026,1,1)], guess=0.2)",
+            0.1,
+        ),
         (
             "[-100,110].finance.xnpv(rate=0.1, dates=[date(2025,1,1),date(2026,1,1)]).round(2)",
             0.0,
@@ -33,6 +42,11 @@ fn finance_namespace_and_receivers_share_the_financial_functions() {
         ),
         ("principal = 1000\nprincipal.finance.ppmt(0, 1, 10)", -100.0),
         ("[110,121].finance.npv(0.1)", 200.0),
+        ("[-100,110].finance.irr()", 0.1),
+        (
+            "[-100,110].finance.xirr([date(2025,1,1),date(2026,1,1)])",
+            0.1,
+        ),
         (
             "[-100,110].finance.xnpv(0.1, [date(2025,1,1),date(2026,1,1)]).round(2)",
             0.0,
@@ -42,6 +56,7 @@ fn finance_namespace_and_receivers_share_the_financial_functions() {
             -15.0,
         ),
         ("FINANCE.PMT(rate=0, nper=10, pv=100)", -10.0),
+        ("[-100,110].FINANCE.IRR()", 0.1),
     ] {
         close(formula, expected);
     }
@@ -83,6 +98,7 @@ fn namespace_completion_has_receiver_specific_signatures() {
         ("(100).", "namespace.finance"),
         ("(100).finance.PM", "finance.pmt"),
         ("(100).FINANCE.PM", "finance.pmt"),
+        ("[-100,110].finance.XIR", "finance.xirr"),
     ] {
         assert!(
             complete(source)
@@ -98,9 +114,10 @@ fn namespace_completion_has_receiver_specific_signatures() {
             .iter()
             .any(|s| s.id == "namespace.finance")
     );
-    for (source, expected) in [
-        ("finance.pmt(0, ", "namespace.finance.pmt"),
-        ("(100).finance.pmt(0, ", "finance.pmt"),
+    for (source, expected, argument) in [
+        ("finance.pmt(0, ", "namespace.finance.pmt", 1),
+        ("(100).finance.pmt(0, ", "finance.pmt", 1),
+        ("[-100,110].finance.xirr(dates=", "finance.xirr", 0),
     ] {
         let result = complete(source);
         assert_eq!(
@@ -108,7 +125,7 @@ fn namespace_completion_has_receiver_specific_signatures() {
             Some(expected),
             "{source}"
         );
-        assert_eq!(result.active_argument, Some(1));
+        assert_eq!(result.active_argument, Some(argument));
     }
     let catalog = formula_function_catalog();
     let method = catalog.iter().find(|f| f.id == "finance.pmt").unwrap();
@@ -124,4 +141,8 @@ fn namespace_completion_has_receiver_specific_signatures() {
             .collect::<Vec<_>>(),
         ["rate", "nper", "pmt", "type"]
     );
+    let irr = catalog.iter().find(|f| f.id == "finance.irr").unwrap();
+    assert_eq!(irr.signature, ".finance.irr(guess=0.1)");
+    assert_eq!(irr.minimum_arguments, 0);
+    assert_eq!(irr.maximum_arguments, 1);
 }

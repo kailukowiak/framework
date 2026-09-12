@@ -27,4 +27,16 @@ describe("financial Scratchwork", () => {
     );
     await waitForGutterAnswer("0");
   });
+
+  it("solves periodic and dated returns and follows a changed cash flow", async () => {
+    const source = $('textarea[aria-label$=" lines"]');
+    const returns = (amount: number) =>
+      `proceeds = ${amount}\nperiodic = (finance.irr([-100, proceeds]) * 100).round(2)\nannual = ([-100, proceeds].finance.xirr([date(2025,1,1), date(2027,1,1)]) * 100).round(2)`;
+    await source.setValue(returns(121));
+    await waitForGutterAnswer("21");
+    await waitForGutterAnswer("10");
+    await source.setValue(returns(144));
+    await waitForGutterAnswer("44");
+    await waitForGutterAnswer("20");
+  });
 });
