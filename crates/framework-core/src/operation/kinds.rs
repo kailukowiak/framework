@@ -6,7 +6,7 @@ use crate::model::frame::{
     CellUpdate, CrosstabDisplay, FrameCellStyle, FrameStyleTarget, FrameViewOrientation,
     SummaryOperation,
 };
-use crate::model::value::{ColumnFormat, DataType, FrozenValue};
+use crate::model::value::{ColumnFormat, DataType, FrozenValue, ScalarValue};
 use crate::operation::input::{
     CalculationMatrixFormulaInput, FrameStepInput, FrameStyleRuleInput, JoinColumnInput,
     NamedFormulaInput,
@@ -386,6 +386,12 @@ pub enum Operation {
     SetValue {
         object_id: Id,
         raw: String,
+    },
+    /// Change the selected value of a slider/dropdown/date_input constructor
+    /// on a named variable. Configuration and value remain in its formula.
+    SetParameterValue {
+        object_id: Id,
+        value: ScalarValue,
     },
     SetPlotSpec {
         plot_id: Id,

@@ -7,6 +7,8 @@ pub mod layout;
 pub mod plot;
 pub mod scenario;
 pub mod value;
+mod parameter;
+pub use parameter::*;
 
 pub use data_artifact::*;
 pub use derivation::*;

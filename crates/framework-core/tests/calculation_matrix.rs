@@ -25,6 +25,7 @@ fn add_matrix(store: &mut Store) -> String {
 
 fn input(name: &str, formula: &str) -> CalculationMatrixFormulaInput {
     CalculationMatrixFormulaInput {
+        target_id: None,
         id: None,
         name: name.into(),
         formula: formula.into(),
@@ -158,6 +159,7 @@ fn axis_ids_survive_edits_and_undo_restores_the_matrix() {
         .apply(Operation::SetCalculationMatrix {
             object_id: id.clone(),
             rows: vec![CalculationMatrixFormulaInput {
+                target_id: None,
                 id: Some(axis_id.clone()),
                 name: "amount".into(),
                 formula: "sequence(2, 4)".into(),

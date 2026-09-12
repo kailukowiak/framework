@@ -1,5 +1,6 @@
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { FormulaField } from "./FormulaField";
+import { ParameterAnswer } from "./ParameterInputs";
 import { DebugTracePanel } from "./DebugTracePanel";
 import { useActiveFormulaEditorCommands } from "./ActiveFormulaEditor";
 import {
@@ -146,12 +147,12 @@ export function VariableCard({
           )
         }
       />
-      <output
+      <ParameterAnswer id={result.id}><output
         className={computed?.error ? "variable-answer error" : "variable-answer"}
         title={computed?.error ?? computed?.display}
       >
         → {computed?.error ? "—" : computed?.display ?? "—"}
-      </output>
+      </output></ParameterAnswer>
       <small
         className="variable-vector-handle"
         data-vector-drag={valueCount > 0 ? "true" : undefined}
@@ -551,9 +552,9 @@ export function ResultCard({
         }}
       />
       <div className="value-input-row">
-        <output className="result-display">
+        <ParameterAnswer id={result.id}><output className="result-display">
           {computed?.error ? "—" : computed?.display ?? "—"}
-        </output>
+        </output></ParameterAnswer>
         {/* Nothing at all when it is live: a card whose whole job is to be
             live does not need a badge saying so. A written-down answer is
             the case worth marking, because its age is a fact about it. */}

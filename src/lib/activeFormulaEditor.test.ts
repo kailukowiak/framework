@@ -21,6 +21,21 @@ function binding(
 }
 
 describe("ActiveFormulaEditorRegistry", () => {
+  it("reconciles stored text without taking focus or authoring another edit", () => {
+    const registry = new ActiveFormulaEditorRegistry();
+    const editor = binding();
+    registry.bind(editor);
+    registry.activate(editor.id, { start: 0, end: 0 });
+    registry.blur(editor.id);
+    registry.reconcile("another-editor", "ignored", { start: 0, end: 0 });
+    expect(registry.getSnapshot()?.draft).toBe(editor.draft);
+    registry.reconcile(editor.id, "new", { start: 9, end: 9 });
+    registry.bind({ ...editor, draft: "new" });
+    expect(registry.getSnapshot()).toMatchObject({ draft: "new", focused: false, selection: { start: 3, end: 3 } });
+    expect(editor.onChange).not.toHaveBeenCalled();
+    expect(editor.onFocus).not.toHaveBeenCalled();
+  });
+
   it("publishes a changed row anchor for the same logical editor", () => {
     const registry = new ActiveFormulaEditorRegistry();
     const first = binding({

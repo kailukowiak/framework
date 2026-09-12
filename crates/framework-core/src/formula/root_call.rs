@@ -7,6 +7,11 @@ pub(super) fn compile_polars_root_call(
     keyword_arguments: &[(String, Expr)],
     document: &Document,
 ) -> Result<pl::Expr, String> {
+    if crate::formula::controls::is_control(name) {
+        let call = Expr::PolarsCall { name: name.into(), arguments: arguments.to_vec(), keyword_arguments: keyword_arguments.to_vec() };
+        let control = crate::formula::controls::read(&call)?.expect("known constructor");
+        return crate::formula::controls::expression(&crate::formula::controls::selected(&control))?.to_polars(document);
+    }
     if crate::formula::financial::is_financial(name) {
         return crate::formula::financial::compile(name, arguments, keyword_arguments, document);
     }
@@ -131,6 +136,8 @@ pub(crate) fn polars_call_declared_type(
     scope: &[crate::Column],
 ) -> Option<DataType> {
     match name {
+        "slider" => Some(DataType::Number),
+        "date_input" => Some(DataType::Date),
         "recur" => arguments
             .first()
             .and_then(|seed| seed.declared_type_among(document, scope))

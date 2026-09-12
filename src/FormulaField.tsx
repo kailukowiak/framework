@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useActiveFormulaEditorCommands } from "./ActiveFormulaEditor";
 import { FormulaEditor } from "./FormulaEditor";
 import type { FormulaReference } from "./lib/formulaReferences";
 
@@ -28,7 +29,19 @@ export function FormulaField({
 }) {
   const [value, setValue] = useState(initial);
   const [formulaError, setFormulaError] = useState<string | null>(null);
-  useEffect(() => setValue(initial), [initial]);
+  const previousInitial = useRef(initial);
+  const { getActive, reconcile } = useActiveFormulaEditorCommands();
+  useEffect(() => {
+    // Mounting must retain an editor session's unsaved draft. A changed
+    // stored formula, however, must reach both the field and the formula
+    // bar, or rebinding would restore the pre-control value over this one.
+    if (previousInitial.current === initial) return;
+    previousInitial.current = initial;
+    const active = getActive();
+    const selection = active?.id === editorId ? active.selection : { start: 0, end: 0 };
+    reconcile(editorId, initial, selection);
+    setValue(initial);
+  }, [initial, editorId, getActive, reconcile]);
   const execute = async (draft = value) => {
     if (draft.trim() === initial.trim()) {
       setFormulaError(null);

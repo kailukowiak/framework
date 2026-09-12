@@ -1,6 +1,9 @@
 pub mod build;
 pub mod cache;
 pub mod compute;
+mod matrix;
+mod matrix_sensitivity;
+mod matrix_dependencies;
 mod join;
 pub mod plan;
 mod recurrence;

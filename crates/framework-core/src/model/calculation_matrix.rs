@@ -22,6 +22,11 @@ pub struct CalculationMatrixObject {
 #[ts(export)]
 pub struct CalculationMatrixAxisFormula {
     pub id: Id,
+    /// Explicit model input varied by this axis. Names remain local aliases;
+    /// matching a name must never silently change a model's dependencies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub target_id: Option<Id>,
     pub name: String,
     pub source: String,
     pub formula: Option<Formula>,

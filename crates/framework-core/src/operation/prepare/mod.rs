@@ -21,6 +21,7 @@ mod statistics;
 pub mod views;
 
 mod header_filter;
+mod parameters;
 mod sources;
 use crate::*;
 
@@ -30,6 +31,9 @@ impl Document {
         operation: Operation,
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok(match operation {
+            operation @ (Operation::AddVariable { .. }
+            | Operation::SetResultFormula { .. }
+            | Operation::SetParameterValue { .. }) => self.prepare_variable_operation(operation)?,
             operation @ Operation::AddStatisticalAnalysis { .. } => {
                 self.prepare_statistical_analysis(operation)?
             }
@@ -40,12 +44,6 @@ impl Document {
             | Operation::ImportOnnxModel { .. }
             | Operation::AddModelPredictions { .. }
             | Operation::AddModelSummary { .. }) => self.prepare_model_operation(operation)?,
-            Operation::AddVariable {
-                name,
-                formula,
-                x,
-                y,
-            } => self.prepare_add_variable(name, formula, x, y)?,
             Operation::AddValue {
                 name,
                 raw,
@@ -60,9 +58,6 @@ impl Document {
                 y,
                 container_id,
             } => self.prepare_add_result(name, formula, x, y, container_id)?,
-            Operation::SetResultFormula { object_id, formula } => {
-                self.prepare_set_result_formula(object_id, formula)?
-            }
             Operation::AddBlock { name, x, y } => self.prepare_add_block(name, x, y)?,
             Operation::AddCalculationMatrix { name, x, y } => {
                 self.prepare_add_calculation_matrix(name, x, y)?

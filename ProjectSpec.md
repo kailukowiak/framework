@@ -851,6 +851,17 @@ and an explicit wide conversion when rendered headers must become physical
 columns, can build on this stable boundary without changing the matrix authoring
 model.
 
+Matrix axes may explicitly bind a value object or named control variable as
+a sensitivity input. The binding is by stable id, never inferred from an axis
+name. The axis expression still supplies the trial values, and the body may
+reference an existing model result. Each cell evaluates in an isolated document
+with those inputs substituted; it does not change the active inputs, save
+temporary values, or emit undo/collaboration events. Unbound axis fields retain
+their local-tuple meaning. A missing or repeated target is an inline matrix
+error; invalid trial values fail only their cells. Sensitivity grids are capped
+at 2,500 cells because each point may execute an entire model. Frozen answers
+remain recorded facts, not refreshed model outputs.
+
 #### Build order
 
 This is the historical dependency order that produced the landed surfaces,
@@ -1408,7 +1419,7 @@ The pop-out shipped as the narrowest honest version: one window per workbook, ho
 
 - **TODO: Quick Commands is the menu, not yet the app.** ⌘⇧P indexes the native menu's actions with three enablement facts. It should grow to the selection's context-menu actions by name (rename, delete, freeze, pin columns, create frame from column), recent documents, and match on shortcut text so "⌘3" finds the Wrangle inspector. Jumping to an object is what Find already does, so the two palettes need a clear split — Find is *things*, Quick Commands is *verbs* — or one surface.
 
-- **Later: a dashboard view with widgets (2026-09-05).** Kai's sketch: pick objects to show, arranged in tabs, and add input widgets such as sliders. Parked, not ranked. When it is picked up: a container is already the one place a standalone value may live and the designated dashboard arrangement, so a dashboard is a container promoted to its own tab rather than a new object kind; a slider is an input surface over an existing named line or scenario parameter, never a value of its own, so moving it is an ordinary operation and undo, history, and the MCP surface get it for free. Presentation-only, values-only, same boundary as export.
+- **Variable controls (2026-09-12); dashboard layout later.** Controls are ordinary named variables, declared by a root constructor: `growth = slider(start=0, stop=0.2, step=0.01, value=0.05)`, `region = dropdown(["North", "South"])`, or `cutoff = date_input(date(2026,12,31))`. Scratchwork shows the control in its existing answer gutter, and a compact variable shows it beside its formula. The constructor returns the selected scalar. Bounds and choices are literal configuration in the formula, not a parallel widget store; moving the control rewrites only its value argument, preserving its id, dependencies, persistence and undo. Sliders commit once on release or keyboard adjustment, exact/date fields on blur or Enter. These variables may drive semantic filters as well as finance assumptions. Invalid domains report errors and frozen variables are read-only. Dashboard tabs and arranging selected objects remain later work: a container promoted to its own tab, not a new value kind.
 
 - **Untested outside macOS.** Under the menu-less shell the pop-out forwards shortcuts through its own keydown path (`hasNativeMenu()` false). The flatpak build wants one hands-on pass before the window ships in a release.
 

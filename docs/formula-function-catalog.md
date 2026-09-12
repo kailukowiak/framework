@@ -141,6 +141,20 @@ Unsupported methods fail visibly instead of falling back to another evaluator. T
 
 The table above is the hand-written core. Beyond it, [formula-function-catalog.generated.md](formula-function-catalog.generated.md) lists a much wider, code-generated surface covering most of the remaining Polars 0.55.2 `Expr` methods and namespaces (root functions, and the `str`/`dt`/`list`/`arr`/`struct`/`cat` namespaces). It is produced by `tools/generate_expr_bindings.py` from the vendored `polars-plan` source and compiled by `crates/framework-core/src/generated_expr_bindings.rs`; both files carry regeneration instructions in their headers. Methods that take closures/UDFs, IO/serialization/meta/plugin methods, and `alias` are excluded by rule; anything else the generator can't bind with certainty (an options-struct or enum argument, for example) is left out and recorded with a reason in `tools/expr_bindings_spec.json` rather than silently misbound.
 
+## Variable controls
+
+Named Scratchwork lines and compact variables can declare an input control in their formula:
+
+```text
+growth = slider(start=0, stop=0.2, step=0.01, value=0.05)
+region = dropdown(["North", "South"], value="North")
+cutoff = date_input(value=date(2026, 12, 31))
+```
+
+Each constructor returns the selected scalar, so other formulas and semantic filters reference the variable normally. The UI edits only its `value` argument through ordinary history; there is no separate widget state in the document. Sliders commit on release (or after a keyboard adjustment), and exact numeric/date fields commit on blur or Enter. One slider gesture is one undoable edit.
+
+Bounds, step, options and initial selection must be literals. Slider bounds are inclusive; step must be positive. The default selection is `start`, and the exact numeric field allows in-range values between steps. Dropdown options must be distinct, nonempty and all one scalar type; its default is the first option. Date inputs require a literal date. Invalid definitions and out-of-domain edits report errors, not silent clamping. Frozen variables do not expose an editable control.
+
 ## Safety boundary
 
 FrameWork constructs typed Polars expressions from a parsed AST. It does not expose imports, attribute access outside known expression namespaces, filesystem or network I/O, Python callbacks, UDFs, plugins, NumPy execution, or arbitrary code evaluation. Expensive operations can later receive cost limits at the compiler/executor boundary without changing saved formula syntax.

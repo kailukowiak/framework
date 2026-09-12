@@ -1,0 +1,13 @@
+.matrix-input-binding {
+  width: 110px;
+  max-width: 45%;
+  height: 22px;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+.matrix-axis-source { display: flex; align-items: center; gap: 3px; }
+.matrix-axis-source > .calculation-matrix-formula { flex: 1; min-width: 0; }

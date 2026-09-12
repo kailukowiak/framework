@@ -4,6 +4,11 @@ import type { Formula } from "./Formula";
 
 export type CalculationMatrixAxisFormula = {
   id: string;
+  /**
+   * Explicit model input varied by this axis. Names remain local aliases;
+   * matching a name must never silently change a model's dependencies.
+   */
+  targetId?: string;
   name: string;
   source: string;
   formula: Formula | null;

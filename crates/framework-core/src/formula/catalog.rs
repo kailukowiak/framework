@@ -32,6 +32,8 @@ pub(crate) struct FormulaFunctionDefinition {
 
 #[path = "catalog_financial.rs"]
 pub(crate) mod financial;
+#[path = "catalog_controls.rs"]
+pub(crate) mod controls;
 #[path = "catalog_financial_namespace.rs"]
 mod financial_namespace;
 

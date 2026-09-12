@@ -19,6 +19,9 @@ pub struct CalculationMatrixFormulaInput {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub id: Option<Id>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub target_id: Option<Id>,
     pub name: String,
     pub formula: String,
 }

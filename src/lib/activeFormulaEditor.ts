@@ -253,6 +253,15 @@ export class ActiveFormulaEditorRegistry {
     });
   }
 
+  /** A document rewrite is not typing and must not take focus. Keep the
+   * retained draft in sync before its surface rebinds; otherwise bind()
+   * correctly restores the retained draft, but restores an obsolete value.
+   */
+  reconcile(id: string, draft: string, selection: FormulaSelection): void {
+    if (this.active?.id !== id) return;
+    this.publish({ ...this.active, draft, selection: clampSelection(selection, draft.length) });
+  }
+
   setDraft(draft: string, selection: FormulaSelection): void {
     if (!this.active) return;
     const binding = this.bindingFor(this.active.id);

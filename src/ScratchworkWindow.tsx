@@ -1,5 +1,6 @@
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ParameterInputsProvider } from "./ParameterInputs";
 import {
   useActiveFormulaEditorCommands,
   useActiveFormulaEditorWatcher,
@@ -130,7 +131,7 @@ export default function ScratchworkWindow() {
 
   if (!document) return <main className="scratchwork-window" />;
   return (
-    <NumberDisplayContext.Provider value={useThousandsSeparators}>
+    <ParameterInputsProvider document={document} onOperation={run}><NumberDisplayContext.Provider value={useThousandsSeparators}>
       <main className="scratchwork-window" aria-label="Scratchwork window">
         {block ? (
           <BlockCard
@@ -150,6 +151,6 @@ export default function ScratchworkWindow() {
         )}
         {error && <p className="scratchwork-window-error">{error}</p>}
       </main>
-    </NumberDisplayContext.Provider>
+    </NumberDisplayContext.Provider></ParameterInputsProvider>
   );
 }

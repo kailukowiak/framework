@@ -18,6 +18,7 @@ pub(crate) use parser::*;
 
 pub(crate) mod dictionary;
 pub(crate) mod financial;
+pub(crate) mod controls;
 mod financial_discount;
 mod financial_namespace;
 mod financial_return;

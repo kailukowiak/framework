@@ -104,6 +104,7 @@ export function useActiveFormulaEditorCommands() {
       clear: registry.clear.bind(registry),
       activateAndFocus: registry.activateAndFocus.bind(registry),
       getActive: registry.getSnapshot,
+      reconcile: registry.reconcile.bind(registry),
     }),
     [registry]
   );

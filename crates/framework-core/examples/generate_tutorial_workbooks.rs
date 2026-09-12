@@ -1302,11 +1302,13 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
         object_id: calculation_matrix_id,
         rows: vec![
             CalculationMatrixFormulaInput {
+                target_id: None,
                 id: None,
                 name: "Scenario".into(),
                 formula: "`Scenario`".into(),
             },
             CalculationMatrixFormulaInput {
+                target_id: None,
                 id: None,
                 name: "Multiplier".into(),
                 formula: "`Multiplier`".into(),
@@ -1314,11 +1316,13 @@ fn generate_vectors_and_joins(output: &Path) -> Result<(), Box<dyn std::error::E
         ],
         columns: vec![
             CalculationMatrixFormulaInput {
+                target_id: None,
                 id: None,
                 name: "Quarter".into(),
                 formula: "`Quarter`".into(),
             },
             CalculationMatrixFormulaInput {
+                target_id: None,
                 id: None,
                 name: "Base revenue".into(),
                 formula: "`Base revenue`".into(),

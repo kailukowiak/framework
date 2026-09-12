@@ -272,6 +272,7 @@ fn add_matrix(
         axes.iter()
             .map(
                 |(name, formula)| framework_core::CalculationMatrixFormulaInput {
+                    target_id: None,
                     id: None,
                     name: (*name).into(),
                     formula: (*formula).into(),

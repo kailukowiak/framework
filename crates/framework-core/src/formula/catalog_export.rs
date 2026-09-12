@@ -4,6 +4,7 @@ pub fn formula_function_catalog() -> Vec<FormulaFunction> {
     let hand_written = POLARS_FORMULA_FUNCTIONS
         .iter()
         .chain(financial::FUNCTIONS.iter())
+        .chain(controls::FUNCTIONS.iter())
         .map(|function| FormulaFunction {
             id: function.id.into(),
             name: function.name.into(),

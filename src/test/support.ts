@@ -1,4 +1,7 @@
 import dictionariesJson from "./fixtures/dictionaries.json";
+import parametersJson from "./fixtures/parameters.json";
+import parametersSelectedJson from "./fixtures/parameters-selected.json";
+import matrixSensitivityJson from "./fixtures/matrix-sensitivity.json";
 import { clearMocks, mockIPC } from "@tauri-apps/api/mocks";
 import type { DataObject, DocumentView } from "../lib/types";
 import blankJson from "./fixtures/blank.json";
@@ -22,6 +25,9 @@ import mlModelsJson from "./fixtures/ml-models.json";
 // ---------------------------------------------------------------------------
 
 export const fixtures = {
+  matrixSensitivity: matrixSensitivityJson as unknown as DocumentView,
+  parameters: parametersJson as unknown as DocumentView,
+  parametersSelected: parametersSelectedJson as unknown as DocumentView,
   mlModels: mlModelsJson as unknown as DocumentView,
   dictionaries: dictionariesJson as unknown as DocumentView,
   blank: blankJson as unknown as DocumentView,

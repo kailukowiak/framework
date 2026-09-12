@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { FormulaEditor, FormulaErrorDetails } from "./FormulaEditor";
+import { useMemo } from "react";
+import { FormulaErrorDetails } from "./FormulaEditor";
+import { MatrixAxis, MatrixFormulaField } from "./MatrixAxis";
+import { useParameterInputs } from "./ParameterInputs";
 import { scalarFormulaReferences } from "./ScalarCards";
 import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
-import { formatFormulaChains } from "./lib/formulaFormatting";
 import type { OperationHandler } from "./lib/handlers";
 import type {
   CalculationMatrixAxisFormula,
@@ -13,11 +14,7 @@ import type {
   DataObject,
   FormulaFunction,
 } from "./lib/types";
-import {
-  hasVectorDrag,
-  readVectorDrag,
-  type VectorDrag,
-} from "./lib/vectorDrag";
+import type { VectorDrag } from "./lib/vectorDrag";
 
 export type CalculationMatrixCardObject = CalculationMatrixObject;
 export type CalculationMatrixCardComputed = ComputedCalculationMatrix;
@@ -45,16 +42,15 @@ export function CalculationMatrixCanvasCard({
   formulaFunctions: FormulaFunction[];
   onOperation: OperationHandler;
 }) {
+  const inputs = useParameterInputs();
+  const inputIds = new Set([...inputs.map((input) => input.id), ...objects.filter((object) => object.kind === "value").map((object) => object.id)]);
+  const references = scalarFormulaReferences(objects, formulaFunctions, computedFrames, matrix.id);
   return (
     <CalculationMatrixCard
       matrix={matrix}
       computed={computed}
-      references={scalarFormulaReferences(
-        objects,
-        formulaFunctions,
-        computedFrames,
-        matrix.id
-      )}
+      references={references}
+      inputReferences={references.filter((reference) => inputIds.has(reference.id))}
       onRename={(name) =>
         onOperation({ type: "renameObject", objectId: matrix.id, name })
       }
@@ -72,12 +68,14 @@ export function CalculationMatrixCard({
   matrix,
   computed,
   references,
+  inputReferences = [],
   onRename,
   onCommit,
 }: {
   matrix: CalculationMatrixCardObject;
   computed?: CalculationMatrixCardComputed;
   references: FormulaReference[];
+  inputReferences?: FormulaReference[];
   onRename: (name: string) => unknown;
   onCommit: (draft: MatrixDraft) => Promise<string | null>;
 }) {
@@ -111,6 +109,10 @@ export function CalculationMatrixCard({
   };
   const appendVector = (axis: "rows" | "columns", vector: VectorDrag) =>
     commitAxis(axis, axis === "rows" ? rows.length : columns.length, vector.formula, vector.name);
+  const bindInput = (axis: "rows" | "columns", index: number, targetId: string) => {
+    const next = (axis === "rows" ? rows : columns).map((item, i) => i === index ? { ...item, targetId: targetId || undefined } : item);
+    return onCommit({ rows: axis === "rows" ? next : rows, columns: axis === "columns" ? next : columns, body: matrix.body.source });
+  };
 
   return (
     <div className="calculation-matrix-card">
@@ -130,6 +132,8 @@ export function CalculationMatrixCard({
       <div className="calculation-matrix-axes">
         <MatrixAxis
           axis="rows"
+          inputReferences={inputReferences}
+          onBind={(index, target) => bindInput("rows", index, target)}
           sources={matrix.rows}
           tuples={computed?.rowTuples ?? []}
           references={references}
@@ -138,6 +142,8 @@ export function CalculationMatrixCard({
         />
         <MatrixAxis
           axis="columns"
+          inputReferences={inputReferences}
+          onBind={(index, target) => bindInput("columns", index, target)}
           sources={matrix.columns}
           tuples={computed?.columnTuples ?? []}
           references={references}
@@ -160,150 +166,6 @@ export function CalculationMatrixCard({
   );
 }
 
-function MatrixAxis({
-  axis,
-  sources,
-  tuples,
-  references,
-  onCommit,
-  onDrop,
-}: {
-  axis: "rows" | "columns";
-  sources: CalculationMatrixAxisFormula[];
-  tuples: Array<{ values: string[] }>;
-  references: FormulaReference[];
-  onCommit: (index: number, source: string) => Promise<string | null>;
-  onDrop: (vector: VectorDrag) => void;
-}) {
-  const title = axis === "rows" ? "Rows" : "Columns";
-  return (
-    <section
-      className="calculation-matrix-axis"
-      aria-label={`${title} formulas`}
-      data-matrix-axis={axis}
-      data-vector-drop-target="true"
-      data-vector-drop-action={`Use in ${axis}`}
-      onDragOver={(event) => {
-        if (!hasVectorDrag(event.dataTransfer)) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "link";
-      }}
-      onDrop={(event) => {
-        const vector = readVectorDrag(event.dataTransfer);
-        if (!vector) return;
-        event.preventDefault();
-        onDrop(vector);
-      }}
-    >
-      <header>
-        <strong>{title}</strong>
-        <AxisPreview sources={sources} tuples={tuples} />
-      </header>
-      {sources.map((source, index) => (
-        <MatrixFormulaField
-          key={source.id}
-          editorId={`calculation-matrix:${source.id}`}
-          label={`${title} · ${source.name}`}
-          initial={source.source}
-          references={references}
-          error={source.error}
-          placeholder={axis === "rows" ? "Scenario" : "Period"}
-          onCommit={(draft) => onCommit(index, draft)}
-        />
-      ))}
-      <MatrixFormulaField
-        editorId={`calculation-matrix:new-${axis}`}
-        label={`Add ${title.toLowerCase()} source`}
-        initial=""
-        references={references}
-        placeholder={axis === "rows" ? "MyVar" : "MyTable.Column1"}
-        onCommit={(draft) => onCommit(sources.length, draft)}
-      />
-    </section>
-  );
-}
-
-function AxisPreview({
-  sources,
-  tuples,
-}: {
-  sources: CalculationMatrixAxisFormula[];
-  tuples: Array<{ values: string[] }>;
-}) {
-  if (!sources.length || !tuples.length)
-    return <span className="calculation-matrix-axis-empty">drop or type a vector</span>;
-  return (
-    <span className="calculation-matrix-axis-preview" title={`${tuples.length} combinations`}>
-      {sources.map((source, sourceIndex) => (
-        <span key={source.id}>
-          {source.name}: {tuples.slice(0, 3).map((tuple) => tuple.values[sourceIndex] ?? "—").join(", ")}
-          {tuples.length > 3 ? "…" : ""}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function MatrixFormulaField({
-  editorId,
-  label,
-  initial,
-  references,
-  error,
-  placeholder,
-  format = false,
-  onCommit,
-}: {
-  editorId: string;
-  label: string;
-  initial: string;
-  references: FormulaReference[];
-  error?: string | null;
-  placeholder: string;
-  format?: boolean;
-  onCommit: (source: string) => Promise<string | null>;
-}) {
-  const [draft, setDraft] = useState(initial);
-  const [commitError, setCommitError] = useState<string | null>(null);
-  const committed = useRef(initial);
-  useEffect(() => {
-    setDraft(initial);
-    committed.current = initial;
-    setCommitError(null);
-  }, [initial]);
-  const execute = async (source = draft) => {
-    const next = format ? formatFormulaChains(source).source : source.trim();
-    setDraft(next);
-    if (next === committed.current) return;
-    const nextError = await onCommit(next);
-    setCommitError(nextError);
-    if (!nextError) committed.current = next;
-  };
-  return (
-    <div
-      className={`calculation-matrix-formula${format ? " calculation-matrix-body-formula" : ""}`}
-      onBlurCapture={(event) => {
-        if (!(event.target instanceof HTMLTextAreaElement)) return;
-        void execute(event.target.value);
-      }}
-    >
-      <FormulaEditor
-        editorId={editorId}
-        label={label}
-        value={draft}
-        references={references}
-        error={commitError ?? error}
-        placeholder={placeholder}
-        compact
-        onChange={(next) => {
-          setDraft(next);
-          setCommitError(null);
-        }}
-        onCommit={execute}
-      />
-    </div>
-  );
-}
 
 function MatrixOutput({
   matrix,
@@ -348,7 +210,7 @@ function MatrixOutput({
 }
 
 function axisInputs(axis: CalculationMatrixAxisFormula[]): CalculationMatrixFormulaDraft[] {
-  return axis.map((item) => ({ id: item.id, name: item.name, formula: item.source }));
+  return axis.map((item) => ({ id: item.id, name: item.name, formula: item.source, targetId: item.targetId }));
 }
 
 export function matrixAxisReferences(matrix: CalculationMatrixCardObject): FormulaReference[] {

@@ -11,6 +11,10 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Calculation Matrix axes can now vary named control inputs or value objects, recalculating the existing model for each combination without changing its current inputs. One- and two-axis sensitivity use the same matrix formulas and grid.
+
+- Named variables can declare their own controls: `slider(0,1,0.1)`, `dropdown(["North","South"])`, and `date_input(date(2026,12,31))`. Scratchwork and compact variables show the control alongside the formula; changing it updates dependent formulas and filters, saves with the workbook, and supports undo.
+
 - Solve periodic and dated investment returns with `finance.irr` and `finance.xirr`, or cash-flow dot calls. Invalid inputs and unsuccessful searches report an inline error; an optional guess selects among discovered roots. The Price a deal lesson now solves and checks its return.
 - Financial functions are available under `finance`, including dot calls such as `principal.finance.pmt(rate, term)` and `flows.finance.xnpv(rate, dates)`, with autocomplete and argument hints. Existing unqualified formulas still work.
 - Calculate loan payments, present and future values, payment periods, interest and principal, and periodic or dated net present value with `pmt`, `pv`, `fv`, `nper`, `ipmt`, `ppmt`, `npv` and `xnpv`. The Price a deal lesson now uses these functions.

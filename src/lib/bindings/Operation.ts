@@ -19,6 +19,7 @@ import type { JoinColumnInput } from "./JoinColumnInput";
 import type { ModelSpec } from "./ModelSpec";
 import type { ModelSummaryKind } from "./ModelSummaryKind";
 import type { NamedFormulaInput } from "./NamedFormulaInput";
+import type { ScalarValue } from "./ScalarValue";
 import type { StatsRequest } from "./StatsRequest";
 import type { SummaryOperation } from "./SummaryOperation";
 
@@ -257,6 +258,7 @@ export type Operation =
   | { "type": "renameObject"; objectId: string; name: string }
   | { "type": "deleteObject"; objectId: string }
   | { "type": "setValue"; objectId: string; raw: string }
+  | { "type": "setParameterValue"; objectId: string; value: ScalarValue }
   | { "type": "setPlotSpec"; plotId: string; spec: Record<string, unknown> }
   | { "type": "moveView"; viewId: string; x: number; y: number }
   | { "type": "resizeView"; viewId: string; width: number; height: number }

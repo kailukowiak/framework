@@ -2,6 +2,7 @@
 
 export type CalculationMatrixFormulaInput = {
   id?: string | null;
+  targetId?: string;
   name: string;
   formula: string;
 };

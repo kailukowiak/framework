@@ -1,5 +1,5 @@
 import { CanvasHeading } from "./CanvasHeading";
-import { ModelWorkbench } from "./models/ModelWorkbench";
+import { DocumentWorkbench } from "./DocumentWorkbench";
 import { useHistoryMenuState } from "./hooks/useHistoryMenuState";
 import { CircleAlert, Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useReducer, useState } from "react";
@@ -1234,7 +1234,7 @@ export default function App() {
   });
 
   return (
-    <ModelWorkbench key={document.id} document={document} onOperation={run} position={() => insertPosition({ width: 560, height: 420 })}>
+    <DocumentWorkbench key={document.id} document={document} onOperation={run} position={() => insertPosition({ width: 560, height: 420 })}>
     <NumberDisplayContext.Provider value={useThousandsSeparators}>
       <div
         className={`app-shell${formulaEditorActive ? " formula-pick-active" : ""}`}
@@ -2078,6 +2078,6 @@ export default function App() {
         )}
       </div>
     </NumberDisplayContext.Provider>
-    </ModelWorkbench>
+    </DocumentWorkbench>
   );
 }

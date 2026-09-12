@@ -2,6 +2,7 @@
     fn generic_operation_surface_tracks_and_applies_the_canonical_enum() {
         let (server, path) = test_server();
         let catalog = server.describe_operations().unwrap().0;
+        assert!(catalog.type_script.contains("targetId?: string"));
         assert!(catalog.type_script.contains(r#""type": "renameDocument""#));
         assert!(
             catalog
@@ -27,6 +28,56 @@
         if path.exists() {
             std::fs::remove_file(path).unwrap();
         }
+    }
+
+    #[test]
+    fn matrix_input_bindings_use_the_canonical_operation_surface() {
+        let (server, path) = test_server();
+        for operation in [
+            serde_json::json!({"type":"addVariable","name":"growth","formula":"slider(0,1,0.1,0.2)","x":0,"y":0}),
+            serde_json::json!({"type":"addCalculationMatrix","name":"Sensitivity","x":0,"y":0}),
+        ] {
+            server.apply_operation(Parameters(ApplyOperationArgs { operation, expected_revision: None })).unwrap();
+        }
+        let (input, matrix) = {
+            let session = server.lock().unwrap();
+            let objects = &session.store.document().objects;
+            (objects.iter().find(|o| o.name() == "growth").unwrap().id().to_string(),
+             objects.iter().find(|o| o.name() == "Sensitivity").unwrap().id().to_string())
+        };
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({"type":"setCalculationMatrix","objectId":matrix,"rows":[{"name":"r","formula":"[0.1,0.3]","targetId":input}],"columns":[],"body":"`growth` * 100"}), expected_revision: None,
+        })).unwrap();
+        let session = server.lock().unwrap();
+        let view = session.store.view();
+        assert_eq!(view.computed_calculation_matrices[&matrix].cells[1][0].value, Some(30.0));
+        assert_eq!(view.computed_results[&input].cell.value, Some(0.2));
+        drop(session);
+        if path.exists() { std::fs::remove_file(path).unwrap(); }
+    }
+
+    #[test]
+    fn parameter_values_use_the_canonical_typed_operation() {
+        let (server, path) = test_server();
+        let catalog = server.describe_operations().unwrap().0.type_script;
+        assert!(catalog.contains(r#""type": "setParameterValue""#));
+        assert!(catalog.contains("ScalarValue"));
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({ "type":"addVariable", "name":"growth", "formula":"slider(0,1,0.1)", "x":0, "y":0 }),
+            expected_revision: Some(0),
+        })).unwrap();
+        let object_id = server.lock().unwrap().store.view().parameter_inputs[0].id.clone();
+        server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({ "type":"setParameterValue", "objectId":object_id, "value":{"type":"number","value":0.25} }),
+            expected_revision: Some(1),
+        })).unwrap();
+        assert_eq!(server.lock().unwrap().store.view().computed_results[&object_id].cell.value, Some(0.25));
+        assert!(server.apply_operation(Parameters(ApplyOperationArgs {
+            operation: serde_json::json!({ "type":"setParameterValue", "objectId":object_id, "value":{"type":"string","value":"bad"} }),
+            expected_revision: Some(2),
+        })).is_err());
+        assert_eq!(server.inspect_document().unwrap().0.revision, 2);
+        if path.exists() { std::fs::remove_file(path).unwrap(); }
     }
 
     #[test]

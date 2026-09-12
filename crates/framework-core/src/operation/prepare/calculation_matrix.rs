@@ -120,6 +120,7 @@ impl Document {
                 match self.parse_formula_rule(&input.formula) {
                     Ok(expression) => match self.evaluate_to_series(&expression) {
                         Ok((data_type, _)) => CalculationMatrixAxisFormula {
+                            target_id: input.target_id,
                             id: item_id,
                             name: input.name,
                             source: input.formula,
@@ -128,6 +129,7 @@ impl Document {
                             error: None,
                         },
                         Err(error) => CalculationMatrixAxisFormula {
+                            target_id: input.target_id,
                             id: item_id,
                             name: input.name,
                             source: input.formula,
@@ -137,6 +139,7 @@ impl Document {
                         },
                     },
                     Err(error) => CalculationMatrixAxisFormula {
+                        target_id: input.target_id,
                         id: item_id,
                         name: input.name,
                         source: input.formula,

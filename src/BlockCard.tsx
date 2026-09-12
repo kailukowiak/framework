@@ -1,4 +1,5 @@
-import { ChevronRight } from "lucide-react";
+import { GutterRow } from "./BlockGutterRow";
+import { useBlockCommit } from "./hooks/useBlockCommit";
 import {
   useCallback,
   useContext,
@@ -9,12 +10,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useFormulaEditorRegistration } from "./ActiveFormulaEditor";
+import { useActiveFormulaEditorCommands, useFormulaEditorRegistration } from "./ActiveFormulaEditor";
 import { BlockCompletionMenu } from "./BlockCompletionMenu";
 import { NumberDisplayContext } from "./FrameGrid";
 import {
   ScratchworkResultViewer,
-  scratchworkResultIsLong,
 } from "./ScratchworkResultViewer";
 import { scalarFormulaReferences, takenWhen } from "./ScalarCards";
 import { carryCaret } from "./lib/carryCaret";
@@ -33,7 +33,6 @@ import {
   type FormulaReference,
 } from "./lib/formulaReferences";
 import type { OperationHandler } from "./lib/handlers";
-import { beginVectorPointerDrag } from "./lib/vectorDrag";
 import {
   continueScratchworkLine,
   mergeStoredScratchwork,
@@ -132,8 +131,9 @@ export function BlockCard({
   onFreeze: (objectId: string) => Promise<void>;
 }) {
   const stored = computed?.source ?? "";
+  const { reconcile } = useActiveFormulaEditorCommands();
   const [draft, setDraft] = useState(stored);
-  const [error, setError] = useState<string | null>(null);
+  const { sent, sentEditing, pending, inflight, error, commit } = useBlockCommit(block.id, stored, onOperation);
   const [cursor, setCursor] = useState(0);
   const [picking, setPicking] = useState(0);
   const [focused, setFocused] = useState(false);
@@ -142,49 +142,6 @@ export function BlockCard({
   const gutter = useRef<HTMLDivElement>(null);
   const highlight = useRef<HTMLPreElement>(null);
   const stripes = useRef<HTMLDivElement>(null);
-  // The text last handed to the document. What separates "the author has
-  // typed since" from "this is our own edit coming back".
-  const sent = useRef(stored);
-  // The line said to be under the cursor when that text was sent, so we know
-  // whether there is a name still being held open down there.
-  const sentEditing = useRef<number | null>(null);
-  // Sends that have not been answered yet. `stored` is one edit behind for
-  // as long as one is outstanding, and text one edit behind is not a
-  // correction to accept -- it is our own previous send, which would undo
-  // whatever has been typed since.
-  const inflight = useRef(0);
-  const pending = useRef<number | undefined>(undefined);
-  const latestCommit = useRef<{
-    source: string;
-    editing: number | null;
-    promise: Promise<void>;
-  } | null>(null);
-
-  const commit = useCallback(
-    (source: string, editing: number | null): Promise<void> => {
-      window.clearTimeout(pending.current);
-      if (source === sent.current && editing === sentEditing.current)
-        return latestCommit.current?.promise ?? Promise.resolve();
-      sent.current = source;
-      sentEditing.current = editing;
-      inflight.current += 1;
-      const promise = (async () => {
-        try {
-          setError(
-            await onOperation(
-              { type: "setBlockSource", blockId: block.id, source, editing },
-              { inlineError: true }
-            )
-          );
-        } finally {
-          inflight.current -= 1;
-        }
-      })();
-      latestCommit.current = { source, editing, promise };
-      return promise;
-    },
-    [block.id, onOperation]
-  );
 
   // Live, on a pause rather than a keystroke: every send is an undo step, and
   // an undo step per character would bury the history. A pause is also what
@@ -199,7 +156,7 @@ export function BlockCard({
     window.clearTimeout(pending.current);
     pending.current = window.setTimeout(() => void commit(source, line), 350);
   };
-  useEffect(() => () => window.clearTimeout(pending.current), []);
+  useEffect(() => () => window.clearTimeout(pending.current), [pending]);
 
   // The document may hand back text that is not what was sent: renaming a
   // line rewrites the lines that read it. Taken while the author is typing,
@@ -208,7 +165,7 @@ export function BlockCard({
   // across the change rather than left at the end or counted again.
   const caret = useRef<{ at: number; from: string } | null>(null);
   useEffect(() => {
-    if (inflight.current > 0) return;
+    if (inflight > 0 || error) return;
     if (stored === sent.current) return;
     if (draft !== sent.current) return;
     // The line the cursor is in is the author's. The document is holding
@@ -219,9 +176,11 @@ export function BlockCard({
     if (next === draft) return;
     const node = textarea.current;
     caret.current = node ? { at: node.selectionStart, from: draft } : null;
+    const at = node ? carryCaret(draft, next, node.selectionStart) : next.length;
+    reconcile(`scratchwork:${block.id}`, next, { start: at, end: at });
     sent.current = next;
     setDraft(next);
-  }, [stored, draft]);
+  }, [stored, draft, inflight, error, sent, sentEditing, block.id, reconcile]);
   useLayoutEffect(() => {
     const held = caret.current;
     if (!held) return;
@@ -240,7 +199,7 @@ export function BlockCard({
     if (!focused || sentEditing.current === null) return;
     if (sentEditing.current === logicalLineIndexAt(draft, cursor)) return;
     void commit(draft, null);
-  }, [draft, cursor, focused, commit]);
+  }, [draft, cursor, focused, commit, sentEditing]);
 
   // The mirror put back under the text, from wherever the text now is.
   //
@@ -589,107 +548,6 @@ export function BlockCard({
 
 function nameKey(value: string): string {
   return value.replace(/[^\p{L}\p{N}]/gu, "").toLocaleLowerCase();
-}
-
-/**
- * The document's text, with the one line the cursor is in left as the author
- * has it.
- *
- * They are two different authorities on the same text and they only disagree
- * about one line: the document is deliberately holding that line's old name
- * until the cursor leaves, and handing it back would retype the name out from
- * under whoever is typing it. Everywhere else the document is right, which is
- * how a rename made elsewhere still lands while somebody is typing here.
- */
-function gutterRowTitle(
-  line: ComputedBlockLine,
-  answered: boolean
-): string | undefined {
-  if (line.error) return line.error;
-  if (line.frozen) return `Frozen ${takenWhen(line.frozen.takenAt)}`;
-  return answered ? "Open and copy this answer" : undefined;
-}
-
-/** One answer beside its line, spanning as many rows as the line does. */
-function GutterRow({
-  line,
-  formula,
-  span,
-  banded,
-  open,
-  onToggle,
-}: {
-  line: ComputedBlockLine;
-  formula: string | null;
-  span: number;
-  banded: boolean;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const useGrouping = useContext(NumberDisplayContext);
-  const answered = !line.blank && !line.comment && !line.error;
-  const draggable = answered && formula !== null && line.valueCount > 0;
-  const className = `block-gutter-row${line.error ? " failed" : ""}${
-    line.frozen ? (line.frozen.stale ? " stale" : " frozen") : ""
-  }${answered && scratchworkResultIsLong(line.display) ? " long" : ""}${
-    banded ? " banded" : ""
-  }${span > 1 ? " spanning" : ""}`;
-  const spanStyle =
-    span > 1 ? { height: `calc(var(--text-sm) * 1.7 * ${span})` } : undefined;
-  const title = gutterRowTitle(line, answered);
-  return answered ? (
-    <button
-      type="button"
-      className={`${className}${open ? " open" : ""}${
-        draggable ? " draggable-formula" : ""
-      }`}
-      style={spanStyle}
-      title={
-        draggable
-          ? "Drag this answer onto a table or empty canvas; click to open"
-          : title
-      }
-      aria-label={`Open ${line.name || "scratchwork"} result`}
-      aria-expanded={open}
-      onClick={onToggle}
-    >
-      {draggable && (
-        <span
-          className="formula-drag-handle"
-          aria-hidden="true"
-          onClick={(event) => event.stopPropagation()}
-          onPointerDown={(event) =>
-            beginVectorPointerDrag(event.nativeEvent, {
-              objectId: line.id,
-              formula,
-              name: line.name,
-              length: line.valueCount,
-            })
-          }
-        >
-          ↗
-        </span>
-      )}
-      <span>
-        {formatComputedScalar(
-          line.typedValue,
-          line.dataType,
-          line.display,
-          useGrouping
-        )}
-        {line.frozen && (
-          <i className={line.frozen.stale ? "stale" : "frozen"}>
-            {line.frozen.stale ? "*" : "·"}
-          </i>
-        )}
-      </span>
-      <ChevronRight size={10} aria-hidden />
-    </button>
-  ) : (
-    <div className={className} style={spanStyle} title={title}>
-      {line.error ? "!" : ""}
-    </div>
-  );
 }
 
 /**

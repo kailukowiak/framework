@@ -10,6 +10,7 @@ import type { ComputedValue } from "./ComputedValue";
 import type { DataObject } from "./DataObject";
 import type { FormulaFunction } from "./FormulaFunction";
 import type { FrozenValue } from "./FrozenValue";
+import type { ParameterInput } from "./ParameterInput";
 import type { Scenario } from "./Scenario";
 
 export type DocumentView = {
@@ -29,6 +30,10 @@ export type DocumentView = {
    */
   computedValues: { [key in string]: ComputedValue };
   computedModels: { [key in string]: ComputedModel };
+  /**
+   * UI projections of named constructor formulas, never independent state.
+   */
+  parameterInputs?: Array<ParameterInput>;
   formulaFunctions: Array<FormulaFunction>;
   canUndo: boolean;
   canRedo: boolean;

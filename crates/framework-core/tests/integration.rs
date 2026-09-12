@@ -2,6 +2,7 @@ mod common;
 
 mod blocks;
 mod calculation_matrix;
+mod matrix_sensitivity;
 mod categories;
 mod collaboration;
 mod column_fill_editing;
@@ -16,6 +17,7 @@ mod export_scope;
 mod finance_tutorials;
 mod financial_functions;
 mod financial_live;
+mod parameter_controls;
 mod financial_namespace;
 mod formulas;
 mod frame_names;
