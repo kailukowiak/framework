@@ -1,0 +1,315 @@
+{
+  "format": "framework-document",
+  "formatVersion": 1,
+  "tutorialVersion": 2,
+  "document": {
+    "id": "d261859f-12e4-490c-b793-ac5c9dccf9ef",
+    "name": "Scenarios, sensitivity and goal seek",
+    "revision": 16,
+    "objects": [
+      {
+        "kind": "text",
+        "id": "c9093de2-f3d5-48b5-8843-2f6d976d77cb",
+        "name": "Tutorial walkthrough",
+        "text": "",
+        "segments": [
+          {
+            "kind": "literal",
+            "text": "# Scenarios, sensitivity and goal seek\n\nAbout 25 minutes. Open **Scenarios, sensitivity and goal seek — Start** from\n**Data library → Tutorials and examples**, or open the linked `.fw` files\nwith **File → Open**. The answer key is a separate workbook.\n\nThis is the third finance lesson. It builds the job with today's FrameWork,\nshows where that hurts, and then shows what it becomes when phase 3 of\n[the finance build plan](../../docs/finance-build-plan.md), evaluate under\noverrides, lands.\n\n## Why this lesson exists\n\nScenarios already work: the tour switches a whole model between Base,\nUpside and Downside with one menu. What a finance person does next is put\nthe three answers side by side, vary two assumptions in a grid, and ask\nwhat price hits a target. Every one of those is \"compute the model as if\nthis assumption were different, without changing it\". Today FrameWork can\nonly change it. So the comparison is a table you fill in by hand, the grid\nis the model retyped as a formula, and the goal seek is a scan you read by\neye. This lesson does all three the hard way so the easy way is obvious.\n\n## Files\n\n- [`scenarios-and-sensitivity-start.fw`](scenarios-and-sensitivity-start.fw)\n  — an `Assumptions` group with `Price`, `Annual units`, `Unit cost` and\n  `Fixed costs`; `Upside` and `Downside` scenarios already defined; and a\n  `Plan` table of twelve months with seasonality weights.\n- [`scenarios-and-sensitivity-finished.fw`](scenarios-and-sensitivity-finished.fw)\n  — the answer key, built with today's catalog.\n\n## 1. Build the model\n\nSelect `Plan`, open **Wrangle**, and add three calculated columns, one step\nat a time:\n\n```text\nUnits = `Annual units` * `Weight` / 100\nRevenue = `Units` * `Price`\nCost = `Units` * `Unit cost`\n```\n\nFormat Revenue and Cost as USD Accounting.\n\nAdd a block named `Model` with:\n\n```text\nrevenue = `Plan`.`Revenue`.sum()\ngross = revenue - `Plan`.`Cost`.sum()\nebitda = gross - `Fixed costs`\nmargin = ebitda / revenue\n```\n\nCheckpoint: `960000.00`, `400000.00`, `150000.00`, `0.1562`.\n\nThe model is small on purpose. What matters is that part of it lives in a\ntable: the price is applied month by month, inside `Plan`, not in the block.\n\n## 2. Compare scenarios by hand\n\nUse the **Scenario** menu in the bottom-right corner of the canvas. Switch\nto `Upside`, read the four lines of `Model`, and write them down. Switch to\n`Downside` and do it again. Switch back to `Base`.\n\nCheckpoint, which you now have on paper and nowhere in the document:\n\n| | Base | Upside | Downside |\n|---|---:|---:|---:|\n| revenue | 960,000 | 1,187,500 | 747,500 |\n| gross | 400,000 | 522,500 | 292,500 |\n| ebitda | 150,000 | 272,500 | 42,500 |\n\nThat table is what gets presented. The document can produce each column\nbut cannot hold all three at once, because it can only be in one scenario\nat a time.\n\n## 3. A sensitivity grid, by retyping the model\n\nClick **Variable** in the left rail and enter:\n\n```text\nPrice axis = [100, 110, 120, 130, 140]\n```\n\nClick **Variable** again:\n\n```text\nUnits axis = [6000, 7000, 8000, 9000, 10000]\n```\n\nAdd a blank **Calculation Matrix** named `EBITDA by price and units`. Drag\n`Price axis` into **Rows** and `Units axis` into **Columns**. Enter this body:\n\n```text\n(`Price axis` - `Unit cost`) * `Units axis` - `Fixed costs`\n```\n\nCheckpoint: the centre cell, price 120 by 8,000 units, reads `150000.00`, the\nsame as `Model.ebitda`. The corners read `-70000.00`, `50000.00`,\n`170000.00` and `450000.00`.\n\nNow read the body formula. It is not the model. It is the model retyped as\na closed form, and it agrees with `Model` only because the seasonality\nweights sum to 100 so the months can be ignored. The matrix cannot ask\n`Model.ebitda` what it would be at a different price, because the price is\napplied inside `Plan`, and the matrix has no way to reach into `Plan` with a\ndifferent value. The moment the model has a per-month price list, a cost\nstep, or anything that does not collapse to one line, this grid cannot be\nbuilt at all.\n\n## 4. Goal seek, by scanning\n\nWhat price makes EBITDA 300,000 at the base volume? Click **Variable** and\nenter:\n\n```text\nPrice scan = sequence(100, 145, 5)\n```\n\nAdd a blank **Calculation Matrix** named `EBITDA by price`. Drag\n`Price scan` into **Rows**. For **Columns**, add a variable\n`Answer = [\"EBITDA\"]` and drag it in. Enter the body:\n\n```text\n(`Price scan` - `Unit cost`) * `Annual units` - `Fixed costs`\n```\n\nCheckpoint: the column climbs from `-10000.00` at 100 to `310000.00` at 140. The\ntarget falls between 135 and 140. To get closer you narrow the scan and\nlook again.\n\n## 5. What changes when evaluate-under-overrides lands\n\nNone of the following computes today. It is the acceptance target for\nphase 3 of the finance plan, and the checkpoints above are its expected\nnumbers.\n\nSection 2's table becomes lines in `Model`, or one **Compare scenarios**\ngesture:\n\n```text\nupside ebitda = under(`Upside`, ebitda)\ndownside ebitda = under(`Downside`, ebitda)\n```\n\nExpected: `272500.00` and `42500.00`, with the document still on Base.\n\nSection 3's grid keeps its two axes but binds them to the assumptions they\nvary, and its body becomes the model itself:\n\n```text\n`Model`.ebitda\n```\n\nExpected: the same twenty-five numbers, now computed through `Plan` rather\nthan around it. Change a seasonality weight so the months no longer sum to\n100 and the grid must follow, which the retyped version cannot do. The card\nmust show how many evaluations it ran.\n\nSection 4 becomes one line:\n\n```text\ntarget price = solve(`Model`.ebitda == 300000, by=`Price`, within=[100, 200])\n```\n\nExpected: `138.75`, with the iterations and residual visible in the trace,\nand an **Apply** action that sets `Price` to the answer as an ordinary,\nundoable edit. Asking for a bracket that contains no solution must refuse\nwith a reason rather than return a number.\n\nThe rule under all three: evaluating under an override must not activate a\nscenario, materialise anything, or change the document. Property test:\nfor every scenario, `under(scenario, x)` equals activating that scenario and\nreading `x`.\n\n## Smoke-test notes\n\nIf a named control is missing, a step cannot be completed, or a checkpoint\ndiffers, record it with the template in the parent tutorial README rather\nthan working around it. Expected awkwardness that is product feedback, not\na lesson error: the hand-filled table in section 2, and the retyped model in\nsections 3 and 4.\n\n## Rebuilding the files\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials scenarios-and-sensitivity\n```\n\nThe generator asserts every checkpoint above against the reloaded answer\nkey, including switching scenarios and reading `Model` the way the reader\ndoes. The expected numbers were computed independently in Python before the\nworkbook existed.\n"
+          }
+        ]
+      },
+      {
+        "kind": "container",
+        "id": "1c4016b2-17b1-4cc6-822c-c91eb7375d38",
+        "name": "Assumptions",
+        "memberIds": [
+          "b5d54632-50db-4a5b-b4a9-5493e4976840",
+          "5891a148-790b-4365-baba-0d9912a1595d",
+          "ca8db494-a554-4ef0-aa48-303ccdd8f574",
+          "dc7ebdbc-37d6-4a95-9ce2-3eefe299a16b"
+        ]
+      },
+      {
+        "kind": "value",
+        "id": "b5d54632-50db-4a5b-b4a9-5493e4976840",
+        "name": "Price",
+        "raw": "120",
+        "dataType": "integer"
+      },
+      {
+        "kind": "value",
+        "id": "5891a148-790b-4365-baba-0d9912a1595d",
+        "name": "Annual units",
+        "raw": "8000",
+        "dataType": "integer"
+      },
+      {
+        "kind": "value",
+        "id": "ca8db494-a554-4ef0-aa48-303ccdd8f574",
+        "name": "Unit cost",
+        "raw": "70",
+        "dataType": "integer"
+      },
+      {
+        "kind": "value",
+        "id": "dc7ebdbc-37d6-4a95-9ce2-3eefe299a16b",
+        "name": "Fixed costs",
+        "raw": "250000",
+        "dataType": "integer"
+      },
+      {
+        "kind": "frame",
+        "id": "b460c797-b330-4053-be4a-d6cec8b7a0ae",
+        "name": "Plan",
+        "columns": [
+          {
+            "id": "month~g66dct",
+            "name": "Month",
+            "sourceName": null,
+            "dataType": "string",
+            "categories": [],
+            "format": null,
+            "formula": null
+          },
+          {
+            "id": "weight~sdrctk",
+            "name": "Weight",
+            "sourceName": null,
+            "dataType": "integer",
+            "categories": [],
+            "format": null,
+            "formula": null
+          }
+        ],
+        "rows": [
+          {
+            "id": "eba1ab75-d405-4c72-8200-e5a5d38add8b",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Jan"
+              },
+              "weight~sdrctk": {
+                "raw": "6"
+              }
+            }
+          },
+          {
+            "id": "50b0cb72-65f9-4592-b646-a6b5c0aaa0d5",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Feb"
+              },
+              "weight~sdrctk": {
+                "raw": "6"
+              }
+            }
+          },
+          {
+            "id": "3f756eb4-c43b-4c7b-b1c0-7544a5d14bf8",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Mar"
+              },
+              "weight~sdrctk": {
+                "raw": "7"
+              }
+            }
+          },
+          {
+            "id": "42802209-8b83-4cbb-b0c6-937539b4b4fc",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Apr"
+              },
+              "weight~sdrctk": {
+                "raw": "8"
+              }
+            }
+          },
+          {
+            "id": "8cc0446a-85ce-4e0c-b38d-b4fffc26f1f6",
+            "cells": {
+              "month~g66dct": {
+                "raw": "May"
+              },
+              "weight~sdrctk": {
+                "raw": "9"
+              }
+            }
+          },
+          {
+            "id": "78276cdf-1e98-423c-a678-69f81f109988",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Jun"
+              },
+              "weight~sdrctk": {
+                "raw": "9"
+              }
+            }
+          },
+          {
+            "id": "ab9c03c9-5564-4c6a-871b-a31105246175",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Jul"
+              },
+              "weight~sdrctk": {
+                "raw": "9"
+              }
+            }
+          },
+          {
+            "id": "711aa585-8187-4c74-8efe-ed3de534d3e4",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Aug"
+              },
+              "weight~sdrctk": {
+                "raw": "9"
+              }
+            }
+          },
+          {
+            "id": "612361a3-c098-4a67-9195-a3961c3324ec",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Sep"
+              },
+              "weight~sdrctk": {
+                "raw": "8"
+              }
+            }
+          },
+          {
+            "id": "7439f576-d78f-4944-8763-3e14e69f5c70",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Oct"
+              },
+              "weight~sdrctk": {
+                "raw": "9"
+              }
+            }
+          },
+          {
+            "id": "74218c91-6aea-4268-9476-bbe75aaee9c3",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Nov"
+              },
+              "weight~sdrctk": {
+                "raw": "10"
+              }
+            }
+          },
+          {
+            "id": "65a284db-30dd-4bc1-b484-89bcbe56d960",
+            "cells": {
+              "month~g66dct": {
+                "raw": "Dec"
+              },
+              "weight~sdrctk": {
+                "raw": "10"
+              }
+            }
+          }
+        ],
+        "sourceFile": null,
+        "artifact": null,
+        "connector": null,
+        "derivation": null,
+        "materialization": null,
+        "uniqueKeys": [],
+        "summaries": []
+      }
+    ],
+    "views": [
+      {
+        "id": "5e57111d-c19c-45b3-95c4-fc1be6b608ae",
+        "objectId": "c9093de2-f3d5-48b5-8843-2f6d976d77cb",
+        "x": 70.0,
+        "y": 70.0,
+        "width": 580.0,
+        "height": 820.0,
+        "collapsed": false
+      },
+      {
+        "id": "243d6f31-e3de-411c-abc4-63fbad1f393d",
+        "objectId": "1c4016b2-17b1-4cc6-822c-c91eb7375d38",
+        "x": 720.0,
+        "y": 70.0,
+        "width": 260.0,
+        "height": 240.0,
+        "collapsed": false
+      },
+      {
+        "id": "ff018780-da13-4d80-9e05-59f4b3f8c3f2",
+        "objectId": "b5d54632-50db-4a5b-b4a9-5493e4976840",
+        "x": 0.0,
+        "y": 0.0,
+        "width": 220.0,
+        "height": 116.0,
+        "collapsed": false
+      },
+      {
+        "id": "3b36ee30-945a-48f7-af9c-66b0a65279b0",
+        "objectId": "5891a148-790b-4365-baba-0d9912a1595d",
+        "x": 0.0,
+        "y": 0.0,
+        "width": 220.0,
+        "height": 116.0,
+        "collapsed": false
+      },
+      {
+        "id": "be5d21ef-746b-4254-9649-0689fa8d2ac8",
+        "objectId": "ca8db494-a554-4ef0-aa48-303ccdd8f574",
+        "x": 0.0,
+        "y": 0.0,
+        "width": 220.0,
+        "height": 116.0,
+        "collapsed": false
+      },
+      {
+        "id": "abc95479-ca0d-4ea4-ad07-baef78e86fb1",
+        "objectId": "dc7ebdbc-37d6-4a95-9ce2-3eefe299a16b",
+        "x": 0.0,
+        "y": 0.0,
+        "width": 220.0,
+        "height": 116.0,
+        "collapsed": false
+      },
+      {
+        "id": "53a41ca2-9ef3-4cca-aa49-cd4f7d626f84",
+        "objectId": "b460c797-b330-4053-be4a-d6cec8b7a0ae",
+        "x": 720.0,
+        "y": 350.0,
+        "width": 420.0,
+        "height": 666.0,
+        "collapsed": false
+      }
+    ],
+    "frozenValues": {},
+    "scenarios": [
+      {
+        "id": "47a4d930-f5d0-4209-9617-a15f5f54ba95",
+        "name": "Upside",
+        "values": {
+          "5891a148-790b-4365-baba-0d9912a1595d": "9500",
+          "b5d54632-50db-4a5b-b4a9-5493e4976840": "125"
+        }
+      },
+      {
+        "id": "0d2d4fe8-a9c4-44cd-8881-aba4ebc163e0",
+        "name": "Downside",
+        "values": {
+          "5891a148-790b-4365-baba-0d9912a1595d": "6500",
+          "b5d54632-50db-4a5b-b4a9-5493e4976840": "115"
+        }
+      }
+    ],
+    "activeScenario": null
+  },
+  "versionVector": {}
+}

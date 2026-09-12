@@ -80,6 +80,7 @@ cargo run -p framework-core --example generate_tutorial_workbooks
 cargo run -p framework-core --example generate_excel_import_tutorial
 cargo run -p framework-core --example generate_formula_click_tutorial
 cargo run -p framework-core --example generate_dictionary_tutorial
+cargo run -p framework-core --example generate_finance_tutorials
 ```
 
 The first command rebuilds the tour, the first-workbook lesson, month-end
@@ -134,3 +135,22 @@ Regenerate this lesson with `cargo run -p framework-core --example generate_dict
 Both lessons include a Start workbook and an Answer key in the Data library.
 Regenerate with `cargo run -p framework-core --example generate_robust_linear_regression_tutorial`
 and `cargo run -p framework-core --example generate_xgboost_tutorial`.
+
+## Finance track
+
+Three lessons for modellers and FP&A. Each builds a real job with today's
+FrameWork, shows where that hurts, and ends with what the same job becomes
+when the matching phase of [the finance build plan](../docs/finance-build-plan.md)
+lands. The closing section of each README is that phase's acceptance target.
+
+- **[Price a deal](price-a-deal/README.md)** — a loan payment and
+  amortisation schedule by recurrence, a discounted cash flow from parts, and
+  an IRR found by scanning rates because there is no solver yet. About 20
+  minutes.
+- **[Driver-based forecast](driver-forecast/README.md)** — a positional prior
+  month and why it lies, a generated spine and join that make it safe, an
+  actual/forecast cutover on one assumption, and a February fiscal year
+  written by hand. About 30 minutes.
+- **[Scenarios, sensitivity and goal seek](scenarios-and-sensitivity/README.md)**
+  — compare scenarios by switching and writing numbers down, a sensitivity
+  grid that retypes the model, and a goal seek by scan. About 25 minutes.

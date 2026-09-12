@@ -32,6 +32,7 @@ mod search;
 mod series;
 mod summaries;
 mod tutorials;
+mod finance_tutorials;
 mod typed_cells;
 mod undo;
 mod variables;
