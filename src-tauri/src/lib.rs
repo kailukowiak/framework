@@ -1,3 +1,4 @@
+mod recent_documents;
 mod tutorial_assets;
 use framework_core::{
     ArtifactSweep, CollaborationPaths, ConnectorRecipe, DataArtifact, DataObject, Document,
@@ -683,29 +684,6 @@ fn save_document_as_dialog_inner(
     Ok(Some(payload))
 }
 
-#[tauri::command]
-fn list_recent_documents(app: AppHandle) -> Result<Vec<RecentDocument>, String> {
-    let path = recent_documents_path(&app)?;
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-    let contents = fs::read_to_string(path).map_err(|error| error.to_string())?;
-    let mut documents: Vec<RecentDocument> = serde_json::from_str(&contents).unwrap_or_default();
-    documents.retain(|document| {
-        let path = Path::new(&document.path);
-        path.is_file() && is_framework_document_path(path)
-    });
-    // Recomputed on every list, not trusted from the stored JSON: a file
-    // that was readable when it was recorded can go dark later (a macOS TCC
-    // deny arriving, or permissions changing underneath it), and the entry
-    // should reflect that rather than repeat what was true when it was added.
-    for document in &mut documents {
-        document.readable = fs::File::open(&document.path).is_ok();
-    }
-    documents.truncate(MAX_RECENT_DOCUMENTS);
-    Ok(documents)
-}
-
 fn cli_connector_profiles_path(app: &AppHandle) -> Result<PathBuf, String> {
     #[cfg(feature = "e2e")]
     if let Some(path) = std::env::var_os("FRAMEWORK_E2E_CONNECTOR_PROFILE_PATH") {
@@ -1025,13 +1003,20 @@ fn materialize_tutorial_documents(
 }
 
 #[tauri::command]
-fn list_tutorial_documents(app: AppHandle) -> Result<TutorialLibrary, String> {
-    Ok(tutorial_library(&tutorial_library_directory(&app)?))
+async fn list_tutorial_documents(app: AppHandle) -> Result<TutorialLibrary, String> {
+    let directory = tutorial_library_directory(&app)?;
+    // Permission/cloud waits in file probes must not block the window thread.
+    tauri::async_runtime::spawn_blocking(move || tutorial_library(&directory))
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
-fn create_tutorial_documents(app: AppHandle) -> Result<TutorialLibrary, String> {
-    materialize_tutorial_documents(&tutorial_library_directory(&app)?, false)
+async fn create_tutorial_documents(app: AppHandle) -> Result<TutorialLibrary, String> {
+    let directory = tutorial_library_directory(&app)?;
+    tauri::async_runtime::spawn_blocking(move || materialize_tutorial_documents(&directory, false))
+        .await
+        .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -2765,7 +2750,7 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         open_document_dialog,
         new_document_dialog,
         save_document_as_dialog,
-        list_recent_documents,
+        recent_documents::list_recent_documents,
         list_cli_connector_profiles,
         save_cli_connector_profile,
         list_database_connections,

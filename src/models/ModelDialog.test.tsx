@@ -21,27 +21,29 @@ function setup() {
 }
 
 describe("model authoring", () => {
-  it("requires explicit features and emits the selected statistical specification", async () => {
+  it("uses every source column except the target for the statistical specification", async () => {
     const { run, user } = setup();
     await user.click(screen.getByRole("button", { name: "Create model…" }));
-    expect((screen.getByRole("textbox", { name: "Model feature columns" }) as HTMLTextAreaElement).value).toBe("");
-    await user.type(screen.getByRole("textbox", { name: "Model feature columns" }), "Revenue");
+    expect(screen.queryByRole("textbox", { name: "Model feature columns" })).toBeNull();
     await user.selectOptions(screen.getByRole("combobox", { name: "Model target column" }), id("Cost"));
     await user.selectOptions(screen.getByRole("combobox", { name: "Model standard errors" }), "hc3");
     await user.click(screen.getByRole("button", { name: "Create model" }));
     expect(run).toHaveBeenCalledWith({ type: "addModel", name: "Regression", x: 100, y: 200,
-      spec: { sourceFrameId: frame.id, targetColumnId: id("Cost"), featureColumnIds: [id("Revenue")],
+      spec: { sourceFrameId: frame.id, targetColumnId: id("Cost"), featureColumnIds: frame.columns.filter(column => column.id !== id("Cost")).map(column => column.id),
         method: "ols", covariance: "hc3", confidenceLevel: 0.95, holdoutFraction: 0.2, seed: 42 } }, { inlineError: true });
   });
 
-  it("refuses using the target as a feature before emitting an operation", async () => {
+  it("requires a target and recalculates predictors when the target changes", async () => {
     const { run, user } = setup();
     await user.click(screen.getByRole("button", { name: "Create model…" }));
-    await user.type(screen.getByRole("textbox", { name: "Model feature columns" }), "Revenue");
+    expect((screen.getByRole("button", { name: "Create model" }) as HTMLButtonElement).disabled).toBe(true);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Model target column" }), id("Cost"));
     await user.selectOptions(screen.getByRole("combobox", { name: "Model target column" }), id("Revenue"));
     await user.click(screen.getByRole("button", { name: "Create model" }));
-    expect(screen.getByRole("alert").textContent).toContain("target cannot also be a feature");
-    expect(run).not.toHaveBeenCalled();
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ spec: expect.objectContaining({
+      targetColumnId: id("Revenue"),
+      featureColumnIds: frame.columns.filter(column => column.id !== id("Revenue")).map(column => column.id),
+    }) }), { inlineError: true });
   });
 
   it("routes file and pasted XGBoost JSON through the same public operation", async () => {
@@ -76,11 +78,29 @@ describe("model authoring", () => {
     const { run, user } = setup();
     await user.click(screen.getByRole("button", { name: "Create model…" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Model method" }), "randomForestRegressor");
-    await user.type(screen.getByRole("textbox", { name: "Model feature columns" }), "Revenue");
     await user.selectOptions(screen.getByRole("combobox", { name: "Model target column" }), id("Cost"));
     await user.click(screen.getByRole("button", { name: "Create model" }));
     expect(run).toHaveBeenCalledWith(expect.objectContaining({ type: "addModel", spec: expect.objectContaining({
       method: "randomForestRegressor", forest: { trees: 100, maxDepth: 8, minSamplesLeaf: 2, maxFeatures: null, seed: 0 },
+    }) }), { inlineError: true });
+  });
+
+  it.each([
+    ["xgboostRegression", "regression"], ["xgboostBinary", "binary"], ["xgboostMulticlass", "multiclass"],
+  ])("authors native %s with typed settings", async (method, objective) => {
+    const { run, user } = setup();
+    await user.click(screen.getByRole("button", { name: "Create model…" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Model method" }), method);
+    expect(screen.queryByRole("combobox", { name: "Model standard errors" })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "XGBoost model JSON" })).toBeNull();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Model target column" }), id("Cost"));
+    await user.click(screen.getByText("XGBoost settings"));
+    await user.clear(screen.getByRole("spinbutton", { name: "Boosting rounds" }));
+    await user.type(screen.getByRole("spinbutton", { name: "Boosting rounds" }), "25");
+    await user.click(screen.getByRole("button", { name: "Create model" }));
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ type: "addModel", spec: expect.objectContaining({
+      method: "xgboost", xgboost: { objective, rounds: 25, maxDepth: 6, learningRate: 0.1,
+        minChildWeight: 1, subsample: 1, columnSubsample: 1, l2Regularization: 1, seed: 0, threads: 1 },
     }) }), { inlineError: true });
   });
 

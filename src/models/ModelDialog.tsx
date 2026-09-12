@@ -8,7 +8,7 @@ import { resolveModelColumns } from "./columns";
 import { modelDraft } from "./modelDraft";
 import { ModelFitSettings, isForestMethod } from "./ModelFitSettings";
 import { ModelImportFields } from "./ModelImportFields";
-import type { Method } from "../lib/bindings/Method";
+import { XgboostSettings, xgboostObjective, nativeMethod, type ModelChoice } from "./XgboostSettings";
 import type { ForestSettings } from "../lib/bindings/ForestSettings";
 
 export function ModelDialog({ state, onClose }: { state: ModelDialogState; onClose: () => void }) {
@@ -18,7 +18,7 @@ export function ModelDialog({ state, onClose }: { state: ModelDialogState; onClo
   const [sourceId, setSourceId] = useState(initial.sourceId);
   const source = frames.find(frame => frame.id === sourceId);
   const [name, setName] = useState("Regression");
-  const [method, setMethod] = useState<Method | "onnx">(initial.method);
+  const [method, setMethod] = useState<ModelChoice>(initial.method);
   const [features, setFeatures] = useState(initial.features);
   const [target, setTarget] = useState(initial.target);
   const [covariance, setCovariance] = useState<"classical" | "hc3">(initial.covariance);
@@ -28,13 +28,17 @@ export function ModelDialog({ state, onClose }: { state: ModelDialogState; onClo
   const [json, setJson] = useState("");
   const [bytes, setBytes] = useState<number[] | null>(null);
   const [fileName, setFileName] = useState("");
+  const [xgboost, setXgboost] = useState(initial.xgboost);
+  const objective = xgboostObjective(method);
+  const importing = method === "xgboost" || method === "onnx";
+  const predictors = source?.columns.filter(column => column.id !== target) ?? [];
   const [forest, setForest] = useState<ForestSettings>(initial.forest);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submit = async () => {
     setBusy(true); setError(null);
     try {
-      const featureColumnIds = resolveModelColumns(source, features);
+      const featureColumnIds = importing ? resolveModelColumns(source, features) : predictors.map(column => column.id);
       const position = { x: state.x, y: state.y };
       let operation: Operation;
       if (method === "xgboost") {
@@ -45,10 +49,10 @@ export function ModelDialog({ state, onClose }: { state: ModelDialogState; onClo
         operation = { type: "importOnnxModel", name: name.trim(), sourceFrameId: sourceId, featureColumnIds, bytes, ...position };
       } else {
         if (!target) throw new Error("Choose a target column.");
-        if (featureColumnIds.includes(target)) throw new Error("The target cannot also be a feature.");
+        if (!featureColumnIds.length) throw new Error("The frame needs at least one predictor besides the target.");
         const nextSpec = { sourceFrameId: sourceId, targetColumnId: target, featureColumnIds,
-          method, covariance: method === "ols" ? covariance : "classical" as const,
-          confidenceLevel: confidence / 100, holdoutFraction: holdout / 100, seed, ...(isForestMethod(method) ? { forest } : {}) };
+          method: nativeMethod(method), covariance: method === "ols" ? covariance : "classical" as const,
+          confidenceLevel: confidence / 100, holdoutFraction: holdout / 100, seed, ...(isForestMethod(method) ? { forest } : {}), ...(objective ? { xgboost: { ...xgboost, objective } } : {}) };
         operation = state.kind === "edit" && state.modelId
           ? { type: "setModelSpec", modelId: state.modelId, spec: nextSpec }
           : { type: "addModel", name: name.trim(), spec: nextSpec, ...position };
@@ -77,6 +81,9 @@ export function ModelDialog({ state, onClose }: { state: ModelDialogState; onClo
       onChange={event => setMethod(event.target.value as typeof method)}>
       <option value="ols">Predict a number · Linear regression (OLS)</option>
       <option value="logistic">Predict a category · Logistic regression</option>
+      <option value="xgboostRegression">Predict a number · XGBoost</option>
+      <option value="xgboostBinary">Predict two categories · XGBoost</option>
+      <option value="xgboostMulticlass">Predict multiple categories · XGBoost</option>
       <option value="randomForestRegressor">Predict a number · Random forest</option>
       <option value="randomForestClassifier">Predict a category · Random forest</option>
       {state.kind !== "edit" && <>
@@ -85,15 +92,16 @@ export function ModelDialog({ state, onClose }: { state: ModelDialogState; onClo
       </>}
     </select></label>
     <ModelSourceFields frames={frames} sourceId={sourceId} onSource={id => { setSourceId(id); setFeatures(""); setTarget(""); }}
-      features={features} onFeatures={setFeatures} />
-    {method === "xgboost" || method === "onnx"
+      features={features} onFeatures={setFeatures} showFeatures={importing} />
+    {importing
       ? <ModelImportFields method={method} json={json} onJson={setJson} fileName={fileName} onPick={() => void pick()} />
       : <ModelFitSettings source={source} method={method} target={target} onTarget={setTarget}
         covariance={covariance} onCovariance={setCovariance} confidence={confidence} onConfidence={setConfidence}
         holdout={holdout} onHoldout={setHoldout} seed={seed} onSeed={setSeed} forest={forest} onForest={setForest} />}
+    {objective && <XgboostSettings settings={xgboost} onChange={setXgboost} />}
     <div className="dialog-actions"><button className="secondary-action" onClick={onClose}>Cancel</button>
-      <button className="primary-action" disabled={!sourceId || !features.trim() || (method === "xgboost" && !json.trim()) || (method === "onnx" && !bytes)}
-        onClick={() => void submit()}>{busy ? "Working…" : state.kind === "edit" ? "Apply specification" : method === "xgboost" || method === "onnx" ? "Import model" : "Create model"}</button>
+      <button className="primary-action" disabled={!sourceId || (importing ? !features.trim() : !target || !predictors.length) || (method === "xgboost" && !json.trim()) || (method === "onnx" && !bytes)}
+        onClick={() => void submit()}>{busy ? "Working…" : state.kind === "edit" ? "Apply specification" : importing ? "Import model" : "Create model"}</button>
     </div>
   </ModelDialogShell>;
 }

@@ -8,9 +8,16 @@ predictions. A failed fit leaves the last successful fit available. You can dele
 a model input column: the affected model or prediction frame reports the missing
 input inline, and the saved fit remains intact. Undo restores the connection.
 
+## Learn by doing
+
+The Data library includes two model tutorials, each with a Start workbook and an
+Answer key: [robust OLS on diabetes](../tutorials/robust-linear-regression/README.md)
+and [XGBoost on Iris](../tutorials/xgboost/README.md). Create tutorials to add the
+new lessons without replacing your existing working copies.
+
 ## Start with a regression
 
-Create a model from a frame, choose the target and ordered feature columns, and
+Create a model from a frame, choose the target column, and
 choose linear regression or binary logistic regression. Native regressions use
 numeric predictors and an intercept. Logistic targets must be 0 and 1. Missing
 values need explicit preparation before fitting; they are not silently dropped.
@@ -50,6 +57,22 @@ Wrangle first; statistical rows are not silently removed. Welch's calculation
 assumes independent samples, whereas Pearson uses aligned pairs. Statistical
 uncertainty depends on those assumptions; the output is not a causal conclusion.
 
+## Train XGBoost
+
+Create a model from a frame and choose XGBoost for a number, a binary category
+(0/1), or multiple categories (consecutive class indices starting at zero).
+Choose the target column, then create and explicitly fit the model.
+The default uses 100 boosting rounds, depth 6 and a 0.1 learning rate. Advanced
+settings are optional. Holdout evaluation and live prediction frames work just
+like regression; editing data never silently retrains the saved booster.
+
+Native training is available on supported macOS and Windows builds. Predictor
+columns currently need finite numeric values; prepare missing values and category
+encodings before fitting, observing the training-only preprocessing rule above.
+The saved model contains typed trees and can score without a native training
+library. See [packaging verification](ml-xgboost-packaging.md) for remaining
+clean-machine release checks.
+
 ## Import XGBoost
 
 Export a fitted booster using `booster.save_model("model.json")` (or the equivalent
@@ -64,11 +87,7 @@ objectives and versions are errors, not approximate conversions. An exported
 booster does not contain preprocessing outside that booster: apply the same
 external transformations before scoring it.
 
-Import runs locally without Python or a native XGBoost library. Native XGBoost
-**training is deferred** in this implementation: the local packaging spike ran,
-but its macOS library required macOS 15 and path repairs, and clean Windows/Linux
-and signed application packaging have not been demonstrated. This is an explicit
-scope cut, not a claim that imported inference replaces in-app training.
+Import and scoring run locally without Python or a native XGBoost library.
 
 ## Import a fitted sklearn pipeline
 
@@ -126,3 +145,5 @@ Path("pipeline.onnx").write_bytes(model.SerializeToString())
 Conversion succeeding is not itself a compatibility guarantee. FrameWork checks
 the actual operators, wiring, types and fitted values at import, then keeps the
 accepted recipe with the model.
+
+Native model fitting uses every source-frame column except the target, in frame order. To use fewer predictors, select the desired columns in a derived frame through Wrangle/formulas, then model that frame. Unsupported column types produce a fit error rather than being silently omitted. Imported models keep their explicit ordered input mapping.

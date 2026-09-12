@@ -82,7 +82,7 @@ function SavedModelSummary({ model }: { model: Extract<DataObject, { kind: "mode
 
 function modelStatus(model: Extract<DataObject, { kind: "model" }>): string {
   const kind = model.fitted?.result.payload.kind;
-  const method = kind === "onnx" ? "Imported ONNX pipeline" : (kind === "randomForest" || model.spec?.method.startsWith("randomForest")) ? "Random forest" : kind === "xgboost" ? "XGBoost"
+  const method = kind === "onnx" ? "Imported ONNX pipeline" : (kind === "randomForest" || model.spec?.method.startsWith("randomForest")) ? "Random forest" : (kind === "xgboost" || model.spec?.method === "xgboost") ? "XGBoost"
     : (kind ? kind === "binaryLogistic" : model.spec?.method === "logistic") ? "Logistic regression" : "Linear regression";
   const status = model.spec ? model.fitted ? "Fitted" : "Not fitted" : "Imported · inference only";
   const observations = model.fitted?.result.summary.observations;

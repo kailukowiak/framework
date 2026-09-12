@@ -159,12 +159,13 @@ Pearson correlation, and Welch differences of means. Imported inference includes
 the tested numerical XGBoost JSON subset and the explicitly bounded sklearn ONNX
 pipeline motif. Each addition uses the same operation/history/frame path.
 
-**Native XGBoost training is deferred as an explicit scope cut.** The spike proves
-local fit/reload/relocation, but its macOS dependency has a macOS 15 deployment
-floor and required path repair. Clean supported-platform and signed-bundle evidence
-is missing. Import inference ships independently of that native library. This
-decision satisfies the requirement to decide after measuring; it does not claim
-the native-training goal was delivered.
+**Native XGBoost training is now included.** Kai clarified the supported targets
+as macOS 26+ and Windows 11+, superseding the earlier deferral based partly on
+an assumed older macOS floor. The shared model path supports numerical regression,
+binary classification, and multiclass training. Pinned native library packaging
+is shared by development, e2e, and release builds. Clean-machine Windows installer
+and signed/notarized macOS verification remain release gates; local tests do not
+establish those results.
 
 No ONNX Runtime is bundled for the supported linear/logistic graph subset. The
 translator and executor match the supplied sklearn and ORT fixtures. An ONNX tree
@@ -219,3 +220,31 @@ Native e2e uses the documented embedded-driver focus and select-event
 compensations. Visual density, native menus, and literal operating-system focus
 remain manual checks in `npm run tauri dev`; automated integration passing does
 not claim those manual checks were performed. No release was published.
+
+### Native XGBoost follow-through (2026-09-12)
+
+Native regression, binary classification and multiclass training now use the
+shared model specification and explicit fit operation. The authoring dialog
+exposes all three choices with bounded defaults and optional advanced settings.
+The trained booster is converted to typed persisted trees, so live scoring uses
+the same validated inference path as imported XGBoost models.
+
+A fresh, ad-hoc signed macOS app passed all nine model e2e tests, including native
+XGBoost fit → holdout metrics → live prediction → source edit → undo → save/reopen.
+The existing three Scratchwork native tests also passed against that bundle.
+`otool -L` confirms the executable and XGBoost library use bundled `@rpath`
+XGBoost/OpenMP dependencies without Homebrew paths. This verifies the local
+macOS 27 host, not a clean macOS 26 or Windows 11 installation.
+
+The frontend suite now has 907 passing tests. App/e2e typechecks and frontend
+lint pass with the same 45 pre-existing warnings. Focused runtime tests cover
+all three XGBoost objectives; new Store tests cover regression and classification,
+held-out metrics, persisted fits, live scoring and undo. The final native build
+also includes the documented macOS 27 compiler-plugin stripping workaround.
+
+Final Rust verification: `cargo test --workspace --lib --tests` passed 754 tests
+with three pre-existing ignored tests, using the same prepared XGBoost/OpenMP
+libraries and macOS 26 deployment target as the desktop build. Rust lint passed
+with existing structural warnings, and formatting/diff whitespace checks passed.
+The earlier full-run attempts failed from disk exhaustion and concurrent cache
+cleanup; those interrupted attempts are superseded by this completed run.

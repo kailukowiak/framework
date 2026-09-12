@@ -1,9 +1,13 @@
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useEffect, useRef } from "react";
+import { isGridClipboardTarget } from "./lib/gridClipboardTarget";
 
 type MenuHandlers = Record<string, () => void>;
 
 export function ownsTextHistory(target: Element | null): boolean {
+  // The grid's hidden textarea receives native clipboard commands, but has
+  // no editable draft. Its Undo belongs to the workbook just like its cells.
+  if (isGridClipboardTarget(target)) return false;
   if (target instanceof HTMLInputElement) {
     return ![
       "button",

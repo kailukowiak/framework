@@ -22,7 +22,6 @@
  * identifier so this build installs beside the release instead of over it.
  */
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const DEV_CONFIG = "src-tauri/tauri.dev-bundle.conf.json";
@@ -47,10 +46,10 @@ if (!platform) {
 }
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-// Run the CLI's own entry under node rather than the `tauri` shim: the shim is
-// only on PATH when a package manager put it there, and this script should
-// also work when it is run directly.
-const tauri = createRequire(import.meta.url).resolve("@tauri-apps/cli/tauri.js");
+// The shared wrapper prepares native libraries and merges their platform
+// configuration before invoking the CLI. It works directly under Node as well
+// as through a package manager, so no shell shim needs to be on PATH.
+const tauri = fileURLToPath(new URL("tauri-native.mjs", import.meta.url));
 
 execFileSync(
   process.execPath,

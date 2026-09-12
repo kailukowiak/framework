@@ -47,3 +47,7 @@ mod legacy_display;
 mod ml_models;
 
 mod ml_extended;
+
+#[path = "ml_tutorials.rs"]
+mod ml_tutorials;
+mod ml_xgboost_native;

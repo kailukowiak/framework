@@ -137,6 +137,7 @@ impl Document {
             covariance: spec.covariance,
             max_iterations: 100,
             forest: spec.forest.clone(),
+            xgboost: spec.xgboost.clone(),
         };
         let result =
             framework_ml::fit(&request, &dataset(&split.training_rows)).map_err(ml_error)?;

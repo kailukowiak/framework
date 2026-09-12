@@ -6,7 +6,17 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 
-const BUNDLED_TUTORIALS: [[&str; 2]; 14] = [
+const BUNDLED_TUTORIALS: [[&str; 2]; 18] = [
+    [
+        "robust-linear-regression",
+        "robust-linear-regression-start.fw",
+    ],
+    [
+        "robust-linear-regression",
+        "robust-linear-regression-finished.fw",
+    ],
+    ["xgboost", "xgboost-start.fw"],
+    ["xgboost", "xgboost-finished.fw"],
     ["dictionaries", "dictionaries-start.fw"],
     ["dictionaries", "dictionaries-finished.fw"],
     ["grand-tour", "grand-tour-start.fw"],

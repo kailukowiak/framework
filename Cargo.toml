@@ -45,9 +45,23 @@ debug = 1
 
 [profile.dev.package."*"]
 debug = 0
+strip = "none"
 
 [profile.test]
 debug = 1
 
 [profile.test.package."*"]
 debug = 0
+strip = "none"
+
+# Rust's implicit debuginfo stripping can misalign proc-macro dylibs on
+# macOS 27 (rust-lang/rust#157750). Keep host build tools unstripped; the
+# application/dependency debug levels above still control their disk footprint.
+[profile.dev.build-override]
+strip = "none"
+
+[profile.test.build-override]
+strip = "none"
+
+[profile.release.build-override]
+strip = "none"

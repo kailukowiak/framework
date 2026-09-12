@@ -44,6 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         holdout_fraction: 0.2,
         seed: 42,
         forest: Default::default(),
+        xgboost: Default::default(),
     };
     store.apply(Operation::AddModel {
         name: "Demand".into(),

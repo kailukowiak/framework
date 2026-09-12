@@ -13,9 +13,9 @@
     "test": "vitest run",
     "sign:e2e": "codesign --force --deep --sign - target/debug/bundle/macos/FrameWork.app",
     "prepare:e2e:samples": "cargo run -p framework-core --example generate_sample_documents",
-    "test:e2e": "npm run prepare:e2e:samples && tauri build --debug --bundles app --features e2e --config e2e/tauri.e2e.conf.json && npm run sign:e2e && npm run test:e2e:only",
+    "test:e2e": "npm run prepare:e2e:samples && npm run tauri -- build --debug --bundles app --features e2e --config e2e/tauri.e2e.conf.json && npm run sign:e2e && npm run test:e2e:only",
     "test:e2e:only": "for f in e2e/specs/*.e2e.ts; do wdio run e2e/wdio.conf.ts --spec \"$f\" || exit 1; done",
-    "tauri": "tauri",
+    "tauri": "node scripts/tauri-native.mjs",
     "setup:dev-signing": "node scripts/setup-dev-signing.mjs",
     "build:dev-app": "node scripts/build-dev-app.mjs",
     "version:set": "node scripts/set-version.mjs"

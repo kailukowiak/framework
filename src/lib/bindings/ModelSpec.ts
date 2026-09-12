@@ -2,6 +2,7 @@
 import type { CovarianceMethod } from "./CovarianceMethod";
 import type { ForestSettings } from "./ForestSettings";
 import type { Method } from "./Method";
+import type { Settings } from "./Settings";
 
 export type ModelSpec = {
   sourceFrameId: string;
@@ -13,4 +14,5 @@ export type ModelSpec = {
   holdoutFraction: number;
   seed: number;
   forest?: ForestSettings;
+  xgboost?: Settings;
 };

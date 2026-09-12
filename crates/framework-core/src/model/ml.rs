@@ -28,6 +28,9 @@ pub struct ModelSpec {
     #[serde(default)]
     #[ts(optional, as = "Option<framework_ml::ForestSettings>")]
     pub forest: framework_ml::ForestSettings,
+    #[serde(default)]
+    #[ts(optional, as = "Option<framework_ml::xgboost::Settings>")]
+    pub xgboost: framework_ml::xgboost::Settings,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]

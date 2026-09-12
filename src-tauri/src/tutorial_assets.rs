@@ -176,4 +176,36 @@ pub(super) const BUNDLED_TUTORIALS: &[BundledTutorial] = &[
         contents: include_bytes!("../../tutorials/dictionaries/dictionaries-finished.fw"),
         assets: &[],
     },
+    BundledTutorial {
+        lesson: "Robust standard errors with diabetes progression",
+        kind: "Start",
+        relative_path: "Robust standard errors with diabetes progression/Start/Workbook.fw",
+        contents: include_bytes!(
+            "../../tutorials/robust-linear-regression/robust-linear-regression-start.fw"
+        ),
+        assets: &[],
+    },
+    BundledTutorial {
+        lesson: "Robust standard errors with diabetes progression",
+        kind: "Answer key",
+        relative_path: "Robust standard errors with diabetes progression/Answer key/Workbook.fw",
+        contents: include_bytes!(
+            "../../tutorials/robust-linear-regression/robust-linear-regression-finished.fw"
+        ),
+        assets: &[],
+    },
+    BundledTutorial {
+        lesson: "Classify Iris species with XGBoost",
+        kind: "Start",
+        relative_path: "Classify Iris species with XGBoost/Start/Workbook.fw",
+        contents: include_bytes!("../../tutorials/xgboost/xgboost-start.fw"),
+        assets: &[],
+    },
+    BundledTutorial {
+        lesson: "Classify Iris species with XGBoost",
+        kind: "Answer key",
+        relative_path: "Classify Iris species with XGBoost/Answer key/Workbook.fw",
+        contents: include_bytes!("../../tutorials/xgboost/xgboost-finished.fw"),
+        assets: &[],
+    },
 ];

@@ -88,7 +88,7 @@ that one.
 
 ## In the desktop app
 
-Open **Data Library** and choose **Create tutorials**. FrameWork creates fourteen
+Open **Data Library** and choose **Create tutorials**. FrameWork creates eighteen
 editable workbooks in `Documents/FrameWork Tutorials`: a starting workbook and
 an answer key for each practical lesson. Open a starting workbook, work through
 the guide, and use its answer key only to compare the result.
@@ -96,7 +96,7 @@ the guide, and use its answer key only to compare the result.
 If you are working directly from this repository instead, open the `.fw` files
 linked under **Files** in each lesson with **File → Open**.
 
-**Reset tutorials** is deliberately explicit: it replaces those fourteen known
+**Reset tutorials** is deliberately explicit: it replaces those eighteen known
 working copies, their histories, and the tiny Excel lesson sources with the
 bundled canonical files. It does not remove notes, exports, or any other files
 in the tutorial folder.
@@ -123,3 +123,14 @@ duplicate-key protection. Open **Dictionaries and value mapping — Start** in
 the Data library; an **Answer key** is included beside it.
 
 Regenerate this lesson with `cargo run -p framework-core --example generate_dictionary_tutorial`.
+
+## Models: robust regression and XGBoost
+
+- [Robust standard errors with diabetes progression](robust-linear-regression/README.md):
+  fit OLS with HC3 uncertainty, inspect coefficients and holdout error, then score new rows.
+- [Classify Iris species with XGBoost](xgboost/README.md):
+  fit a multiclass booster, inspect probabilities, and try live predictions.
+
+Both lessons include a Start workbook and an Answer key in the Data library.
+Regenerate with `cargo run -p framework-core --example generate_robust_linear_regression_tutorial`
+and `cargo run -p framework-core --example generate_xgboost_tutorial`.

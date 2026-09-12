@@ -26,8 +26,13 @@ are learned from training targets and retained in the fitted model.
 - Numerical XGBoost 3.0.x `gbtree` JSON for squared-error regression, binary logistic,
   and multiclass soft probabilities. Stored `best_iteration` is preserved; a caller
   may explicitly override the iteration range. Categorical splits, other boosters,
-  vector leaves and unsupported versions/objectives are rejected. Fitting through
-  `Method::Xgboost` remains explicitly unsupported until native packaging is added.
+  vector leaves and unsupported versions/objectives are rejected. Native fitting
+  through `Method::Xgboost` uses pinned xgb 3.0.6 on macOS/Windows, with explicit
+  regression/binary/multiclass objectives. It serializes the booster in memory and
+  converts it to the same validated typed tree payload used by imported inference.
+  Defaults are 100 rounds, depth 6, learning rate 0.1, full row/column sampling,
+  L2 1, child weight 1, seed 0, and one thread. Training is bounded to 1,000 rounds,
+  depth 16, 16 threads, and 500 million row-by-feature-by-round work units.
 
 - Seeded random forest regression and classification using Smartcore 0.6.14.
   Settings default to 100 trees, depth 8, minimum leaf size 2, seed 0, and
@@ -74,12 +79,12 @@ intervals are not yet advertised. The current fitting surface requires finite
 numeric data and an intercept; missing-value recipes and intercept choices need
 additional implementation and acceptance for native training. Imported ONNX
 pipelines already own their fitted typed recipe and use `predict_scalars`; the
-numeric-only `predict` entry point deliberately refuses those pipelines. Native
-XGBoost training, arbitrary ONNX graphs, and arbitrary sklearn pickle/joblib loading
+numeric-only `predict` entry point deliberately refuses those pipelines.
+Arbitrary ONNX graphs and arbitrary sklearn pickle/joblib loading
 are outside this implementation. Import supported sklearn pipelines through ONNX.
 
 `FitRequest` carries method, ordered feature names, target name, covariance,
-confidence level, iteration budget, and defaulted forest settings. `FittedModel`
+confidence level, iteration budget, and defaulted forest/XGBoost settings. `FittedModel`
 retains its typed payload, summary, training mean/prevalence and multiclass class
 frequencies. `evaluate` accepts a separate numeric assessment dataset and compares
 against those saved training baselines. The document layer owns deterministic

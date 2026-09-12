@@ -11,6 +11,17 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Fit models by choosing a frame and target; all other columns become predictors. Use a narrower derived frame to choose fewer inputs.
+- Undo and Redo from the native menu now restore grid edits when the grid has keyboard focus.
+- Keep the app responsive while checking recent files that may be waiting on
+  cloud storage or file access.
+
+- Learn robust OLS on the diabetes dataset and XGBoost on Iris with two new
+  tutorials, each with a Start workbook and a completed Answer key.
+
+- Train XGBoost models from a frame to predict numbers or categories, with held-out
+  evaluation and saved fits powering live prediction frames.
+
 - Fit linear, binary logistic, and random-forest models on the canvas, inspect
   coefficient tables and evaluation results, and use their predictions in
   ordinary frames. Predictions follow changes to their inputs; retraining is

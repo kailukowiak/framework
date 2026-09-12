@@ -3,6 +3,7 @@
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runFocusedTextHistory, useApplicationMenu } from "./useApplicationMenu";
+import { focusGridClipboardTarget } from "./lib/gridClipboardTarget";
 
 const windowListen = vi.fn();
 
@@ -18,6 +19,7 @@ function MenuListener({ onOpen }: { onOpen: () => void }) {
 describe("useApplicationMenu", () => {
   afterEach(() => {
     cleanup();
+    document.querySelector("[data-framework-grid-clipboard]")?.remove();
     vi.clearAllMocks();
     Reflect.deleteProperty(document, "execCommand");
   });
@@ -71,6 +73,23 @@ describe("useApplicationMenu", () => {
         execCommand,
       })
     ).toBe(false);
+    expect(execCommand).not.toHaveBeenCalled();
+  });
+
+  it("routes native undo to workbook history while the grid owns the clipboard", async () => {
+    windowListen.mockResolvedValue(vi.fn());
+    const onUndo = vi.fn();
+    function GridListener() {
+      useApplicationMenu(true, { undo: onUndo }, vi.fn());
+      return null;
+    }
+    render(<GridListener />);
+    await waitFor(() => expect(windowListen).toHaveBeenCalledOnce());
+    focusGridClipboardTarget();
+    const execCommand = vi.fn();
+    Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
+    windowListen.mock.calls[0][1]({ payload: "undo" });
+    expect(onUndo).toHaveBeenCalledOnce();
     expect(execCommand).not.toHaveBeenCalled();
   });
 });

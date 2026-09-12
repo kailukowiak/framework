@@ -41,6 +41,7 @@ pub(super) fn fixture() -> (Store, ModelSpec) {
         holdout_fraction: 0.2,
         seed: 42,
         forest: Default::default(),
+        xgboost: Default::default(),
     };
     (store, spec)
 }
@@ -398,6 +399,7 @@ fn ml_imported_xgboost_predicts_live_without_training_staleness() {
         holdout_fraction: 0.0,
         seed: 42,
         forest: Default::default(),
+        xgboost: Default::default(),
     };
     let predictions = predictions(&mut store, &id, &input);
     let before = store.view().computed_frames[&predictions]

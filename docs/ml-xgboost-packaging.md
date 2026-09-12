@@ -12,6 +12,11 @@ when its SHA-256 matches the value in the script. `XGBOOST_LIB_DIR` then points
 the sys crate's linker at those same staged files, so Cargo cannot silently
 link one XGBoost copy while Tauri bundles another.
 
+Development and e2e use `scripts/tauri-native.mjs` through `npm run tauri`.
+It prepares the same artifacts, passes the platform bundle config, and supplies
+the loader paths needed by an unbundled development executable. `build:dev-app`
+and `test:e2e` use this wrapper too.
+
 ## macOS arm64
 
 The release uses the XGBoost 3.0.5 `mac_arm64` dylib and LLVM OpenMP 23.1.1
@@ -61,3 +66,13 @@ considered proven end to end:
 Linux release packaging is deliberately unchanged because native training is
 not compiled there. Supporting it later requires a separate pinned `libgomp`
 and C++ runtime policy plus clean Ubuntu compatibility testing.
+
+## Building on macOS 27
+
+A clean build on the local macOS 27 host exposed
+[Rust issue 157750](https://github.com/rust-lang/rust/issues/157750): implicit
+stripping can produce proc-macro dylibs rejected by dyld as a misaligned LINKEDIT
+string pool. Cargo profiles explicitly disable stripping for dependency/build-tool
+artifacts while retaining `debug = 0` for dependencies. A focused bytemuck derive
+build confirmed that removing the stripping step fixes the observed load failure.
+This is a compiler-host workaround, not a change to the macOS 26 application floor.

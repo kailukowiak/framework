@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { documentJson, openTutorialsAndExamples, pointAtColumnCell, pressAndRelease, resetAndOpenTutorial } from "../lib/helpers";
 import type { DocumentView } from "../../src/lib/types";
 
-const data = "MLinput\tMLtarget\tMLaux\n1\t3.1\t0\n2\t4.8\t0\n3\t7.2\t0\n4\t8.9\t0\n5\t11.1\t0\n6\t12.8\t0\n7\t15.2\t0\n8\t16.9\t0\n9\t19.1\t0\n10\t20.8\t0\n11\t23.2\t0\n12\t24.9\t0";
+const data = "MLinput\tMLtarget\tMLaux\n1\t3.1\t0\n2\t4.8\t1\n3\t7.2\t0\n4\t8.9\t1\n5\t11.1\t0\n6\t12.8\t1\n7\t15.2\t0\n8\t16.9\t1\n9\t19.1\t0\n10\t20.8\t1\n11\t23.2\t0\n12\t24.9\t1";
 const trainingFrameName = "ML Training Data";
 const readDocument = async () => JSON.parse(await documentJson()) as DocumentView;
 const fittedId = async () => {
@@ -95,7 +95,7 @@ describe("fitted models and live prediction frames", function () {
     await chooseSelectOption("Model source frame", { text: trainingFrameName });
     await waitForModelSourceColumns(["MLinput", "MLtarget", "MLaux"]);
     await waitForSelectOption("Model target column", "MLtarget");
-    await $('[aria-label="Model feature columns"]').setValue("MLinput");
+    expect(await $('[aria-label="Model feature columns"]').isExisting()).toBe(false);
     await chooseSelectOption("Model target column", { text: "MLtarget" });
     await chooseSelectOption("Model standard errors", { value: "hc3" });
     await $(".model-dialog").$("button=Create model").click();
@@ -202,6 +202,45 @@ describe("fitted models and live prediction frames", function () {
     await browser.waitUntil(async () => (await firstPrediction()) === before);
     await browser.waitUntil(async () => !(await $('.model-card [role="alert"]').isExisting()));
     expect(await fittedId()).toBe(fitId);
+  });
+
+  it("trains native XGBoost and retains its live predictions after undo and reopen", async () => {
+    await $(".left-rail").$("button*=Model").click();
+    await $('.model-dialog [aria-label="Model name"]').setValue("Native XGBoost");
+    await chooseSelectOption("Model method", { value: "xgboostRegression" });
+    await chooseSelectOption("Model source frame", { text: trainingFrameName });
+    await waitForModelSourceColumns(["MLinput", "MLtarget", "MLaux"]);
+    expect(await $('[aria-label="Model feature columns"]').isExisting()).toBe(false);
+    await chooseSelectOption("Model target column", { text: "MLtarget" });
+    await $(".model-dialog").$("button=Create model").click();
+    const card = $('.model-object:has(input[aria-label="Model name"][value="Native XGBoost"])');
+    await card.$("button=Fit model").click();
+    await card.$('table[aria-label="Holdout evaluation metrics"]').waitForExist();
+    const nativeFit = async () => {
+      const model = (await readDocument()).objects.find(object => object.kind === "model" && object.name === "Native XGBoost");
+      return model?.kind === "model" ? model.fitted?.id : undefined;
+    };
+    const revision = await nativeFit();
+    expect(revision).toBeTruthy();
+    await card.$("button=Predictions…").click();
+    await $('[aria-label="Prediction frame name"]').setValue("NativeScores");
+    await $(".model-dialog").$("button=Create predictions").click();
+    await browser.waitUntil(async () => Boolean(await firstPrediction("NativeScores")));
+    const original = await firstPrediction("NativeScores");
+    await pointAtColumnCell("MLinput", 0);
+    await browser.keys(Key.F2);
+    const editor = $(".cell-editor"); await editor.waitForExist();
+    await editor.setValue("12"); await browser.keys(Key.Enter);
+    await browser.waitUntil(async () => (await firstPrediction("NativeScores")) !== original);
+    expect(await nativeFit()).toBe(revision);
+    await browser.keys([Key.Command, "z"]);
+    await browser.waitUntil(async () => (await firstPrediction("NativeScores")) === original);
+    await browser.execute(() => (document.activeElement as HTMLElement | null)?.blur());
+    await browser.keys([Key.Command, Key.Shift, "l"]);
+    await $(".dataset-dialog").waitForExist(); await openTutorialsAndExamples();
+    await $(".dataset-dialog").$("button*=The FrameWork tour — Start").click();
+    await browser.waitUntil(async () => (await firstPrediction("NativeScores")) === original);
+    expect(await nativeFit()).toBe(revision);
   });
 
 });

@@ -12,15 +12,16 @@ export function ModelFitSettings({ source, method, target, onTarget, covariance,
   confidence: number; onConfidence: (value: number) => void; holdout: number; onHoldout: (value: number) => void;
   seed: number; onSeed: (value: number) => void; forest: ForestSettings; onForest: (value: ForestSettings) => void;
 }) {
+  const boosted = method.startsWith("xgboost");
   const forestMethod = isForestMethod(method);
-  const targetLabel = method === "logistic" ? "Target (numeric 0 or 1)"
-    : method === "randomForestClassifier" ? "Target (numeric classes 0, 1, …)" : "Target";
+  const targetLabel = (method === "logistic" || method === "xgboostBinary") ? "Target (numeric 0 or 1)"
+    : (method === "randomForestClassifier" || method === "xgboostMulticlass") ? "Target (numeric classes 0, 1, …)" : "Target";
   return <>
     <label>{targetLabel}<select aria-label="Model target column" value={target} onChange={event => onTarget(event.target.value)}>
       <option value="">Choose a target</option>
       {source?.columns.map(column => <option key={column.id} value={column.id}>{column.name}</option>)}
     </select></label>
-    {!forestMethod && <div className="model-settings-row">
+    {!forestMethod && !boosted && <div className="model-settings-row">
       <label>Standard errors<select aria-label="Model standard errors" value={method === "logistic" ? "classical" : covariance}
         disabled={method === "logistic"} onChange={event => onCovariance(event.target.value as typeof covariance)}>
         <option value="classical">Classical</option><option value="hc3">Robust (HC3)</option>
