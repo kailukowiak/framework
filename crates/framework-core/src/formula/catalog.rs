@@ -30,6 +30,11 @@ pub(crate) struct FormulaFunctionDefinition {
     maximum_arguments: usize,
 }
 
+#[path = "catalog_financial.rs"]
+pub(crate) mod financial;
+#[path = "catalog_financial_namespace.rs"]
+mod financial_namespace;
+
 pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
     formula_function!(
         "root.lookup",
@@ -990,43 +995,9 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
     ),
 ];
 
-pub fn formula_function_catalog() -> Vec<FormulaFunction> {
-    let hand_written = POLARS_FORMULA_FUNCTIONS
-        .iter()
-        .map(|function| FormulaFunction {
-            id: function.id.into(),
-            name: function.name.into(),
-            aliases: function
-                .aliases
-                .iter()
-                .map(|alias| (*alias).into())
-                .collect(),
-            category: function.category.into(),
-            signature: function.signature.into(),
-            description: function.description.into(),
-            minimum_arguments: function.minimum_arguments,
-            maximum_arguments: function.maximum_arguments,
-            return_type: formula_function_return_type(function.id).into(),
-            null_behavior: formula_function_null_behavior(function.id).into(),
-            arguments: formula_function_arguments(function.id, function.signature),
-        });
-    let generated = crate::formula::generated_bindings::GENERATED_FORMULA_FUNCTIONS
-        .iter()
-        .map(|function| FormulaFunction {
-            id: function.id.into(),
-            name: function.name.into(),
-            aliases: Vec::new(),
-            category: function.category.into(),
-            signature: function.signature.into(),
-            description: function.description.into(),
-            minimum_arguments: function.minimum_arguments,
-            maximum_arguments: function.maximum_arguments,
-            return_type: function.return_type.into(),
-            null_behavior: "native Polars behavior".into(),
-            arguments: formula_function_arguments(function.id, function.signature),
-        });
-    hand_written.chain(generated).collect()
-}
+#[path = "catalog_export.rs"]
+mod catalog_export;
+pub use catalog_export::formula_function_catalog;
 
 /// Argument help is derived beside the catalog entry, not in the editor. The
 /// generated Polars surface supplies signatures automatically, while this

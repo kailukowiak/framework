@@ -11,6 +11,10 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Financial functions are available under `finance`, including dot calls such as `principal.finance.pmt(rate, term)` and `flows.finance.xnpv(rate, dates)`, with autocomplete and argument hints. Existing unqualified formulas still work.
+- Calculate loan payments, present and future values, payment periods, interest and principal, and periodic or dated net present value with `pmt`, `pv`, `fv`, `nper`, `ipmt`, `ppmt`, `npv` and `xnpv`. The Price a deal lesson now uses these functions.
+- Calculate down rows retains fractional results when the starting value is an integer, so loan balances and compounding forecasts no longer lose cents at every step.
+
 - Three finance lessons join the tutorial library: **Price a deal**,
   **Driver-based forecast**, and **Scenarios, sensitivity and goal seek**.
   Each builds the job with today's FrameWork, says where that is harder than

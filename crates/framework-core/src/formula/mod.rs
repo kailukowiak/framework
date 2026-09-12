@@ -17,3 +17,6 @@ pub use complete::{CompletionResult, Suggestion, SuggestionKind, complete_formul
 pub(crate) use parser::*;
 
 pub(crate) mod dictionary;
+pub(crate) mod financial;
+mod financial_discount;
+mod financial_namespace;

@@ -69,17 +69,7 @@ impl Document {
         output_column_id: &str,
         recurrence: RecurrenceParts<'_>,
     ) -> Result<pl::LazyFrame, String> {
-        let output_type = plan
-            .clone()
-            .select([recurrence
-                .seed
-                .to_polars(self)?
-                .alias(output_column_id.to_string())])
-            .collect_schema()
-            .map_err(|error| error.to_string())?
-            .get(output_column_id)
-            .cloned()
-            .ok_or_else(|| "Could not determine the first-row value type".to_string())?;
+        let output_type = recurrence_type(self, &plan, &recurrence)?;
         let mut frame = plan.collect().map_err(|error| error.to_string())?;
         let mut histories: HashMap<String, pl::Series> = HashMap::new();
         let mut output: Option<pl::Series> = None;
@@ -132,6 +122,50 @@ impl Document {
             .map_err(|error| error.to_string())?;
         Ok(frame.lazy())
     }
+}
+
+/// Resolve both branches before calculating even the first row. Casting every
+/// answer to the seed's type used to discard cents at every step of an integer-
+/// seeded loan. Feed the promoted type back into previous() until the schema
+/// settles: the next expression can itself depend on the previous value's type.
+fn recurrence_type(
+    document: &Document,
+    plan: &pl::LazyFrame,
+    recurrence: &RecurrenceParts<'_>,
+) -> Result<pl::DataType, String> {
+    let seed = recurrence.seed.to_polars(document)?;
+    let next = recurrence.next.to_polars(document)?;
+    let mut probe = plan.clone().select([seed.clone().alias("answer")]);
+    let mut dtype = probe
+        .collect_schema()
+        .map_err(|e| e.to_string())?
+        .get("answer")
+        .cloned()
+        .ok_or("Could not determine the recurrence seed type")?;
+    for _ in 0..8 {
+        let mut probe = plan
+            .clone()
+            .with_column(
+                pl::lit(pl::NULL)
+                    .cast(dtype.clone())
+                    .alias(PREVIOUS_RESULT_COLUMN_ID),
+            )
+            .select([pl::when(pl::lit(true))
+                .then(seed.clone())
+                .otherwise(next.clone())
+                .alias("answer")]);
+        let promoted = probe
+            .collect_schema()
+            .map_err(|e| e.to_string())?
+            .get("answer")
+            .cloned()
+            .ok_or("Could not determine the recurrence step type")?;
+        if promoted == dtype {
+            return Ok(dtype);
+        }
+        dtype = promoted;
+    }
+    Err("Could not determine a stable recurrence result type; cast the seed and next value explicitly".into())
 }
 
 fn partition_key(

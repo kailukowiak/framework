@@ -240,26 +240,8 @@ pub(crate) enum Shape {
     Column,
 }
 
-/// The methods that take a whole list and answer with one value. The set a
-/// list may be handed to directly, alongside the functions that take one.
-const REDUCING_METHODS: &[&str] = &[
-    "sum",
-    "mean",
-    "median",
-    "quantile",
-    "min",
-    "max",
-    "count",
-    "len",
-    "null_count",
-    "n_unique",
-    "std",
-    "var",
-    "product",
-    "first",
-    "last",
-    "at",
-];
+#[path = "method_shape.rs"]
+mod method_shape;
 
 /// The type two values have to have in common to sit in one list, or
 /// `None` when they have none worth having.
@@ -522,91 +504,12 @@ impl Expr {
                     right.declared_type_among(document, scope)?,
                 ),
             },
-            // A fold answers in the same kind its values were — the sum of
-            // money is money, the earliest of some dates is a date — except
-            // for the ones that answer with a tally, which are numbers
-            // whatever they counted. Everything else stays unknown: what a
-            // Polars method hands back is a fact about Polars, and guessing
-            // at it would put this document's writing on a value it does
-            // not own.
             Expr::Method {
                 input,
                 path,
                 arguments,
                 ..
-            } => match path.as_slice() {
-                [name] if name == "format" => Some(DataType::String),
-                // The override, and the only thing in the language whose
-                // whole job is to answer this question. Said out loud, it
-                // beats whatever the arithmetic worked out — and it is
-                // where the chain starts again, because everything above
-                // reads this node rather than the one under it.
-                [name] if name == "show" => match arguments.as_slice() {
-                    [Expr::String { value }] => shown_as(value),
-                    _ => None,
-                },
-                [name] if matches!(name.as_str(), "count" | "len" | "null_count" | "n_unique") => {
-                    Some(DataType::Integer)
-                }
-                [name] if matches!(name.as_str(), "mean" | "median" | "quantile") => input
-                    .declared_type_among(document, scope)
-                    .map(|data_type| match data_type {
-                        DataType::Integer | DataType::Number => DataType::Number,
-                        other => other,
-                    }),
-                [name] if name == "mode" => input.declared_type_among(document, scope),
-                // A fraction of the way along a range, whatever went in.
-                // Money normalized is not money -- said here so notation
-                // stops at this node rather than riding out on a number
-                // that no longer means dollars.
-                [name] if name == "normalize" => Some(DataType::Number),
-                [namespace, name] if namespace == "str" && name == "to_date" => {
-                    Some(DataType::Date)
-                }
-                // Date in, date out — not a guess about Polars but the
-                // meaning of the operation: moving or snapping a date
-                // cannot answer with anything else, and a date has no
-                // notation variants for this to get wrong. Known here so
-                // `today().dt.month_start() + 1` can read the `1` as days.
-                [namespace, name]
-                    if namespace == "dt"
-                        && matches!(
-                            name.as_str(),
-                            "date" | "month_start" | "month_end" | "offset_by"
-                        ) =>
-                {
-                    Some(DataType::Date)
-                }
-                // The calendar parts are counts by the same definitional
-                // argument as `count` and `len` above. Declaring them is
-                // load-bearing, not cosmetic: `offset_by` reads an
-                // integer-typed argument as a day count, and an expression
-                // built from `.dt.day()` has to *say* it is an integer for
-                // that reading to reach it — left unknown, the raw number
-                // once flowed into a string slot and took a frame down
-                // with it.
-                [namespace, name]
-                    if namespace == "dt"
-                        && matches!(
-                            name.as_str(),
-                            "year"
-                                | "iso_year"
-                                | "quarter"
-                                | "month"
-                                | "week"
-                                | "weekday"
-                                | "day"
-                                | "ordinal_day"
-                                | "days_in_month"
-                        ) =>
-                {
-                    Some(DataType::Integer)
-                }
-                [name] if REDUCING_METHODS.contains(&name.as_str()) => {
-                    input.declared_type_among(document, scope)
-                }
-                _ => None,
-            },
+            } => method_shape::declared_type(input, path, arguments, document, scope),
             Expr::PolarsCall {
                 name, arguments, ..
             } => {
@@ -731,7 +634,8 @@ impl Expr {
             argument.validate_list_placement(document, true)?;
         }
         for (_, argument) in keyword_arguments {
-            argument.validate_list_placement(document, false)?;
+            argument
+                .validate_list_placement(document, crate::formula::financial::is_financial(name))?;
         }
         Ok(())
     }
@@ -858,10 +762,7 @@ impl Expr {
                 // a column formula the ambient permission is still `false`,
                 // so a foreign column of many rows cannot sneak into a
                 // column of another frame by wearing a method.
-                let reduces = matches!(
-                    path.as_slice(),
-                    [name] if REDUCING_METHODS.contains(&name.as_str())
-                );
+                let reduces = method_shape::reduces(path);
                 let filters = matches!(path.as_slice(), [name] if name == "filter");
                 if filters && !list_allowed {
                     return Err(CoreError::Formula(
@@ -877,7 +778,7 @@ impl Expr {
                     argument.validate_list_placement(document, !filters)?;
                 }
                 for (_, argument) in keyword_arguments {
-                    argument.validate_list_placement(document, false)?;
+                    argument.validate_list_placement(document, method_shape::is_financial(path))?;
                 }
             }
             _ => {}
@@ -1234,7 +1135,7 @@ impl Expr {
             // A method that folds a list down answers with one value; any
             // other keeps the shape of what it was called on.
             Expr::Method { input, path, .. } => match path.last() {
-                Some(name) if REDUCING_METHODS.contains(&name.as_str()) => Shape::Scalar,
+                Some(_) if method_shape::reduces(path) => Shape::Scalar,
                 // Like a written list, a filtered expression no longer has
                 // one value for every input row. It is only valid on a
                 // frame when some later aggregate folds it back down.

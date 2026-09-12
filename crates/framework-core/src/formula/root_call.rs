@@ -7,6 +7,9 @@ pub(super) fn compile_polars_root_call(
     keyword_arguments: &[(String, Expr)],
     document: &Document,
 ) -> Result<pl::Expr, String> {
+    if crate::formula::financial::is_financial(name) {
+        return crate::formula::financial::compile(name, arguments, keyword_arguments, document);
+    }
     if matches!(name, "lookup" | "map_values") {
         return crate::formula::dictionary::compile_mapping(
             name,
@@ -130,7 +133,10 @@ pub(crate) fn polars_call_declared_type(
     match name {
         "recur" => arguments
             .first()
-            .and_then(|seed| seed.declared_type_among(document, scope)),
+            .and_then(|seed| seed.declared_type_among(document, scope))
+            // Integer seeds can grow fractional results. Let the resolved
+            // Polars schema report that type rather than forcing integer display.
+            .filter(|kind| *kind != DataType::Integer),
         "format" => Some(DataType::String),
         "today" => Some(DataType::Date),
         _ => None,

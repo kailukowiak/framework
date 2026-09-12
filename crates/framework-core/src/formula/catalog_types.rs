@@ -21,6 +21,7 @@ pub(super) fn formula_function_return_type(id: &str) -> &'static str {
 
 pub(super) fn formula_function_null_behavior(id: &str) -> &'static str {
     match id {
+        "root.npv" | "root.xnpv" => "missing inputs error",
         "root.today" | "root.now" => "never null",
         "root.coalesce" => "returns first non-null",
         "root.lookup" | "root.map_values" => "matches null keys and preserves mapped nulls",

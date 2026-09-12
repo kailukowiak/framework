@@ -20,6 +20,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use ts_rs::TS;
 
+#[path = "completion_financial.rs"]
+mod financial;
+
 const PROBE_ALIAS: &str = "__framework_completion_probe";
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, TS)]
@@ -142,118 +145,9 @@ pub fn complete_formula_in_scope(
     result
 }
 
-/// The innermost call whose closing parenthesis is still to the right of the
-/// cursor. This deliberately scans incomplete text rather than asking the
-/// parser: parameter help is most useful between the opening parenthesis and
-/// the moment the expression becomes valid.
-fn active_call_at_cursor(chars: &[char], cursor: usize) -> Option<(String, usize)> {
-    #[derive(Debug)]
-    enum Open {
-        Call { spelling: String, argument: usize },
-        Group,
-        Bracket,
-    }
-
-    let mut open = Vec::new();
-    let mut index = 0;
-    while index < cursor {
-        match chars[index] {
-            '"' => {
-                index += 1;
-                while index < cursor {
-                    if chars[index] == '\\' {
-                        index = (index + 2).min(cursor);
-                    } else if chars[index] == '"' {
-                        index += 1;
-                        break;
-                    } else {
-                        index += 1;
-                    }
-                }
-                continue;
-            }
-            '`' => {
-                index += 1;
-                while index < cursor {
-                    if chars[index] == '`' && chars.get(index + 1) == Some(&'`') {
-                        index += 2;
-                    } else if chars[index] == '`' {
-                        index += 1;
-                        break;
-                    } else {
-                        index += 1;
-                    }
-                }
-                continue;
-            }
-            '(' => {
-                let spelling = callable_before(chars, index);
-                open.push(if spelling.is_empty() {
-                    Open::Group
-                } else {
-                    Open::Call {
-                        spelling,
-                        argument: 0,
-                    }
-                });
-            }
-            '[' => open.push(Open::Bracket),
-            ')' | ']' => {
-                open.pop();
-            }
-            ',' => {
-                if let Some(Open::Call { argument, .. }) = open.last_mut() {
-                    *argument += 1;
-                }
-            }
-            _ => {}
-        }
-        index += 1;
-    }
-    open.into_iter().rev().find_map(|item| match item {
-        Open::Call { spelling, argument } => Some((spelling, argument)),
-        Open::Group | Open::Bracket => None,
-    })
-}
-
-fn callable_before(chars: &[char], opening: usize) -> String {
-    let mut end = opening;
-    while end > 0 && chars[end - 1].is_whitespace() {
-        end -= 1;
-    }
-    let mut start = end;
-    while start > 0
-        && (chars[start - 1].is_alphanumeric()
-            || chars[start - 1] == '_'
-            || chars[start - 1] == '.')
-    {
-        start -= 1;
-    }
-    let spelling: String = chars[start..end].iter().collect();
-    if spelling.eq_ignore_ascii_case("frame.len") {
-        spelling
-    } else if let Some(dot) = spelling.find('.') {
-        spelling[dot..].to_string()
-    } else {
-        spelling
-    }
-}
-
-fn function_id_for_spelling(spelling: &str) -> Option<String> {
-    let method = spelling.starts_with('.');
-    let normalized = spelling.trim_start_matches('.').to_lowercase();
-    crate::formula_function_catalog()
-        .into_iter()
-        .find(|function| {
-            function.name.starts_with('.') == method
-                && (function.name.trim_start_matches('.').to_lowercase() == normalized
-                    || function
-                        .aliases
-                        .iter()
-                        .any(|alias| alias.to_lowercase() == normalized))
-        })
-        .map(|function| function.id)
-}
+#[path = "completion_calls.rs"]
+mod calls;
+use calls::{active_call_at_cursor, function_id_for_spelling};
 
 // ---------------------------------------------------------------------------
 // Cursor-context scanning
@@ -553,6 +447,7 @@ fn expr_entry_matches_family(entry: &FormulaFunction, family: Option<DtypeFamily
 /// (family `None` means "unknown" — permissive, show everything).
 fn entry_matches_family(entry: &FormulaFunction, family: Option<DtypeFamily>) -> bool {
     match entry_namespace(entry) {
+        "finance" => matches!(family, None | Some(DtypeFamily::Numeric)),
         "expr" => expr_entry_matches_family(entry, family),
         "dt" => matches!(family, None | Some(DtypeFamily::Date)),
         // Categorical labels are text for the one conversion whose result is
@@ -575,6 +470,7 @@ fn entry_matches_family(entry: &FormulaFunction, family: Option<DtypeFamily>) ->
 /// are permissive rather than blocked.
 fn namespace_matches_family(namespace: &str, family: DtypeFamily) -> bool {
     match namespace {
+        "finance" => family == DtypeFamily::Numeric,
         "dt" => family == DtypeFamily::Date,
         "str" => matches!(family, DtypeFamily::String | DtypeFamily::Categorical),
         "list" => family == DtypeFamily::List,
@@ -802,8 +698,8 @@ fn match_tier(label: &str, partial: &str) -> u8 {
     }
 }
 
-/// Fuzzy-rank (SkimMatcherV2) against `partial`, or alphabetize when nothing has
-/// been typed yet. Entries that don't match `partial` at all are dropped.
+/// Rank without case sensitivity so Excel spellings such as PMT find pmt.
+/// Alphabetize an empty query; drop entries that do not match at all.
 fn rank(items: Vec<Suggestion>, partial: &str) -> Vec<Suggestion> {
     if partial.is_empty() {
         let mut items = items;
@@ -814,7 +710,7 @@ fn rank(items: Vec<Suggestion>, partial: &str) -> Vec<Suggestion> {
         });
         return items;
     }
-    let matcher = SkimMatcherV2::default();
+    let matcher = SkimMatcherV2::default().ignore_case();
     let mut scored: Vec<Suggestion> = items
         .into_iter()
         .filter_map(|mut item| {
@@ -896,6 +792,7 @@ fn complete_root(document: &Document, frame: &FrameObject, partial: &str) -> Com
         .map(|column| column_suggestion(column, true))
         .collect();
     suggestions.push(frame_suggestion(frame, None));
+    suggestions.push(financial::namespace(false));
     suggestions.extend(canvas_suggestions(document, frame));
     suggestions.extend(
         crate::formula_function_catalog()
@@ -1015,6 +912,9 @@ fn complete_after_dot(
     path: &[String],
     partial: &str,
 ) -> CompletionResult {
+    if receiver_text.eq_ignore_ascii_case("finance") && path.is_empty() {
+        return financial::complete_static(partial);
+    }
     if path.is_empty() && receiver_text.eq_ignore_ascii_case("frame") {
         let suggestions = crate::formula_function_catalog()
             .into_iter()
@@ -1049,12 +949,12 @@ fn complete_after_dot(
     if let Some(namespace) = path.last() {
         let candidates: Vec<&FormulaFunction> = catalog
             .iter()
-            .filter(|entry| entry_namespace(entry) == namespace.as_str())
+            .filter(|entry| entry_namespace(entry).eq_ignore_ascii_case(namespace))
             .filter(|entry| entry_matches_family(entry, family))
             .collect();
 
         if let Some(family) = family
-            && !namespace_matches_family(namespace, family)
+            && !namespace_matches_family(&namespace.to_ascii_lowercase(), family)
         {
             let receiver_desc = receiver_description(document, frame, receiver_text);
             let note = match expected_namespace_for(family) {
@@ -1103,6 +1003,9 @@ fn complete_after_dot(
         .filter(|entry| entry_matches_family(entry, family))
         .map(|entry| method_suggestion(entry, 0))
         .collect();
+    if matches!(family, None | Some(DtypeFamily::Numeric)) {
+        suggestions.push(financial::namespace(true));
+    }
     if let Some(family) = family
         && let Some(namespace) = expected_namespace_for(family)
     {

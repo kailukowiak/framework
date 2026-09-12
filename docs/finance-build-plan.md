@@ -1,6 +1,11 @@
 # Finance build plan: functions, time spine, evaluate-under-overrides
 
 Status: proposed 2026-09-11, drafted from a design conversation with Kai.
+Implementation update 2026-09-12: the recurrence precision fix and phase 1a
+(`pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`) are implemented.
+Price a deal now uses these functions. Phase 1b's solvers and the remaining
+function pack are still planned. The branch/worktree sequencing notes below
+record the original plan; the plan and lessons have since merged to main.
 Lives on the `finance` branch in its own worktree so it can proceed beside
 the in-flight ML batch on `main`. Refines the *Target workflows
 (finance/accounting wedge)* and *Workflow primitive backlog* sections of
@@ -296,6 +301,8 @@ feedback rather than a lesson error.
   currency-typed column or a `400000.0` literal. The engine should promote
   the recurrence to the wider of the seed's and the step's types, or refuse
   with a message.
+  **Fixed in 1a:** seed and step resolve a common type before evaluation,
+  including partition restarts and integer column seeds.
 - **A Calculation Matrix body cannot read a table that has calculated
   columns unless it is materialised**, while a block line reading the same
   column can. The rate scan in the first lesson is a block for this reason.
