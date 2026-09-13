@@ -122,12 +122,19 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn parse(mut self) -> Result<Expr, CoreError> {
-        let expression = self.parse_expression(0)?;
+        let mut expression = self.parse_expression(0)?;
         if self.peek() != &Token::End {
             return Err(CoreError::Formula(
                 "Unexpected text at end of formula".into(),
             ));
         }
+        // Calendars are bound here rather than while the arguments are
+        // being read because which argument is the calendar is a fact
+        // about the function being called, and the call is not complete
+        // until its arguments are. Every other name — a value, a column,
+        // a frame — is resolved to an id as it is read; this is the same
+        // act, one step later.
+        crate::formula::financial_calendar::bind_references(&mut expression, self.document)?;
         expression.validate_list_placement(self.document, self.lists)?;
         expression.validate_comparison_types_among(self.document, &self.frame.columns)?;
         Ok(expression)

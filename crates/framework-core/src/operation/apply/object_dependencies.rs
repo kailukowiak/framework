@@ -88,31 +88,7 @@ fn formula_refusal(
     };
     referenced_ids
         .iter()
-        .find_map(|target| {
-            document.objects.iter().find_map(|object| {
-                // The object being deleted does not hold itself in place:
-                // a block's lines reading each other go out together.
-                if object.id() == object_id {
-                    return None;
-                }
-                match object {
-                    DataObject::Frame(frame) => (frame.references_object(target)
-                        || frame.display.references_object(target))
-                    .then(|| as_named(&frame.name)),
-                    DataObject::Result(result) => result
-                        .formula
-                        .expression
-                        .references_object(target)
-                        .then(|| as_named(&result.name)),
-                    DataObject::Block(block) => block.lines.iter().find_map(|line| {
-                        line.expression()?
-                            .references_object(target)
-                            .then(|| as_line_named(block, line))
-                    }),
-                    _ => None,
-                }
-            })
-        })
+        .find_map(|target| document.read_by(target, Some(object_id)))
         .map(|reader| {
             format!("{reader} reads {going}, so it cannot be deleted. Change the formula that reads it first.")
         })

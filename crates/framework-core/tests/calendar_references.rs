@@ -1,15 +1,15 @@
 //! What a formula's calendar reference is worth: renaming, removing, the
 //! replicated back door, and undo.
 //!
-//! Calendars are named in formulas by name, which is the whole reason
-//! this file exists. Every other reference in the document — a value, a
-//! foreign column — is resolved to an id when the formula is parsed, so
-//! renaming the thing is free. A calendar reference is a plain string
-//! argument that may equally be supplied by a named value at plan time,
-//! so it cannot be resolved that early, and renaming a calendar is
-//! therefore a rewrite of every formula that says the old name. Nothing
-//! rewrites them, so both rename and removal are refused while a formula
-//! names the calendar — the tests below are the statement of that rule.
+//! A calendar is named in a formula the way anything else is — by writing
+//! its name — and held the way everything else is held: by id. The name
+//! is bound when the formula is parsed, so renaming the calendar reaches
+//! every formula that names it and changes nothing about what they read,
+//! and removing one a formula names is refused by the same rule that
+//! keeps a value from being deleted while something reads it. The one
+//! reference that stays a name to the last moment is a calendar handed
+//! over by a named value, because what that value says is the user's to
+//! change between one plan and the next.
 use crate::common::frame_named;
 use framework_core::*;
 
@@ -70,6 +70,21 @@ fn column_values(store: &Store, name: &str) -> Vec<String> {
         .collect()
 }
 
+/// The formula a column is written back out as: the text a person reading
+/// or re-saving it would see.
+fn rendered(store: &Store, name: &str) -> String {
+    let frame = frame_named(store.document(), "Dates");
+    let id = frame.id.clone();
+    let column = frame
+        .columns
+        .iter()
+        .find(|column| column.name == name)
+        .unwrap()
+        .id
+        .clone();
+    store.view().computed_frames[&id].formulas[&column].clone()
+}
+
 fn rename(store: &mut Store, to: &str) -> Result<DocumentView, CoreError> {
     let calendar = store.document().calendars[0].clone();
     store.apply(Operation::UpdateCalendar {
@@ -85,33 +100,32 @@ fn rename(store: &mut Store, to: &str) -> Result<DocumentView, CoreError> {
 }
 
 #[test]
-fn renaming_a_referenced_calendar_is_refused_naming_the_formula_that_reads_it() {
+fn renaming_a_calendar_reaches_every_formula_that_names_it() {
     let mut store = store_with_calendar("Company");
     add_column(&mut store, "FY", "fiscal_year(`Day`, calendar=\"Company\")");
-    assert_eq!(column_values(&store, "FY"), vec!["2026", "2027"]);
-
-    let refused = rename(&mut store, "Group");
-    assert!(
-        matches!(&refused, Err(CoreError::InvalidOperation(message))
-            if message.contains("‘Company’") && message.contains("‘Dates’")),
-        "{refused:?}",
-    );
-    // Refused, not half-applied: the name and the answers both stand.
-    assert_eq!(store.document().calendars[0].name, "Company");
-    assert_eq!(column_values(&store, "FY"), vec!["2026", "2027"]);
-
-    // The reference is matched the way a formula resolves it, without
-    // regard to case, and a positional calendar argument counts too.
+    // The same reference written positionally, and without regard to
+    // case, which is how a formula resolves a calendar name.
     add_column(&mut store, "Week", "fiscal_week(`Day`, \"company\")");
-    assert!(rename(&mut store, "Group").is_err());
+    assert_eq!(column_values(&store, "FY"), vec!["2026", "2027"]);
 
-    // Everything except the name may still be edited freely: the formula
-    // goes on reading the calendar and simply gets the new answer.
+    rename(&mut store, "Group").unwrap();
+    assert_eq!(store.document().calendars[0].name, "Group");
+    // The formulas read the same calendar as before — they never held the
+    // spelling — and they are written back out saying the new name.
+    assert_eq!(column_values(&store, "FY"), vec!["2026", "2027"]);
+    assert_eq!(
+        rendered(&store, "FY"),
+        "fiscal_year(`Day`, calendar=\"Group\")"
+    );
+    assert_eq!(rendered(&store, "Week"), "fiscal_week(`Day`, \"Group\")");
+
+    // Everything else may still be edited freely: the formula goes on
+    // reading the calendar and simply gets the new answer.
     let calendar = store.document().calendars[0].clone();
     store
         .apply(Operation::UpdateCalendar {
             calendar_id: calendar.id,
-            name: "Company".into(),
+            name: "Group".into(),
             fy_start: 1,
             pattern: calendar.pattern,
             year_end: calendar.year_end,
@@ -121,6 +135,117 @@ fn renaming_a_referenced_calendar_is_refused_naming_the_formula_that_reads_it() 
         })
         .unwrap();
     assert_eq!(column_values(&store, "FY"), vec!["2026", "2026"]);
+}
+
+/// The text a formula is written back out as is the text it was typed
+/// as. This is not cosmetic: a chain formula the client authored is
+/// re-sent as text, and an echo that disagreed with it would reseed the
+/// step on every save.
+#[test]
+fn a_calendar_reference_round_trips_through_the_rendered_formula() {
+    let mut store = store_with_calendar("NRF");
+    let frame_id = frame_named(store.document(), "Dates").id.clone();
+    let day = frame_named(store.document(), "Dates").columns[0].id.clone();
+    store
+        .apply(Operation::SetFramePeriod {
+            frame_id,
+            period: Some(FramePeriod {
+                column_id: day,
+                partition_column_ids: Vec::new(),
+            }),
+        })
+        .unwrap();
+    add_column(&mut store, "Revenue", "100");
+
+    for formula in [
+        "ytd(`Revenue`, calendar=\"NRF\")",
+        "fiscal_year(`Day`, calendar=\"NRF\")",
+        "fiscal_week(`Day`, \"NRF\")",
+        "`Day`.finance.fiscal_week(\"NRF\")",
+    ] {
+        add_column(&mut store, "Answer", formula);
+        assert_eq!(rendered(&store, "Answer"), formula);
+        let column = frame_named(store.document(), "Dates")
+            .columns
+            .iter()
+            .find(|column| column.name == "Answer")
+            .unwrap()
+            .id
+            .clone();
+        store
+            .apply(Operation::DeleteColumn {
+                frame_id: frame_named(store.document(), "Dates").id.clone(),
+                column_id: column,
+            })
+            .unwrap();
+    }
+}
+
+/// A calendar nobody has heard of is refused where the formula is
+/// written, the way an unknown value name is, rather than surfacing
+/// later as a column that will not compute.
+#[test]
+fn an_unknown_calendar_is_refused_as_the_formula_is_written() {
+    let mut store = store_with_calendar("Company");
+    let frame_id = frame_named(store.document(), "Dates").id.clone();
+    let refused = store.apply(Operation::AddComputedColumn {
+        frame_id,
+        name: "FY".into(),
+        formula: "fiscal_year(`Day`, calendar=\"Fiscal\")".into(),
+        after_column_id: None,
+    });
+    assert!(
+        matches!(&refused, Err(CoreError::Formula(message))
+            if message.contains("no calendar named ‘Fiscal’") && message.contains("Company")),
+        "{refused:?}",
+    );
+    assert_eq!(frame_named(store.document(), "Dates").columns.len(), 1);
+}
+
+/// The other way to supply a calendar stays a name to the last moment,
+/// and has to go on working: what a value holds is the user's to change
+/// between one plan and the next, so it cannot be bound when the formula
+/// is parsed.
+#[test]
+fn a_calendar_held_by_a_value_is_still_read_at_plan_time() {
+    let mut store = store_with_calendar("Company");
+    // A loose value needs somewhere to live; the canvas itself holds
+    // frames, blocks and containers.
+    store
+        .apply(Operation::AddContainer {
+            name: "Settings".into(),
+            x: 0.0,
+            y: 0.0,
+            container_id: None,
+        })
+        .unwrap();
+    let holder = store
+        .document()
+        .objects
+        .iter()
+        .find(|object| object.name() == "Settings")
+        .unwrap()
+        .id()
+        .to_string();
+    store
+        .apply(Operation::AddValue {
+            name: "Which calendar".into(),
+            raw: "Company".into(),
+            x: 0.0,
+            y: 0.0,
+            container_id: Some(holder),
+        })
+        .unwrap();
+    add_column(
+        &mut store,
+        "FY",
+        "fiscal_year(`Day`, calendar=`Which calendar`)",
+    );
+    assert_eq!(column_values(&store, "FY"), vec!["2026", "2027"]);
+    assert_eq!(
+        rendered(&store, "FY"),
+        "fiscal_year(`Day`, calendar=`Settings`.`Which calendar`)"
+    );
 }
 
 #[test]

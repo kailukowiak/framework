@@ -900,8 +900,8 @@
                       [
                         "calendar",
                         {
-                          "kind": "string",
-                          "value": "NRF 4-5-4"
+                          "kind": "calendar",
+                          "calendar_id": "82a8ec5f-ff72-4042-96c0-06e05bb2ec9a"
                         }
                       ]
                     ]

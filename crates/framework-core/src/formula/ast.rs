@@ -3,6 +3,7 @@ use crate::engine::values::normalize_name;
 use crate::error::CoreError;
 use crate::format_number;
 use crate::formula::compile::format_polars_call;
+use crate::formula::financial_calendar::calendar_name;
 use crate::formula::lexer::ReferenceName;
 use crate::model::document::{DataObject, Document};
 use crate::model::frame::{Column, FrameObject};
@@ -169,6 +170,23 @@ pub enum Expr {
     Value {
         object_id: Id,
     },
+    /// A fiscal calendar the formula names: `calendar="NRF 4-5-4"`.
+    ///
+    /// Written as a string and read back as one, but held as an id, for
+    /// the same reason every other reference in this document is held as
+    /// an id: the name is what a person types and reads, and the id is
+    /// what survives them changing it. Binding happens where every other
+    /// name is bound — when the formula is parsed (see
+    /// `financial_calendar::bind_references`) — so a calendar that is not
+    /// there is refused at the boundary rather than at plan time, and a
+    /// rename is nothing at all.
+    ///
+    /// The other way to supply a calendar stays a name to the last
+    /// moment: [`Expr::Value`] holding one is read at plan time, because
+    /// what that value says is the user's to change between plans.
+    Calendar {
+        calendar_id: Id,
+    },
     /// A named list on the canvas: `` `Allowed currencies` ``.
     ///
     /// Always a list, however many values are in it, because that is what it
@@ -207,23 +225,6 @@ pub enum Expr {
         keyword_arguments: Vec<(String, Expr)>,
     },
 }
-
-/// Every function that takes a `calendar` argument, mirroring the parameter
-/// tables in `financial.rs`. Only the names are needed, not the slots: the
-/// remaining parameters of all of these are dates or numbers, so a string
-/// literal among their positional arguments is the calendar. Adding a
-/// calendar-taking function means adding it here, or a rename will silently
-/// break formulas that call it.
-const CALENDAR_FUNCTIONS: &[&str] = &[
-    "fiscal_year",
-    "fiscal_quarter",
-    "fiscal_period",
-    "period_start",
-    "period_end",
-    "fiscal_week",
-    "workday",
-    "networkdays",
-];
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -468,8 +469,10 @@ impl Expr {
             Expr::Date { .. } => Some(DataType::Date),
             // A gap sits in a list of anything, so it brings no type of its
             // own for the others to disagree with. A duration is not a
-            // value at all — see [`Expr::Duration`].
-            Expr::Null | Expr::Duration { .. } => None,
+            // value at all — see [`Expr::Duration`] — and neither is a
+            // calendar reference, which only means anything in the one
+            // argument slot that asks for it.
+            Expr::Null | Expr::Duration { .. } | Expr::Calendar { .. } => None,
             Expr::Column { column_id } | Expr::ForeignColumn { column_id, .. } => scope
                 .iter()
                 .find(|column| column.id == *column_id)
@@ -892,54 +895,6 @@ impl Expr {
         });
     }
 
-    /// Whether this expression names the calendar `name` outright.
-    ///
-    /// Calendars are the one document object a formula still reaches by
-    /// name rather than by id: `calendar="NRF 4-5-4"` is a plain string
-    /// argument, and the parser has no way to tell it from any other
-    /// string, because the calendar may equally be supplied by a named
-    /// value whose contents are only known at plan time. Rather than
-    /// teach the parser which keyword of which function is a reference —
-    /// and then carry a calendar-shaped variant through render, shape,
-    /// type and the generated bindings — renaming and removal ask this
-    /// question and refuse to break a formula that would stop resolving.
-    ///
-    /// The reading is deliberately narrow: a `calendar=` keyword on any
-    /// call, or a string literal handed positionally to one of the
-    /// functions that takes a calendar (every other parameter of those is
-    /// a date or a number, so a string there is the calendar slot). A
-    /// name arriving through a value object is not seen here, and cannot
-    /// be: the value's contents are the user's to change.
-    pub(crate) fn names_calendar(&self, name: &str) -> bool {
-        self.any(|expression| {
-            let (function, arguments, keyword_arguments) = match expression {
-                Expr::PolarsCall {
-                    name,
-                    arguments,
-                    keyword_arguments,
-                } => (name.as_str(), arguments, keyword_arguments),
-                Expr::Method {
-                    path,
-                    arguments,
-                    keyword_arguments,
-                    ..
-                } => (
-                    path.last().map(String::as_str).unwrap_or(""),
-                    arguments,
-                    keyword_arguments,
-                ),
-                _ => return false,
-            };
-            let matches = |expression: &Expr| {
-                matches!(expression, Expr::String { value } if value.eq_ignore_ascii_case(name))
-            };
-            keyword_arguments
-                .iter()
-                .any(|(key, value)| key == "calendar" && matches(value))
-                || (CALENDAR_FUNCTIONS.contains(&function) && arguments.iter().any(matches))
-        })
-    }
-
     /// Calls `visit` on this expression and everything inside it.
     pub(crate) fn walk<'a>(&'a self, visit: &mut impl FnMut(&'a Expr)) {
         visit(self);
@@ -1135,12 +1090,17 @@ impl Expr {
         })
     }
 
-    /// Whether this expression names a given object on the canvas — a value
-    /// or a list, both of which are read by id and both of which something
-    /// would break by deleting.
+    /// Whether this expression names a given thing the document holds — a
+    /// value, a list, or a fiscal calendar, all of which are read by id and
+    /// all of which something would break by deleting.
+    ///
+    /// Calendars answer here rather than through a question of their own so
+    /// that one rule keeps every by-id reference alive: whatever a formula
+    /// holds in place cannot be taken away underneath it.
     pub(crate) fn references_object(&self, target_object_id: &str) -> bool {
         self.any(|expression| match expression {
             Expr::Value { object_id } | Expr::Series { object_id } => object_id == target_object_id,
+            Expr::Calendar { calendar_id } => calendar_id == target_object_id,
             _ => false,
         })
     }
@@ -1248,10 +1208,9 @@ impl Expr {
             // sign is put back on the figure a person would have typed.
             Expr::Percentage { value } => format!("{}%", format_number(*value * 100.0)),
             Expr::Money { value } => format!("${}", format_number(*value)),
-            Expr::String { value } => {
-                serde_json::to_string(value).unwrap_or_else(|_| "\"\"".into())
-            }
+            Expr::String { value } => quoted(value),
             Expr::Boolean { value } => if *value { "True" } else { "False" }.into(),
+            Expr::Calendar { calendar_id } => quoted(calendar_name(document, calendar_id)),
             Expr::Date { value } => value.format("%Y-%m-%d").to_string(),
             Expr::Duration { value } => value.clone(),
             Expr::Null => "None".into(),
@@ -1412,6 +1371,15 @@ pub(crate) fn keyword_argument<'a>(
     arguments
         .iter()
         .find_map(|(candidate, value)| (candidate == name).then_some(value))
+}
+
+/// A string as the formula language writes one, escapes and all.
+///
+/// A calendar reference comes out this way too: it is written as a string
+/// argument and has to lex as one when the text is read back, so the
+/// rename it carries lands inside the quotes. See [`Expr::Calendar`].
+fn quoted(value: &str) -> String {
+    serde_json::to_string(value).unwrap_or_else(|_| "\"\"".into())
 }
 
 pub(crate) fn formula_name(name: &str) -> String {

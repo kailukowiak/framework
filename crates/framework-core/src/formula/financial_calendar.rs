@@ -30,16 +30,43 @@ pub(super) fn builtin_months_calendar() -> ResolvedCalendar {
     ResolvedCalendar::builtin_months()
 }
 
-/// The calendar a call reads: the named one, the document default, or
+/// What the calendar `calendar_id` is called now — which is the only
+/// place a rename has to reach, because the id is what formulas hold.
+/// `#REF` for an id no calendar answers to, the way a lost column renders.
+pub(super) fn calendar_name<'a>(document: &'a Document, calendar_id: &str) -> &'a str {
+    document
+        .calendars
+        .iter()
+        .find(|calendar| calendar.id == calendar_id)
+        .map(|calendar| calendar.name.as_str())
+        .unwrap_or("#REF")
+}
+
+/// The calendar a call reads: the one it names, the document default, or
 /// calendar months when the document sets none.
+///
+/// A calendar written in the formula arrives already bound to an id — the
+/// parser did that, the way it binds every other name (see
+/// [`bind_references`]) — so nothing here has to guess which calendar
+/// `"NRF"` meant when it was typed. A calendar handed over by a named
+/// value is still a name at this point and can only be one: what that
+/// value says is the user's to change between one plan and the next.
 pub(super) fn resolve_calendar(
     document: &Document,
     argument: Option<&Expr>,
 ) -> Result<ResolvedCalendar, String> {
     match argument {
         None => default_calendar(document),
+        Some(Expr::Calendar { calendar_id }) => document
+            .calendars
+            .iter()
+            .find(|calendar| calendar.id == *calendar_id)
+            .ok_or_else(|| {
+                format!("The calendar this formula reads is no longer on the document (‘{calendar_id}’).")
+            })?
+            .resolve(),
         Some(expression) => {
-            let reference = string_literal(expression, document).map_err(|_| {
+            let reference = value_name(expression, document).map_err(|_| {
                 "calendar must be a calendar name written in the formula or held by a named value"
                     .to_string()
             })?;
@@ -49,6 +76,134 @@ pub(super) fn resolve_calendar(
                 .resolve()
         }
     }
+}
+
+/// Rewrites every calendar name written in `expression` into the id of the
+/// calendar it names, refusing a name no calendar answers to.
+///
+/// This is the calendar half of what the parser already does for a value,
+/// a list and a foreign column: a name is resolved once, where it was
+/// typed, and never again. Doing it here rather than at plan time is what
+/// makes a rename free — the formula holds the calendar, not the spelling
+/// — and what makes an unknown calendar an error where the person can see
+/// the formula they wrote, instead of a broken column later.
+///
+/// Which argument is the calendar is not guessed: the parameter tables in
+/// `financial.rs` say, and the receiver binding in
+/// `financial_namespace.rs` says where the same parameter sits when the
+/// call is written as a method. A calendar-taking function added there
+/// needs nothing added here.
+pub(crate) fn bind_references(
+    expression: &mut Expr,
+    document: &Document,
+) -> Result<(), crate::error::CoreError> {
+    match expression {
+        Expr::PolarsCall {
+            name,
+            arguments,
+            keyword_arguments,
+        } => {
+            let slot = calendar_slot(name, false);
+            bind_call(slot, arguments, keyword_arguments, document)?;
+        }
+        Expr::Method {
+            input,
+            path,
+            arguments,
+            keyword_arguments,
+        } => {
+            // Only `.finance.<name>(…)` is a financial call written as a
+            // method; a bare `.fiscal_week(…)` is an ordinary Polars
+            // method name that happens to read alike, and binding a
+            // calendar inside it would answer a nonexistent method with a
+            // confusing complaint about its argument.
+            let slot = match path.as_slice() {
+                [namespace, function] if namespace.eq_ignore_ascii_case("finance") => {
+                    calendar_slot(function, true)
+                }
+                _ => None,
+            };
+            bind_call(slot, arguments, keyword_arguments, document)?;
+            bind_references(input, document)?;
+        }
+        Expr::List { items } => {
+            for item in items {
+                bind_references(item, document)?;
+            }
+        }
+        Expr::Negate { expression } | Expr::Not { expression } => {
+            bind_references(expression, document)?
+        }
+        Expr::Binary { left, right, .. } => {
+            bind_references(left, document)?;
+            bind_references(right, document)?;
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Where the `calendar` parameter sits among the arguments as written:
+/// counted from the front for a plain call, and with the receiver taken
+/// out for a method, because the receiver is one of the parameters.
+fn calendar_slot(function: &str, as_method: bool) -> Option<usize> {
+    let lower = function.to_ascii_lowercase();
+    let name = lower.strip_prefix("finance.").unwrap_or(&lower);
+    if !super::financial::is_financial(name) {
+        return None;
+    }
+    let parameters = super::financial::parameter_names(name);
+    if !as_method {
+        return parameters
+            .iter()
+            .position(|parameter| *parameter == "calendar");
+    }
+    let receiver = super::financial_namespace::receiver_parameter(name);
+    parameters
+        .iter()
+        .filter(|parameter| **parameter != receiver)
+        .position(|parameter| *parameter == "calendar")
+}
+
+fn bind_call(
+    slot: Option<usize>,
+    arguments: &mut [Expr],
+    keyword_arguments: &mut [(String, Expr)],
+    document: &Document,
+) -> Result<(), crate::error::CoreError> {
+    if let Some(index) = slot
+        && let Some(argument) = arguments.get_mut(index)
+    {
+        bind_one(argument, document)?;
+    }
+    for (key, value) in keyword_arguments.iter_mut() {
+        if slot.is_some() && key == "calendar" {
+            bind_one(value, document)?;
+        } else {
+            bind_references(value, document)?;
+        }
+    }
+    for (index, argument) in arguments.iter_mut().enumerate() {
+        if Some(index) != slot {
+            bind_references(argument, document)?;
+        }
+    }
+    Ok(())
+}
+
+/// A name in the calendar slot becomes the id it names; anything else —
+/// a named value, or an already-bound reference — is left alone.
+fn bind_one(argument: &mut Expr, document: &Document) -> Result<(), crate::error::CoreError> {
+    let Expr::String { value } = argument else {
+        return bind_references(argument, document);
+    };
+    let calendar = document
+        .find_calendar(value)
+        .ok_or_else(|| crate::error::CoreError::Formula(no_such_calendar(document, value)))?;
+    *argument = Expr::Calendar {
+        calendar_id: calendar.id.clone(),
+    };
+    Ok(())
 }
 
 /// The document default, or calendar months when it sets none.
@@ -95,10 +250,9 @@ fn no_such_calendar(document: &Document, reference: &str) -> String {
     )
 }
 
-/// A whole string written in the formula or held by a named value.
-fn string_literal(expression: &Expr, document: &Document) -> Result<String, String> {
+/// The name a named value holds.
+fn value_name(expression: &Expr, document: &Document) -> Result<String, String> {
     match expression {
-        Expr::String { value } => Ok(value.clone()),
         Expr::Value { object_id } => match document.object(object_id) {
             Ok(DataObject::Value(value)) => {
                 Ok(document.effective_value_raw(value).trim().to_string())
@@ -143,31 +297,8 @@ pub(super) fn compile(
     // Receiver calls arrive with everything as keywords (the receiver
     // already bound), so each parameter resolves positionally first, then
     // by name — the same shape as the fiscal binder.
-    let parameters: &[&str] = match name {
-        "fiscal_week" => &["date", "calendar"],
-        "workday" => &["date", "n", "calendar"],
-        "networkdays" => &["start_date", "end_date", "calendar"],
-        _ => unreachable!(),
-    };
-    if arguments.len() > parameters.len() {
-        return Err(format!(
-            "{name} expects at most {} arguments",
-            parameters.len()
-        ));
-    }
-    let mut slots: Vec<Option<&Expr>> = vec![None; parameters.len()];
-    for (slot, argument) in slots.iter_mut().zip(arguments) {
-        *slot = Some(argument);
-    }
-    for (key, value) in keywords {
-        let index = parameters
-            .iter()
-            .position(|parameter| parameter == key)
-            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
-        if slots[index].replace(value).is_some() {
-            return Err(format!("{name}: ‘{key}’ was supplied twice"));
-        }
-    }
+    let parameters = super::financial::parameter_names(name);
+    let slots = super::financial::bind_slots(name, parameters, None, arguments, keywords)?;
     let calendar = resolve_calendar(document, slots[parameters.len() - 1])?;
     let dates = slots[0]
         .ok_or_else(|| format!("{name} expects the date to read"))?

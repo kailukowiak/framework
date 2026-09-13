@@ -33,30 +33,8 @@ pub(super) fn compile(
     // Receiver calls arrive with everything as keywords (the receiver
     // already bound to `date`), so each parameter resolves positionally
     // first, then by name — the same shape as `period_arguments`.
-    let parameters: &[&str] = match name {
-        "add_periods" => &["date", "n"],
-        "period_start" | "period_end" => &["date", "calendar"],
-        _ => &["date", "fy_start", "calendar"],
-    };
-    if arguments.len() > parameters.len() {
-        return Err(format!(
-            "{name} expects at most {} arguments",
-            parameters.len()
-        ));
-    }
-    let mut slots: Vec<Option<&Expr>> = vec![None; parameters.len()];
-    for (slot, argument) in slots.iter_mut().zip(arguments) {
-        *slot = Some(argument);
-    }
-    for (key, value) in keywords {
-        let index = parameters
-            .iter()
-            .position(|parameter| parameter == key)
-            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
-        if slots[index].replace(value).is_some() {
-            return Err(format!("{name}: ‘{key}’ was supplied twice"));
-        }
-    }
+    let parameters = super::financial::parameter_names(name);
+    let slots = super::financial::bind_slots(name, parameters, None, arguments, keywords)?;
     let calendar = if parameters.contains(&"calendar") {
         resolve_calendar(document, slots[parameters.len() - 1])?
     } else {

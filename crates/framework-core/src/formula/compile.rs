@@ -11,6 +11,17 @@ pub(crate) use root_call::polars_call_declared_type;
 
 const MAX_SEQUENCE_VALUES: usize = 1_000_000;
 
+/// A calendar is a rule for reading dates, not a value, so it never
+/// becomes a Polars expression: the function that takes one reads it out
+/// of its argument before compiling anything. Reaching this means a
+/// calendar was named somewhere that does not ask for one.
+fn not_a_value(document: &Document, calendar_id: &str) -> String {
+    format!(
+        "‘{}’ is a calendar, not a value. Name it in the calendar argument of a fiscal function.",
+        crate::formula::financial_calendar::calendar_name(document, calendar_id)
+    )
+}
+
 impl Expr {
     pub(crate) fn to_polars(&self, document: &Document) -> Result<pl::Expr, String> {
         match self {
@@ -28,6 +39,7 @@ impl Expr {
                 "‘{value}’ is a length of time, not a value. Add it to a date \
                  or subtract it from one."
             )),
+            Expr::Calendar { calendar_id } => Err(not_a_value(document, calendar_id)),
             Expr::Null => Ok(pl::lit(pl::NULL)),
             Expr::Column { column_id } => Ok(pl::col(column_id)),
             Expr::ForeignColumn {

@@ -762,9 +762,10 @@ pub enum Operation {
     },
     /// Adds a fiscal calendar to the document: the month its year starts
     /// on, the week pattern its periods follow, the rule ending its year,
-    /// and the days the business counts. Names are unique; formulas name
-    /// calendars, and the default supplies the year start when a call
-    /// names none.
+    /// and the days the business counts. Names are unique because a
+    /// formula names a calendar by writing its name; what the formula
+    /// then holds is the id. The default supplies the year start when a
+    /// call names none.
     AddCalendar {
         name: String,
         fy_start: u8,
@@ -778,11 +779,11 @@ pub enum Operation {
     /// update with a shorter list, and every formula reading the calendar
     /// simply gets the new answer.
     ///
-    /// The name is the exception. Formulas name calendars by name, not by
-    /// id, so a rename is a rewrite of every formula that says the old
-    /// one — and nothing rewrites them. A rename is therefore refused
-    /// while any formula in the document names the calendar, and the
-    /// refusal says which object is in the way.
+    /// The name is no exception. A formula holds the calendar's id and is
+    /// written back out with whatever the calendar is called now, so a
+    /// rename reaches every formula that names it and changes nothing
+    /// about what they read. Names stay unique, because the name is still
+    /// what a person types.
     UpdateCalendar {
         calendar_id: Id,
         name: String,
@@ -793,8 +794,10 @@ pub enum Operation {
         weekend: Vec<u8>,
         holidays: Vec<String>,
     },
-    /// Removes a calendar by id. The default calendar cannot be removed;
-    /// set another default first, and neither can one a formula names.
+    /// Removes a calendar by id. The default calendar cannot be removed —
+    /// set another default first — and neither can one a formula names:
+    /// that refusal is the same one that keeps a value from being deleted
+    /// while something reads it, and it says who is reading.
     RemoveCalendar {
         calendar_id: Id,
     },

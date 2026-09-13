@@ -803,3 +803,159 @@ fn the_default_calendar_reaches_bare_windows_and_indexes() {
         ]
     );
 }
+
+/// Gaps, nulls and a shuffled grid across two year boundaries. The window
+/// join names the indexes it wants rather than scanning the partition, so
+/// this is the test that the indexes it names are the right ones: a
+/// missing month contributes nothing, a present-but-empty month keeps the
+/// window readable only if something else in it is readable, and no answer
+/// depends on where its row sits.
+#[test]
+fn windows_read_gaps_and_nulls_across_a_year_boundary() {
+    let mut store = Store::new(Document::blank("Gaps"));
+    store
+        .apply(Operation::AddFrame {
+            name: "Actuals".into(),
+            grid: vec![
+                vec!["Month".into(), "Revenue".into()],
+                vec!["2025-03-01".into(), "30".into()],
+                vec!["2024-12-01".into(), "12".into()],
+                // A whole year with one month in it, and that month empty:
+                // every window ending on it has nothing to read.
+                vec!["2023-07-01".into(), "".into()],
+                vec!["2025-08-01".into(), "80".into()],
+                vec!["2024-09-01".into(), "9".into()],
+                vec!["2025-01-01".into(), "10".into()],
+                // October is missing outright; November is present and empty.
+                vec!["2024-11-01".into(), "".into()],
+                vec!["2025-05-01".into(), "50".into()],
+                vec!["2025-02-01".into(), "20".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Actuals").clone();
+    let month = frame
+        .columns
+        .iter()
+        .find(|column| column.name == "Month")
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetFramePeriod {
+            frame_id: frame.id.clone(),
+            period: Some(FramePeriod {
+                column_id: month,
+                partition_column_ids: Vec::new(),
+            }),
+        })
+        .unwrap();
+    add_column(&mut store, "Actuals", "TTM", "ttm(`Revenue`)");
+    add_column(&mut store, "Actuals", "YTD", "ytd(`Revenue`)");
+    assert_eq!(
+        by_month(&store, "TTM"),
+        vec![
+            ("2023-07-01".into(), "".into()),
+            ("2024-09-01".into(), "9".into()),
+            ("2024-11-01".into(), "9".into()),
+            ("2024-12-01".into(), "21".into()),
+            ("2025-01-01".into(), "31".into()),
+            ("2025-02-01".into(), "51".into()),
+            ("2025-03-01".into(), "81".into()),
+            ("2025-05-01".into(), "131".into()),
+            ("2025-08-01".into(), "211".into()),
+        ]
+    );
+    assert_eq!(
+        by_month(&store, "YTD"),
+        vec![
+            ("2023-07-01".into(), "".into()),
+            ("2024-09-01".into(), "9".into()),
+            ("2024-11-01".into(), "9".into()),
+            ("2024-12-01".into(), "21".into()),
+            ("2025-01-01".into(), "10".into()),
+            ("2025-02-01".into(), "30".into()),
+            ("2025-03-01".into(), "60".into()),
+            ("2025-05-01".into(), "110".into()),
+            ("2025-08-01".into(), "190".into()),
+        ]
+    );
+}
+
+/// Five thousand daily rows through one trailing window. The pairing used
+/// to be every row against every other row before the range filter, which
+/// is twenty-five million pairs here and minutes of work; naming the
+/// twelve indexes each row wants makes it a few passes. The assertion is
+/// deliberately loose — this is a "did the quadratic come back" alarm, not
+/// a benchmark.
+#[test]
+fn a_daily_frame_runs_one_window_without_pairing_every_row() {
+    let mut store = Store::new(Document::blank("Scale"));
+    store
+        .apply(Operation::AddGeneratorFrame {
+            name: "Days".into(),
+            formula: "sequence(2010-01-01, 2023-09-09, 1d)".into(),
+            column_name: Some("Day".into()),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Days").clone();
+    let day = frame
+        .columns
+        .iter()
+        .find(|column| column.name == "Day")
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetFramePeriod {
+            frame_id: frame.id.clone(),
+            period: Some(FramePeriod {
+                column_id: day,
+                partition_column_ids: Vec::new(),
+            }),
+        })
+        .unwrap();
+    // A generated frame owns no rows, so its columns arrive as a pipeline.
+    let column = |name: &str, formula: &str| ExistingFormulaInput {
+        output_column_id: id(),
+        name: name.into(),
+        formula: formula.into(),
+    };
+    let started = std::time::Instant::now();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame.id.clone(),
+            steps: vec![
+                FrameStepInput::WithColumns {
+                    columns: vec![column("Revenue", "1")],
+                },
+                FrameStepInput::WithColumns {
+                    columns: vec![column("TTM", "ttm(`Revenue`)")],
+                },
+            ],
+        })
+        .unwrap();
+    let id = frame_named(store.document(), "Days").id.clone();
+    let page = store.get_frame_page(&id, 0, 5).unwrap();
+    let elapsed = started.elapsed();
+    assert!(
+        page.total_rows >= 4_900,
+        "expected about five thousand days, got {}",
+        page.total_rows
+    );
+    // A window counts whole periods, and a month is one period however
+    // many days sit in it: every day of January 2010 reads all thirty-one
+    // of them, because the frame starts there and a trailing window
+    // reaches eleven months further back into nothing.
+    assert_eq!(page.rows[0][2], "31");
+    assert_eq!(page.rows[4][2], "31");
+    assert!(
+        elapsed < std::time::Duration::from_secs(20),
+        "one trailing window over {} daily rows took {elapsed:?}",
+        page.total_rows
+    );
+}

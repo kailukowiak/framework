@@ -33,7 +33,7 @@ impl Document {
             .map_err(CoreError::InvalidOperation)?;
         if self.calendar_name_taken(&name, except) {
             return Err(CoreError::InvalidOperation(format!(
-                "There is already a calendar named ‘{name}’. Calendar names are unique because formulas resolve them by name."
+                "There is already a calendar named ‘{name}’. Calendar names are unique because a formula names one by writing its name, and two calendars answering to it would be a coin toss."
             )));
         }
         let mut weekend = weekend;
@@ -51,39 +51,6 @@ impl Document {
             year_label,
             weekend,
             holidays,
-        })
-    }
-
-    /// The name of the first object holding a formula that names the
-    /// calendar `name`, if any.
-    ///
-    /// Formulas name calendars by name — the one document reference that
-    /// is still a string rather than an id (see `Expr::names_calendar`).
-    /// That makes a rename or a removal a rewrite of every formula that
-    /// says the old name, which nothing here does; so instead of silently
-    /// breaking them, both refuse and say what is in the way.
-    fn first_calendar_reference(&self, name: &str) -> Option<String> {
-        self.objects.iter().find_map(|object| {
-            let reads = match object {
-                DataObject::Frame(frame) => {
-                    frame
-                        .expressions()
-                        .any(|expression| expression.names_calendar(name))
-                        || frame
-                            .display
-                            .style_rules
-                            .iter()
-                            .any(|rule| rule.formula.expression.names_calendar(name))
-                }
-                DataObject::Result(result) => result.formula.expression.names_calendar(name),
-                DataObject::Block(block) => block.lines.iter().any(|line| {
-                    line.formula
-                        .as_ref()
-                        .is_some_and(|formula| formula.expression.names_calendar(name))
-                }),
-                _ => false,
-            };
-            reads.then(|| object.name().to_string())
         })
     }
 
@@ -128,25 +95,17 @@ impl Document {
         weekend: Vec<u8>,
         holidays: Vec<String>,
     ) -> Result<ReplicatedOperation, CoreError> {
-        let previous_name = self
+        // A calendar may be edited freely, name included: a formula holds
+        // the calendar's id, so a rename changes what those formulas say
+        // and nothing about what they read. That is the point of holding
+        // the rule in one place, and it is why this no longer refuses.
+        if !self
             .calendars
             .iter()
-            .find(|calendar| calendar.id == calendar_id)
-            .map(|calendar| calendar.name.clone())
-            .ok_or_else(|| {
-                CoreError::InvalidOperation(format!(
-                    "There is no calendar with id ‘{calendar_id}’."
-                ))
-            })?;
-        // Everything else about a calendar may be edited freely: a formula
-        // that reads it goes on reading it and simply gets the new answer,
-        // which is the point of holding the rule in one place. The name is
-        // the exception, because the name is the reference.
-        if !previous_name.eq_ignore_ascii_case(&name)
-            && let Some(reader) = self.first_calendar_reference(&previous_name)
+            .any(|calendar| calendar.id == calendar_id)
         {
             return Err(CoreError::InvalidOperation(format!(
-                "‘{previous_name}’ cannot be renamed while ‘{reader}’ has a formula that names it. Change those formulas first, or edit the calendar's rules without renaming it."
+                "There is no calendar with id ‘{calendar_id}’."
             )));
         }
         let calendar = self.validated_calendar(
@@ -182,10 +141,13 @@ impl Document {
                 calendar.name
             )));
         }
+        // The same rule that holds a value in place while a formula reads
+        // it, asked of a calendar id: a formula naming this calendar is a
+        // reason it cannot go, and the refusal says who is reading.
         let name = calendar.name.clone();
-        if let Some(reader) = self.first_calendar_reference(&name) {
+        if let Some(reader) = self.read_by(&calendar_id, None) {
             return Err(CoreError::InvalidOperation(format!(
-                "‘{name}’ cannot be removed while ‘{reader}’ has a formula that names it. Change those formulas first."
+                "{reader} reads ‘{name}’, so it cannot be removed. Change the formula that reads it first."
             )));
         }
         Ok(ReplicatedOperation::RemoveCalendar { calendar_id })

@@ -52,19 +52,11 @@ pub(crate) fn compile(
     }
     let lower = name.to_ascii_lowercase();
     let name = lower.strip_prefix("finance.").unwrap_or(&lower).to_string();
-    let args = bind_arguments(&name, arguments, keywords, document)?;
-    if matches!(name.as_str(), "irr" | "xirr") {
-        return super::financial_return::compile(&name, args);
-    }
-    if matches!(name.as_str(), "npv" | "xnpv" | "mirr") {
-        return super::financial_discount::compile(&name, args);
-    }
-    if matches!(name.as_str(), "sln" | "db" | "ddb") {
-        return super::financial_depreciation::compile(&name, args);
-    }
-    if matches!(name.as_str(), "effect" | "nominal" | "rate") {
-        return super::financial_yield::compile(&name, args);
-    }
+    // These two answer before any argument is bound, because binding
+    // compiles every slot to Polars and a calendar reference is not a
+    // Polars value. Binding first would answer `ytd(…, calendar="NRF")`
+    // by complaining about the calendar rather than saying the one thing
+    // worth saying: this call needs a frame with a declared period.
     if name == "prior" {
         // A `prior` call never compiles to a standalone expression: the
         // engine lifts it into a self-join in `apply_with_columns_step`,
@@ -84,6 +76,19 @@ pub(crate) fn compile(
         return Err(format!(
             "{name} reads neighbouring periods, so it needs a frame with a declared period column. Use it in a calculated column."
         ));
+    }
+    let args = bind_arguments(&name, arguments, keywords, document)?;
+    if matches!(name.as_str(), "irr" | "xirr") {
+        return super::financial_return::compile(&name, args);
+    }
+    if matches!(name.as_str(), "npv" | "xnpv" | "mirr") {
+        return super::financial_discount::compile(&name, args);
+    }
+    if matches!(name.as_str(), "sln" | "db" | "ddb") {
+        return super::financial_depreciation::compile(&name, args);
+    }
+    if matches!(name.as_str(), "effect" | "nominal" | "rate") {
+        return super::financial_yield::compile(&name, args);
     }
     let args: Vec<_> = args
         .into_iter()
@@ -210,22 +215,7 @@ fn bind_arguments(
         "ttm" | "same_period_last_year" => 1,
         _ => 3,
     };
-    let mut slots = vec![None; parameters.len()];
-    if arguments.len() > slots.len() {
-        return Err(format!("{name} expects at most {} arguments", slots.len()));
-    }
-    for (slot, argument) in slots.iter_mut().zip(arguments) {
-        *slot = Some(argument);
-    }
-    for (key, value) in keywords {
-        let index = parameters
-            .iter()
-            .position(|parameter| parameter == key)
-            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
-        if slots[index].replace(value).is_some() {
-            return Err(format!("{name}: ‘{key}’ was supplied twice"));
-        }
-    }
+    let slots = bind_slots(name, parameters, None, arguments, keywords)?;
     slots
         .iter()
         .enumerate()
@@ -235,6 +225,65 @@ fn bind_arguments(
             None => Ok(default_argument(name, parameters[i])),
         })
         .collect::<Result<Vec<_>, _>>()
+}
+
+/// Binds a call's arguments to its parameters: positionals in order, then
+/// keywords by name. Every financial call is written either way, and the
+/// namespace lets any of them be written as a method, where the receiver
+/// stands in for the first parameter — so `receiver` is simply the
+/// positional that comes before the written ones.
+///
+/// This is the one place the three complaints about a mis-written call are
+/// worded, so a call refused as a method reads the same as the same call
+/// refused as a function. The returned slots line up with `parameters`;
+/// what an unfilled slot means — a default, or a missing-argument error —
+/// is each function's own business.
+pub(super) fn bind_slots<'a>(
+    name: &str,
+    parameters: &[&str],
+    receiver: Option<&'a Expr>,
+    arguments: &'a [Expr],
+    keywords: &'a [(String, Expr)],
+) -> Result<Vec<Option<&'a Expr>>, String> {
+    bind_slots_refusing(name, parameters, receiver, arguments, keywords, |_| None)
+}
+
+/// `bind_slots` with a first say over the keywords: `refuse` answers a
+/// keyword this call wants to reject in its own words, before the generic
+/// unknown-argument complaint gets to it. It is consulted in written
+/// order, so an earlier bad keyword still answers first.
+pub(super) fn bind_slots_refusing<'a>(
+    name: &str,
+    parameters: &[&str],
+    receiver: Option<&'a Expr>,
+    arguments: &'a [Expr],
+    keywords: &'a [(String, Expr)],
+    refuse: impl Fn(&str) -> Option<String>,
+) -> Result<Vec<Option<&'a Expr>>, String> {
+    let mut slots: Vec<Option<&Expr>> = vec![None; parameters.len()];
+    if arguments.len() + usize::from(receiver.is_some()) > parameters.len() {
+        return Err(format!(
+            "{name} expects at most {} arguments",
+            parameters.len()
+        ));
+    }
+    let positional = receiver.into_iter().chain(arguments.iter());
+    for (slot, argument) in slots.iter_mut().zip(positional) {
+        *slot = Some(argument);
+    }
+    for (key, value) in keywords {
+        if let Some(complaint) = refuse(key) {
+            return Err(complaint);
+        }
+        let index = parameters
+            .iter()
+            .position(|parameter| parameter == key)
+            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
+        if slots[index].replace(value).is_some() {
+            return Err(format!("{name}: ‘{key}’ was supplied twice"));
+        }
+    }
+    Ok(slots)
 }
 
 fn default_argument(name: &str, parameter: &str) -> pl::Expr {

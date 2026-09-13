@@ -103,41 +103,20 @@ fn window_call<'a>(expression: &'a Expr, document: &Document) -> Result<WindowCa
     // whatever this window still takes. A trailing window has no year
     // boundary to place, so `calendar` is its second parameter and
     // `fy_start` is not one of its parameters at all.
-    let parameters: &[&str] = match kind {
-        WindowKind::Ytd => &["expr", "fy_start", "calendar"],
-        _ => &["expr", "calendar"],
-    };
-    let mut slots: Vec<Option<&Expr>> = vec![None; parameters.len()];
-    let mut positional = Vec::with_capacity(parameters.len());
-    if let Some(input) = inner {
-        positional.push(input);
-    }
-    positional.extend(arguments.iter());
-    if positional.len() > parameters.len() {
-        return Err(format!(
-            "{name} expects at most {} arguments",
-            parameters.len()
-        ));
-    }
-    for (slot, argument) in slots.iter_mut().zip(positional) {
-        *slot = Some(argument);
-    }
-    for (key, value) in keywords {
-        // Naming the missing parameter beats "no argument fy_start": the
-        // reason a trailing window has none is worth saying once.
-        if key == "fy_start" && !matches!(kind, WindowKind::Ytd) {
-            return Err(format!(
-                "{name} counts twelve whole periods, so it takes no fy_start"
-            ));
-        }
-        let index = parameters
-            .iter()
-            .position(|parameter| parameter == key)
-            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
-        if slots[index].replace(value).is_some() {
-            return Err(format!("{name}: ‘{key}’ was supplied twice"));
-        }
-    }
+    let parameters = super::financial::parameter_names(&name);
+    let slots = super::financial::bind_slots_refusing(
+        &name,
+        parameters,
+        inner,
+        arguments,
+        keywords,
+        |key| {
+            // Naming the missing parameter beats "no argument fy_start":
+            // the reason a trailing window has none is worth saying once.
+            (key == "fy_start" && !matches!(kind, WindowKind::Ytd))
+                .then(|| format!("{name} counts twelve whole periods, so it takes no fy_start"))
+        },
+    )?;
     let expression = slots[0].ok_or_else(|| format!("{name} expects the expression to read"))?;
     // The numbering comes from the document default when unwritten: a bare
     // `ytd` in a February-start workbook counts from February, and under a
@@ -271,12 +250,22 @@ pub(crate) fn join_window_aggregates(
     Ok((acc, rewritten, outputs))
 }
 
-/// One `ytd` or `ttm` as a range self-join: each row pairs with the rows
-/// in its window, which are then summed per row. Both sides derive from
-/// the pre-pass snapshot; the answer joins back onto the accumulation by
-/// the partition columns and the period column the declaration guarantees
-/// unique, so no synthetic row key is needed and row order never enters
-/// the answer. The range is index arithmetic throughout.
+/// One `ytd` or `ttm` as a self-join on the indexes the window covers.
+///
+/// Both windows span at most twelve indexes, so each row can name them
+/// outright instead of pairing with the whole partition and filtering:
+/// the left side explodes into the (at most twelve) indexes its window
+/// asks for, the right side is one row per index carrying that index's
+/// total, and an equi-join on the index pairs them. Cost is linear in the
+/// rows rather than quadratic in the partition, and nothing about the
+/// answer changes — a window still sums the periods that exist, gaps
+/// simply find no row to match.
+///
+/// Both sides derive from the pre-pass snapshot; the answer joins back
+/// onto the accumulation by the partition columns and the period column
+/// the declaration guarantees unique, so no synthetic row key is needed
+/// and row order never enters the answer. The range is index arithmetic
+/// throughout.
 fn join_window(
     document: &Document,
     period: &FramePeriod,
@@ -285,10 +274,10 @@ fn join_window(
     window: &WindowCall<'_>,
     output: &str,
 ) -> Result<pl::LazyFrame, String> {
-    let low = format!("{output}_low");
-    let high = format!("{output}_high");
+    let wanted = format!("{output}_wanted");
     let have = format!("{output}_have");
     let value = format!("{output}_value");
+    let gross = format!("{output}_gross");
     let count = format!("{output}_count");
     // Both bounds count in the call's own basis. A trailing window would
     // answer the same under any year start — shifting the year start moves
@@ -296,7 +285,6 @@ fn join_window(
     // *periods* the other side of the join counts, which under a retail
     // pattern are blocks of weeks rather than months.
     let index = window.basis.index(pl::col(&period.column_id));
-    let high_expr = index.clone();
     let low_expr = match window.kind {
         WindowKind::Ytd => {
             // The index is twelve per fiscal year from a zero-based month,
@@ -306,56 +294,74 @@ fn join_window(
         }
         _ => index.clone() - pl::lit(11),
     };
-    let left = base
-        .clone()
-        .with_columns([high_expr.alias(high.as_str()), low_expr.alias(low.as_str())]);
-    let right = base.clone().select(
-        period
-            .partition_column_ids
-            .iter()
-            .map(pl::col)
-            .chain([
-                pl::col(&period.column_id),
-                index.alias(have.as_str()),
-                window.expression.to_polars(document)?.alias(value.as_str()),
-            ])
-            .collect::<Vec<_>>(),
-    );
-    let partitions: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
-    // With no partitions every row pairs with every row before the range
-    // filter; Polars wants that spelled as a cross join, not an equi-join
-    // with empty keys.
-    let paired = if partitions.is_empty() {
-        left.join(
-            right,
-            Vec::<pl::Expr>::new(),
-            Vec::<pl::Expr>::new(),
-            pl::JoinArgs::new(pl::JoinType::Cross),
-        )
-    } else {
-        left.join(
-            right,
-            partitions.clone(),
-            partitions,
-            pl::JoinArgs::new(pl::JoinType::Inner),
-        )
-    };
-    let paired = paired.filter(
-        pl::col(have.as_str())
-            .gt_eq(pl::col(low.as_str()))
-            .and(pl::col(have.as_str()).lt_eq(pl::col(high.as_str()))),
-    );
     // The declaration's natural keys identify each row: the period column
-    // is unique within each partition. Nulls are skipped the way a frame
-    // `sum` skips them; only a window with no readable value at all reads
-    // blank rather than zero.
+    // is unique within each partition.
     let mut natural: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
     natural.push(pl::col(&period.column_id));
+    // `int_ranges` is half-open, so the high bound is the row's own index
+    // plus one: a window always covers the period it ends on.
+    let left = base
+        .clone()
+        .select(
+            natural
+                .iter()
+                .cloned()
+                .chain([pl::int_ranges(
+                    low_expr,
+                    index.clone() + pl::lit(1),
+                    pl::lit(1),
+                    pl::DataType::Int32,
+                )
+                .alias(wanted.as_str())])
+                .collect::<Vec<_>>(),
+        )
+        .explode(
+            pl::by_name([wanted.as_str()], true, false),
+            pl::ExplodeOptions {
+                empty_as_null: true,
+                keep_nulls: true,
+            },
+        );
+    // One row per index, not per row: several rows can share an index —
+    // daily dates inside one month, say — and folding them first keeps the
+    // pairing one row per wanted index rather than one per row behind it.
+    // Nulls are skipped the way a frame `sum` skips them; the count of
+    // readable values is what decides blank from zero further down.
+    let mut index_keys: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
+    index_keys.push(pl::col(have.as_str()));
+    let totals = base
+        .clone()
+        .select(
+            period
+                .partition_column_ids
+                .iter()
+                .map(pl::col)
+                .chain([
+                    index.alias(have.as_str()),
+                    window.expression.to_polars(document)?.alias(value.as_str()),
+                ])
+                .collect::<Vec<_>>(),
+        )
+        .group_by(index_keys.clone())
+        .agg([
+            pl::col(value.as_str()).sum().alias(gross.as_str()),
+            pl::col(value.as_str()).count().alias(count.as_str()),
+        ]);
+    let mut left_keys: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
+    left_keys.push(pl::col(wanted.as_str()));
+    let paired = left.join(
+        totals,
+        left_keys,
+        index_keys,
+        pl::JoinArgs::new(pl::JoinType::Inner),
+    );
+    // Only a window with no readable value at all reads blank rather than
+    // zero, so the counts add up alongside the totals.
     let summed = paired
         .group_by(natural.clone())
         .agg([
-            pl::col(value.as_str()).sum().alias(output),
-            pl::col(value.as_str()).count().alias(count.as_str()),
+            pl::col(gross.as_str()).sum().alias(output),
+            pl::col(count.as_str()).sum().alias(count.as_str()),
         ])
         .with_columns([pl::when(pl::col(count.as_str()).eq(pl::lit(0)))
             .then(pl::lit(pl::NULL))

@@ -132,23 +132,8 @@ fn period_arguments<'a>(
     name: &str,
     document: &Document,
 ) -> Result<(&'a Expr, PeriodBasis), String> {
-    let parameters = ["date", "fy_start", "calendar"];
-    if arguments.len() > parameters.len() {
-        return Err(format!("{name} expects at most 3 arguments"));
-    }
-    let mut slots: [Option<&Expr>; 3] = [None, None, None];
-    for (slot, argument) in slots.iter_mut().zip(arguments) {
-        *slot = Some(argument);
-    }
-    for (key, value) in keywords {
-        let index = parameters
-            .iter()
-            .position(|parameter| parameter == key)
-            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
-        if slots[index].replace(value).is_some() {
-            return Err(format!("{name}: ‘{key}’ was supplied twice"));
-        }
-    }
+    let parameters = super::financial::parameter_names(name);
+    let slots = super::financial::bind_slots(name, parameters, None, arguments, keywords)?;
     let date = slots[0].ok_or_else(|| format!("{name} expects the date to count from"))?;
     Ok((
         date,
@@ -226,30 +211,8 @@ fn prior_call<'a>(expression: &'a Expr, document: &Document) -> Result<PriorCall
     };
     // The receiver stands in for `expr`, so the remaining positionals are
     // `n`, `fy_start` then `calendar` either way they were written.
-    let mut slots: [Option<&Expr>; 4] = [None, None, None, None];
-    let mut positional = Vec::with_capacity(4);
-    if let Some(input) = inner {
-        positional.push(input);
-    }
-    positional.extend(arguments.iter());
-    if positional.len() > 4 {
-        return Err("prior expects at most 4 arguments".into());
-    }
-    for (slot, argument) in slots.iter_mut().zip(positional) {
-        *slot = Some(argument);
-    }
-    for (key, value) in keywords {
-        let index = match key.as_str() {
-            "expr" => 0,
-            "n" => 1,
-            "fy_start" => 2,
-            "calendar" => 3,
-            _ => return Err(format!("prior has no argument ‘{key}’")),
-        };
-        if slots[index].replace(value).is_some() {
-            return Err(format!("prior: ‘{key}’ was supplied twice"));
-        }
-    }
+    let parameters = super::financial::parameter_names("prior");
+    let slots = super::financial::bind_slots("prior", parameters, inner, arguments, keywords)?;
     let expression = slots[0].ok_or_else(|| "prior expects the expression to read".to_string())?;
     let n = match slots[1] {
         None => 1,
