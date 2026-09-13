@@ -319,8 +319,8 @@ pub struct RenderedDerivedExpression {
 /// Everything else is a **pipeline**: an ordered `steps` chain, with `join`
 /// empty. Nothing creates both, and `steps()` hands back one list either
 /// way, so almost nothing downstream has to ask which shape it is holding.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
-#[serde(rename_all = "camelCase", from = "StoredFrameDerivation")]
+#[derive(Debug, Clone, Serialize, PartialEq, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct FrameDerivation {
     pub source_frame_id: Id,
@@ -328,6 +328,22 @@ pub struct FrameDerivation {
     pub join: Option<FrameJoin>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub steps: Vec<FrameStep>,
+}
+
+/// Old documents arrive through the stored shape above rather than through a
+/// derived `Deserialize`. The `#[serde(from = ...)]` conversion attribute
+/// would say the same thing in one line, but ts-rs cannot parse it and warns
+/// on every build; spelling out the identical conversion here keeps the
+/// compatibility behavior while leaving ts-rs a plain struct it understands.
+/// TypeScript generation is unaffected either way: the conversion only
+/// governs reading, and the exported shape is this struct.
+impl<'de> Deserialize<'de> for FrameDerivation {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        StoredFrameDerivation::deserialize(deserializer).map(FrameDerivation::from)
+    }
 }
 
 /// A derivation as it may appear on disk, including the flat field layout
