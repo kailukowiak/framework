@@ -3,29 +3,29 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "b8349128-9c81-4ebf-82d0-88635f4056fc",
+    "id": "db191bf8-10e8-4dcc-a13b-e4725c660158",
     "name": "Driver-based forecast",
     "revision": 33,
     "objects": [
       {
         "kind": "text",
-        "id": "3d91c36e-722f-46d8-baed-1a16690548ce",
+        "id": "fa6fdc7b-e241-4cbd-bc16-3b3e03cddc32",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# Driver-based forecast\n\nAbout 30 minutes. Open **Driver-based forecast — Start** from **Data library\n→ Tutorials and examples**, or open the linked `.fw` files with **File →\nOpen**. The answer key is a separate workbook.\n\nThis is the second finance lesson. Like the others it builds the job with\ntoday's FrameWork, shows where that hurts, and then shows what it becomes\nwhen phase 2 of [the finance build plan](../../docs/finance-build-plan.md),\nthe period-aware time spine, lands.\n\n## Why this lesson exists\n\nNearly every finance model is a monthly series with period-relative logic:\nlast month, same month last year, year to date, and a line where actuals\nstop and the forecast starts. Excel has no idea what a period is, so every\nmodel rebuilds that idea from column headers, and every `SUMIFS` over dates\nis the idea rebuilt again.\n\nFrameWork already refuses the worst of the spreadsheet habit: a calculation\nthat silently depends on row order must declare that order. But today the\nonly prior-period tool is a positional `.shift`, and a fiscal year that does\nnot start in January is arithmetic you write by hand. This lesson makes both\nof those visible.\n\n## Files\n\n- [`driver-forecast-start.fw`](driver-forecast-start.fw) — eighteen months\n  of actual revenue typed as currency, and an `Assumptions` group holding\n  `Close date` and `Growth`.\n- [`driver-forecast-finished.fw`](driver-forecast-finished.fw) — the answer\n  key, built with today's catalog.\n\nThe company's fiscal year starts in February, so FY2026 runs February 2025\nto January 2026. That is deliberate: it is the ordinary case in retail and\ngovernment, and it is where hand-written calendar arithmetic goes wrong.\n\n## 1. Prior month on the actuals, and why it is fragile\n\nSelect `Actuals`, open **Wrangle**, and sort by Month ascending. Add two\ncalculated columns:\n\n```text\nPrior month = `Revenue`.shift(1)\nChange = `Revenue` / `Prior month` - 1\n```\n\nFormat Change as a percentage with one decimal.\n\nCheckpoint: March 2025 shows Prior month `100,000` and Change `4.0%`.\nFebruary 2025, the first row, has no prior month.\n\nNow do the thing this lesson is about. Right-click the November 2025 row and\ndelete it. Look at December 2025: its Prior month now reads `119,000`, which\nis October. Nothing warned you. The column is right about position and wrong\nabout time. Undo the deletion before continuing.\n\n`.shift(1)` means \"the row above\". A finance person means \"the period\nbefore\". Those agree only while no month is missing, and a month goes\nmissing the first time an export is late.\n\n## 2. A spine that cannot have gaps\n\nThe workaround is to build the calendar yourself. Add a generated table\nnamed `Months` whose formula is:\n\n```text\nsequence(2025-02-01, 2027-02-01, 1mo)\n```\n\nwith the column named `Month`. It has twenty-four rows, February 2025 to\nJanuary 2027: two complete fiscal years.\n\nRight-click `Actuals`, mark `Month` unique, then right-click `Months` and\nchoose **Join another table**:\n\n- Starting key: Month\n- Lookup table: Actuals\n- Lookup key: Month\n- Keep: every Months row\n- Result name: Forecast\n- Output columns: Month, and Revenue renamed `Actual`\n\nCheckpoint: `Forecast` has 24 rows. The last six, August 2026 onward, have\nan empty Actual.\n\n## 3. Actuals until the close date, drivers after it\n\nSelect `Forecast`, open **Wrangle**, sort by Month ascending, and add this\ncolumn with **Calculate down rows…**, or type it:\n\n```text\nRevenue = recur(`Actual`, when(`Month` <= `Close date`).then(`Actual`).otherwise(previous() * (1 + `Growth`)))\n```\n\nFormat it as USD Accounting.\n\nCheckpoint: July 2026 reads `146,000`, the last actual. August 2026 reads\n`148,920`, and January 2027 reads `164,420`.\n\nChange `Growth` in the Assumptions group to `0.03` and watch the six forecast\nmonths move while the actuals stay put. Put it back to `0.02`.\n\nThis part is good, and it is the reason the lesson uses FrameWork rather\nthan a spreadsheet: the cutover is one assumption, the forecast is one\nformula, and neither is a range you drag.\n\n## 4. Fiscal year and quarter by hand\n\nAdd two calculated columns:\n\n```text\nFiscal year = when(`Month`.dt.month() >= 2).then(`Month`.dt.year() + 1).otherwise(`Month`.dt.year())\nFiscal quarter = ((`Month`.dt.month() + 10) % 12) // 3 + 1\n```\n\nCheckpoint: January 2026 is Fiscal year `2026`, quarter `4`. February 2026\nis Fiscal year `2027`, quarter `1`.\n\nRead the quarter formula again. It is correct for a February year start. It\nwould be wrong for any other, it says nothing about 4-4-5 weeks or a\n53-week year, and there is no way to tell from the formula which company it\nbelongs to.\n\n## 5. Period-relative columns, positionally\n\nAdd, in one step:\n\n```text\nPrior month = `Revenue`.shift(1)\nYTD = `Revenue`.cum_sum(False).over(`Fiscal year`)\nLast year = `Revenue`.shift(12)\n```\n\nand then, in a step after it:\n\n```text\nYoY = `Revenue` / `Last year` - 1\n```\n\nFormat the money columns as USD Accounting and YoY as a percentage.\n\nCheckpoint: January 2026 YTD reads `1,475,000`, the FY2026 total. July 2026\nYTD reads `767,000`. August 2026 YoY reads `16.3%`, and January 2027 YoY\nreads `8.2%`.\n\nThese are right only because section 2 built a spine with no gaps and\nsection 3 sorted it. `shift(12)` does not know it means \"a year ago\"; it\nmeans \"twelve rows up\". Nothing in the document records that the two are\nsupposed to be the same thing.\n\n## 6. Summarise by fiscal quarter\n\nBranch `Forecast` to a tab named `By quarter` and add **Summarize** in\nWrangle:\n\n- Group by: Fiscal year, Fiscal quarter\n- Revenue: `` `Revenue`.sum() ``\n\nCheckpoint:\n\n| Fiscal year | Quarter | Revenue |\n|---|---|---:|\n| 2026 | 1 | 314,000 |\n| 2026 | 2 | 374,000 |\n| 2026 | 3 | 369,000 |\n| 2026 | 4 | 418,000 |\n| 2027 | 1 | 351,000 |\n| 2027 | 2 | 416,000 |\n| 2027 | 3 | 455,755 |\n| 2027 | 4 | 483,651 |\n\nAdd a block named `Checks` with:\n\n```text\nfy2026 = `Forecast`.`Revenue`.filter(`Forecast`.`Fiscal year` == 2026).sum()\nfy2027 = `Forecast`.`Revenue`.filter(`Forecast`.`Fiscal year` == 2027).sum()\nforecast months = `Forecast`.`Actual`.null_count()\n```\n\nCheckpoint: `1475000.00`, `1706405.3738`, `6`.\n\n## 7. What changes when the time spine lands\n\nNone of the following computes today. It is the acceptance target for\nphase 2 of the finance plan, and the checkpoints above are its expected\nnumbers.\n\nThe document gets a calendar: fiscal year starting in February, calendar\nmonths. Section 4 becomes:\n\n```text\nFiscal year = fiscal_year(`Month`)\nFiscal quarter = fiscal_quarter(`Month`)\n```\n\n`Forecast` declares `Month` as its period column. Section 5 becomes:\n\n```text\nPrior month = prior(`Revenue`)\nYTD = ytd(`Revenue`)\nLast year = same_period_last_year(`Revenue`)\n```\n\nand a trailing-twelve-months column is one more word:\n\n```text\nTTM = ttm(`Revenue`)\n```\n\nSection 1's fragile column on `Actuals` becomes `prior(`Revenue`)` as well,\nafter declaring Month as its period. Then repeat the deletion from section 1:\nDecember's prior month must read empty, not October, because the period\nbefore December is November and November is gone. That is the test that\nmatters. A period-relative function that returns the row above is the bug\nthis phase exists to remove.\n\nExpected: every checkpoint in sections 3 to 6 unchanged. `prior` and its\nsiblings must refuse to run on a frame with no period declaration, naming\nthe frame and the fix, without refusing any other operation on it. The\nfiscal functions must accept a 4-4-5 calendar with a 53-week year and match a\npublished retail calendar for every week.\n\n## Smoke-test notes\n\nIf a named control is missing, a step cannot be completed, or a checkpoint\ndiffers, record it with the template in the parent tutorial README rather\nthan working around it. Expected awkwardness that is product feedback, not\na lesson error:\n\n- the quarter formula in section 4, and the fact that a generated table and\n  a join are needed before `shift` is safe;\n- a recurrence keeps the type of its first value, which is why the start\n  workbook types Revenue as currency: seeded from an integer column, section\n  3 would truncate every forecast month to whole dollars;\n- `.cum_sum` demands its optional argument be spelled out, so\n  `.cum_sum(False)` rather than `.cum_sum()`.\n\n## Rebuilding the files\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials driver-forecast\n```\n\nThe generator asserts every checkpoint above against the reloaded answer key.\nThe expected numbers were computed independently in Python before the\nworkbook existed.\n"
+            "text": "# Driver-based forecast\n\nAbout 30 minutes. Open **Driver-based forecast — Start** from **Data library\n→ Tutorials and examples**, or open the linked `.fw` files with **File →\nOpen**. The answer key is a separate workbook.\n\nThis is the second finance lesson. Like the others it builds the job with\ntoday's FrameWork, shows where that hurts, and then shows what it becomes\nwhen phase 2 of [the finance build plan](../../docs/finance-build-plan.md),\nthe period-aware time spine, lands.\n\n## Why this lesson exists\n\nNearly every finance model is a monthly series with period-relative logic:\nlast month, same month last year, year to date, and a line where actuals\nstop and the forecast starts. Excel has no idea what a period is, so every\nmodel rebuilds that idea from column headers, and every `SUMIFS` over dates\nis the idea rebuilt again.\n\nFrameWork already refuses the worst of the spreadsheet habit: a calculation\nthat silently depends on row order must declare that order. But today the\nonly prior-period tool is a positional `.shift`, and a fiscal year that does\nnot start in January is arithmetic you write by hand. This lesson makes both\nof those visible.\n\n## Files\n\n- [`driver-forecast-start.fw`](driver-forecast-start.fw) — eighteen months\n  of actual revenue typed as currency, and an `Assumptions` group holding\n  `Close date` and `Growth`. It also carries the two calendars section 7\n  needs — `Company` as the default, `NRF 4-5-4` for the retail check —\n  and `Actuals`' declared period.\n- [`driver-forecast-finished.fw`](driver-forecast-finished.fw) — the answer\n  key, built with today's catalog.\n\nThe company's fiscal year starts in February, so FY2026 runs February 2025\nto January 2026. That is deliberate: it is the ordinary case in retail and\ngovernment, and it is where hand-written calendar arithmetic goes wrong.\n\n## 1. Prior month on the actuals, and why it is fragile\n\nSelect `Actuals`, open **Wrangle**, and sort by Month ascending. Add two\ncalculated columns:\n\n```text\nPrior month = `Revenue`.shift(1)\nChange = `Revenue` / `Prior month` - 1\n```\n\nFormat Change as a percentage with one decimal.\n\nCheckpoint: March 2025 shows Prior month `100,000` and Change `4.0%`.\nFebruary 2025, the first row, has no prior month.\n\nNow do the thing this lesson is about. Right-click the November 2025 row and\ndelete it. Look at December 2025: its Prior month now reads `119,000`, which\nis October. Nothing warned you. The column is right about position and wrong\nabout time. Undo the deletion before continuing.\n\n`.shift(1)` means \"the row above\". A finance person means \"the period\nbefore\". Those agree only while no month is missing, and a month goes\nmissing the first time an export is late.\n\n## 2. A spine that cannot have gaps\n\nThe workaround is to build the calendar yourself. Add a generated table\nnamed `Months` whose formula is:\n\n```text\nsequence(2025-02-01, 2027-02-01, 1mo)\n```\n\nwith the column named `Month`. It has twenty-four rows, February 2025 to\nJanuary 2027: two complete fiscal years.\n\nRight-click `Actuals`, mark `Month` unique, then right-click `Months` and\nchoose **Join another table**:\n\n- Starting key: Month\n- Lookup table: Actuals\n- Lookup key: Month\n- Keep: every Months row\n- Result name: Forecast\n- Output columns: Month, and Revenue renamed `Actual`\n\nCheckpoint: `Forecast` has 24 rows. The last six, August 2026 onward, have\nan empty Actual.\n\n## 3. Actuals until the close date, drivers after it\n\nSelect `Forecast`, open **Wrangle**, sort by Month ascending, and add this\ncolumn with **Calculate down rows…**, or type it:\n\n```text\nRevenue = recur(`Actual`, when(`Month` <= `Close date`).then(`Actual`).otherwise(previous() * (1 + `Growth`)))\n```\n\nFormat it as USD Accounting.\n\nCheckpoint: July 2026 reads `146,000`, the last actual. August 2026 reads\n`148,920`, and January 2027 reads `164,420`.\n\nChange `Growth` in the Assumptions group to `0.03` and watch the six forecast\nmonths move while the actuals stay put. Put it back to `0.02`.\n\nThis part is good, and it is the reason the lesson uses FrameWork rather\nthan a spreadsheet: the cutover is one assumption, the forecast is one\nformula, and neither is a range you drag.\n\n## 4. Fiscal year and quarter by hand\n\nAdd two calculated columns:\n\n```text\nFiscal year = when(`Month`.dt.month() >= 2).then(`Month`.dt.year() + 1).otherwise(`Month`.dt.year())\nFiscal quarter = ((`Month`.dt.month() + 10) % 12) // 3 + 1\n```\n\nCheckpoint: January 2026 is Fiscal year `2026`, quarter `4`. February 2026\nis Fiscal year `2027`, quarter `1`.\n\nRead the quarter formula again. It is correct for a February year start. It\nwould be wrong for any other, it says nothing about 4-4-5 weeks or a\n53-week year, and there is no way to tell from the formula which company it\nbelongs to.\n\n## 5. Period-relative columns, positionally\n\nAdd, in one step:\n\n```text\nPrior month = `Revenue`.shift(1)\nYTD = `Revenue`.cum_sum(False).over(`Fiscal year`)\nLast year = `Revenue`.shift(12)\n```\n\nand then, in a step after it:\n\n```text\nYoY = `Revenue` / `Last year` - 1\n```\n\nFormat the money columns as USD Accounting and YoY as a percentage.\n\nCheckpoint: January 2026 YTD reads `1,475,000`, the FY2026 total. July 2026\nYTD reads `767,000`. August 2026 YoY reads `16.3%`, and January 2027 YoY\nreads `8.2%`.\n\nThese are right only because section 2 built a spine with no gaps and\nsection 3 sorted it. `shift(12)` does not know it means \"a year ago\"; it\nmeans \"twelve rows up\". Nothing in the document records that the two are\nsupposed to be the same thing.\n\n## 6. Summarise by fiscal quarter\n\nBranch `Forecast` to a tab named `By quarter` and add **Summarize** in\nWrangle:\n\n- Group by: Fiscal year, Fiscal quarter\n- Revenue: `` `Revenue`.sum() ``\n\nCheckpoint:\n\n| Fiscal year | Quarter | Revenue |\n|---|---|---:|\n| 2026 | 1 | 314,000 |\n| 2026 | 2 | 374,000 |\n| 2026 | 3 | 369,000 |\n| 2026 | 4 | 418,000 |\n| 2027 | 1 | 351,000 |\n| 2027 | 2 | 416,000 |\n| 2027 | 3 | 455,755 |\n| 2027 | 4 | 483,651 |\n\nAdd a block named `Checks` with:\n\n```text\nfy2026 = `Forecast`.`Revenue`.filter(`Forecast`.`Fiscal year` == 2026).sum()\nfy2027 = `Forecast`.`Revenue`.filter(`Forecast`.`Fiscal year` == 2027).sum()\nforecast months = `Forecast`.`Actual`.null_count()\n```\n\nCheckpoint: `1475000.00`, `1706405.3738`, `6`.\n\n## 7. The time spine lands\n\nThe start file already carries what this section needs: a `Company`\ncalendar (February, calendar months, years numbered by the calendar year\nthey end in) set as the default, an `NRF 4-5-4` calendar for the retail\ncheck at the end, and `Actuals`' declared period. Right-click `Actuals`\nand open the frame menu: the Period column reads `Month`. That choice is\nwhat lets the formulas below read the period before instead of the row\nabove. Creating a calendar is an MCP step for now — the start file carries\nboth — while declaring is one choice in the frame menu.\n\nSection 1's fragile column becomes:\n\n```text\nPrior month = prior(`Revenue`)\n```\n\n`Change` stays exactly as it is. Now repeat the deletion from section 1:\ndelete November 2025 and look at December. Its Prior month reads empty,\nnot October, because the period before December is November and November\nis gone. That is the test that matters. Undo the deletion before\ncontinuing.\n\nSelect `Forecast` and declare `Month` as its period from the frame menu.\nSection 4 becomes:\n\n```text\nFiscal year = fiscal_year(`Month`)\nFiscal quarter = fiscal_quarter(`Month`)\n```\n\nNo year start is written anywhere: the bare calls read the default\nCompany calendar. January 2026 is still Fiscal year `2026`, quarter `4`;\nFebruary 2026 is still `2027`, quarter `1`. The formula now says which\ncompany it belongs to, because the calendar is a named object on the\ndocument rather than arithmetic in the column.\n\nSection 5 becomes, in one step:\n\n```text\nPrior month = prior(`Revenue`)\nYTD = ytd(`Revenue`)\nLast year = same_period_last_year(`Revenue`)\n```\n\nand a trailing-twelve-months column is one more word:\n\n```text\nTTM = ttm(`Revenue`)\n```\n\nCheckpoint: January 2027 TTM reads `1,706,405.37`, the FY2027 total —\ntwelve months ending here, whatever months are missing. Every checkpoint\nin sections 3 to 6 is unchanged: January 2026 YTD still reads `1,475,000`,\nAugust 2026 YoY still reads `16.3%`. `prior` and its siblings refuse to\nrun on a frame with no period declaration, naming the frame and the fix,\nwithout refusing any other operation on it.\n\nFinally the retail check. Add one column:\n\n```text\nRetail week = fiscal_week(`Month`, calendar=\"NRF 4-5-4\")\n```\n\nCheckpoint: February 1 2025 is week `52` — the last week of the 53-week\nfiscal 2023 — and January 1 2026 is week `48`. The NRF 4-5-4 calendar puts\nevery week of fiscal 2023, 2024 and 2025 where the published calendar\nputs it, including the 53rd week of 2023 stretching January 2024 to five\nweeks.\n\n## Smoke-test notes\n\nIf a named control is missing, a step cannot be completed, or a checkpoint\ndiffers, record it with the template in the parent tutorial README rather\nthan working around it. Expected awkwardness that is product feedback, not\na lesson error:\n\n- creating a calendar is an MCP step for now; the start file carries both\n  calendars section 7 needs, and declaring a period is one choice in the\n  frame menu;\n- a generated table and a join are still needed before the forecast has\n  somewhere to put its months;\n- a recurrence keeps the type of its first value, which is why the start\n  workbook types Revenue as currency: seeded from an integer column, section\n  3 would truncate every forecast month to whole dollars;\n- `.cum_sum` demands its optional argument be spelled out, so\n  `.cum_sum(False)` rather than `.cum_sum()`.\n\n## Rebuilding the files\n\n```bash\ncargo run -p framework-core --example generate_finance_tutorials driver-forecast\n```\n\nThe generator asserts every checkpoint above against the reloaded answer key.\nThe expected numbers were computed independently in Python before the\nworkbook existed.\n"
           }
         ]
       },
       {
         "kind": "frame",
-        "id": "cf4292dd-af23-4e08-9bb6-0818cc8fb76f",
+        "id": "8e74a5b2-f5c6-48d0-a24a-8c498893b26d",
         "name": "Actuals",
         "columns": [
           {
-            "id": "month~h7zdrx",
+            "id": "month~471ght",
             "name": "Month",
             "sourceName": null,
             "dataType": "date",
@@ -34,7 +34,7 @@
             "formula": null
           },
           {
-            "id": "revenue~yv0zjx",
+            "id": "revenue~x4m78s",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "currency",
@@ -51,7 +51,7 @@
             "formula": null
           },
           {
-            "id": "prior_month~d902w8",
+            "id": "prior_month~cemfx4",
             "name": "Prior month",
             "sourceName": null,
             "dataType": "currency",
@@ -68,7 +68,7 @@
             "formula": null
           },
           {
-            "id": "change~j57j1h",
+            "id": "change~mf82mq",
             "name": "Change",
             "sourceName": null,
             "dataType": "number",
@@ -87,199 +87,199 @@
         ],
         "rows": [
           {
-            "id": "7eeefd50-840f-4e82-9cbf-9b546998b759",
+            "id": "4b521e23-9a1e-4a9a-81fe-a3d8b27223a0",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-02-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "100000"
               }
             }
           },
           {
-            "id": "1bcbd90d-cacf-42cb-9e37-f4d9ac5f9414",
+            "id": "a0a76042-fdc1-4f6d-887a-cec5859871c2",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-03-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "104000"
               }
             }
           },
           {
-            "id": "423caeb1-c4f5-40dc-8393-72b6f21619cd",
+            "id": "27784fda-93e6-4d67-91bf-ba4a53b44898",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-04-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "110000"
               }
             }
           },
           {
-            "id": "e618d8a9-b49f-435f-8431-5f22bb2784df",
+            "id": "23a70e65-6262-4df0-9cde-231148ec0247",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-05-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "118000"
               }
             }
           },
           {
-            "id": "fa79104e-d3e4-4ce0-ab8f-18f7383885b2",
+            "id": "a4c93d9e-a3d4-43b5-b57e-743d7078d260",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-06-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "125000"
               }
             }
           },
           {
-            "id": "90d46835-0318-4251-b18d-c541beb7cb11",
+            "id": "92299358-fb28-4dbc-a710-ba47658a6113",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-07-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "131000"
               }
             }
           },
           {
-            "id": "2024f092-bdc1-4999-bc14-837771d8868c",
+            "id": "5fff99cf-25ac-4654-b2dc-4845cee33b2d",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-08-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "128000"
               }
             }
           },
           {
-            "id": "e62bb012-ec84-43b9-ac07-ad13498233dd",
+            "id": "61c346d0-fd17-4cb5-b996-7ec574817f8e",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-09-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "122000"
               }
             }
           },
           {
-            "id": "23c7182c-a96e-4737-a17a-773414174b5b",
+            "id": "043127bd-5d25-4964-9eb0-5cd714663276",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-10-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "119000"
               }
             }
           },
           {
-            "id": "192fd471-68bb-4153-aab1-6b6a4aff2104",
+            "id": "111a5974-6515-4ea9-95f9-5896a198b9d9",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-11-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "126000"
               }
             }
           },
           {
-            "id": "1ef34068-ee16-4709-a7dc-fcf9af840d13",
+            "id": "ffbcd3e6-c26d-4486-9331-334a2849dc91",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2025-12-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "140000"
               }
             }
           },
           {
-            "id": "7f9f4812-eeec-408c-a9d5-e055f532fdf0",
+            "id": "5405eee5-7c0a-460e-aa08-8da3fa1e4648",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-01-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "152000"
               }
             }
           },
           {
-            "id": "749518de-9c39-4877-8128-872b021113f8",
+            "id": "faa4505c-f546-4b09-a430-0d2a8cceb7f8",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-02-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "112000"
               }
             }
           },
           {
-            "id": "a41c24b6-0fc0-4819-9950-55c04990485e",
+            "id": "6579e52c-029a-44c1-8be3-3a9519d834dc",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-03-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "116000"
               }
             }
           },
           {
-            "id": "6bab61b5-6db3-4f0a-ac61-ee854c12119b",
+            "id": "d2858c76-6da6-4e02-b02a-e3a67680f5ef",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-04-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "123000"
               }
             }
           },
           {
-            "id": "8389c8b3-b00b-4d21-bf70-1846af680591",
+            "id": "6196a9f2-2a80-40e0-8c65-05eaf56321d2",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-05-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "131000"
               }
             }
           },
           {
-            "id": "7fa8ec3e-ec6e-4c0e-a062-8e2f6191ace5",
+            "id": "01e342fd-2241-495c-a010-b8551a77148c",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-06-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "139000"
               }
             }
           },
           {
-            "id": "4cebbf67-b071-4f59-951c-fb9900cf5d9c",
+            "id": "8cf16bb5-f3f0-4c61-96ac-ebd0359b388c",
             "cells": {
-              "month~h7zdrx": {
+              "month~471ght": {
                 "raw": "2026-07-01"
               },
-              "revenue~yv0zjx": {
+              "revenue~x4m78s": {
                 "raw": "146000"
               }
             }
@@ -290,7 +290,7 @@
             "kind": "sort",
             "keys": [
               {
-                "columnId": "month~h7zdrx",
+                "columnId": "month~471ght",
                 "descending": false
               }
             ]
@@ -299,14 +299,14 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "prior_month~d902w8",
+                "outputColumnId": "prior_month~cemfx4",
                 "expression": {
                   "kind": "polarsCall",
                   "name": "prior",
                   "arguments": [
                     {
                       "kind": "column",
-                      "column_id": "revenue~yv0zjx"
+                      "column_id": "revenue~x4m78s"
                     }
                   ],
                   "keyword_arguments": []
@@ -318,7 +318,7 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "change~j57j1h",
+                "outputColumnId": "change~mf82mq",
                 "expression": {
                   "kind": "binary",
                   "operator": "subtract",
@@ -327,11 +327,11 @@
                     "operator": "divide",
                     "left": {
                       "kind": "column",
-                      "column_id": "revenue~yv0zjx"
+                      "column_id": "revenue~x4m78s"
                     },
                     "right": {
                       "kind": "column",
-                      "column_id": "prior_month~d902w8"
+                      "column_id": "prior_month~cemfx4"
                     }
                   },
                   "right": {
@@ -345,7 +345,7 @@
         ],
         "baseColumns": [
           {
-            "id": "month~h7zdrx",
+            "id": "month~471ght",
             "name": "Month",
             "sourceName": null,
             "dataType": "date",
@@ -354,7 +354,7 @@
             "formula": null
           },
           {
-            "id": "revenue~yv0zjx",
+            "id": "revenue~x4m78s",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "currency",
@@ -378,47 +378,47 @@
         "materialization": null,
         "uniqueKeys": [
           {
-            "id": "0068b774-14db-4943-abc2-164db9a8d930",
+            "id": "4cbaf34d-dc50-4286-83b3-e0d9bd94c95e",
             "columnIds": [
-              "month~h7zdrx"
+              "month~471ght"
             ]
           }
         ],
         "period": {
-          "columnId": "month~h7zdrx"
+          "columnId": "month~471ght"
         },
         "summaries": []
       },
       {
         "kind": "container",
-        "id": "59b17fd9-8f80-436c-a988-d35b220572b9",
+        "id": "51df76e1-fda9-45b3-96e8-7979d79ee212",
         "name": "Assumptions",
         "memberIds": [
-          "9287566f-4ab4-452c-94dd-800bfd4e2799",
-          "a569410b-0cf0-4aab-a6df-e761913ddee4"
+          "12eafbc1-4b7f-4330-81a1-7863ac770640",
+          "265d035f-aa3e-4734-84e6-1cb92713bf9d"
         ]
       },
       {
         "kind": "value",
-        "id": "9287566f-4ab4-452c-94dd-800bfd4e2799",
+        "id": "12eafbc1-4b7f-4330-81a1-7863ac770640",
         "name": "Close date",
         "raw": "2026-07-01",
         "dataType": "date"
       },
       {
         "kind": "value",
-        "id": "a569410b-0cf0-4aab-a6df-e761913ddee4",
+        "id": "265d035f-aa3e-4734-84e6-1cb92713bf9d",
         "name": "Growth",
         "raw": "0.02",
         "dataType": "number"
       },
       {
         "kind": "frame",
-        "id": "daa7a8b9-fa90-4392-9cd4-1a49782ef055",
+        "id": "2ad419bd-14b4-42b8-9831-adfcd0337a8f",
         "name": "Months",
         "columns": [
           {
-            "id": "month~6x9gby",
+            "id": "month~29efzr",
             "name": "Month",
             "sourceName": null,
             "dataType": "date",
@@ -461,11 +461,11 @@
       },
       {
         "kind": "frame",
-        "id": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
+        "id": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
         "name": "Forecast",
         "columns": [
           {
-            "id": "month~a82mex",
+            "id": "month~t0v3t5",
             "name": "Month",
             "sourceName": null,
             "dataType": "date",
@@ -474,7 +474,7 @@
             "formula": null
           },
           {
-            "id": "actual~93xsa1",
+            "id": "actual~jnqfzb",
             "name": "Actual",
             "sourceName": null,
             "dataType": "currency",
@@ -491,7 +491,7 @@
             "formula": null
           },
           {
-            "id": "revenue~re61mg",
+            "id": "revenue~gwsmcb",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "currency",
@@ -508,7 +508,7 @@
             "formula": null
           },
           {
-            "id": "fiscal_year~vf8gr7",
+            "id": "fiscal_year~8gyef3",
             "name": "Fiscal year",
             "sourceName": null,
             "dataType": "integer",
@@ -517,7 +517,7 @@
             "formula": null
           },
           {
-            "id": "fiscal_quarter~n3w80p",
+            "id": "fiscal_quarter~qf8p0g",
             "name": "Fiscal quarter",
             "sourceName": null,
             "dataType": "integer",
@@ -526,7 +526,7 @@
             "formula": null
           },
           {
-            "id": "prior_month~wcfyav",
+            "id": "prior_month~mncp17",
             "name": "Prior month",
             "sourceName": null,
             "dataType": "currency",
@@ -543,7 +543,7 @@
             "formula": null
           },
           {
-            "id": "ytd~dc311h",
+            "id": "ytd~yrtyss",
             "name": "YTD",
             "sourceName": null,
             "dataType": "currency",
@@ -560,7 +560,7 @@
             "formula": null
           },
           {
-            "id": "last_year~btmqtc",
+            "id": "last_year~rre9pw",
             "name": "Last year",
             "sourceName": null,
             "dataType": "currency",
@@ -577,7 +577,7 @@
             "formula": null
           },
           {
-            "id": "ttm~gx0kgs",
+            "id": "ttm~mznjwy",
             "name": "TTM",
             "sourceName": null,
             "dataType": "currency",
@@ -594,7 +594,7 @@
             "formula": null
           },
           {
-            "id": "retail_week~ee1z52",
+            "id": "retail_week~r610va",
             "name": "Retail week",
             "sourceName": null,
             "dataType": "integer",
@@ -603,7 +603,7 @@
             "formula": null
           },
           {
-            "id": "yoy~xsbe8s",
+            "id": "yoy~8kem2a",
             "name": "YoY",
             "sourceName": null,
             "dataType": "number",
@@ -623,7 +623,7 @@
         "rows": [],
         "baseColumns": [
           {
-            "id": "month~a82mex",
+            "id": "month~t0v3t5",
             "name": "Month",
             "sourceName": null,
             "dataType": "date",
@@ -632,7 +632,7 @@
             "formula": null
           },
           {
-            "id": "actual~93xsa1",
+            "id": "actual~jnqfzb",
             "name": "Actual",
             "sourceName": null,
             "dataType": "currency",
@@ -653,26 +653,26 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "daa7a8b9-fa90-4392-9cd4-1a49782ef055",
+          "sourceFrameId": "2ad419bd-14b4-42b8-9831-adfcd0337a8f",
           "join": {
-            "lookupFrameId": "cf4292dd-af23-4e08-9bb6-0818cc8fb76f",
+            "lookupFrameId": "8e74a5b2-f5c6-48d0-a24a-8c498893b26d",
             "primaryKeyColumnIds": [
-              "month~6x9gby"
+              "month~29efzr"
             ],
             "lookupKeyColumnIds": [
-              "month~h7zdrx"
+              "month~471ght"
             ],
             "joinType": "left",
             "outputs": [
               {
-                "outputColumnId": "month~a82mex",
-                "sourceFrameId": "daa7a8b9-fa90-4392-9cd4-1a49782ef055",
-                "sourceColumnId": "month~6x9gby"
+                "outputColumnId": "month~t0v3t5",
+                "sourceFrameId": "2ad419bd-14b4-42b8-9831-adfcd0337a8f",
+                "sourceColumnId": "month~29efzr"
               },
               {
-                "outputColumnId": "actual~93xsa1",
-                "sourceFrameId": "cf4292dd-af23-4e08-9bb6-0818cc8fb76f",
-                "sourceColumnId": "revenue~yv0zjx"
+                "outputColumnId": "actual~jnqfzb",
+                "sourceFrameId": "8e74a5b2-f5c6-48d0-a24a-8c498893b26d",
+                "sourceColumnId": "revenue~x4m78s"
               }
             ]
           },
@@ -680,24 +680,24 @@
             {
               "kind": "join",
               "join": {
-                "lookupFrameId": "cf4292dd-af23-4e08-9bb6-0818cc8fb76f",
+                "lookupFrameId": "8e74a5b2-f5c6-48d0-a24a-8c498893b26d",
                 "primaryKeyColumnIds": [
-                  "month~6x9gby"
+                  "month~29efzr"
                 ],
                 "lookupKeyColumnIds": [
-                  "month~h7zdrx"
+                  "month~471ght"
                 ],
                 "joinType": "left",
                 "outputs": [
                   {
-                    "outputColumnId": "month~a82mex",
-                    "sourceFrameId": "daa7a8b9-fa90-4392-9cd4-1a49782ef055",
-                    "sourceColumnId": "month~6x9gby"
+                    "outputColumnId": "month~t0v3t5",
+                    "sourceFrameId": "2ad419bd-14b4-42b8-9831-adfcd0337a8f",
+                    "sourceColumnId": "month~29efzr"
                   },
                   {
-                    "outputColumnId": "actual~93xsa1",
-                    "sourceFrameId": "cf4292dd-af23-4e08-9bb6-0818cc8fb76f",
-                    "sourceColumnId": "revenue~yv0zjx"
+                    "outputColumnId": "actual~jnqfzb",
+                    "sourceFrameId": "8e74a5b2-f5c6-48d0-a24a-8c498893b26d",
+                    "sourceColumnId": "revenue~x4m78s"
                   }
                 ]
               }
@@ -706,7 +706,7 @@
               "kind": "sort",
               "keys": [
                 {
-                  "columnId": "month~a82mex",
+                  "columnId": "month~t0v3t5",
                   "descending": false
                 }
               ]
@@ -715,14 +715,14 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "revenue~re61mg",
+                  "outputColumnId": "revenue~gwsmcb",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "recur",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "actual~93xsa1"
+                        "column_id": "actual~jnqfzb"
                       },
                       {
                         "kind": "method",
@@ -737,11 +737,11 @@
                                 "operator": "lessEqual",
                                 "left": {
                                   "kind": "column",
-                                  "column_id": "month~a82mex"
+                                  "column_id": "month~t0v3t5"
                                 },
                                 "right": {
                                   "kind": "value",
-                                  "object_id": "9287566f-4ab4-452c-94dd-800bfd4e2799"
+                                  "object_id": "12eafbc1-4b7f-4330-81a1-7863ac770640"
                                 }
                               }
                             ],
@@ -753,7 +753,7 @@
                           "arguments": [
                             {
                               "kind": "column",
-                              "column_id": "actual~93xsa1"
+                              "column_id": "actual~jnqfzb"
                             }
                           ],
                           "keyword_arguments": []
@@ -780,7 +780,7 @@
                               },
                               "right": {
                                 "kind": "value",
-                                "object_id": "a569410b-0cf0-4aab-a6df-e761913ddee4"
+                                "object_id": "265d035f-aa3e-4734-84e6-1cb92713bf9d"
                               }
                             }
                           }
@@ -797,28 +797,28 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "fiscal_year~vf8gr7",
+                  "outputColumnId": "fiscal_year~8gyef3",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "fiscal_year",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "month~a82mex"
+                        "column_id": "month~t0v3t5"
                       }
                     ],
                     "keyword_arguments": []
                   }
                 },
                 {
-                  "outputColumnId": "fiscal_quarter~n3w80p",
+                  "outputColumnId": "fiscal_quarter~qf8p0g",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "fiscal_quarter",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "month~a82mex"
+                        "column_id": "month~t0v3t5"
                       }
                     ],
                     "keyword_arguments": []
@@ -830,70 +830,70 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "prior_month~wcfyav",
+                  "outputColumnId": "prior_month~mncp17",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "prior",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "revenue~re61mg"
+                        "column_id": "revenue~gwsmcb"
                       }
                     ],
                     "keyword_arguments": []
                   }
                 },
                 {
-                  "outputColumnId": "ytd~dc311h",
+                  "outputColumnId": "ytd~yrtyss",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "ytd",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "revenue~re61mg"
+                        "column_id": "revenue~gwsmcb"
                       }
                     ],
                     "keyword_arguments": []
                   }
                 },
                 {
-                  "outputColumnId": "last_year~btmqtc",
+                  "outputColumnId": "last_year~rre9pw",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "same_period_last_year",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "revenue~re61mg"
+                        "column_id": "revenue~gwsmcb"
                       }
                     ],
                     "keyword_arguments": []
                   }
                 },
                 {
-                  "outputColumnId": "ttm~gx0kgs",
+                  "outputColumnId": "ttm~mznjwy",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "ttm",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "revenue~re61mg"
+                        "column_id": "revenue~gwsmcb"
                       }
                     ],
                     "keyword_arguments": []
                   }
                 },
                 {
-                  "outputColumnId": "retail_week~ee1z52",
+                  "outputColumnId": "retail_week~r610va",
                   "expression": {
                     "kind": "polarsCall",
                     "name": "fiscal_week",
                     "arguments": [
                       {
                         "kind": "column",
-                        "column_id": "month~a82mex"
+                        "column_id": "month~t0v3t5"
                       }
                     ],
                     "keyword_arguments": [
@@ -901,7 +901,7 @@
                         "calendar",
                         {
                           "kind": "calendar",
-                          "calendar_id": "82a8ec5f-ff72-4042-96c0-06e05bb2ec9a"
+                          "calendar_id": "2a507836-44ae-4914-8d46-f8fd8acf1d4b"
                         }
                       ]
                     ]
@@ -913,7 +913,7 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "yoy~xsbe8s",
+                  "outputColumnId": "yoy~8kem2a",
                   "expression": {
                     "kind": "binary",
                     "operator": "subtract",
@@ -922,11 +922,11 @@
                       "operator": "divide",
                       "left": {
                         "kind": "column",
-                        "column_id": "revenue~re61mg"
+                        "column_id": "revenue~gwsmcb"
                       },
                       "right": {
                         "kind": "column",
-                        "column_id": "last_year~btmqtc"
+                        "column_id": "last_year~rre9pw"
                       }
                     },
                     "right": {
@@ -942,17 +942,17 @@
         "materialization": null,
         "uniqueKeys": [],
         "period": {
-          "columnId": "month~a82mex"
+          "columnId": "month~t0v3t5"
         },
         "summaries": []
       },
       {
         "kind": "frame",
-        "id": "2f7b8ebc-7c5d-4154-addd-f7b34c56b4a1",
+        "id": "da005272-7423-40ef-80b6-89669d54673d",
         "name": "By quarter",
         "columns": [
           {
-            "id": "fiscal_year~pdgdbk",
+            "id": "fiscal_year~92adw9",
             "name": "Fiscal year",
             "sourceName": null,
             "dataType": "integer",
@@ -961,7 +961,7 @@
             "formula": null
           },
           {
-            "id": "fiscal_quarter~jdg065",
+            "id": "fiscal_quarter~sfyndf",
             "name": "Fiscal quarter",
             "sourceName": null,
             "dataType": "integer",
@@ -970,7 +970,7 @@
             "formula": null
           },
           {
-            "id": "revenue~9zezpc",
+            "id": "revenue~e8gymm",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "currency",
@@ -992,35 +992,35 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
+          "sourceFrameId": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
           "join": null,
           "steps": [
             {
               "kind": "summarize",
               "groupKeys": [
                 {
-                  "outputColumnId": "fiscal_year~pdgdbk",
+                  "outputColumnId": "fiscal_year~92adw9",
                   "expression": {
                     "kind": "column",
-                    "column_id": "fiscal_year~vf8gr7"
+                    "column_id": "fiscal_year~8gyef3"
                   }
                 },
                 {
-                  "outputColumnId": "fiscal_quarter~jdg065",
+                  "outputColumnId": "fiscal_quarter~sfyndf",
                   "expression": {
                     "kind": "column",
-                    "column_id": "fiscal_quarter~n3w80p"
+                    "column_id": "fiscal_quarter~qf8p0g"
                   }
                 }
               ],
               "aggregates": [
                 {
-                  "outputColumnId": "revenue~9zezpc",
+                  "outputColumnId": "revenue~e8gymm",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "revenue~re61mg"
+                      "column_id": "revenue~gwsmcb"
                     },
                     "path": [
                       "sum"
@@ -1040,11 +1040,11 @@
       },
       {
         "kind": "block",
-        "id": "e0b52492-81c8-4fc9-a04c-67e7f53dbedb",
+        "id": "238eafe0-dfb6-4d45-9b7e-8abf958d33a7",
         "name": "Checks",
         "lines": [
           {
-            "id": "07535f35-37c3-44d0-9866-9058821b8017",
+            "id": "6db31ae8-0249-47de-88eb-3298891a6ae0",
             "name": "fy2026",
             "named": true,
             "nameQuoted": false,
@@ -1056,8 +1056,8 @@
                   "kind": "method",
                   "input": {
                     "kind": "foreignColumn",
-                    "frame_id": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
-                    "column_id": "revenue~re61mg"
+                    "frame_id": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
+                    "column_id": "revenue~gwsmcb"
                   },
                   "path": [
                     "filter"
@@ -1068,8 +1068,8 @@
                       "operator": "equal",
                       "left": {
                         "kind": "foreignColumn",
-                        "frame_id": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
-                        "column_id": "fiscal_year~vf8gr7"
+                        "frame_id": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
+                        "column_id": "fiscal_year~8gyef3"
                       },
                       "right": {
                         "kind": "integer",
@@ -1089,7 +1089,7 @@
             "error": null
           },
           {
-            "id": "ad45c09b-8e2d-41bb-9d31-b3b6f41494c5",
+            "id": "52a68b0b-e1c0-431f-8929-58e611dd482e",
             "name": "fy2027",
             "named": true,
             "nameQuoted": false,
@@ -1101,8 +1101,8 @@
                   "kind": "method",
                   "input": {
                     "kind": "foreignColumn",
-                    "frame_id": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
-                    "column_id": "revenue~re61mg"
+                    "frame_id": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
+                    "column_id": "revenue~gwsmcb"
                   },
                   "path": [
                     "filter"
@@ -1113,8 +1113,8 @@
                       "operator": "equal",
                       "left": {
                         "kind": "foreignColumn",
-                        "frame_id": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
-                        "column_id": "fiscal_year~vf8gr7"
+                        "frame_id": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
+                        "column_id": "fiscal_year~8gyef3"
                       },
                       "right": {
                         "kind": "integer",
@@ -1134,7 +1134,7 @@
             "error": null
           },
           {
-            "id": "1ce70d95-e2cb-4395-b7fa-2cf84d80ab73",
+            "id": "732726b4-48aa-4323-9155-81d0be5c7d5d",
             "name": "forecast months",
             "named": true,
             "nameQuoted": false,
@@ -1144,8 +1144,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
-                  "column_id": "actual~93xsa1"
+                  "frame_id": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
+                  "column_id": "actual~jnqfzb"
                 },
                 "path": [
                   "null_count"
@@ -1161,8 +1161,8 @@
     ],
     "views": [
       {
-        "id": "80290983-b12f-49ba-9946-8d4f7e5ffab7",
-        "objectId": "3d91c36e-722f-46d8-baed-1a16690548ce",
+        "id": "14a8a5b1-35e8-4700-956c-5230bdb95178",
+        "objectId": "fa6fdc7b-e241-4cbd-bc16-3b3e03cddc32",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -1170,8 +1170,8 @@
         "collapsed": false
       },
       {
-        "id": "329a23a4-1e80-46df-a36d-2568a729c545",
-        "objectId": "cf4292dd-af23-4e08-9bb6-0818cc8fb76f",
+        "id": "1437e684-ef45-4bab-9c90-c560adaf5e4b",
+        "objectId": "8e74a5b2-f5c6-48d0-a24a-8c498893b26d",
         "x": 720.0,
         "y": 70.0,
         "width": 420.0,
@@ -1179,8 +1179,8 @@
         "collapsed": false
       },
       {
-        "id": "3899a285-538b-486c-94b2-a7b1a7aa5fdd",
-        "objectId": "59b17fd9-8f80-436c-a988-d35b220572b9",
+        "id": "6e50afdc-4612-49a9-a3c8-0aa750ed8a4d",
+        "objectId": "51df76e1-fda9-45b3-96e8-7979d79ee212",
         "x": 1410.0,
         "y": 70.0,
         "width": 260.0,
@@ -1188,8 +1188,8 @@
         "collapsed": false
       },
       {
-        "id": "be65c408-33b5-4dac-84ee-902a8be48a71",
-        "objectId": "9287566f-4ab4-452c-94dd-800bfd4e2799",
+        "id": "cf9058de-6e92-417d-9d44-e47379c5182b",
+        "objectId": "12eafbc1-4b7f-4330-81a1-7863ac770640",
         "x": 0.0,
         "y": 0.0,
         "width": 220.0,
@@ -1197,8 +1197,8 @@
         "collapsed": false
       },
       {
-        "id": "468848ab-9e21-484b-9349-403a2789bdde",
-        "objectId": "a569410b-0cf0-4aab-a6df-e761913ddee4",
+        "id": "52b26627-c30f-4c61-9add-c905d5ba1041",
+        "objectId": "265d035f-aa3e-4734-84e6-1cb92713bf9d",
         "x": 0.0,
         "y": 0.0,
         "width": 220.0,
@@ -1206,8 +1206,8 @@
         "collapsed": false
       },
       {
-        "id": "e0f6fb1e-2519-424f-a7dd-e5cbd25e5f81",
-        "objectId": "daa7a8b9-fa90-4392-9cd4-1a49782ef055",
+        "id": "b338e4ec-d4fd-4c1f-a773-3af2581a1b4f",
+        "objectId": "2ad419bd-14b4-42b8-9831-adfcd0337a8f",
         "x": 1410.0,
         "y": 350.0,
         "width": 260.0,
@@ -1215,8 +1215,8 @@
         "collapsed": false
       },
       {
-        "id": "80200f96-a219-4721-a804-9a7752dd70f9",
-        "objectId": "5dd17638-aacb-4eee-8f12-d33f18dc62a3",
+        "id": "49f1b228-1de7-4ce6-8998-224cc1875754",
+        "objectId": "9cad6edb-6537-4a44-9f0d-56e74508c54a",
         "x": 2100.0,
         "y": 70.0,
         "width": 620.0,
@@ -1224,8 +1224,8 @@
         "collapsed": false
       },
       {
-        "id": "22c2c711-ea81-4508-aebe-e3cf2b34da85",
-        "objectId": "2f7b8ebc-7c5d-4154-addd-f7b34c56b4a1",
+        "id": "a5f8c0cc-75a1-4619-8f43-ca2fbdca177b",
+        "objectId": "da005272-7423-40ef-80b6-89669d54673d",
         "x": 2100.0,
         "y": 410.0,
         "width": 520.0,
@@ -1233,8 +1233,8 @@
         "collapsed": false
       },
       {
-        "id": "fc8d1de6-b83c-442d-b371-193c523f7c44",
-        "objectId": "e0b52492-81c8-4fc9-a04c-67e7f53dbedb",
+        "id": "1982c94b-f637-431d-a987-a8b818c94cc8",
+        "objectId": "238eafe0-dfb6-4d45-9b7e-8abf958d33a7",
         "x": 2100.0,
         "y": 900.0,
         "width": 600.0,
@@ -1247,7 +1247,7 @@
     "activeScenario": null,
     "calendars": [
       {
-        "id": "f05a618b-5cbf-4968-bbad-3486796010d9",
+        "id": "13cae53b-d993-4c87-81c9-a73e50b03b29",
         "name": "Company",
         "fyStart": 2,
         "pattern": "months",
@@ -1260,7 +1260,7 @@
         "holidays": []
       },
       {
-        "id": "82a8ec5f-ff72-4042-96c0-06e05bb2ec9a",
+        "id": "2a507836-44ae-4914-8d46-f8fd8acf1d4b",
         "name": "NRF 4-5-4",
         "fyStart": 2,
         "pattern": "fourFiveFour",
@@ -1279,7 +1279,7 @@
         "holidays": []
       }
     ],
-    "defaultCalendarId": "f05a618b-5cbf-4968-bbad-3486796010d9"
+    "defaultCalendarId": "13cae53b-d993-4c87-81c9-a73e50b03b29"
   },
   "versionVector": {}
 }
