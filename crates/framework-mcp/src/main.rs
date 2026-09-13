@@ -371,6 +371,17 @@ enum CalendarPatternArg {
     FiveFourFour,
 }
 
+impl From<CalendarPatternArg> for WeekPattern {
+    fn from(value: CalendarPatternArg) -> Self {
+        match value {
+            CalendarPatternArg::Months => WeekPattern::Months,
+            CalendarPatternArg::FourFourFive => WeekPattern::FourFourFive,
+            CalendarPatternArg::FourFiveFour => WeekPattern::FourFiveFour,
+            CalendarPatternArg::FiveFourFour => WeekPattern::FiveFourFour,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 enum CalendarYearEndArg {
@@ -379,11 +390,38 @@ enum CalendarYearEndArg {
     NearestWeekday { weekday: u8, month: u8, day: u8 },
 }
 
+impl From<CalendarYearEndArg> for YearEndRule {
+    fn from(value: CalendarYearEndArg) -> Self {
+        match value {
+            CalendarYearEndArg::LastDayOfMonth => YearEndRule::LastDayOfMonth,
+            CalendarYearEndArg::LastWeekday { weekday } => YearEndRule::LastWeekday { weekday },
+            CalendarYearEndArg::NearestWeekday {
+                weekday,
+                month,
+                day,
+            } => YearEndRule::NearestWeekday {
+                weekday,
+                month,
+                day,
+            },
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 enum CalendarYearLabelArg {
     Start,
     End,
+}
+
+impl From<CalendarYearLabelArg> for YearLabel {
+    fn from(value: CalendarYearLabelArg) -> Self {
+        match value {
+            CalendarYearLabelArg::Start => YearLabel::Start,
+            CalendarYearLabelArg::End => YearLabel::End,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1535,31 +1573,9 @@ impl FrameworkMcp {
             Operation::AddCalendar {
                 name: args.name,
                 fy_start: args.fy_start,
-                pattern: match args.pattern {
-                    CalendarPatternArg::Months => WeekPattern::Months,
-                    CalendarPatternArg::FourFourFive => WeekPattern::FourFourFive,
-                    CalendarPatternArg::FourFiveFour => WeekPattern::FourFiveFour,
-                    CalendarPatternArg::FiveFourFour => WeekPattern::FiveFourFour,
-                },
-                year_end: match args.year_end {
-                    CalendarYearEndArg::LastDayOfMonth => YearEndRule::LastDayOfMonth,
-                    CalendarYearEndArg::LastWeekday { weekday } => {
-                        YearEndRule::LastWeekday { weekday }
-                    }
-                    CalendarYearEndArg::NearestWeekday {
-                        weekday,
-                        month,
-                        day,
-                    } => YearEndRule::NearestWeekday {
-                        weekday,
-                        month,
-                        day,
-                    },
-                },
-                year_label: match args.year_label {
-                    CalendarYearLabelArg::Start => YearLabel::Start,
-                    CalendarYearLabelArg::End => YearLabel::End,
-                },
+                pattern: args.pattern.into(),
+                year_end: args.year_end.into(),
+                year_label: args.year_label.into(),
                 weekend: args.weekend.unwrap_or_else(|| vec![6, 7]),
                 holidays: args.holidays.unwrap_or_default(),
             },
@@ -1590,31 +1606,9 @@ impl FrameworkMcp {
                 calendar_id,
                 name: args.name,
                 fy_start: args.fy_start,
-                pattern: match args.pattern {
-                    CalendarPatternArg::Months => WeekPattern::Months,
-                    CalendarPatternArg::FourFourFive => WeekPattern::FourFourFive,
-                    CalendarPatternArg::FourFiveFour => WeekPattern::FourFiveFour,
-                    CalendarPatternArg::FiveFourFour => WeekPattern::FiveFourFour,
-                },
-                year_end: match args.year_end {
-                    CalendarYearEndArg::LastDayOfMonth => YearEndRule::LastDayOfMonth,
-                    CalendarYearEndArg::LastWeekday { weekday } => {
-                        YearEndRule::LastWeekday { weekday }
-                    }
-                    CalendarYearEndArg::NearestWeekday {
-                        weekday,
-                        month,
-                        day,
-                    } => YearEndRule::NearestWeekday {
-                        weekday,
-                        month,
-                        day,
-                    },
-                },
-                year_label: match args.year_label {
-                    CalendarYearLabelArg::Start => YearLabel::Start,
-                    CalendarYearLabelArg::End => YearLabel::End,
-                },
+                pattern: args.pattern.into(),
+                year_end: args.year_end.into(),
+                year_label: args.year_label.into(),
                 weekend: args.weekend,
                 holidays: args.holidays,
             },
