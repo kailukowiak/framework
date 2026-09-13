@@ -5,15 +5,6 @@ import type { Scalar } from "./Scalar";
 import type { ScaleParameters } from "./ScaleParameters";
 import type { UnknownCategory } from "./UnknownCategory";
 
-/**
- * `deny_unknown_fields` is deliberately absent here even though the structs
- * in this file carry it. ts-rs parses that serde attribute on structs but
- * not on enums, so keeping it warns on every build while changing nothing
- * in the generated TypeScript. Each variant still requires its own fields,
- * so a malformed step is refused all the same; only an extra unknown key
- * inside a known step is now ignored rather than rejected, which is the
- * forgiving direction for recipes persisted in documents.
- */
 export type Step = {
   "kind": "impute";
   input: string;
