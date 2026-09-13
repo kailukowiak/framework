@@ -8,7 +8,14 @@ fn frozen_variables_do_not_offer_or_accept_controls() {
     std::fs::create_dir_all(&directory).unwrap();
     store.freeze_value(&variable, &directory).unwrap();
     assert!(store.view().parameter_inputs.is_empty());
-    assert!(store.apply(Operation::SetParameterValue { object_id: variable, value: ScalarValue::Number(0.5) }).is_err());
+    assert!(
+        store
+            .apply(Operation::SetParameterValue {
+                object_id: variable,
+                value: ScalarValue::Number(0.5)
+            })
+            .is_err()
+    );
     std::fs::remove_dir_all(directory).unwrap();
 }
 use framework_core::*;

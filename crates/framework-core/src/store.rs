@@ -780,7 +780,6 @@ impl Store {
         )
     }
 
-
     /// Whether this store is evaluating. Read at the command boundary to
     /// refuse ingest while a document is being recovered.
     pub fn safe_mode(&self) -> bool {

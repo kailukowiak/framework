@@ -634,8 +634,10 @@ impl Expr {
             argument.validate_list_placement(document, true)?;
         }
         for (_, argument) in keyword_arguments {
-            argument
-                .validate_list_placement(document, crate::formula::financial::is_financial(name) || name == "dropdown")?;
+            argument.validate_list_placement(
+                document,
+                crate::formula::financial::is_financial(name) || name == "dropdown",
+            )?;
         }
         Ok(())
     }

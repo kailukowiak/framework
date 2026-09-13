@@ -8,7 +8,6 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use ts_rs::TS;
 
-
 /// A value object as the canvas shows it under the scenario in force.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -667,7 +666,6 @@ impl Document {
             })
             .collect()
     }
-
 
     fn compute_text(&self, text: &TextObject) -> ComputedText {
         let mut source = String::new();

@@ -229,8 +229,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_current_dir(&workspace)?;
     let output = workspace.join("src/test/fixtures");
     std::fs::create_dir_all(&output)?;
-    if std::env::args().any(|arg| arg == "--sensitivity") { return sensitivity::write(&output); }
-    if std::env::args().any(|arg| arg == "--parameters") { return parameters::write(&output); }
+    if std::env::args().any(|arg| arg == "--sensitivity") {
+        return sensitivity::write(&output);
+    }
+    if std::env::args().any(|arg| arg == "--parameters") {
+        return parameters::write(&output);
+    }
     parameters::write(&output)?;
     sensitivity::write(&output)?;
 

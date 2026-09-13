@@ -42,11 +42,19 @@ impl Document {
                 let mut output = sensitivity_row(matrix, row, column, row_index, column_index);
                 let evaluated = self.evaluate_sensitivity_point(matrix, &scope, &output);
                 let cell = match evaluated {
-                    Ok((_, ScalarValue::Null)) => computed_cell(Ok(ScalarValue::Null), output_type.unwrap_or(DataType::String), false),
+                    Ok((_, ScalarValue::Null)) => computed_cell(
+                        Ok(ScalarValue::Null),
+                        output_type.unwrap_or(DataType::String),
+                        false,
+                    ),
                     Ok((data_type, value)) => {
                         // A live filter can change the inferred integer/float
                         // representation without changing the scalar's type.
-                        let data_type = if matches!(value, ScalarValue::Number(_)) { DataType::Number } else { data_type };
+                        let data_type = if matches!(value, ScalarValue::Number(_)) {
+                            DataType::Number
+                        } else {
+                            data_type
+                        };
                         let expected = *output_type.get_or_insert(data_type);
                         if expected != data_type {
                             computed_cell(
@@ -196,10 +204,29 @@ fn trial_value(raw: &str, data_type: DataType) -> Result<ScalarValue, String> {
     }
 }
 
-fn sensitivity_row(matrix: &CalculationMatrixObject, row: &[String], column: &[String], row_index: usize, column_index: usize) -> Row {
+fn sensitivity_row(
+    matrix: &CalculationMatrixObject,
+    row: &[String],
+    column: &[String],
+    row_index: usize,
+    column_index: usize,
+) -> Row {
     Row {
         id: format!("{}:{row_index}:{column_index}", matrix.id),
-        cells: matrix.rows.iter().chain(&matrix.columns).zip(row.iter().chain(column))
-            .map(|(axis, raw)| (axis.id.clone(), Cell { raw: raw.clone(), override_formula: None })).collect(),
+        cells: matrix
+            .rows
+            .iter()
+            .chain(&matrix.columns)
+            .zip(row.iter().chain(column))
+            .map(|(axis, raw)| {
+                (
+                    axis.id.clone(),
+                    Cell {
+                        raw: raw.clone(),
+                        override_formula: None,
+                    },
+                )
+            })
+            .collect(),
     }
 }

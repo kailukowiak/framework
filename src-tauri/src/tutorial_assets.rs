@@ -240,14 +240,18 @@ pub(super) const BUNDLED_TUTORIALS: &[BundledTutorial] = &[
         lesson: "Scenarios, sensitivity and goal seek",
         kind: "Start",
         relative_path: "Scenarios, sensitivity and goal seek/Start/Workbook.fw",
-        contents: include_bytes!("../../tutorials/scenarios-and-sensitivity/scenarios-and-sensitivity-start.fw"),
+        contents: include_bytes!(
+            "../../tutorials/scenarios-and-sensitivity/scenarios-and-sensitivity-start.fw"
+        ),
         assets: &[],
     },
     BundledTutorial {
         lesson: "Scenarios, sensitivity and goal seek",
         kind: "Answer key",
         relative_path: "Scenarios, sensitivity and goal seek/Answer key/Workbook.fw",
-        contents: include_bytes!("../../tutorials/scenarios-and-sensitivity/scenarios-and-sensitivity-finished.fw"),
+        contents: include_bytes!(
+            "../../tutorials/scenarios-and-sensitivity/scenarios-and-sensitivity-finished.fw"
+        ),
         assets: &[],
     },
 ];

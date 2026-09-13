@@ -203,12 +203,7 @@ impl ResolvedCalendar {
             } => {
                 // The rule names its own anchor month — NRF's January 31 —
                 // which sits in the same calendar year as the year's end.
-                nearest_weekday(
-                    year,
-                    u32::from(rule_month),
-                    u32::from(day),
-                    weekday as u32,
-                )
+                nearest_weekday(year, u32::from(rule_month), u32::from(day), weekday as u32)
             }
         }
     }
