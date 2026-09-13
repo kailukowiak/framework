@@ -373,6 +373,7 @@ impl Document {
         self.validate_unique_keys()?;
         self.validate_join_derivations()?;
         self.validate_period_declarations()?;
+        self.validate_calendars()?;
         Ok(())
     }
 }

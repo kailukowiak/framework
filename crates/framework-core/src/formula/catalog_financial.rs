@@ -184,28 +184,28 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         "period_index",
         ["PERIOD_INDEX", "period number", "fiscal period index"],
         "Financial",
-        "period_index(date, fy_start=1)",
-        "Monthly period number since year zero for a date, counting fiscal months from fy_start (1 is January). Offsets between two indexes are whole periods without date math.",
+        "period_index(date, fy_start=None, calendar=None)",
+        "Period number since year zero for a date: fiscal months counted from the calendar's year start, or retail blocks read from its week table. Defaults to the document's default calendar, and fy_start overrides its year start. Offsets between two indexes are whole periods without date math.",
         1,
-        2
+        3
     ),
     formula_function!(
         "root.prior",
         "prior",
         ["PRIOR", "previous period", "prior period"],
         "Financial",
-        "prior(expr, n=1, fy_start=1)",
-        "The value expr held n periods before each row's own period, joined on the frame's declared period column — the period before, never the row above. Needs a declared period; a missing earlier period reads blank.",
+        "prior(expr, n=1, fy_start=None, calendar=None)",
+        "The value expr held n periods before each row's own period, joined on the frame's declared period column — the period before, never the row above. Counts in the named calendar, or the document default. Needs a declared period; a missing earlier period reads blank.",
         1,
-        3
+        4
     ),
     formula_function!(
         "root.fiscal_year",
         "fiscal_year",
         ["FISCAL_YEAR", "fiscal year", "financial year"],
         "Financial",
-        "fiscal_year(date, fy_start=1, calendar=None)",
-        "The fiscal year a date falls in, numbered by its start or its end according to the calendar. With a February start under end-labelling, January 2025 is fiscal 2025 and February opens 2026. A named calendar supplies both the year start and the labelling; an explicit fy_start wins over the calendar's.",
+        "fiscal_year(date, fy_start=None, calendar=None)",
+        "The fiscal year a date falls in, numbered by its start or its end according to the calendar. With a February start under end-labelling, January 2025 is fiscal 2025 and February opens 2026. A named calendar supplies both the year start and the labelling; an explicit fy_start wins over the calendar's, and is refused outright with a retail week calendar, whose year does not start on a month boundary.",
         1,
         3
     ),
@@ -214,8 +214,8 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         "fiscal_quarter",
         ["FISCAL_QUARTER", "fiscal quarter", "financial quarter"],
         "Financial",
-        "fiscal_quarter(date, fy_start=1, calendar=None)",
-        "The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start or three retail blocks under a week-pattern calendar. Needs no period declaration; it reads the date, not the frame.",
+        "fiscal_quarter(date, fy_start=None, calendar=None)",
+        "The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start or three retail blocks under a week-pattern calendar, which takes no fy_start. Needs no period declaration; it reads the date, not the frame.",
         1,
         3
     ),
@@ -224,8 +224,8 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         "fiscal_period",
         ["FISCAL_PERIOD", "fiscal period", "fiscal month"],
         "Financial",
-        "fiscal_period(date, fy_start=1, calendar=None)",
-        "The fiscal month from 1 to 12 a date falls in, counting from fy_start — or the retail block from 1 to 12 under a week-pattern calendar, where a 53rd week extends the last period. This is the one-date reading of the numbering period_index counts.",
+        "fiscal_period(date, fy_start=None, calendar=None)",
+        "The fiscal month from 1 to 12 a date falls in, counting from fy_start — or the retail block from 1 to 12 under a week-pattern calendar, which takes no fy_start and where a 53rd week extends the last period. This is the one-date reading of the numbering period_index counts.",
         1,
         3
     ),
@@ -264,20 +264,20 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
         "ytd",
         ["YTD", "year to date", "fiscal year to date"],
         "Financial",
-        "ytd(expr, fy_start=1)",
-        "The sum of expr over the fiscal year so far, joined on the frame's declared period column within its partitions. Resets when the fiscal year turns under fy_start; sums the periods present, and only a window with no readable value reads blank.",
+        "ytd(expr, fy_start=None, calendar=None)",
+        "The sum of expr over the fiscal year so far, joined on the frame's declared period column within its partitions. Resets when the fiscal year turns in the named calendar, or the document default; sums the periods present, and only a window with no readable value reads blank.",
         1,
-        2
+        3
     ),
     formula_function!(
         "root.ttm",
         "ttm",
         ["TTM", "trailing twelve months", "last twelve months"],
         "Financial",
-        "ttm(expr)",
-        "The sum of expr over the twelve periods ending here, joined on the frame's declared period column. Twelve indexes back is the same window under any year start, so it takes no fy_start. Needs a declared period like prior.",
+        "ttm(expr, calendar=None)",
+        "The sum of expr over the twelve periods ending here, joined on the frame's declared period column. Twelve indexes back is the same window under any year start, so it takes no fy_start — but which twelve periods exist is a calendar question, so it takes a calendar. Needs a declared period like prior.",
         1,
-        1
+        2
     ),
     formula_function!(
         "root.same_period_last_year",
@@ -288,10 +288,10 @@ pub(crate) const FUNCTIONS: &[FormulaFunctionDefinition] = &[
             "previous year"
         ],
         "Financial",
-        "same_period_last_year(expr)",
-        "The value expr held twelve periods ago — the same month last year — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
+        "same_period_last_year(expr, calendar=None)",
+        "The value expr held twelve periods ago — the same month last year, or the same retail block last year under a week-pattern calendar — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
         1,
-        1
+        2
     ),
     formula_function!(
         "root.fiscal_week",

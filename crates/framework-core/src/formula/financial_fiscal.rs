@@ -10,14 +10,18 @@
 //!
 //! A `calendar` argument names a document calendar for the year start —
 //! and, for `fiscal_year`, for which calendar year numbers the year. An
-//! explicit `fy_start` still wins over the calendar's; without either,
-//! January starts the year. Under a retail week pattern the year, quarter
-//! and period come from the week table instead of month arithmetic, via
-//! the native path in `financial_calendar`.
+//! explicit `fy_start` wins over the calendar's; without either, the
+//! document default calendar's year start applies, and with no default
+//! calendar January starts the year. Under a retail week pattern the year,
+//! quarter and period come from the week table instead of month
+//! arithmetic, via the native path in `financial_calendar` — and
+//! `fy_start` is refused there rather than parsed and dropped, because a
+//! week-pattern year does not start on a month boundary to be moved.
 use crate::*;
 use polars::prelude as pl;
 
 use super::financial_calendar::{fiscal_start, resolve_calendar};
+use super::financial_period::retail_fy_start_error;
 use crate::model::calendar::{WeekPattern, YearLabel};
 
 pub(super) fn compile(
@@ -69,6 +73,12 @@ pub(super) fn compile(
             "fiscal_year" | "fiscal_quarter" | "fiscal_period" | "period_start" | "period_end"
         )
     {
+        // A written `fy_start` cannot be honoured here and must not be
+        // silently dropped: the week table, not a month number, is what
+        // says where a retail year starts. Refuse before answering.
+        if parameters.get(1) == Some(&"fy_start") && slots[1].is_some() {
+            return Err(retail_fy_start_error(name));
+        }
         // Retail weeks are not months, so month arithmetic cannot answer
         // here; the week table does, one date at a time.
         return Ok(super::financial_calendar::compile_retail(

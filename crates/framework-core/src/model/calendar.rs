@@ -69,7 +69,8 @@ pub struct Calendar {
     /// Meaningless for calendar months, which end on month ends.
     pub year_end: YearEndRule,
     pub year_label: YearLabel,
-    /// ISO weekday numbers worked, Monday 1 through Sunday 7.
+    /// ISO weekday numbers *not* worked, Monday 1 through Sunday 7; the
+    /// built-in default is Saturday and Sunday (6, 7).
     pub weekend: Vec<u8>,
     /// Holidays as strict `YYYY-MM-DD` dates.
     pub holidays: Vec<String>,
@@ -120,6 +121,7 @@ impl ResolvedCalendar {
         validate_calendar(
             &calendar.name,
             calendar.fy_start,
+            calendar.pattern,
             &calendar.year_end,
             &calendar.weekend,
             &calendar.holidays,
@@ -218,11 +220,21 @@ impl ResolvedCalendar {
                 let days = (date - start).num_days();
                 let week = (days / 7 + 1) as u32;
                 let weeks = ((end - start).num_days() + 1) as u32 / 7;
-                let (quarter, period, period_start_week, period_weeks) =
-                    self.quarter_period(week, weeks);
-                let period_start =
-                    start + chrono::Duration::days((period_start_week - 1) as i64 * 7);
-                let period_end = period_start + chrono::Duration::days(period_weeks as i64 * 7 - 1);
+                let (quarter, period, period_start, period_end) = match self.pattern {
+                    // Calendar months have no week blocks to read periods
+                    // off: the period is the month itself, and the week is
+                    // simply how many sevens fit since the year started.
+                    WeekPattern::Months => self.month_period(date, start),
+                    _ => {
+                        let (quarter, period, period_start_week, period_weeks) =
+                            self.quarter_period(week, weeks);
+                        let period_start =
+                            start + chrono::Duration::days((period_start_week - 1) as i64 * 7);
+                        let period_end =
+                            period_start + chrono::Duration::days(period_weeks as i64 * 7 - 1);
+                        (quarter, period, period_start, period_end)
+                    }
+                };
                 return LocatedDate {
                     year: label,
                     week,
@@ -239,51 +251,66 @@ impl ResolvedCalendar {
         unreachable!("three consecutive fiscal years cover every date");
     }
 
+    /// Quarter, period 1-12, and the period's bounds for a date under
+    /// calendar months: the period is the fiscal month the date falls in,
+    /// and its bounds are that calendar month's own.
+    fn month_period(
+        &self,
+        date: NaiveDate,
+        year_start: NaiveDate,
+    ) -> (u32, u32, NaiveDate, NaiveDate) {
+        let months = (date.year() - year_start.year()) * 12 + date.month() as i32
+            - year_start.month() as i32;
+        let period = months.rem_euclid(12) as u32 + 1;
+        let quarter = (period - 1) / 3 + 1;
+        let period_start = NaiveDate::from_ymd_opt(date.year(), date.month(), 1)
+            .expect("a date's own month starts on its first");
+        let period_end = last_day_of_month(date.year(), date.month());
+        (quarter, period, period_start, period_end)
+    }
+
     /// Quarter, period, and the period's week span for a 1-based week.
     /// Quarters are always thirteen weeks; the pattern only places the
     /// three periods inside each quarter. A 53rd week extends the year's
-    /// last period.
+    /// last period. Never called under calendar months, which have no
+    /// week blocks — see `month_period`.
     fn quarter_period(&self, week: u32, weeks: u32) -> (u32, u32, u32, u32) {
-        match self.pattern {
-            WeekPattern::Months => {
-                // Periods are calendar months here; week-derived blocks do
-                // not apply. Callers asking for weeks still get the week;
-                // callers asking for periods use the month arithmetic.
-                (0, 0, 0, 0)
+        let blocks = match self.pattern {
+            WeekPattern::FourFourFive => [4, 4, 5],
+            WeekPattern::FourFiveFour => [4, 5, 4],
+            WeekPattern::FiveFourFour => [5, 4, 4],
+            WeekPattern::Months => [4, 4, 5],
+        };
+        // A week pattern needs a year that is a whole number of weeks, and
+        // validation refuses any rule that does not give one. A document
+        // stored before it did can still hold a week past the year's last,
+        // and evaluating it must answer rather than panic.
+        let week = week.min(weeks.max(1));
+        let quarter = ((week - 1) / 13 + 1).min(4);
+        // Subtraction, not modulo: week 53 is Q4's fourteenth week, not
+        // its first.
+        let mut week_in_quarter = week - (quarter - 1) * 13;
+        let last_stretch = weeks >= 53 && quarter == 4;
+        let mut period_start = 1;
+        for (index, block) in blocks.iter().enumerate() {
+            let mut length = *block;
+            if last_stretch && index == 2 {
+                length += 1;
             }
-            _ => {
-                let blocks = match self.pattern {
-                    WeekPattern::FourFourFive => [4, 4, 5],
-                    WeekPattern::FourFiveFour => [4, 5, 4],
-                    WeekPattern::FiveFourFour => [5, 4, 4],
-                    WeekPattern::Months => unreachable!(),
-                };
-                let quarter = ((week - 1) / 13 + 1).min(4);
-                // Subtraction, not modulo: week 53 is Q4's fourteenth
-                // week, not its first.
-                let mut week_in_quarter = week - (quarter - 1) * 13;
-                let last_stretch = weeks == 53 && quarter == 4;
-                let mut period_start = 1;
-                for (index, block) in blocks.iter().enumerate() {
-                    let mut length = *block;
-                    if last_stretch && index == 2 {
-                        length += 1;
-                    }
-                    if week_in_quarter <= length {
-                        let start = period_start;
-                        return (
-                            quarter,
-                            (quarter - 1) * 3 + index as u32 + 1,
-                            (quarter - 1) * 13 + start,
-                            length,
-                        );
-                    }
-                    week_in_quarter -= length;
-                    period_start += length;
-                }
-                unreachable!("thirteen-week quarters cover weeks 1-13, fourteen in a long Q4");
+            // The last block of a quarter is the catch-all: a week the
+            // earlier blocks did not take belongs to it.
+            if week_in_quarter <= length || index == 2 {
+                return (
+                    quarter,
+                    (quarter - 1) * 3 + index as u32 + 1,
+                    (quarter - 1) * 13 + period_start,
+                    length,
+                );
             }
+            week_in_quarter -= length;
+            period_start += length;
         }
+        (quarter, quarter * 3, (quarter - 1) * 13 + 1, 13)
     }
 
     /// Fiscal year number for a date under this calendar's labelling.
@@ -301,16 +328,31 @@ impl ResolvedCalendar {
     /// and back for negative. The start date is day zero, never counted —
     /// the Excel WORKDAY convention — so shifting by zero returns the date
     /// itself even on a weekend.
-    pub fn add_workdays(&self, mut date: NaiveDate, n: i64) -> NaiveDate {
+    pub fn add_workdays(&self, date: NaiveDate, n: i64) -> Option<NaiveDate> {
         let step = chrono::Duration::days(n.signum());
         let mut remaining = n.abs();
+        let mut date = date;
+        // Bound the walk. Seven days always hold at least one workday —
+        // validation refuses a weekend covering the whole week — so a
+        // sound calendar lands inside this many steps, and a shift of a
+        // thousand years is a mistake rather than a question. Answering
+        // nothing beats a formula that never returns.
+        let mut budget = remaining
+            .saturating_mul(7)
+            .saturating_add(self.holidays.len() as i64)
+            .saturating_add(7)
+            .min(400_000);
         while remaining > 0 {
-            date += step;
+            if budget == 0 {
+                return None;
+            }
+            budget -= 1;
+            date = date.checked_add_signed(step)?;
             if self.is_workday(date) {
                 remaining -= 1;
             }
         }
-        date
+        Some(date)
     }
 
     /// Business days from `start` through `end` inclusive, negated when
@@ -341,7 +383,7 @@ pub struct LocatedDate {
     /// Weeks in the year: 52, or 53 in a long year.
     pub weeks: u32,
     pub quarter: u32,
-    /// Retail period 1–12; zero under calendar months, which count months.
+    /// Retail period 1–12; under calendar months, the fiscal month 1–12.
     pub period: u32,
     pub period_start: NaiveDate,
     pub period_end: NaiveDate,
@@ -370,7 +412,12 @@ fn last_weekday_of_month(year: i32, month: u32, weekday: u32) -> NaiveDate {
 }
 
 fn nearest_weekday(year: i32, month: u32, day: u32, weekday: u32) -> NaiveDate {
-    let anchor = NaiveDate::from_ymd_opt(year, month, day).expect("validated anchor date");
+    // Validation refuses an anchor day no month can hold, February 29
+    // included. A calendar stored before it did must still evaluate, so
+    // fall back to the month's last day rather than panicking.
+    let month = month.clamp(1, 12);
+    let anchor =
+        NaiveDate::from_ymd_opt(year, month, day).unwrap_or_else(|| last_day_of_month(year, month));
     let current = anchor.weekday().number_from_monday();
     let forward = (weekday + 7 - current) % 7;
     let back = (current + 7 - weekday) % 7;
@@ -391,6 +438,7 @@ fn parse_calendar_date(text: &str) -> Result<NaiveDate, String> {
 pub fn validate_calendar(
     name: &str,
     fy_start: u8,
+    pattern: WeekPattern,
     year_end: &YearEndRule,
     weekend: &[u8],
     holidays: &[String],
@@ -410,8 +458,24 @@ pub fn validate_calendar(
             ));
         }
     }
+    let mut distinct: Vec<u8> = weekend.to_vec();
+    distinct.sort_unstable();
+    distinct.dedup();
+    if distinct.len() >= 7 {
+        return Err(
+            "‘weekend’ lists the days not worked, so it cannot cover all seven — a calendar needs at least one working day"
+                .into(),
+        );
+    }
     match *year_end {
-        YearEndRule::LastDayOfMonth => {}
+        YearEndRule::LastDayOfMonth => {
+            if pattern != WeekPattern::Months {
+                return Err(
+                    "A 4-4-5, 4-5-4 or 5-4-4 calendar counts whole weeks, so its year must end on a weekday: ending on the last day of a month leaves a part week. Choose a last-weekday or nearest-weekday year end, or the calendar-months pattern."
+                        .into(),
+                );
+            }
+        }
         YearEndRule::LastWeekday { weekday } => {
             if !(1..=7).contains(&weekday) {
                 return Err(format!(
@@ -434,7 +498,9 @@ pub fn validate_calendar(
                     "Year-end anchor months run 1 to 12; ‘{month}’ is not one"
                 ));
             }
-            let last = last_day_of_month(2024, month as u32).day();
+            // A non-leap year on purpose: February 29 is not a day every
+            // fiscal year holds, so it cannot anchor a year end.
+            let last = last_day_of_month(2025, month as u32).day();
             if day < 1 || u32::from(day) > last {
                 return Err(format!(
                     "Year-end anchor days run 1 to {last} in month {month}; ‘{day}’ is not one"

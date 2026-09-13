@@ -17,7 +17,8 @@ export type Calendar = {
   yearEnd: YearEndRule;
   yearLabel: YearLabel;
   /**
-   * ISO weekday numbers worked, Monday 1 through Sunday 7.
+   * ISO weekday numbers *not* worked, Monday 1 through Sunday 7; the
+   * built-in default is Saturday and Sunday (6, 7).
    */
   weekend: Array<number>;
   /**

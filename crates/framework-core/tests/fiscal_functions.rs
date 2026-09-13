@@ -291,3 +291,105 @@ fn scratchwork_reads_fiscal_dates_with_no_declaration() {
         .collect();
     assert_eq!(displays, vec!["2025", "2024-02-29", "2"]);
 }
+
+/// The published NRF 4-5-4 retail calendar: February start, years labelled
+/// by the year they open, ending the Saturday nearest January 31.
+fn nrf_calendar(store: &mut Store) {
+    store
+        .apply(Operation::AddCalendar {
+            name: "NRF".into(),
+            fy_start: 2,
+            pattern: WeekPattern::FourFiveFour,
+            year_end: YearEndRule::NearestWeekday {
+                weekday: 6,
+                month: 1,
+                day: 31,
+            },
+            year_label: YearLabel::Start,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+}
+
+#[test]
+fn a_retail_calendar_refuses_fy_start_rather_than_dropping_it() {
+    let mut store = dated_store();
+    nrf_calendar(&mut store);
+    // A retail year opens the day after the previous year's Saturday, so
+    // there is no month number to move it to. Writing one used to parse
+    // and then vanish, answering about the calendar's own year start
+    // instead; every fiscal call now says why it cannot.
+    for formula in [
+        "fiscal_year(`Day`, fy_start=1, calendar=\"NRF\")",
+        "fiscal_quarter(`Day`, 1, calendar=\"NRF\")",
+        "fiscal_period(`Day`, fy_start=1, calendar=\"NRF\")",
+    ] {
+        let frame_id = frame_named(store.document(), "Dates").id.clone();
+        let refused = store.apply(Operation::AddComputedColumn {
+            frame_id,
+            name: "Refused".into(),
+            formula: formula.into(),
+            after_column_id: None,
+        });
+        let message = refused.unwrap_err().to_string();
+        assert!(
+            message.contains("cannot take fy_start")
+                && message.contains("retail week calendar")
+                && message.contains("calendar-month calendar"),
+            "unexpected error for {formula}: {message}"
+        );
+    }
+
+    // Without fy_start the same calls read the week table, and 2025-01-15
+    // lands in the retail year that opened in February 2024.
+    add_column(&mut store, "FY", "fiscal_year(`Day`, calendar=\"NRF\")");
+    assert_eq!(column_values(&store, "FY")[0], "2024");
+}
+
+#[test]
+fn period_relative_calls_refuse_a_retail_fy_start_in_the_same_words() {
+    let mut store = dated_store();
+    nrf_calendar(&mut store);
+    // `prior` and the windows check the declaration before the call, so
+    // declare one: the refusal under test is about the calendar, not about
+    // a missing period column.
+    let frame = frame_named(store.document(), "Dates").clone();
+    let day = frame
+        .columns
+        .iter()
+        .find(|column| column.name == "Day")
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetFramePeriod {
+            frame_id: frame.id.clone(),
+            period: Some(FramePeriod {
+                column_id: day,
+                partition_column_ids: Vec::new(),
+            }),
+        })
+        .unwrap();
+    // The index and the window aggregates share the refusal, so a workbook
+    // cannot end up with a retail `fiscal_period` beside a January-counted
+    // `period_index` on the same dates.
+    for formula in [
+        "period_index(`Day`, fy_start=1, calendar=\"NRF\")",
+        "prior(`Shift`, 1, fy_start=1, calendar=\"NRF\")",
+        "ytd(`Shift`, fy_start=1, calendar=\"NRF\")",
+    ] {
+        let frame_id = frame_named(store.document(), "Dates").id.clone();
+        let refused = store.apply(Operation::AddComputedColumn {
+            frame_id,
+            name: "Refused".into(),
+            formula: formula.into(),
+            after_column_id: None,
+        });
+        let message = refused.unwrap_err().to_string();
+        assert!(
+            message.contains("cannot take fy_start") && message.contains("retail week calendar"),
+            "unexpected error for {formula}: {message}"
+        );
+    }
+}

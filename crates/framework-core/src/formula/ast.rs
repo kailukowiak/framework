@@ -208,6 +208,23 @@ pub enum Expr {
     },
 }
 
+/// Every function that takes a `calendar` argument, mirroring the parameter
+/// tables in `financial.rs`. Only the names are needed, not the slots: the
+/// remaining parameters of all of these are dates or numbers, so a string
+/// literal among their positional arguments is the calendar. Adding a
+/// calendar-taking function means adding it here, or a rename will silently
+/// break formulas that call it.
+const CALENDAR_FUNCTIONS: &[&str] = &[
+    "fiscal_year",
+    "fiscal_quarter",
+    "fiscal_period",
+    "period_start",
+    "period_end",
+    "fiscal_week",
+    "workday",
+    "networkdays",
+];
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum BinaryOperator {
@@ -873,6 +890,54 @@ impl Expr {
                 visit(object_id);
             }
         });
+    }
+
+    /// Whether this expression names the calendar `name` outright.
+    ///
+    /// Calendars are the one document object a formula still reaches by
+    /// name rather than by id: `calendar="NRF 4-5-4"` is a plain string
+    /// argument, and the parser has no way to tell it from any other
+    /// string, because the calendar may equally be supplied by a named
+    /// value whose contents are only known at plan time. Rather than
+    /// teach the parser which keyword of which function is a reference —
+    /// and then carry a calendar-shaped variant through render, shape,
+    /// type and the generated bindings — renaming and removal ask this
+    /// question and refuse to break a formula that would stop resolving.
+    ///
+    /// The reading is deliberately narrow: a `calendar=` keyword on any
+    /// call, or a string literal handed positionally to one of the
+    /// functions that takes a calendar (every other parameter of those is
+    /// a date or a number, so a string there is the calendar slot). A
+    /// name arriving through a value object is not seen here, and cannot
+    /// be: the value's contents are the user's to change.
+    pub(crate) fn names_calendar(&self, name: &str) -> bool {
+        self.any(|expression| {
+            let (function, arguments, keyword_arguments) = match expression {
+                Expr::PolarsCall {
+                    name,
+                    arguments,
+                    keyword_arguments,
+                } => (name.as_str(), arguments, keyword_arguments),
+                Expr::Method {
+                    path,
+                    arguments,
+                    keyword_arguments,
+                    ..
+                } => (
+                    path.last().map(String::as_str).unwrap_or(""),
+                    arguments,
+                    keyword_arguments,
+                ),
+                _ => return false,
+            };
+            let matches = |expression: &Expr| {
+                matches!(expression, Expr::String { value } if value.eq_ignore_ascii_case(name))
+            };
+            keyword_arguments
+                .iter()
+                .any(|(key, value)| key == "calendar" && matches(value))
+                || (CALENDAR_FUNCTIONS.contains(&function) && arguments.iter().any(matches))
+        })
     }
 
     /// Calls `visit` on this expression and everything inside it.

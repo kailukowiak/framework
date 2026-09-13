@@ -13,12 +13,15 @@
 //! the year starts. Twelve indexes back is the same date last year under
 //! any year start — shifting the calendar moves every index by the same
 //! constant — so `ttm` and `same_period_last_year` honestly take none.
+//! All three take `calendar`, because which periods exist at all is a
+//! calendar question: under a retail week pattern twelve indexes back is
+//! twelve retail blocks, not twelve calendar months.
 use crate::*;
 use polars::prelude as pl;
 
 use super::financial_period::{
-    PriorCall, check_period_columns, fiscal_year_start, is_prior_call, join_prior,
-    period_index_expr, require_period, substitute,
+    PeriodBasis, PriorCall, check_period_columns, is_prior_call, join_prior, require_period,
+    substitute,
 };
 
 enum WindowKind {
@@ -27,12 +30,12 @@ enum WindowKind {
     SamePeriodLastYear,
 }
 
-/// One window call: the value expression and, for `ytd`, the fiscal year
-/// start its year boundary counts in.
+/// One window call: the value expression and the numbering its bounds
+/// count in — the same `PeriodBasis` both sides of the join read.
 struct WindowCall<'a> {
     expression: &'a Expr,
     kind: WindowKind,
-    fy_start: i64,
+    basis: PeriodBasis,
 }
 
 pub(super) fn is_window_call(expression: &Expr) -> bool {
@@ -96,50 +99,58 @@ fn window_call<'a>(expression: &'a Expr, document: &Document) -> Result<WindowCa
         "ttm" => WindowKind::Ttm,
         _ => WindowKind::SamePeriodLastYear,
     };
-    // The receiver stands in for `expr`, so the remaining positional is
-    // `fy_start` on `ytd` either way it was written.
-    let mut slots: [Option<&Expr>; 2] = [None, None];
-    let mut positional = Vec::with_capacity(2);
+    // The receiver stands in for `expr`, so the remaining positionals are
+    // whatever this window still takes. A trailing window has no year
+    // boundary to place, so `calendar` is its second parameter and
+    // `fy_start` is not one of its parameters at all.
+    let parameters: &[&str] = match kind {
+        WindowKind::Ytd => &["expr", "fy_start", "calendar"],
+        _ => &["expr", "calendar"],
+    };
+    let mut slots: Vec<Option<&Expr>> = vec![None; parameters.len()];
+    let mut positional = Vec::with_capacity(parameters.len());
     if let Some(input) = inner {
         positional.push(input);
     }
     positional.extend(arguments.iter());
-    if positional.len() > 2 {
-        return Err(format!("{name} expects at most 2 arguments"));
+    if positional.len() > parameters.len() {
+        return Err(format!(
+            "{name} expects at most {} arguments",
+            parameters.len()
+        ));
     }
     for (slot, argument) in slots.iter_mut().zip(positional) {
         *slot = Some(argument);
     }
     for (key, value) in keywords {
-        let index = match key.as_str() {
-            "expr" => 0,
-            "fy_start" => 1,
-            _ => return Err(format!("{name} has no argument ‘{key}’")),
-        };
+        // Naming the missing parameter beats "no argument fy_start": the
+        // reason a trailing window has none is worth saying once.
+        if key == "fy_start" && !matches!(kind, WindowKind::Ytd) {
+            return Err(format!(
+                "{name} counts twelve whole periods, so it takes no fy_start"
+            ));
+        }
+        let index = parameters
+            .iter()
+            .position(|parameter| parameter == key)
+            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
         if slots[index].replace(value).is_some() {
             return Err(format!("{name}: ‘{key}’ was supplied twice"));
         }
     }
     let expression = slots[0].ok_or_else(|| format!("{name} expects the expression to read"))?;
-    if !matches!(kind, WindowKind::Ytd) && slots[1].is_some() {
-        return Err(format!(
-            "{name} counts twelve whole periods, so it takes no fy_start"
-        ));
-    }
-    // The year boundary comes from the document default when unwritten:
-    // a bare `ytd` in a February-start workbook counts from February, not
-    // January. Trailing windows are index-relative and need no calendar.
-    let fy_start = match slots[1] {
-        Some(argument) => fiscal_year_start(Some(argument), document)?,
-        None if matches!(kind, WindowKind::Ytd) => {
-            super::financial_calendar::resolve_calendar(document, None)?.fy_start as i64
-        }
-        None => 1,
+    // The numbering comes from the document default when unwritten: a bare
+    // `ytd` in a February-start workbook counts from February, and under a
+    // retail calendar every window counts the blocks `fiscal_period` does.
+    let fy_start = match kind {
+        WindowKind::Ytd => slots[1],
+        _ => None,
     };
+    let basis = PeriodBasis::resolve(&name, fy_start, slots[parameters.len() - 1], document)?;
     Ok(WindowCall {
         expression,
         kind,
-        fy_start,
+        basis,
     })
 }
 
@@ -242,7 +253,7 @@ pub(crate) fn join_window_aggregates(
                 &PriorCall {
                     expression: window.expression,
                     n: 12,
-                    fy_start: 1,
+                    basis: window.basis.clone(),
                 },
                 &output,
             )?,
@@ -279,16 +290,12 @@ fn join_window(
     let have = format!("{output}_have");
     let value = format!("{output}_value");
     let count = format!("{output}_count");
-    // The bounds are index-relative, so a trailing window counts the same
-    // under any year start and uses January, the cheapest constant. A
-    // year-to-date window must count in its own fiscal calendar instead:
-    // the year's first index is only index-minus-remainder in the calendar
-    // whose year is turning.
-    let calendar = match window.kind {
-        WindowKind::Ytd => window.fy_start,
-        _ => 1,
-    };
-    let index = period_index_expr(pl::col(&period.column_id), calendar);
+    // Both bounds count in the call's own basis. A trailing window would
+    // answer the same under any year start — shifting the year start moves
+    // every index by one constant — but it must still count the same
+    // *periods* the other side of the join counts, which under a retail
+    // pattern are blocks of weeks rather than months.
+    let index = window.basis.index(pl::col(&period.column_id));
     let high_expr = index.clone();
     let low_expr = match window.kind {
         WindowKind::Ytd => {

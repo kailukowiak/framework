@@ -501,7 +501,18 @@ impl Document {
                     .ok_or(CoreError::InvalidOperation(format!(
                         "There is no calendar with id ‘{calendar_id}’."
                     )))?;
-                vec![ReplicatedOperation::AddCalendar { calendar: removed }]
+                // Removing the default clears `default_calendar_id`, so
+                // putting the calendar back is only half of undoing it:
+                // without the second operation the document comes back
+                // with the calendar present and nothing defaulting to it,
+                // and every bare fiscal call silently returns to January.
+                let mut inverse = vec![ReplicatedOperation::AddCalendar { calendar: removed }];
+                if self.default_calendar_id.as_deref() == Some(calendar_id.as_str()) {
+                    inverse.push(ReplicatedOperation::SetDefaultCalendar {
+                        calendar_id: self.default_calendar_id.clone(),
+                    });
+                }
+                inverse
             }
             ReplicatedOperation::SetDefaultCalendar { .. } => {
                 vec![ReplicatedOperation::SetDefaultCalendar {

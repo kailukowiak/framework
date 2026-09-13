@@ -10,15 +10,101 @@
 //! which row is silently read instead.
 //!
 //! The declaration lives on the frame (see `FramePeriod`), the calendar on
-//! the calls: `fy_start` names the month a fiscal year starts on, defaulting
-//! to January. A fuller calendar object will supply that default later; the
-//! index arithmetic here will not have to change.
+//! the calls: an optional `calendar` names a document calendar and an
+//! optional `fy_start` names the month a fiscal year starts on. With
+//! neither written, every period-relative call reads the document default
+//! calendar — the same calendar `fiscal_period` reads — so one document
+//! cannot number its periods two ways.
+//!
+//! `PeriodBasis` is that numbering, resolved once per call and shared by
+//! every period-relative function: month arithmetic under a calendar-month
+//! pattern, and the week table under a retail pattern, where a period is a
+//! block of weeks rather than a month.
 use crate::*;
 use polars::prelude as pl;
 
+use super::financial_calendar::{broadcast_dates, fiscal_start, int_series, resolve_calendar};
+use crate::model::calendar::{ResolvedCalendar, WeekPattern};
+
+/// The numbering one period-relative call counts in. Every call that joins
+/// on an index resolves one of these and hands it to both sides of the
+/// join, so the two sides can never disagree about where a year turns.
+#[derive(Clone)]
+pub(super) struct PeriodBasis {
+    calendar: ResolvedCalendar,
+    fy_start: i64,
+}
+
+impl PeriodBasis {
+    /// The basis a call counts in: the named calendar or the document
+    /// default, with `fy_start` overriding its year start.
+    pub(super) fn resolve(
+        name: &str,
+        fy_start: Option<&Expr>,
+        calendar: Option<&Expr>,
+        document: &Document,
+    ) -> Result<PeriodBasis, String> {
+        let calendar = resolve_calendar(document, calendar)?;
+        if fy_start.is_some() && calendar.pattern != WeekPattern::Months {
+            return Err(retail_fy_start_error(name));
+        }
+        let fy_start = fiscal_start(fy_start, &calendar, document)?;
+        Ok(PeriodBasis { calendar, fy_start })
+    }
+
+    /// The period index of a date under this basis. Calendar months count
+    /// by arithmetic; retail weeks count through the week table, so a date
+    /// lands in the period `fiscal_period` reports for it rather than in
+    /// the calendar month it happens to sit in.
+    pub(super) fn index(&self, date: pl::Expr) -> pl::Expr {
+        match self.calendar.pattern {
+            WeekPattern::Months => period_index_expr(date, self.fy_start),
+            _ => retail_period_index(date, self.calendar.clone()),
+        }
+    }
+}
+
+/// Why a retail calendar refuses `fy_start`. A week-pattern year starts the
+/// day after the previous year's end rule fires — the Saturday nearest
+/// January 31, say — so there is no month number to move it to: honouring
+/// `fy_start` here would mean inventing a different calendar and quietly
+/// answering about that one instead. Refusing says so once, in the same
+/// words, for every call that takes both.
+pub(super) fn retail_fy_start_error(name: &str) -> String {
+    format!(
+        "{name} cannot take fy_start together with a retail week calendar: the week table fixes where that year starts. Drop fy_start, or name a calendar-month calendar."
+    )
+}
+
+/// A retail period index: twelve blocks a year, so `year * 12 + period - 1`
+/// counts exactly the way month arithmetic does — one date at a time,
+/// through the same `locate` the retail fiscal functions read.
+fn retail_period_index(date: pl::Expr, calendar: ResolvedCalendar) -> pl::Expr {
+    pl::apply_multiple(
+        move |columns| {
+            let length = columns.iter().map(|column| column.len()).max().unwrap_or(0);
+            let raw = broadcast_dates("period_index", &columns[0], length)?;
+            Ok(int_series(
+                "period_index",
+                raw.into_iter()
+                    .map(|date| {
+                        date.map(|date| {
+                            let placed = calendar.locate(date);
+                            placed.year * 12 + placed.period as i32 - 1
+                        })
+                    })
+                    .collect(),
+            ))
+        },
+        [date],
+        |_, _| Ok(pl::Field::new("period_index".into(), pl::DataType::Int32)),
+        false,
+    )
+}
+
 /// Monthly index of a date expression: fiscal years of twelve months from
 /// `fy_start`, times twelve plus the zero-based fiscal month.
-pub(super) fn period_index_expr(date: pl::Expr, fy_start: i64) -> pl::Expr {
+fn period_index_expr(date: pl::Expr, fy_start: i64) -> pl::Expr {
     let year = date.clone().dt().year().cast(pl::DataType::Int32);
     let month = date.dt().month().cast(pl::DataType::Int32);
     let start = pl::lit(fy_start as i32);
@@ -36,50 +122,38 @@ pub(super) fn compile_period_index(
     keywords: &[(String, Expr)],
     document: &Document,
 ) -> Result<pl::Expr, String> {
-    let (date, fy_start) = period_arguments(arguments, keywords, "period_index", document)?;
-    Ok(period_index_expr(date.to_polars(document)?, fy_start))
+    let (date, basis) = period_arguments(arguments, keywords, "period_index", document)?;
+    Ok(basis.index(date.to_polars(document)?))
 }
 
 fn period_arguments<'a>(
     arguments: &'a [Expr],
-    keywords: &[(String, Expr)],
+    keywords: &'a [(String, Expr)],
     name: &str,
     document: &Document,
-) -> Result<(&'a Expr, i64), String> {
-    if arguments.len() > 2 {
-        return Err(format!("{name} expects at most 2 arguments"));
+) -> Result<(&'a Expr, PeriodBasis), String> {
+    let parameters = ["date", "fy_start", "calendar"];
+    if arguments.len() > parameters.len() {
+        return Err(format!("{name} expects at most 3 arguments"));
     }
-    let date = arguments
-        .first()
-        .ok_or_else(|| format!("{name} expects the date to count from"))?;
-    let mut fy_start = arguments.get(1);
+    let mut slots: [Option<&Expr>; 3] = [None, None, None];
+    for (slot, argument) in slots.iter_mut().zip(arguments) {
+        *slot = Some(argument);
+    }
     for (key, value) in keywords {
-        if key != "fy_start" {
-            return Err(format!("{name} has no argument ‘{key}’"));
-        }
-        if fy_start.replace(value).is_some() {
-            return Err(format!("{name}: ‘fy_start’ was supplied twice"));
+        let index = parameters
+            .iter()
+            .position(|parameter| parameter == key)
+            .ok_or_else(|| format!("{name} has no argument ‘{key}’"))?;
+        if slots[index].replace(value).is_some() {
+            return Err(format!("{name}: ‘{key}’ was supplied twice"));
         }
     }
-    Ok((date, fiscal_year_start(fy_start, document)?))
-}
-
-pub(super) fn fiscal_year_start(
-    argument: Option<&Expr>,
-    document: &Document,
-) -> Result<i64, String> {
-    let start = match argument {
-        None => 1,
-        Some(expression) => integer_literal(expression, document).map_err(|_| {
-            "fy_start must be a whole month number from 1 to 12, with 1 meaning January".to_string()
-        })?,
-    };
-    if !(1..=12).contains(&start) {
-        return Err(
-            "fy_start must be a whole month number from 1 to 12, with 1 meaning January".into(),
-        );
-    }
-    Ok(start)
+    let date = slots[0].ok_or_else(|| format!("{name} expects the date to count from"))?;
+    Ok((
+        date,
+        PeriodBasis::resolve(name, slots[1], slots[2], document)?,
+    ))
 }
 
 /// A whole number written in the formula or held by a named value.
@@ -100,11 +174,11 @@ pub(super) fn integer_literal(expression: &Expr, document: &Document) -> Result<
 }
 
 /// One `prior(...)` call: the value expression, the whole-period offset,
-/// and the fiscal year start it counts in.
+/// and the numbering it counts in.
 pub(super) struct PriorCall<'a> {
     pub(super) expression: &'a Expr,
     pub(super) n: i64,
-    pub(super) fy_start: i64,
+    pub(super) basis: PeriodBasis,
 }
 
 pub(super) fn is_prior_call(expression: &Expr) -> bool {
@@ -151,15 +225,15 @@ fn prior_call<'a>(expression: &'a Expr, document: &Document) -> Result<PriorCall
         _ => unreachable!("is_prior_call only collects prior calls"),
     };
     // The receiver stands in for `expr`, so the remaining positionals are
-    // `n` then `fy_start` either way they were written.
-    let mut slots: [Option<&Expr>; 3] = [None, None, None];
-    let mut positional = Vec::with_capacity(3);
+    // `n`, `fy_start` then `calendar` either way they were written.
+    let mut slots: [Option<&Expr>; 4] = [None, None, None, None];
+    let mut positional = Vec::with_capacity(4);
     if let Some(input) = inner {
         positional.push(input);
     }
     positional.extend(arguments.iter());
-    if positional.len() > 3 {
-        return Err("prior expects at most 3 arguments".into());
+    if positional.len() > 4 {
+        return Err("prior expects at most 4 arguments".into());
     }
     for (slot, argument) in slots.iter_mut().zip(positional) {
         *slot = Some(argument);
@@ -169,6 +243,7 @@ fn prior_call<'a>(expression: &'a Expr, document: &Document) -> Result<PriorCall
             "expr" => 0,
             "n" => 1,
             "fy_start" => 2,
+            "calendar" => 3,
             _ => return Err(format!("prior has no argument ‘{key}’")),
         };
         if slots[index].replace(value).is_some() {
@@ -187,7 +262,7 @@ fn prior_call<'a>(expression: &'a Expr, document: &Document) -> Result<PriorCall
     Ok(PriorCall {
         expression,
         n,
-        fy_start: fiscal_year_start(slots[2], document)?,
+        basis: PeriodBasis::resolve("prior", slots[2], slots[3], document)?,
     })
 }
 
@@ -388,7 +463,7 @@ pub(super) fn join_prior(
     let want = format!("{output}_want");
     let have = format!("{output}_have");
     let value = format!("{output}_value");
-    let index = period_index_expr(pl::col(&period.column_id), prior.fy_start);
+    let index = prior.basis.index(pl::col(&period.column_id));
     let mut keys: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();
     keys.push(pl::col(&want));
     let mut have_keys: Vec<pl::Expr> = period.partition_column_ids.iter().map(pl::col).collect();

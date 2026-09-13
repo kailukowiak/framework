@@ -465,6 +465,18 @@ impl Document {
             .ok_or(CoreError::ObjectNotFound)
     }
 
+    /// The calendar a reference names, by id or by name. Names match
+    /// without regard to case because a person typing `calendar="nrf"`
+    /// into a formula means the calendar they called `NRF`, and because
+    /// calendar names are already unique case-insensitively. This is the
+    /// one lookup: formula resolution and the MCP tools both come here so
+    /// a name that works in one cannot fail in the other.
+    pub fn find_calendar(&self, reference: &str) -> Option<&Calendar> {
+        self.calendars.iter().find(|calendar| {
+            calendar.id == reference || calendar.name.eq_ignore_ascii_case(reference)
+        })
+    }
+
     pub(crate) fn object_mut(&mut self, object_id: &str) -> Result<&mut DataObject, CoreError> {
         self.objects
             .iter_mut()

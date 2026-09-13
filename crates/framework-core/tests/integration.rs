@@ -2,6 +2,7 @@ mod common;
 
 mod blocks;
 mod calculation_matrix;
+mod calendar_references;
 mod categories;
 mod collaboration;
 mod column_fill_editing;

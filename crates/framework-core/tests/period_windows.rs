@@ -574,3 +574,232 @@ fn scratchwork_refuses_windows_the_way_it_refuses_prior() {
         "unexpected error: {error}",
     );
 }
+
+/// The published NRF 4-5-4 retail calendar: February start, years labelled
+/// by the year they open, ending the Saturday nearest January 31.
+fn nrf_calendar(store: &mut Store) {
+    store
+        .apply(Operation::AddCalendar {
+            name: "NRF".into(),
+            fy_start: 2,
+            pattern: WeekPattern::FourFiveFour,
+            year_end: YearEndRule::NearestWeekday {
+                weekday: 6,
+                month: 1,
+                day: 31,
+            },
+            year_label: YearLabel::Start,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+}
+
+/// Four dates, one inside each of four consecutive NRF periods across a
+/// retail year boundary. Fiscal 2024 runs February 4 2024 through February
+/// 1 2025, so February 1 2025 is still P12 of fiscal 2024 and fiscal 2025
+/// opens on February 2 — the day month arithmetic gets wrong, since it
+/// turns the year on February 1.
+fn retail_store() -> Store {
+    let mut store = Store::new(Document::blank("Retail"));
+    nrf_calendar(&mut store);
+    store
+        .apply(Operation::AddFrame {
+            name: "Actuals".into(),
+            grid: vec![
+                vec!["Month".into(), "Revenue".into()],
+                vec!["2025-02-02".into(), "400".into()],
+                vec!["2024-12-01".into(), "100".into()],
+                vec!["2025-03-02".into(), "800".into()],
+                vec!["2025-02-01".into(), "200".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let frame = frame_named(store.document(), "Actuals").clone();
+    let month = frame
+        .columns
+        .iter()
+        .find(|column| column.name == "Month")
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetFramePeriod {
+            frame_id: frame.id.clone(),
+            period: Some(FramePeriod {
+                column_id: month,
+                partition_column_ids: Vec::new(),
+            }),
+        })
+        .unwrap();
+    store
+}
+
+#[test]
+fn a_retail_calendar_numbers_windows_by_its_week_table() {
+    let mut store = retail_store();
+    add_column(
+        &mut store,
+        "Actuals",
+        "Index",
+        "period_index(`Month`, calendar=\"NRF\")",
+    );
+    add_column(
+        &mut store,
+        "Actuals",
+        "Period",
+        "fiscal_period(`Month`, calendar=\"NRF\")",
+    );
+    // The index is twelve blocks a fiscal year, so it agrees with the
+    // block `fiscal_period` reports rather than with the calendar month.
+    assert_eq!(
+        by_month(&store, "Index"),
+        vec![
+            ("2024-12-01".into(), "24298".into()),
+            ("2025-02-01".into(), "24299".into()),
+            ("2025-02-02".into(), "24300".into()),
+            ("2025-03-02".into(), "24301".into()),
+        ]
+    );
+    assert_eq!(
+        by_month(&store, "Period"),
+        vec![
+            ("2024-12-01".into(), "11".into()),
+            ("2025-02-01".into(), "12".into()),
+            ("2025-02-02".into(), "1".into()),
+            ("2025-03-02".into(), "2".into()),
+        ]
+    );
+
+    add_column(
+        &mut store,
+        "Actuals",
+        "YTD",
+        "ytd(`Revenue`, calendar=\"NRF\")",
+    );
+    // The retail year turns on February 2, not February 1: February 1 still
+    // adds to fiscal 2024's running total, and February 2 starts over.
+    // Month arithmetic on the same calendar's February start would reset a
+    // day early and put both February rows in one period.
+    assert_eq!(
+        by_month(&store, "YTD"),
+        vec![
+            ("2024-12-01".into(), "100".into()),
+            ("2025-02-01".into(), "300".into()),
+            ("2025-02-02".into(), "400".into()),
+            ("2025-03-02".into(), "1200".into()),
+        ]
+    );
+
+    add_column(
+        &mut store,
+        "Actuals",
+        "Prior",
+        "prior(`Revenue`, 1, calendar=\"NRF\")",
+    );
+    // One period back is one retail block back, so February 2 reads
+    // February 1 — the block before it, a single day earlier.
+    assert_eq!(
+        by_month(&store, "Prior"),
+        vec![
+            ("2024-12-01".into(), "".into()),
+            ("2025-02-01".into(), "100".into()),
+            ("2025-02-02".into(), "200".into()),
+            ("2025-03-02".into(), "400".into()),
+        ]
+    );
+
+    add_column(
+        &mut store,
+        "Actuals",
+        "TTM",
+        "ttm(`Revenue`, calendar=\"NRF\")",
+    );
+    // Twelve retail blocks back reaches every earlier row here, so each
+    // trailing window is the running total of the blocks present.
+    assert_eq!(
+        by_month(&store, "TTM"),
+        vec![
+            ("2024-12-01".into(), "100".into()),
+            ("2025-02-01".into(), "300".into()),
+            ("2025-02-02".into(), "700".into()),
+            ("2025-03-02".into(), "1500".into()),
+        ]
+    );
+
+    add_column(
+        &mut store,
+        "Actuals",
+        "Last year",
+        "same_period_last_year(`Revenue`, calendar=\"NRF\")",
+    );
+    // Nothing here is a retail year old, so every row reads blank rather
+    // than reaching back into a calendar month twelve names earlier.
+    assert_eq!(
+        by_month(&store, "Last year"),
+        vec![
+            ("2024-12-01".into(), "".into()),
+            ("2025-02-01".into(), "".into()),
+            ("2025-02-02".into(), "".into()),
+            ("2025-03-02".into(), "".into()),
+        ]
+    );
+}
+
+#[test]
+fn the_default_calendar_reaches_bare_windows_and_indexes() {
+    let mut store = retail_store();
+    let calendar_id = store.document().calendars[0].id.clone();
+    store
+        .apply(Operation::SetDefaultCalendar {
+            calendar_id: Some(calendar_id),
+        })
+        .unwrap();
+    // Named or not, the same calendar answers: a bare window in a retail
+    // workbook cannot disagree with the retail `fiscal_period` beside it.
+    add_column(&mut store, "Actuals", "Bare", "ytd(`Revenue`)");
+    add_column(
+        &mut store,
+        "Actuals",
+        "Named",
+        "ytd(`Revenue`, calendar=\"NRF\")",
+    );
+    assert_eq!(by_month(&store, "Bare"), by_month(&store, "Named"));
+    assert_eq!(
+        by_month(&store, "Bare"),
+        vec![
+            ("2024-12-01".into(), "100".into()),
+            ("2025-02-01".into(), "300".into()),
+            ("2025-02-02".into(), "400".into()),
+            ("2025-03-02".into(), "1200".into()),
+        ]
+    );
+    // The new keyword survives the parse-and-format round trip the engine
+    // echoes formulas through, so a saved `calendar=` is still the text
+    // that was written rather than a reseeded rewrite.
+    let frame = frame_named(store.document(), "Actuals").clone();
+    let named = frame
+        .columns
+        .iter()
+        .find(|column| column.name == "Named")
+        .unwrap()
+        .id
+        .clone();
+    assert_eq!(
+        store.view().computed_frames[&frame.id].formulas[&named],
+        "ytd(`Revenue`, calendar=\"NRF\")"
+    );
+
+    add_column(&mut store, "Actuals", "Bare index", "period_index(`Month`)");
+    assert_eq!(
+        by_month(&store, "Bare index"),
+        vec![
+            ("2024-12-01".into(), "24298".into()),
+            ("2025-02-01".into(), "24299".into()),
+            ("2025-02-02".into(), "24300".into()),
+            ("2025-03-02".into(), "24301".into()),
+        ]
+    );
+}

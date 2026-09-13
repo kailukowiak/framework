@@ -775,8 +775,14 @@ pub enum Operation {
         holidays: Vec<String>,
     },
     /// Replaces a calendar wholesale by id. Removing a holiday is an
-    /// update with a shorter list; renaming keeps formulas working
-    /// because they resolve names at plan time.
+    /// update with a shorter list, and every formula reading the calendar
+    /// simply gets the new answer.
+    ///
+    /// The name is the exception. Formulas name calendars by name, not by
+    /// id, so a rename is a rewrite of every formula that says the old
+    /// one — and nothing rewrites them. A rename is therefore refused
+    /// while any formula in the document names the calendar, and the
+    /// refusal says which object is in the way.
     UpdateCalendar {
         calendar_id: Id,
         name: String,
@@ -788,7 +794,7 @@ pub enum Operation {
         holidays: Vec<String>,
     },
     /// Removes a calendar by id. The default calendar cannot be removed;
-    /// set another default first.
+    /// set another default first, and neither can one a formula names.
     RemoveCalendar {
         calendar_id: Id,
     },

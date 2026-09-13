@@ -118,6 +118,13 @@ impl Store {
             )
         };
         let mut document = document;
+        // A calendar that will not resolve is worth refusing at the door:
+        // loaded quietly, it makes every bare fiscal call answer with
+        // January arithmetic while the same call naming the calendar
+        // errors, which is a wrong number rather than a missing one.
+        document
+            .validate_calendars()
+            .map_err(|error| CoreError::Load(error.to_string()))?;
         document.normalize_frame_names();
         // A relative path is relative to this file; an absolute one was
         // written by an older build, or points somewhere of the user's own,

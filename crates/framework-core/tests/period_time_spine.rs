@@ -489,3 +489,80 @@ fn receiver_and_case_insensitive_spellings_share_the_join() {
     assert_eq!(rows[2][2], "104000");
     assert_eq!(rows[2][3], "104000");
 }
+
+/// A calendar whose year opens in `fy_start`, set as the document default.
+fn default_calendar(store: &mut Store, name: &str, fy_start: u8) {
+    store
+        .apply(Operation::AddCalendar {
+            name: name.into(),
+            fy_start,
+            pattern: WeekPattern::Months,
+            year_end: YearEndRule::LastDayOfMonth,
+            year_label: YearLabel::End,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+    let calendar_id = store
+        .document()
+        .calendars
+        .iter()
+        .find(|calendar| calendar.name == name)
+        .unwrap()
+        .id
+        .clone();
+    store
+        .apply(Operation::SetDefaultCalendar {
+            calendar_id: Some(calendar_id),
+        })
+        .unwrap();
+}
+
+#[test]
+fn a_bare_index_counts_in_the_default_calendar_not_january() {
+    let mut store = Store::new(Document::blank("Indexes"));
+    default_calendar(&mut store, "Company", 2);
+    set_block(
+        &mut store,
+        "opening = period_index(date(2025, 2, 1))\n\
+         written = period_index(date(2025, 2, 1), 2)\n\
+         january = period_index(date(2025, 1, 15))\n\
+         named = period_index(date(2025, 2, 1), calendar=\"Company\")\n\
+         period = fiscal_period(date(2025, 2, 1))",
+    );
+    // February opens the year in this document, so a bare index numbers it
+    // the year's first month — the same answer the written fy_start gives,
+    // and the same month `fiscal_period` reports. January, a fortnight
+    // earlier, closes the year before at the eleventh index after it.
+    assert_eq!(
+        block_values(&store),
+        vec![24300.0, 24300.0, 24299.0, 24300.0, 1.0]
+    );
+
+    // With no default calendar the bare index still counts from January,
+    // which is what every document without a calendar has always had.
+    let mut plain = Store::new(Document::blank("Plain"));
+    set_block(&mut plain, "period_index(date(2025, 2, 1))");
+    assert_eq!(block_values(&plain), vec![24301.0]);
+}
+
+#[test]
+fn a_bare_prior_crosses_the_default_calendars_year_boundary() {
+    let mut store = monthly_store();
+    default_calendar(&mut store, "Company", 2);
+    declare_period(&mut store);
+    let frame_id = frame_named(store.document(), "Actuals").id.clone();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: frame_id.clone(),
+            steps: vec![calculation("Prior month", "prior(`Revenue`, 1)")],
+        })
+        .unwrap();
+    // January 2025 closes fiscal 2025 and February opens fiscal 2026: one
+    // index apart, so the read crosses the boundary by arithmetic rather
+    // than losing February's answer to a reset.
+    let rows = priors(&store);
+    assert_eq!(rows[0][2], "");
+    assert_eq!(rows[1][2], "100000");
+    assert_eq!(rows[2][2], "104000");
+}

@@ -37,36 +37,45 @@ pub(super) fn resolve_calendar(
     argument: Option<&Expr>,
 ) -> Result<ResolvedCalendar, String> {
     match argument {
-        None => Ok(default_calendar(document)),
+        None => default_calendar(document),
         Some(expression) => {
             let reference = string_literal(expression, document).map_err(|_| {
                 "calendar must be a calendar name written in the formula or held by a named value"
                     .to_string()
             })?;
             document
-                .calendars
-                .iter()
-                .find(|calendar| {
-                    calendar.id == reference || calendar.name.eq_ignore_ascii_case(&reference)
-                })
+                .find_calendar(&reference)
                 .ok_or_else(|| no_such_calendar(document, &reference))?
                 .resolve()
         }
     }
 }
 
-fn default_calendar(document: &Document) -> ResolvedCalendar {
-    document
-        .default_calendar_id
-        .as_deref()
-        .and_then(|id| {
-            document
-                .calendars
-                .iter()
-                .find(|calendar| calendar.id == *id)
-        })
-        .and_then(|calendar| calendar.resolve().ok())
-        .unwrap_or_else(ResolvedCalendar::builtin_months)
+/// The document default, or calendar months when it sets none.
+///
+/// A default that will not resolve is an error, not a shrug. Swallowing it
+/// — which this did — meant a document carrying a broken calendar answered
+/// every bare `fiscal_year(...)` with January arithmetic while the same
+/// call written `calendar="Retail"` failed loudly: two different answers
+/// from one broken calendar, and the silent one wrong. The error now
+/// travels, so the calendar gets fixed instead of quietly ignored.
+fn default_calendar(document: &Document) -> Result<ResolvedCalendar, String> {
+    let Some(id) = document.default_calendar_id.as_deref() else {
+        return Ok(ResolvedCalendar::builtin_months());
+    };
+    let Some(calendar) = document
+        .calendars
+        .iter()
+        .find(|calendar| calendar.id == *id)
+    else {
+        return Ok(ResolvedCalendar::builtin_months());
+    };
+    calendar.resolve().map_err(|error| {
+        format!(
+            "The default calendar ‘{}’ cannot be read: {error}",
+            calendar.name
+        )
+    })
 }
 
 fn no_such_calendar(document: &Document, reference: &str) -> String {
@@ -227,7 +236,7 @@ fn int_column(name: &str, column: &pl::Column) -> Result<Vec<Option<i64>>, pl::P
     Ok((0..numbers.len()).map(|index| numbers.get(index)).collect())
 }
 
-fn int_series(name: &str, values: Vec<Option<i32>>) -> pl::Column {
+pub(super) fn int_series(name: &str, values: Vec<Option<i32>>) -> pl::Column {
     pl::Column::from(pl::Series::new(name.into(), values))
 }
 
@@ -327,7 +336,7 @@ fn shift_workdays(dates: pl::Expr, count: pl::Expr, calendar: ResolvedCalendar) 
                     .zip(counts)
                     .map(|(date, count)| match (date, count) {
                         (Some(date), Some(count)) => {
-                            Some(date_to_days(calendar.add_workdays(date, count)))
+                            calendar.add_workdays(date, count).map(date_to_days)
                         }
                         _ => None,
                     })
@@ -367,7 +376,7 @@ fn count_workdays(start: pl::Expr, end: pl::Expr, calendar: ResolvedCalendar) ->
     )
 }
 
-fn broadcast_dates(
+pub(super) fn broadcast_dates(
     name: &str,
     column: &pl::Column,
     length: usize,

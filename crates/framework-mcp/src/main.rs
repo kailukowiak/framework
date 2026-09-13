@@ -399,7 +399,7 @@ struct AddCalendarArgs {
     year_end: CalendarYearEndArg,
     /// Which calendar year numbers the fiscal year: its start or its end.
     year_label: CalendarYearLabelArg,
-    /// ISO weekday numbers worked, Monday 1 through Sunday 7. Omit for Saturday and Sunday.
+    /// ISO weekday numbers *not* worked, Monday 1 through Sunday 7. Omit for the default Saturday and Sunday (6, 7).
     weekend: Option<Vec<u8>>,
     /// Holidays as YYYY-MM-DD dates. Omit for none.
     holidays: Option<Vec<String>>,
@@ -422,7 +422,7 @@ struct UpdateCalendarArgs {
     year_end: CalendarYearEndArg,
     /// Which calendar year numbers the fiscal year: its start or its end.
     year_label: CalendarYearLabelArg,
-    /// ISO weekday numbers worked, Monday 1 through Sunday 7.
+    /// ISO weekday numbers *not* worked, Monday 1 through Sunday 7; the built-in default is Saturday and Sunday (6, 7).
     weekend: Vec<u8>,
     /// Holidays as YYYY-MM-DD dates.
     holidays: Vec<String>,
@@ -1491,11 +1491,13 @@ impl FrameworkMcp {
     }
 
     fn resolve_calendar_id(store: &Store, reference: &str) -> Result<String, String> {
+        // The same lookup formulas use, so a name that resolves in a
+        // formula cannot fail here. It used to match names exactly while
+        // `calendar="nrf"` in a formula matched `NRF`, which made the
+        // agent-facing tools stricter than the language they edit.
         store
             .document()
-            .calendars
-            .iter()
-            .find(|calendar| calendar.id == reference || calendar.name == reference)
+            .find_calendar(reference)
             .map(|calendar| calendar.id.clone())
             .ok_or_else(|| {
                 let names: Vec<&str> = store

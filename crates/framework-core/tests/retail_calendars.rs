@@ -470,3 +470,174 @@ fn unknown_calendars_name_what_is_available() {
         "{missing:?}",
     );
 }
+
+#[test]
+fn fiscal_week_counts_from_the_year_start_under_calendar_months() {
+    // No calendar named and none defaulted: the built-in calendar-months
+    // one answers. It has no week blocks to read a period off, which is
+    // the case that used to underflow and take the store with it.
+    let mut store = dates_store(&["2026-01-01", "2026-01-07", "2026-01-08", "2026-12-31"]);
+    add_column(&mut store, "Dates", "W", "fiscal_week(`Day`)");
+    assert_eq!(column_values(&store, "W"), vec!["1", "1", "2", "53"]);
+
+    // A named months calendar starting in February counts from its own
+    // start, not January's.
+    store
+        .apply(Operation::AddCalendar {
+            name: "Company".into(),
+            fy_start: 2,
+            pattern: WeekPattern::Months,
+            year_end: YearEndRule::LastDayOfMonth,
+            year_label: YearLabel::End,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+    add_column(
+        &mut store,
+        "Dates",
+        "CW",
+        "fiscal_week(`Day`, calendar=\"Company\")",
+    );
+    // February 1 2025 opens FY2026, so January 1 2026 is its 48th week
+    // and December 31 2026 is the 48th week of FY2027.
+    assert_eq!(column_values(&store, "CW"), vec!["48", "49", "49", "48"]);
+}
+
+#[test]
+fn a_week_pattern_refuses_a_year_that_ends_mid_week() {
+    let mut store = Store::new(Document::blank("Calendars"));
+    // 4-4-5 weeks only tile a year that is a whole number of weeks; the
+    // last day of a month lands wherever it lands, which used to leave a
+    // 53rd week in a 52-week year and panic evaluation.
+    let refused = store.apply(Operation::AddCalendar {
+        name: "Broken".into(),
+        fy_start: 1,
+        pattern: WeekPattern::FourFourFive,
+        year_end: YearEndRule::LastDayOfMonth,
+        year_label: YearLabel::End,
+        weekend: vec![6, 7],
+        holidays: Vec::new(),
+    });
+    assert!(
+        matches!(&refused, Err(CoreError::InvalidOperation(message)) if message.contains("whole weeks")),
+        "{refused:?}",
+    );
+
+    // A weekday year end is accepted, and updating a good calendar into
+    // the bad pairing is refused the same way.
+    store
+        .apply(Operation::AddCalendar {
+            name: "Retail".into(),
+            fy_start: 1,
+            pattern: WeekPattern::FourFourFive,
+            year_end: YearEndRule::LastWeekday { weekday: 6 },
+            year_label: YearLabel::End,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+    let id = store.document().calendars[0].id.clone();
+    let refused = store.apply(Operation::UpdateCalendar {
+        calendar_id: id,
+        name: "Retail".into(),
+        fy_start: 1,
+        pattern: WeekPattern::FourFourFive,
+        year_end: YearEndRule::LastDayOfMonth,
+        year_label: YearLabel::End,
+        weekend: vec![6, 7],
+        holidays: Vec::new(),
+    });
+    assert!(
+        matches!(&refused, Err(CoreError::InvalidOperation(message)) if message.contains("whole weeks")),
+        "{refused:?}",
+    );
+}
+
+#[test]
+fn a_year_end_anchor_cannot_be_a_day_some_years_lack() {
+    let mut store = Store::new(Document::blank("Calendars"));
+    // February 29 exists in one year out of four, so anchoring a year end
+    // to it has no answer in the other three.
+    let refused = store.apply(Operation::AddCalendar {
+        name: "Leap".into(),
+        fy_start: 3,
+        pattern: WeekPattern::FourFiveFour,
+        year_end: YearEndRule::NearestWeekday {
+            weekday: 6,
+            month: 2,
+            day: 29,
+        },
+        year_label: YearLabel::End,
+        weekend: vec![6, 7],
+        holidays: Vec::new(),
+    });
+    assert!(
+        matches!(&refused, Err(CoreError::InvalidOperation(message)) if message.contains("anchor days")),
+        "{refused:?}",
+    );
+    // February 28 is fine, and so is a 31-day month's 31st.
+    store
+        .apply(Operation::AddCalendar {
+            name: "Leap".into(),
+            fy_start: 3,
+            pattern: WeekPattern::FourFiveFour,
+            year_end: YearEndRule::NearestWeekday {
+                weekday: 6,
+                month: 2,
+                day: 28,
+            },
+            year_label: YearLabel::End,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+}
+
+#[test]
+fn a_calendar_keeps_at_least_one_working_day_and_workday_always_returns() {
+    let mut store = dates_store(&["2026-01-02"]);
+    // Every day listed as not worked leaves nothing for workday() to land
+    // on, which used to spin forever inside the formula.
+    let refused = store.apply(Operation::AddCalendar {
+        name: "Nothing".into(),
+        fy_start: 1,
+        pattern: WeekPattern::Months,
+        year_end: YearEndRule::LastDayOfMonth,
+        year_label: YearLabel::End,
+        weekend: vec![1, 2, 3, 4, 5, 6, 7],
+        holidays: Vec::new(),
+    });
+    assert!(
+        matches!(&refused, Err(CoreError::InvalidOperation(message)) if message.contains("all seven")),
+        "{refused:?}",
+    );
+
+    store
+        .apply(Operation::AddCalendar {
+            name: "Work".into(),
+            fy_start: 1,
+            pattern: WeekPattern::Months,
+            year_end: YearEndRule::LastDayOfMonth,
+            year_label: YearLabel::End,
+            weekend: vec![6, 7],
+            holidays: Vec::new(),
+        })
+        .unwrap();
+    // An absurd shift gives up with no answer instead of hanging.
+    add_column(
+        &mut store,
+        "Dates",
+        "Far",
+        "workday(`Day`, 1000000000, calendar=\"Work\")",
+    );
+    assert_eq!(column_values(&store, "Far"), vec![""]);
+    // An ordinary shift still answers.
+    add_column(
+        &mut store,
+        "Dates",
+        "Near",
+        "workday(`Day`, 5, calendar=\"Work\")",
+    );
+    assert_eq!(column_values(&store, "Near"), vec!["2026-01-09"]);
+}

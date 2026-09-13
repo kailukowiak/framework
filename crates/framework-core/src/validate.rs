@@ -385,6 +385,34 @@ impl Document {
         Ok(())
     }
 
+    /// Every calendar on the document parses, and the default names one
+    /// that exists.
+    ///
+    /// Cheap — a few string parses over a list that is almost always
+    /// empty or tiny — and worth running on every write and every load,
+    /// because the failure it catches is a silent one: a calendar that
+    /// will not resolve used to leave bare fiscal calls quietly reading
+    /// January months while the same call naming the calendar outright
+    /// errored. Surfaced here, a hand-edited `.fw` says so at the door.
+    pub(crate) fn validate_calendars(&self) -> Result<(), CoreError> {
+        for calendar in &self.calendars {
+            calendar.resolve().map_err(|error| {
+                CoreError::InvalidOperation(format!(
+                    "The calendar ‘{}’ cannot be read: {error}",
+                    calendar.name
+                ))
+            })?;
+        }
+        if let Some(id) = &self.default_calendar_id
+            && !self.calendars.iter().any(|calendar| &calendar.id == id)
+        {
+            return Err(CoreError::InvalidOperation(format!(
+                "The default calendar ‘{id}’ is not on this document."
+            )));
+        }
+        Ok(())
+    }
+
     pub(crate) fn validate_period_declarations(&self) -> Result<(), CoreError> {
         for frame in self.objects.iter().filter_map(|object| match object {
             DataObject::Frame(frame) if frame.period.is_some() => Some(frame),

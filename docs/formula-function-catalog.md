@@ -90,17 +90,17 @@ the original unqualified calls remain compatible. Names are case-insensitive.
 | `cost.finance.db(salvage, life, period, month=12)` | initial cost |
 | `cost.finance.ddb(salvage, life, period, factor=2)` | initial cost |
 | `principal.finance.rate(nper, pmt, fv=0, type=0, guess=0.1)` | present value |
-| `date.finance.period_index(fy_start=1)` | date |
-| `value.finance.prior(n=1, fy_start=1)` | value |
-| `date.finance.fiscal_year(fy_start=1)` | date |
-| `date.finance.fiscal_quarter(fy_start=1)` | date |
-| `date.finance.fiscal_period(fy_start=1)` | date |
+| `date.finance.period_index(fy_start=None, calendar=None)` | date |
+| `value.finance.prior(n=1, fy_start=None, calendar=None)` | value |
+| `date.finance.fiscal_year(fy_start=None, calendar=None)` | date |
+| `date.finance.fiscal_quarter(fy_start=None, calendar=None)` | date |
+| `date.finance.fiscal_period(fy_start=None, calendar=None)` | date |
 | `date.finance.period_start()` | date |
 | `date.finance.period_end()` | date |
 | `date.finance.add_periods(n)` | date |
-| `value.finance.ytd(fy_start=1)` | value |
-| `value.finance.ttm()` | value |
-| `value.finance.same_period_last_year()` | value |
+| `value.finance.ytd(fy_start=None, calendar=None)` | value |
+| `value.finance.ttm(calendar=None)` | value |
+| `value.finance.same_period_last_year(calendar=None)` | value |
 | `date.finance.fiscal_week(calendar=None)` | date |
 | `date.finance.workday(n, calendar=None)` | date |
 | `start_date.finance.networkdays(end_date, calendar=None)` | start date |
@@ -167,11 +167,13 @@ matching Excel including the extra period when the first year is partial.
 never drops below salvage. All three broadcast down a Period column, so a
 schedule frame reconciles: each column sums to cost minus salvage.
 
-`period_index(date, fy_start=1)` numbers a date's fiscal month from year
-zero, twelve to a year starting in month `fy_start` (1 is January). Offsets
-between two indexes are whole periods with no date math. `prior(expr, n=1,
-fy_start=1)` reads what `expr` held `n` periods before each row's own
-period, joined on the frame's declared period column within its partitions
+`period_index(date, fy_start=None, calendar=None)` numbers a date's fiscal
+period from year zero, twelve to a year: fiscal months counted from the
+year start, or retail blocks read from a week-pattern calendar's week
+table. Offsets between two indexes are whole periods with no date math.
+`prior(expr, n=1, fy_start=None, calendar=None)` reads what `expr` held `n`
+periods before each row's own period, joined on the frame's declared period
+column within its partitions
 — the period before, never the row above. Declaring the column is a frame
 property (`SetFramePeriod`): the column must hold dates with no missing
 values, unique within each partition. A frame without one gets an error
@@ -182,14 +184,25 @@ rather than failing, which is what separates "no such period" from "the row
 above". `n` and `fy_start` must be whole numbers written in the formula or
 held by a named value.
 
-`fiscal_year(date, fy_start=1)` numbers a date's fiscal year by the
-calendar year it ends in — the way company accounts name theirs — so with
+Every period-relative call — `period_index`, `prior`, `ytd`, `ttm`,
+`same_period_last_year` — takes the same optional `calendar`, and a call
+naming none reads the document default. That default is what supplies the
+year start when no `fy_start` is written, so a February-start workbook
+counts its periods from February everywhere rather than only where
+`fy_start=2` was remembered, and a retail workbook's windows count the same
+blocks its `fiscal_period` reports.
+
+`fiscal_year(date, fy_start=None, calendar=None)` numbers a date's fiscal
+year by the calendar year it ends in — the way company accounts name
+theirs — so with
 a February start, January 2025 is fiscal 2025 and February opens fiscal
 2026. A calendar can instead number years by the year they start in, which
 is how the NRF labels its retail calendars. `fiscal_quarter(date,
-fy_start=1)` and `fiscal_period(date, fy_start=1)` count three-month
-quarters and months from `fy_start` without any labelling question. `period_start(date)` and `period_end(date)` bound the
-calendar month holding a date — February 2024 ends on the 29th.
+fy_start=None, calendar=None)` and `fiscal_period(date, fy_start=None,
+calendar=None)` count three-month quarters and months from `fy_start`
+without any labelling question. `period_start(date, calendar=None)` and
+`period_end(date, calendar=None)` bound the calendar month holding a date —
+February 2024 ends on the 29th.
 `add_periods(date, n)` shifts by `n` calendar months with end-of-month
 clamping, so January 31 plus one month is February 28; this is Excel's EDATE
 arithmetic exactly, and `EDATE` works as an alias. The count may be a column;
@@ -198,13 +211,15 @@ period declaration and work in Scratchwork; like `period_index`, `fy_start`
 must be a whole month number from 1 to 12 written in the formula or held by
 a named value.
 
-`ytd(expr, fy_start=1)` sums `expr` over the fiscal year so far, `ttm(expr)`
-sums the twelve periods ending here, and `same_period_last_year(expr)` reads
-the value twelve periods ago — all joined on the frame's declared period
-column within its partitions, never shifted by row position. `ytd` resets
-when the fiscal year turns under `fy_start`; twelve indexes back is the same
-date last year under any year start, so `ttm` and `same_period_last_year`
-take no year start. Windows sum the periods present — a deleted month
+`ytd(expr, fy_start=None, calendar=None)` sums `expr` over the fiscal year
+so far, `ttm(expr, calendar=None)` sums the twelve periods ending here, and
+`same_period_last_year(expr, calendar=None)` reads the value twelve periods
+ago — all joined on the frame's declared period column within its
+partitions, never shifted by row position. `ytd` resets when the fiscal
+year turns in its calendar; twelve indexes back is the same date last year
+under any year start, so `ttm` and `same_period_last_year` take no year
+start — but which twelve periods exist is a calendar question, so all three
+take a `calendar`. Windows sum the periods present — a deleted month
 removes its value from every window holding it rather than failing — and
 only a window with no readable value at all reads blank. Like `prior`, all
 three need the declaration (a frame without one gets an error naming the
@@ -218,8 +233,11 @@ per quarter), the rule ending its year, which year number the year carries,
 and the days the business counts — weekend days plus dated holidays.
 Calendars live on the document with one default; the fiscal functions take
 an optional `calendar` naming one per call, and a call that names none
-reads the default. An explicit `fy_start` still wins over the calendar's,
-and a missing calendar is refused naming what is available. `fiscal_year`,
+reads the default. An explicit `fy_start` wins over a calendar-month
+calendar's year start, and a missing calendar is refused naming what is
+available. A retail week calendar refuses `fy_start` outright rather than
+parsing and dropping it: its year opens the day after the previous year's
+end rule fires, so there is no month boundary for a month number to move. `fiscal_year`,
 `fiscal_quarter`, `fiscal_period`, `period_start` and `period_end` read a
 week-pattern calendar through its week table: quarters stay thirteen
 weeks, a 53rd week extends the last period, and period bounds are block
