@@ -36,7 +36,7 @@ impl Document {
                 "column ID already exists in the target frame".into(),
             ));
         }
-        let insert_at = match after_column_id {
+        let insert_at = match after_column_id.as_deref() {
             Some(column_id) => frame
                 .columns
                 .iter()
@@ -47,13 +47,14 @@ impl Document {
         };
         let column_id = column.id.clone();
         let has_formula = column.formula.is_some();
-        frame.columns.insert(insert_at, column);
+        frame.columns.insert(insert_at, column.clone());
         for row in &mut frame.rows {
             row.cells.insert(column_id.clone(), Cell::default());
         }
         if has_formula {
             self.ensure_acyclic(&frame_id)?;
         }
+        self.carry_column_into_scored_frames(&frame_id, &column, after_column_id.as_deref());
         Ok(())
     }
 
@@ -114,6 +115,19 @@ impl Document {
                  Change that plot first."
             )));
         }
+        // A scored frame carries this column and will drop it too; what it
+        // shows sorted or filtered by the column has to be cleared first,
+        // the same as here.
+        if let Some(scored) = self
+            .scored_frames(&frame_id)
+            .find(|scored| scored.display.references_column(&column_id))
+            .map(|scored| as_named(&scored.name))
+        {
+            return Err(CoreError::ReferencedByFormula(format!(
+                "{scored} is sorted or filtered by {going}, so it cannot be deleted. \
+                 Clear that first."
+            )));
+        }
 
         let frame = self.frame_mut(&frame_id)?;
         frame.columns.retain(|column| column.id != column_id);
@@ -135,6 +149,7 @@ impl Document {
             } => *styled_column_id != column_id,
             _ => true,
         });
+        self.drop_column_from_scored_frames(&frame_id, &column_id);
         Ok(())
     }
 
@@ -167,6 +182,7 @@ impl Document {
                 update_plot_field_titles(&mut plot.spec, &column_id, &old_name, &next_name);
             }
         }
+        self.rename_carried_column(&frame_id, &column_id, &old_name, &next_name);
         Ok(())
     }
 
@@ -191,6 +207,8 @@ impl Document {
         } else {
             Vec::new()
         };
+        let categories = column.categories.clone();
+        self.retype_carried_column(&frame_id, &column_id, data_type, &categories);
         Ok(())
     }
 
@@ -218,7 +236,8 @@ impl Document {
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = DataType::Categorical;
-        column.categories = categories;
+        column.categories = categories.clone();
+        self.retype_carried_column(&frame_id, &column_id, DataType::Categorical, &categories);
         Ok(())
     }
 
@@ -236,7 +255,8 @@ impl Document {
             .iter_mut()
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
-        column.format = format;
+        let old_format = std::mem::replace(&mut column.format, format.clone());
+        self.reformat_carried_column(&frame_id, &column_id, old_format.as_ref(), format.as_ref());
         Ok(())
     }
 

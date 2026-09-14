@@ -1151,19 +1151,8 @@ impl Document {
             .map_err(CoreError::Formula)?
             .1
             .len();
-        let count_column = "__framework_zip_row_count";
-        let counts = plan
-            .clone()
-            .select([pl::len().alias(count_column)])
-            .collect()
-            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?;
-        let row_count = counts
-            .column(count_column)
-            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?
-            .u32()
-            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?
-            .get(0)
-            .unwrap_or(0) as usize;
+        let row_count = crate::engine::plan::plan_row_count(plan)
+            .map_err(|error| CoreError::Transform(in_plain_words(error)))?;
         if length == 0 || length != row_count {
             return Err(CoreError::Formula(format!(
                 "‘{vector}’ has {length} value{}, but this frame has {row_count} row{}. Pairing lists needs one value for every row.",

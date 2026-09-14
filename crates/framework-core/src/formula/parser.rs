@@ -720,8 +720,10 @@ impl<'a> Parser<'a> {
         // semantic query directly, while Result keeps its one-value boundary.
         if !self.scalar && !self.mapping_arguments && other.materialization.is_none() {
             return Err(CoreError::Formula(format!(
-                "‘{}’ has to be materialized before another frame can read from it. \
-                 Materialize it, and this reference will work.",
+                "‘{}’ has to be materialized before a column formula can read from it. \
+                 Materialize it and this reference will work — or, to place the whole \
+                 column beside these rows, use Wrangle’s ‘Pair vector as column’, which \
+                 reads it live.",
                 other.name
             )));
         }

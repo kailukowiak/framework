@@ -229,6 +229,7 @@ impl Document {
             });
         }
         let object_id = id();
+        let width = crate::engine::build::frame_card_width(columns.len());
         Ok(ReplicatedOperation::AddObject {
             object: DataObject::Frame(FrameObject {
                 id: object_id.clone(),
@@ -247,7 +248,7 @@ impl Document {
                 }),
                 ..FrameObject::default()
             }),
-            view: model_view(object_id, x, y, 480.0, 360.0),
+            view: model_view(object_id, x, y, width, 360.0),
             container_id: None,
         })
     }

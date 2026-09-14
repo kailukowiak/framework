@@ -605,10 +605,37 @@ impl FrameDerivation {
             return true;
         }
         self.source_frame_id == frame_id
-            && self
+            && (self
                 .step_expressions()
                 .iter()
                 .any(|expression| expression.references_column(column_id))
+                || self
+                    .steps()
+                    .iter()
+                    .any(|step| step_names_column(step, column_id)))
+    }
+}
+
+/// Whether a step names `column_id` outright rather than through an
+/// expression — a selection, a sort key, a pivot's axes, an unpivot's
+/// melted columns, a spread's targets. Each is as much a read of the
+/// column as a formula naming it, and dropping the column out from under
+/// any of them has to be refused the same way.
+fn step_names_column(step: &FrameStep, column_id: &str) -> bool {
+    match step {
+        FrameStep::Select { column_ids } | FrameStep::Broadcast { column_ids, .. } => {
+            column_ids.iter().any(|id| id == column_id)
+        }
+        FrameStep::Sort { keys } => keys.iter().any(|key| key.column_id == column_id),
+        FrameStep::Pivot {
+            names_column_id,
+            values_column_id,
+            ..
+        } => names_column_id == column_id || values_column_id == column_id,
+        FrameStep::Unpivot { columns, .. } => {
+            columns.iter().any(|column| column.column_id == column_id)
+        }
+        _ => false,
     }
 }
 

@@ -22,7 +22,7 @@ import {
   type BroadcastStepDraft,
 } from "./PipelineVectorSteps";
 import { meltedColumnIds } from "./lib/columnList";
-import { type FormulaReference } from "./lib/formulaReferences";
+import { formulaToken, type FormulaReference } from "./lib/formulaReferences";
 import {
   draftName,
   exactName,
@@ -226,6 +226,31 @@ export function DerivedFrameCreator({
     after: boolean;
   } | null>(null);
   const [pendingEditor, setPendingEditor] = useState<string | null>(null);
+  const foreignReferences = useMemo<FormulaReference[]>(
+    () =>
+      joinFrames
+        .filter((other) => other.id !== editingFrame.id)
+        .flatMap((other) => [
+          {
+            id: other.id,
+            objectId: other.id,
+            label: other.name,
+            token: `${formulaToken(other.name)}.`,
+            kind: "frame" as const,
+            detail: `${other.columns.length} columns`,
+          },
+          ...other.columns.map((column) => ({
+            id: column.id,
+            objectId: other.id,
+            frameId: other.id,
+            label: `${other.name}.${column.name}`,
+            token: `${formulaToken(other.name)}.${formulaToken(column.name)}`,
+            kind: "column" as const,
+            detail: `${column.dataType} column of ${other.name}`,
+          })),
+        ]),
+    [joinFrames, editingFrame.id]
+  );
   // Which step, if any, is being typed into right now. Held as the editor's
   // id rather than by subscribing this whole panel to the draft, so a
   // keystroke re-renders nothing here: the id changes when a session opens
@@ -584,6 +609,12 @@ export function DerivedFrameCreator({
           })),
         ];
         const scope = { steps: stepScopeInputs, stepIndex: index };
+    // A list step reads a whole column of another frame, live or not, so
+    // the columns of every other frame are offered to it: a click on one
+    // of their headers inserts the qualified name, and the fallback menu
+    // lists them. A column formula gets none of these — it may read only a
+    // snapshot, and the core's completion says which.
+    const listStepReferences = [...stepReferences, ...foreignReferences];
         // A step nobody has finished writing is not a step that failed.
         // While a formula session is open on this step the person is still
         // assembling the sentence — often with the completion menu offering
@@ -945,7 +976,7 @@ export function DerivedFrameCreator({
                     step={step}
                     visible={visible}
                     columnReferences={columnListReferences}
-                    references={stepReferences}
+                    references={listStepReferences}
                     frameId={input.completionFrameId}
                     scope={scope}
                     columnsEditorId={commandId(step, "columns")}
@@ -976,7 +1007,7 @@ export function DerivedFrameCreator({
                 return (
                   <ZipVectorStepRow
                     step={step}
-                    references={stepReferences}
+                    references={listStepReferences}
                     frameId={input.completionFrameId}
                     scope={scope}
                     editorId={commandId(step)}

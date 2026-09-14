@@ -125,15 +125,28 @@ function frameQualifierAt(
     .sort((left, right) => right.token.length - left.token.length)[0];
 }
 
-/** The exact token this editor already declares for a clicked column. */
+/**
+ * The exact token this editor already declares for a clicked column.
+ *
+ * A frame scored from another carries that frame's columns under the same
+ * ids, so one id can name a column on two cards. When the clicked card is
+ * known, its own reference wins; otherwise the first declared one does, as
+ * it always has.
+ */
 export function columnReferenceForPick(
   references: FormulaReference[],
-  columnId: string
+  columnId: string,
+  frameId?: string
 ): FormulaReference | null {
+  const declared = references.filter(
+    (reference) => reference.kind === "column" && reference.id === columnId
+  );
   return (
-    references.find(
-      (reference) => reference.kind === "column" && reference.id === columnId
-    ) ?? null
+    (frameId !== undefined
+      ? declared.find((reference) => reference.frameId === frameId)
+      : undefined) ??
+    declared[0] ??
+    null
   );
 }
 

@@ -689,6 +689,26 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
         1
     ),
     formula_function!(
+        "expr.head",
+        ".head",
+        ["first rows", "top"],
+        "Window",
+        ".head(length)",
+        "The first values of a list or column; ten without a count.",
+        0,
+        1
+    ),
+    formula_function!(
+        "expr.tail",
+        ".tail",
+        ["last rows", "bottom"],
+        "Window",
+        ".tail(length)",
+        "The last values of a list or column; ten without a count.",
+        0,
+        1
+    ),
+    formula_function!(
         "expr.over",
         ".over",
         ["window", "partition"],
@@ -1086,6 +1106,9 @@ fn argument_guidance(id: &str, name: &str) -> (&'static str, Option<&'static str
             "Rows to move: positive reads an earlier row, negative a later one.",
             Some("1"),
         ),
+        ("expr.head", "length") | ("expr.tail", "length") => {
+            ("How many values to keep; ten when left out.", Some("10"))
+        }
         (_, "reverse") if id.starts_with("expr.cum_") => (
             "True accumulates from the last row upward; False accumulates top to bottom.",
             Some("False"),

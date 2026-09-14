@@ -39,8 +39,10 @@ Scenarios deliberately cover different surface areas — `timesheet`
 (generators, expand, entry columns, crosstab), `budget` (summarize,
 validated joins, percentage columns, live recomputation), `reshape`
 (unpivot, editable sources, wide readings), `vectors-joins` (paired vectors,
-row-count-aware dates, and live lookup joins) — so `all` is a broad sweep,
-not several runs of the same muscle.
+row-count-aware dates, and live lookup joins), `predictions` (a fitted
+model, a scored frame, and its prediction paired live beside another
+frame's rows) — so `all` is a broad sweep, not several runs of the same
+muscle.
 
 This lane measures what deterministic tests cannot: discoverability. The
 history that motivated it — three hand-driven runs of the timesheet

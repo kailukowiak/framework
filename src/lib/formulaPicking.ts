@@ -81,7 +81,8 @@ export function formulaColumnPick(
   }
   const reference = columnReferenceForPick(
     active.completion.references,
-    columnId
+    columnId,
+    frameId
   );
   if (!reference) return { kind: "refuse", message: null };
   if (active.kind === "scratchwork" && rowIndex !== undefined) {

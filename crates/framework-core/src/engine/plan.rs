@@ -8,6 +8,23 @@ use std::collections::HashSet;
 /// Column name for the row index a page read carries between the data and
 /// display layers. Not a column id, so it cannot collide with one.
 pub(crate) const ROW_INDEX: &str = "__framework_row";
+
+/// How many rows a plan produces, counted without materializing them.
+pub(crate) fn plan_row_count(plan: &pl::LazyFrame) -> Result<usize, String> {
+    const COUNT: &str = "__framework_row_count";
+    let counted = plan
+        .clone()
+        .select([pl::len().alias(COUNT)])
+        .collect()
+        .map_err(|error| error.to_string())?;
+    Ok(counted
+        .column(COUNT)
+        .map_err(|error| error.to_string())?
+        .u32()
+        .map_err(|error| error.to_string())?
+        .get(0)
+        .unwrap_or(0) as usize)
+}
 const OVERLAY_PATCH: &str = "__framework_patch_";
 const OVERLAY_PRESENT: &str = "__framework_patched_";
 
@@ -740,25 +757,47 @@ impl Document {
         self.apply_with_columns_step(frame_id, plan, &columns)
     }
 
+    /// The pairing's one invariant, checked against the frame as it stands
+    /// now: one value for every row. The length recorded when the step was
+    /// written is not what is compared. A list read from a frame that
+    /// shares this one's rows — predictions scored from the same source —
+    /// grows and shrinks with it, and refusing that would break the pairing
+    /// exactly when it is doing its job. A written list edited shorter
+    /// still fails, because the rows did not change with it.
     fn apply_zip_vector_step(
         &self,
+        frame_id: &str,
         plan: pl::LazyFrame,
         step: &FrameStep,
     ) -> Result<pl::LazyFrame, String> {
         let FrameStep::ZipVector {
             output_column_id,
             vector,
-            expected_length,
+            ..
         } = step
         else {
             unreachable!("called only for a paired-list step")
         };
         let (_, values) = self.evaluate_to_series(vector)?;
-        if values.len() != *expected_length {
+        let rows = plan_row_count(&plan)?;
+        if values.len() != rows {
+            let column = self
+                .frame(frame_id)
+                .ok()
+                .and_then(|frame| {
+                    frame
+                        .columns
+                        .iter()
+                        .chain(frame.base_columns.iter())
+                        .find(|column| column.id == *output_column_id)
+                        .map(|column| column.name.clone())
+                })
+                .unwrap_or_else(|| output_column_id.clone());
             return Err(format!(
-                "This list had {expected_length} value{} when it was paired, but it now has {}. Pair it again to update the rows.",
-                if *expected_length == 1 { "" } else { "s" },
-                values.len()
+                "The list paired as ‘{column}’ has {} value{}, but this frame has {rows} row{} here. Pairing needs one value for every row.",
+                values.len(),
+                if values.len() == 1 { "" } else { "s" },
+                if rows == 1 { "" } else { "s" },
             ));
         }
         Ok(plan.with_columns([pl::lit(values.clone()).alias(output_column_id.clone())]))
@@ -811,7 +850,7 @@ impl Document {
                 self.apply_with_columns_step(frame_id, plan, columns)
             }
             FrameStep::Broadcast { .. } => self.apply_broadcast_step(frame_id, plan, step),
-            FrameStep::ZipVector { .. } => self.apply_zip_vector_step(plan, step),
+            FrameStep::ZipVector { .. } => self.apply_zip_vector_step(frame_id, plan, step),
             FrameStep::Select { column_ids } => Ok(plan.select(
                 column_ids
                     .iter()

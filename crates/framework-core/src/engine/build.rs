@@ -31,6 +31,11 @@ const FRAME_MIN_HEIGHT: f64 = 300.0;
 /// A frame card tall enough to show what arrived, up to a dozen rows: a card
 /// that clips the last row of a six-row paste is the first thing a person has
 /// to fix, every time.
+/// The width a frame card opens at: room for its columns, within reason.
+pub(crate) fn frame_card_width(column_count: usize) -> f64 {
+    (column_count.max(1) as f64 * 150.0 + 48.0).clamp(420.0, 900.0)
+}
+
 pub(crate) fn frame_card_height(row_count: usize) -> f64 {
     let maximum = FRAME_CHROME_HEIGHT + FRAME_AUTOMATIC_ROW_CAP as f64 * FRAME_ROW_HEIGHT;
     (FRAME_CHROME_HEIGHT + row_count.min(FRAME_AUTOMATIC_ROW_CAP) as f64 * FRAME_ROW_HEIGHT)
@@ -138,7 +143,7 @@ impl Document {
             object_id: frame_id,
             x,
             y,
-            width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
+            width: frame_card_width(width),
             height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),
@@ -204,7 +209,7 @@ impl Document {
             object_id: frame_id,
             x,
             y,
-            width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
+            width: frame_card_width(width),
             // A frozen or connected frame is paged rather than held in the
             // document, but the card still has to show rows: it was fixed at
             // the minimum height, which is two rows once the chrome is
@@ -353,7 +358,7 @@ impl Document {
             object_id: frame_id,
             x,
             y,
-            width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
+            width: frame_card_width(width),
             height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),

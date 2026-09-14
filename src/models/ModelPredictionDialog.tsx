@@ -3,7 +3,7 @@ import type { DataObject, FrameObject } from "../lib/types";
 import { useModels, type ModelDialogState } from "./context";
 import { ModelDialogShell } from "./ModelDialogShell";
 import { ModelSourceFields } from "./ModelSourceFields";
-import { resolveModelColumns } from "./columns";
+import { modelColumnNames, resolveModelColumns } from "./columns";
 
 export function ModelPredictionDialog({ state, onClose }: { state: ModelDialogState; onClose: () => void }) {
   const { document, onOperation } = useModels();
@@ -14,8 +14,18 @@ export function ModelPredictionDialog({ state, onClose }: { state: ModelDialogSt
   const [sourceId, setSourceId] = useState(binding?.sourceFrameId ?? "");
   const source = frames.find(frame => frame.id === sourceId);
   const featureNames = model?.fitted?.result.featureNames.join("\n") ?? "";
+  // Scoring the frame the model was fitted or imported against, the bound
+  // columns are listed by their own names, which always resolve — an
+  // imported booster's fitted names are the file's, and a file that names
+  // nothing gets "feature_1". Anywhere else the fitted names are the
+  // starting point, since the new frame has to answer to them in order.
+  const featuresFor = (frame: FrameObject | undefined) => {
+    const bound = binding && frame?.id === binding.sourceFrameId
+      ? modelColumnNames(frame, binding.featureColumnIds) : "";
+    return bound && bound.split("\n").every(Boolean) ? bound : featureNames;
+  };
   const [name, setName] = useState(`${model?.name ?? "Model"} predictions`);
-  const [features, setFeatures] = useState(featureNames);
+  const [features, setFeatures] = useState(featuresFor(source));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submit = async () => {
@@ -32,7 +42,8 @@ export function ModelPredictionDialog({ state, onClose }: { state: ModelDialogSt
   return <ModelDialogShell title="Create live predictions" busy={busy} error={error} onClose={onClose}>
     <label>Name<input aria-label="Prediction frame name" autoFocus value={name} onChange={event => setName(event.target.value)} /></label>
     <ModelSourceFields frames={frames} sourceId={sourceId}
-      onSource={id => { setSourceId(id); setFeatures(featureNames); }} features={features} onFeatures={setFeatures}
+      onSource={id => { setSourceId(id); setFeatures(featuresFor(frames.find(frame => frame.id === id))); }}
+      features={features} onFeatures={setFeatures}
       featureNames={model?.fitted?.result.featureNames} />
     <div className="dialog-actions"><button className="secondary-action" onClick={onClose}>Cancel</button>
       <button className="primary-action" disabled={!sourceId || !features.trim() || !model?.fitted}

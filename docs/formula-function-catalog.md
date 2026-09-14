@@ -38,7 +38,7 @@ The catalog returned by the core and MCP is also used for autocomplete.
 | Conditional/null | `when().then()` — chained as many times as you like — `.otherwise()`, `coalesce`, `.is_null`, `.is_not_null`, `.fill_null`, `.filter(predicate)` → `.sum()` / `.mean()` / `.count()` |
 | Numeric | `.abs`, `.sign`, `.round`, `.round_sig_figs`, `.truncate`, `.floor`, `.ceil`, `.sqrt`, `.cbrt`, `.pow`, `.exp`, `.log`, `.log1p`, `.normalize`, `.clip`, `.clip_min`, `.clip_max`, `.floor_div` |
 | Trigonometry | `.sin`, `.cos`, `.tan`, `.cot`, `.arcsin`, `.arccos`, `.arctan`, `.arctan2`, `.sinh`, `.cosh`, `.tanh`, `.arcsinh`, `.arccosh`, `.arctanh`, `.degrees`, `.radians` |
-| Aggregation/window | `.sum`, `.mean`, `.quantile`, `.min`, `.max`, `.count`, `.len`, `.null_count`, `.shift`, `.over` |
+| Aggregation/window | `.sum`, `.mean`, `.quantile`, `.min`, `.max`, `.count`, `.len`, `.null_count`, `.shift`, `.over`, `.head`, `.tail` |
 | Rolling | `.rolling_mean`, `.rolling_sum`, `.rolling_min`, `.rolling_max` |
 | Dates | `date`, `.dt.year`, `.dt.iso_year`, `.dt.quarter`, `.dt.month`, `.dt.week`, `.dt.weekday`, `.dt.ordinal_day`, `.dt.is_leap_year`, `.dt.days_in_month`, `.dt.date`, `.dt.month_start`, `.dt.month_end`, `.dt.offset_by` |
 | Strings | `.str.to_uppercase`, `.str.to_lowercase`, `.str.to_date()` (strict `YYYY-MM-DD`), `.str.contains` |

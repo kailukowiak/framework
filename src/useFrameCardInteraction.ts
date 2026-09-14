@@ -83,13 +83,11 @@ export function useFrameColumnDrag(
     let latestDrop: { columnId: string; after: boolean } | null = null;
     let latestJoin: { frameId: string; columnId: string } | null = null;
     let latestVectorTarget: HTMLElement | null = null;
-    let highlighted: HTMLElement | null = null;
+    const payload = frameColumnVector(frame, columnId, rowCount);
+    const marks = new HoverMarks();
+    const clearHighlight = () => marks.clear();
     let preview: HTMLElement | null = null;
     let label: HTMLElement | null = null;
-    const clearHighlight = () => {
-      highlighted?.classList.remove("join-column-drop", "vector-column-drop");
-      highlighted = null;
-    };
     // A drag carries whatever the header run under it holds when the gesture
     // is a lookup, and the single column when it is a rearrangement — the
     // same rule the drop itself follows, so the label cannot promise one
@@ -123,15 +121,17 @@ export function useFrameColumnDrag(
       draggingFrameColumnRef.current = columnId;
       setDraggingFrameColumn(columnId);
       const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
-      const vectorTarget = under?.closest<HTMLElement>("[data-vector-drop-target]");
+      const vectorTarget =
+        under?.closest<HTMLElement>("[data-vector-drop-target]") ??
+        otherTableEdge(under, card);
       if (vectorTarget) {
         latestDrop = null;
         latestJoin = null;
         latestVectorTarget = vectorTarget;
         clearHighlight();
-        highlighted = vectorTarget;
-        highlighted.classList.add("vector-column-drop");
-        const payload = frameColumnVector(frame, columnId, rowCount);
+        marks.add(vectorTarget, "vector-column-drop");
+        if (vectorTarget.matches(".frame-edge-header"))
+          marks.add(vectorTarget.closest("table"), "vector-edge-drop");
         if (payload)
           preview = updateVectorDragPreview(preview, payload, moveEvent, vectorTarget);
         clearLabel();
@@ -158,8 +158,7 @@ export function useFrameColumnDrag(
           columnId: target.dataset.columnId!,
         };
         clearHighlight();
-        highlighted = target;
-        highlighted.classList.add("join-column-drop");
+        marks.add(target, "join-column-drop");
         showLabel("join", moveEvent);
         setFrameColumnDrop(null);
         return;
@@ -179,7 +178,6 @@ export function useFrameColumnDrag(
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
       if (moved && latestVectorTarget) {
-        const payload = frameColumnVector(frame, columnId, rowCount);
         if (payload) dispatchVectorDrop(latestVectorTarget, payload, endEvent);
       } else if (moved && latestDrop) {
         const ordered = reorderColumnIds(
@@ -214,6 +212,41 @@ export function useFrameColumnDrag(
 }
 
 /** The same canonical frame-column address completion inserts when typed. */
+/** The classes a drop target wears while a column hovers it, taken off together. */
+class HoverMarks {
+  private marks: Array<[Element, string]> = [];
+  add(element: Element | null, className: string) {
+    if (!element) return;
+    element.classList.add(className);
+    this.marks.push([element, className]);
+  }
+  clear() {
+    for (const [element, className] of this.marks) element.classList.remove(className);
+    this.marks = [];
+  }
+}
+
+/**
+ * The "+" edge of another table takes a dragged column as a list: dropped
+ * there it is paired down that table's rows, live, exactly as a Scratchwork
+ * vector dropped on the same edge is — which is how a prediction column
+ * lands beside the rows it scored without a formula being typed. This
+ * table's own edge is not offered, since a frame cannot pair a column of
+ * itself, and another table's column header stays what it was, a lookup.
+ */
+function otherTableEdge(
+  under: Element | null | undefined,
+  card: HTMLElement | null
+): HTMLElement | null {
+  const edge = under?.closest<HTMLElement>(".frame-edge-header, .frame-edge-cell");
+  if (!edge) return null;
+  const header = edge.matches(".frame-edge-header")
+    ? edge
+    : edge.closest("table")?.querySelector<HTMLElement>(".frame-edge-header");
+  if (!header || header.closest<HTMLElement>(".canvas-object") === card) return null;
+  return header;
+}
+
 export function frameColumnVector(
   frame: Pick<FrameObject, "id" | "name" | "columns">,
   columnId: string,

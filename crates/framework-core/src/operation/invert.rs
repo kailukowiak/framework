@@ -359,9 +359,16 @@ impl Document {
             ReplicatedOperation::SetFrameContent { frame_id, .. }
             | ReplicatedOperation::SetFrameDerivation { frame_id, .. }
             | ReplicatedOperation::SetFrameSteps { frame_id, .. }
-            | ReplicatedOperation::DeleteColumn { frame_id, .. }
             | ReplicatedOperation::AddSummary { frame_id, .. } => {
                 vec![Self::restore_frame(self.frame(frame_id)?)]
+            }
+
+            // Deleting a column drops it from every frame scored from this
+            // one as well, so all of them go back together.
+            ReplicatedOperation::DeleteColumn { frame_id, .. } => {
+                let mut restored = vec![Self::restore_frame(self.frame(frame_id)?)];
+                restored.extend(self.scored_frames(frame_id).map(Self::restore_frame));
+                restored
             }
 
             // The row goes back where it was, which is what `after_row_id`

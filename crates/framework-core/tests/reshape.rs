@@ -1317,7 +1317,10 @@ fn two_lists_make_a_live_two_column_frame_when_their_lengths_match() {
         .get_frame_page(&frame_id, 0, 10)
         .unwrap_err()
         .to_string();
-    assert!(error.contains("had 3") && error.contains("now has 2"));
+    assert!(
+        error.contains("has 2 values") && error.contains("3 rows"),
+        "{error}"
+    );
 }
 
 fn sales_and_copy(store: &mut Store) -> (Id, Id) {

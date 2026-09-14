@@ -91,8 +91,17 @@ describe("calculated column through Wrangle", () => {
     // Revenue is a column in the middle of the table, and the new calculation
     // still belongs at the end of it. Wedging Column 1 between Revenue and
     // Cost would be a positional edit nobody asked for — "Insert column here"
-    // is the gesture that means that.
-    const names = await headerNames();
+    // is the gesture that means that. The body-text check above is satisfied
+    // by the Wrangle step and the bar before the grid has re-rendered, so
+    // wait for the header itself rather than reading a stale header row.
+    let names: string[] = [];
+    await browser.waitUntil(
+      async () => {
+        names = await headerNames();
+        return names.includes("Column 1");
+      },
+      { timeoutMsg: "Column 1 never reached the frame's headers" }
+    );
     expect(names[names.length - 1]).toBe("Column 1");
     expect(names.indexOf("Column 1")).toBeGreaterThan(names.indexOf("Cost"));
   });

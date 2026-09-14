@@ -81,4 +81,77 @@ describe("frame column vector drag", () => {
     expect(join).not.toHaveBeenCalled();
     expect(document.querySelector(".vector-drag-preview")).toBeNull();
   });
+
+  function tableCard(objectId: string) {
+    const card = document.createElement("section");
+    card.className = "canvas-object";
+    card.dataset.objectId = objectId;
+    const table = document.createElement("table");
+    const edge = document.createElement("th");
+    edge.className = "frame-edge-header";
+    const plus = document.createElement("button");
+    edge.append(plus);
+    table.append(edge);
+    card.append(table);
+    document.body.append(card);
+    return { card, table, edge, plus };
+  }
+
+  it("pairs a column dropped on another table's edge, live, without joining", () => {
+    const own = tableCard("sales");
+    const other = tableCard("scored");
+    Object.defineProperty(document, "elementFromPoint", {
+      configurable: true,
+      value: vi.fn(() => other.plus),
+    });
+    let dropped: VectorDrag | null = null;
+    other.edge.addEventListener("drop", (event) => {
+      dropped = readVectorDrag((event as DragEvent).dataTransfer!);
+    });
+    const rearrange = vi.fn();
+    const join = vi.fn();
+    const { result } = renderHook(() =>
+      useFrameColumnDrag(frame, 6, null, rearrange, join)
+    );
+    act(() => {
+      result.current.beginFrameColumnDrag(
+        { button: 0, clientX: 10, clientY: 10, currentTarget: own.edge } as unknown as React.PointerEvent,
+        "column-1"
+      );
+      window.dispatchEvent(pointerEvent("pointermove", 20, 20));
+      expect(document.querySelector(".vector-drag-preview")?.textContent).toBe(
+        "Column16 values · Add column"
+      );
+      expect(other.table.classList.contains("vector-edge-drop")).toBe(true);
+      window.dispatchEvent(pointerEvent("pointerup", 20, 20));
+    });
+    expect(dropped).toEqual(frameColumnVector(frame, "column-1", 6));
+    expect(rearrange).not.toHaveBeenCalled();
+    expect(join).not.toHaveBeenCalled();
+    expect(other.table.classList.contains("vector-edge-drop")).toBe(false);
+  });
+
+  it("does not offer a table its own edge", () => {
+    const own = tableCard("sales");
+    Object.defineProperty(document, "elementFromPoint", {
+      configurable: true,
+      value: vi.fn(() => own.plus),
+    });
+    let dropped: VectorDrag | null = null;
+    own.edge.addEventListener("drop", (event) => {
+      dropped = readVectorDrag((event as DragEvent).dataTransfer!);
+    });
+    const { result } = renderHook(() =>
+      useFrameColumnDrag(frame, 6, null, vi.fn(), vi.fn())
+    );
+    act(() => {
+      result.current.beginFrameColumnDrag(
+        { button: 0, clientX: 10, clientY: 10, currentTarget: own.edge } as unknown as React.PointerEvent,
+        "column-1"
+      );
+      window.dispatchEvent(pointerEvent("pointermove", 20, 20));
+      window.dispatchEvent(pointerEvent("pointerup", 20, 20));
+    });
+    expect(dropped).toBeNull();
+  });
 });
