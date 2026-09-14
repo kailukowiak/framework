@@ -270,9 +270,9 @@ fn untaken(base: &str, separator: char, taken: impl Fn(&str) -> bool) -> String 
 }
 
 pub(crate) fn add_model(model: ModelObject, x: f64, y: f64) -> ReplicatedOperation {
-    let height = model.fitted.as_ref().map_or(140.0, |fit| {
+    let height = model.fitted.as_ref().map_or(160.0, |fit| {
         let rows = fit.result.summary.coefficients.len();
-        (140.0
+        (160.0
             + if rows == 0 {
                 0.0
             } else {

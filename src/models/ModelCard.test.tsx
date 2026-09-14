@@ -47,6 +47,15 @@ describe("saved model card", () => {
       sourceFrameId: model.fitted!.spec!.sourceFrameId, featureColumnIds: model.fitted!.spec!.featureColumnIds }), { inlineError: true });
   });
 
+  it("keeps the feature list populated after switching source frames instead of clearing it", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: "Predictions…" }));
+    const dialog = screen.getByRole("dialog", { name: "Create live predictions" });
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Model source frame" }), "Predictions");
+    const textarea = within(dialog).getByRole("textbox", { name: "Model feature columns" }) as HTMLTextAreaElement;
+    expect(textarea.value).toBe(model.fitted!.result.featureNames.join("\n"));
+  });
+
   it("copies core-owned coefficient results to a referenceable frame", async () => {
     const { run, user } = setup();
     await user.click(screen.getByText("Copy stats to frame"));

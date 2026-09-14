@@ -3,7 +3,7 @@ import type { DataObject, FrameObject } from "../lib/types";
 import { useModels, type ModelDialogState } from "./context";
 import { ModelDialogShell } from "./ModelDialogShell";
 import { ModelSourceFields } from "./ModelSourceFields";
-import { modelColumnNames, resolveModelColumns } from "./columns";
+import { resolveModelColumns } from "./columns";
 
 export function ModelPredictionDialog({ state, onClose }: { state: ModelDialogState; onClose: () => void }) {
   const { document, onOperation } = useModels();
@@ -13,8 +13,9 @@ export function ModelPredictionDialog({ state, onClose }: { state: ModelDialogSt
   const frames = document.objects.filter((object): object is FrameObject => object.kind === "frame");
   const [sourceId, setSourceId] = useState(binding?.sourceFrameId ?? "");
   const source = frames.find(frame => frame.id === sourceId);
+  const featureNames = model?.fitted?.result.featureNames.join("\n") ?? "";
   const [name, setName] = useState(`${model?.name ?? "Model"} predictions`);
-  const [features, setFeatures] = useState(modelColumnNames(source, binding?.featureColumnIds ?? []));
+  const [features, setFeatures] = useState(featureNames);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submit = async () => {
@@ -31,7 +32,7 @@ export function ModelPredictionDialog({ state, onClose }: { state: ModelDialogSt
   return <ModelDialogShell title="Create live predictions" busy={busy} error={error} onClose={onClose}>
     <label>Name<input aria-label="Prediction frame name" autoFocus value={name} onChange={event => setName(event.target.value)} /></label>
     <ModelSourceFields frames={frames} sourceId={sourceId}
-      onSource={id => { setSourceId(id); setFeatures(""); }} features={features} onFeatures={setFeatures}
+      onSource={id => { setSourceId(id); setFeatures(featureNames); }} features={features} onFeatures={setFeatures}
       featureNames={model?.fitted?.result.featureNames} />
     <div className="dialog-actions"><button className="secondary-action" onClick={onClose}>Cancel</button>
       <button className="primary-action" disabled={!sourceId || !features.trim() || !model?.fitted}

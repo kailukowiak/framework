@@ -17,7 +17,7 @@ export function ModelCard({ model }: { model: Extract<DataObject, { kind: "model
       const view = document.views.find(view => view.objectId === model.id);
       // A first fit introduces open-ended tables. Only expand the untouched
       // initial card; a user's chosen dimensions survive every retrain.
-      if (!failure && operation.type === "fitModel" && !model.fitted && view?.height === 140) {
+      if (!failure && operation.type === "fitModel" && !model.fitted && view?.height === 160) {
         setError(await onOperation({ type: "resizeView", viewId: view.id, width: view.width, height: 420 }, { inlineError: true }));
       }
     }
