@@ -265,7 +265,7 @@ export function blankStep(
   const vectorStep = blankVectorStep(kind, id, mintColumnId);
   if (vectorStep) return vectorStep;
   const numeric = sourceColumns.find((column) =>
-    ["integer", "number", "currency", "percentage"].includes(column.dataType)
+    ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)
   );
   switch (kind) {
     case "filter":
@@ -322,7 +322,7 @@ export function blankStep(
       );
       const valuesColumn = visible.find((column) =>
         column.dataType
-          ? ["integer", "number", "currency", "percentage"].includes(column.dataType)
+          ? ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)
           : false
       );
       return {

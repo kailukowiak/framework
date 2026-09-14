@@ -122,6 +122,7 @@ impl Document {
                     name: name.clone(),
                     source_name: Some(header.clone()),
                     data_type: data_types.get(index).copied().unwrap_or(DataType::String),
+                    scale: None,
                     // A file that names its own allowed values arrives with the
                     // dropdown already filled in.
                     categories: categories.get(index).cloned().unwrap_or_default(),
@@ -189,6 +190,7 @@ impl Document {
                     source_name: Some(source_name),
                     data_type: framework_type_from_polars(source.dtype())
                         .unwrap_or(DataType::String),
+                    scale: decimal_scale_from_polars(source.dtype()),
                     categories: declared_categories(source.dtype()),
                     format: None,
                     formula: None,
@@ -246,6 +248,7 @@ impl Document {
                     source_name: None,
                     data_type: framework_type_from_polars(source.dtype())
                         .unwrap_or(DataType::String),
+                    scale: decimal_scale_from_polars(source.dtype()),
                     categories: declared_categories(source.dtype()),
                     format: None,
                     formula: None,
@@ -305,6 +308,7 @@ impl Document {
                     name,
                     source_name: None,
                     data_type: data_types.get(index).copied().unwrap_or(DataType::String),
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -387,6 +391,7 @@ impl FrameObject {
                 name: source.name.clone(),
                 source_name: None,
                 data_type: source.data_type,
+                scale: source.scale,
                 categories: source.categories.clone(),
                 format: source.format.clone(),
                 formula: None,

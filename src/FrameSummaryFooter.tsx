@@ -121,6 +121,7 @@ function summarySupports(
     "integer",
     "number",
     "currency",
+    "accounting",
     "percentage",
   ]).has(dataType);
   if (["sum", "mean", "quartile25", "median", "quartile75"].includes(operation))

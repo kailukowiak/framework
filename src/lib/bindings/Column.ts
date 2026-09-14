@@ -16,6 +16,12 @@ export type Column = {
   sourceName?: string | null;
   dataType: DataType;
   categories?: Array<string>;
+  /**
+   * The decimal places an `Accounting` column's exact values carry.
+   * Meaningless for every other type and absent there. Absent on an
+   * accounting column means `DEFAULT_ACCOUNTING_SCALE`.
+   */
+  scale?: number | null;
   format?: ColumnFormat | null;
   formula: Formula | null;
 };

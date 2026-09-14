@@ -4,7 +4,7 @@ import { stepsFromRendered } from "./pipelineChainEdits";
 import { columnsBeforeStep, stepInput } from "./pipelineSteps";
 import type { Column, ComputedFrame, FrameObject, FrameStepInput } from "./types";
 
-export const READ_TYPES = ["string", "integer", "number", "boolean", "date"] as const;
+export const READ_TYPES = ["string", "integer", "number", "accounting", "boolean", "date"] as const;
 export type ReadType = typeof READ_TYPES[number];
 
 /** Type choices are ordinary Polars casts immediately after the input. Keep

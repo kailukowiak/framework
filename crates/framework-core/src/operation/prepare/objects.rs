@@ -587,6 +587,7 @@ impl Document {
                 name: column_name,
                 source_name: None,
                 data_type,
+                scale: None,
                 categories: Vec::new(),
                 format: None,
                 formula: None,

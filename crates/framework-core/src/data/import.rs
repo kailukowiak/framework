@@ -250,7 +250,7 @@ pub(crate) fn write_frame_artifact(
 
 pub(crate) fn artifact_schema(
     artifact: &DataArtifact,
-) -> Result<Vec<(String, DataType)>, CoreError> {
+) -> Result<Vec<(String, DataType, Option<u8>)>, CoreError> {
     if artifact.format != ArtifactFormat::Parquet {
         return Err(CoreError::Import("Unsupported artifact format".into()));
     }
@@ -265,7 +265,13 @@ pub(crate) fn artifact_schema(
         .iter()
         .map(|column| {
             framework_type_from_polars(column.dtype())
-                .map(|data_type| (column.name().to_string(), data_type))
+                .map(|data_type| {
+                    (
+                        column.name().to_string(),
+                        data_type,
+                        decimal_scale_from_polars(column.dtype()),
+                    )
+                })
                 .map_err(CoreError::Import)
         })
         .collect()

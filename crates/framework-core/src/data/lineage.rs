@@ -44,6 +44,7 @@ pub(crate) fn data_type_label(data_type: DataType) -> &'static str {
         DataType::Integer => "Integer",
         DataType::Number => "Number",
         DataType::Currency => "Currency",
+        DataType::Accounting => "Accounting",
         DataType::Percentage => "Percentage",
         DataType::Boolean => "Boolean",
         DataType::Date => "Date",

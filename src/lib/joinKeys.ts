@@ -12,7 +12,7 @@ export function joinKeysCompatible(
   right: Column | undefined
 ): boolean {
   if (!left || !right) return false;
-  const numeric = ["integer", "number", "currency", "percentage"];
+  const numeric = ["integer", "number", "currency", "accounting", "percentage"];
   const text = ["string", "categorical"];
   return (
     left.dataType === right.dataType ||

@@ -191,6 +191,7 @@ impl Document {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        scale: Option<u8>,
     ) -> Result<(), CoreError> {
         if self.frame(&frame_id)?.is_computed() {
             return Err(CoreError::DerivedFrameReadOnly);
@@ -202,13 +203,21 @@ impl Document {
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = data_type;
+        // The scale is a fact about an amount and nothing else: it goes
+        // when the type does, and an amount arrives with the places it was
+        // asked for, or keeps its own, or gets the default.
+        column.scale = match data_type {
+            DataType::Accounting => scale.or(column.scale).or(Some(DEFAULT_ACCOUNTING_SCALE)),
+            _ => None,
+        };
         column.categories = if data_type == DataType::Categorical {
             distinct_category_values(column, &frame.rows)
         } else {
             Vec::new()
         };
         let categories = column.categories.clone();
-        self.retype_carried_column(&frame_id, &column_id, data_type, &categories);
+        let scale = column.scale;
+        self.retype_carried_column(&frame_id, &column_id, data_type, scale, &categories);
         Ok(())
     }
 
@@ -237,7 +246,13 @@ impl Document {
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = DataType::Categorical;
         column.categories = categories.clone();
-        self.retype_carried_column(&frame_id, &column_id, DataType::Categorical, &categories);
+        self.retype_carried_column(
+            &frame_id,
+            &column_id,
+            DataType::Categorical,
+            None,
+            &categories,
+        );
         Ok(())
     }
 
@@ -270,9 +285,9 @@ impl Document {
         if self.frame(&frame_id)?.is_computed() {
             return Err(CoreError::DerivedFrameReadOnly);
         }
-        let inferred_type = self
+        let (inferred_type, scale) = self
             .frame(&frame_id)?
-            .inferred_column_type(self, &formula.expression)
+            .inferred_column_typing(self, &formula.expression)
             .map_err(CoreError::Formula)?;
         if inferred_type != data_type {
             return Err(CoreError::InvalidOperation(
@@ -286,6 +301,7 @@ impl Document {
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = data_type;
+        column.scale = scale;
         column.categories.clear();
         column.formula = Some(formula);
         self.ensure_acyclic(&frame_id)?;

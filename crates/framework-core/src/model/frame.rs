@@ -407,6 +407,12 @@ pub struct Column {
     #[serde(default)]
     #[ts(optional, as = "Option<Vec<String>>")]
     pub categories: Vec<String>,
+    /// The decimal places an `Accounting` column's exact values carry.
+    /// Meaningless for every other type and absent there. Absent on an
+    /// accounting column means `DEFAULT_ACCOUNTING_SCALE`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub scale: Option<u8>,
     #[serde(default)]
     #[ts(optional = nullable)]
     pub format: Option<ColumnFormat>,
@@ -500,7 +506,11 @@ impl SummaryOperation {
     pub fn supports(self, data_type: DataType) -> bool {
         let numeric = matches!(
             data_type,
-            DataType::Integer | DataType::Number | DataType::Currency | DataType::Percentage
+            DataType::Integer
+                | DataType::Number
+                | DataType::Currency
+                | DataType::Accounting
+                | DataType::Percentage
         );
         match self {
             Self::Sum | Self::Mean | Self::Quartile25 | Self::Median | Self::Quartile75 => numeric,
@@ -514,8 +524,13 @@ impl SummaryOperation {
     pub fn output_type(self, data_type: DataType) -> DataType {
         match self {
             Self::Count | Self::Missing | Self::CountDistinct => DataType::Integer,
+            // An average of exact amounts is not an exact amount: it is a
+            // statistic, and Polars answers it as a float too.
             Self::Mean | Self::Quartile25 | Self::Median | Self::Quartile75
-                if matches!(data_type, DataType::Integer | DataType::Number) =>
+                if matches!(
+                    data_type,
+                    DataType::Integer | DataType::Number | DataType::Accounting
+                ) =>
             {
                 DataType::Number
             }

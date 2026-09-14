@@ -363,6 +363,11 @@ export function displayedColumnFormat(column: Column): ColumnFormat | null {
   if (column.dataType === "integer") return { style: "number", decimals: 0 };
   if (column.dataType === "number") return { style: "number", decimals: null };
   if (column.dataType === "currency") return { style: "currency", decimals: null };
+  // The accounting type implies its presentation: an exact amount is shown in
+  // accounting style at exactly the places the column declares, so the type is
+  // one gesture rather than a type followed by a format.
+  if (column.dataType === "accounting")
+    return { style: "accounting", decimals: column.scale ?? 2 };
   if (column.dataType === "percentage") return { style: "percent", decimals: null };
   return null;
 }

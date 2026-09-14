@@ -373,12 +373,20 @@ pub(crate) fn arithmetic_type(
     // Only numbers carry a way of being written. Anything else here is a
     // date, a span, or text, and what those do under arithmetic is not a
     // question about notation.
-    if !matches!(left, Integer | Number | Currency | Percentage)
-        || !matches!(right, Integer | Number | Currency | Percentage)
+    if !matches!(left, Integer | Number | Currency | Accounting | Percentage)
+        || !matches!(right, Integer | Number | Currency | Accounting | Percentage)
     {
         return None;
     }
     Some(match (operator, left, right) {
+        // An exact amount stays exact under everything but a power, which
+        // leaves every dimension behind. Against money the answer is a
+        // refusal — the compiler asks for a cast — so there is nothing to
+        // write here for that pair.
+        (_, Accounting, Currency) | (_, Currency, Accounting) => return None,
+        (Power, Accounting, _) | (Power, _, Accounting) => Number,
+        (_, Accounting, _) | (_, _, Accounting) => Accounting,
+
         // Money and money is money; money and a plain number or a rate is
         // still money, because the dimension has nowhere to go.
         (Add | Subtract, Currency, _) | (Add | Subtract, _, Currency) => Currency,
@@ -424,6 +432,7 @@ pub(crate) fn type_name(data_type: DataType) -> &'static str {
         DataType::Integer => "an integer",
         DataType::Number => "a number",
         DataType::Currency => "money",
+        DataType::Accounting => "an accounting amount",
         DataType::Percentage => "a percentage",
         DataType::Boolean => "a true/false value",
         DataType::Date => "a date",

@@ -348,6 +348,7 @@ export function ContextMenuFrameEditItems({
                 <option value="integer">Integer</option>
                 <option value="number">Number</option>
                 <option value="currency">Currency</option>
+                <option value="accounting">Accounting</option>
                 <option value="percentage">Percentage</option>
                 <option value="boolean">Boolean</option>
                 <option value="date">Date</option>

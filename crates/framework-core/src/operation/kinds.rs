@@ -558,6 +558,12 @@ pub enum Operation {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        /// Decimal places for an `Accounting` column; ignored for every
+        /// other type. Absent keeps the column's current scale, or the
+        /// default when it had none.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
+        scale: Option<u8>,
     },
     SetColumnCategories {
         frame_id: Id,

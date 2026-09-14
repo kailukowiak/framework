@@ -29,6 +29,7 @@ impl Document {
                     name,
                     source_name: None,
                     data_type,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -71,12 +72,26 @@ impl Document {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        scale: Option<u8>,
     ) -> Result<ReplicatedOperation, CoreError> {
+        if let Some(scale) = scale {
+            if data_type != DataType::Accounting {
+                return Err(CoreError::InvalidOperation(
+                    "Only an accounting column has decimal places to set".into(),
+                ));
+            }
+            if scale as usize > ACCOUNTING_PRECISION {
+                return Err(CoreError::InvalidOperation(format!(
+                    "An accounting column keeps at most {ACCOUNTING_PRECISION} decimal places"
+                )));
+            }
+        }
         Ok({
             ReplicatedOperation::SetColumnType {
                 frame_id,
                 column_id,
                 data_type,
+                scale,
             }
         })
     }
@@ -146,8 +161,8 @@ impl Document {
             }) {
                 return Err(CoreError::ColumnNotFound);
             }
-            let data_type = frame
-                .inferred_column_type(self, &expression)
+            let (data_type, scale) = frame
+                .inferred_column_typing(self, &expression)
                 .map_err(CoreError::Formula)?;
             ReplicatedOperation::AddColumn {
                 frame_id,
@@ -158,6 +173,7 @@ impl Document {
                     name,
                     source_name: None,
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: Some(Formula { expression }),
@@ -328,6 +344,7 @@ mod tests {
                 frame_id: frame_id.clone(),
                 column_id: column_id.clone(),
                 data_type: DataType::Categorical,
+                scale: None,
             })
             .unwrap();
         let after_type_change = store.view();

@@ -49,3 +49,29 @@ it("authors the cast in the chain's own formatted spelling so it round-trips", (
   // unable to recognize the cast it just wrote.
   expect(first.columns[0].formula).toBe(formattedFormula(first.columns[0].formula));
 });
+
+it("offers exact amounts as a read type and recognizes the cast it wrote", () => {
+  const document = fixtures.importedSales;
+  const frame = objectNamed(document, "frame", "Imported sales");
+  const computed = document.computedFrames[frame.id];
+  const columns = frame.baseColumns?.length ? frame.baseColumns : frame.columns;
+  render(<ReadColumnTypes frame={frame} computed={computed} columns={columns} onOperation={vi.fn(async () => null)} />);
+  expect(screen.getByRole("option", { name: "Accounting" })).toBeTruthy();
+
+  const model = readColumnTypes(frame, computed, columns);
+  const steps = model.change(columns[0].id, "accounting");
+  const first = steps[0];
+  if (first.kind !== "withColumns") throw new Error("expected a leading cast step");
+  expect(first.columns[0].formula).toBe(
+    formattedFormula(`${formulaToken(columns[0].name)}.cast("accounting")`)
+  );
+  // The round trip is what keeps the dropdown showing Accounting after a
+  // save: the chain is reseeded from the step the client just wrote, and
+  // reading it back has to recognize the cast as the same type choice.
+  const echoed = readColumnTypes(
+    frame,
+    { ...computed, steps: [{ kind: "withColumns", columns: first.columns }] },
+    columns
+  );
+  expect(echoed.types.get(columns[0].id)).toBe("accounting");
+});

@@ -118,7 +118,14 @@ fn render_file(
                 None => ScalarValue::String(column.name.clone()),
                 Some(i) => polars_value_at(&series[field], i).map_err(CoreError::Export)?,
             };
-            let raw = scalar_value_to_raw(value.clone());
+            // An exact amount is written from its own digits, not from the
+            // float the scalar layer carries for display: `0.10` at scale two
+            // is `0.10` in the file, and a value a float cannot hold exactly
+            // never reaches the file as its nearest float. Everything else
+            // still spells itself the way it always did.
+            let raw = row
+                .and_then(|i| decimal_text_at(&series[field], i))
+                .unwrap_or_else(|| scalar_value_to_raw(value.clone()));
             let token =
                 line.zip(cols.get(column.id.as_str()).copied())
                     .and_then(|(line, field)| {

@@ -201,6 +201,7 @@ fn set_column_type(
         frame_id: frame.id.clone(),
         column_id: column_id_named(&frame, column),
         data_type,
+        scale: None,
     })?;
     Ok(())
 }

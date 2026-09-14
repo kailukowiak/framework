@@ -64,13 +64,23 @@ pub(super) fn declared_type(
             [Expr::String { value }] => shown_as(value),
             _ => None,
         },
+        // A cast says what it produces. Only the amount-to-money direction
+        // is named here, since that is the one cast whose result is a way
+        // of writing rather than a Polars type.
+        [name] if name == "cast" => match arguments {
+            [Expr::String { value }, ..] if matches!(value.as_str(), "currency" | "money") => {
+                Some(DataType::Currency)
+            }
+            [Expr::String { value }, ..] if value == "accounting" => Some(DataType::Accounting),
+            _ => None,
+        },
         [name] if matches!(name.as_str(), "count" | "len" | "null_count" | "n_unique") => {
             Some(DataType::Integer)
         }
         [name] if matches!(name.as_str(), "mean" | "median" | "quantile") => input
             .declared_type_among(document, scope)
             .map(|data_type| match data_type {
-                DataType::Integer | DataType::Number => DataType::Number,
+                DataType::Integer | DataType::Number | DataType::Accounting => DataType::Number,
                 other => other,
             }),
         [name] if name == "mode" => input.declared_type_among(document, scope),

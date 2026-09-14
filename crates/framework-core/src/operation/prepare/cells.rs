@@ -499,6 +499,7 @@ impl Document {
                 name,
                 source_name: None,
                 data_type,
+                scale: None,
                 categories: Vec::new(),
                 format: None,
                 formula: None,
@@ -663,6 +664,7 @@ mod tests {
                 frame_id: frame_id.clone(),
                 column_id: new_column_id.clone(),
                 data_type: DataType::Percentage,
+                scale: None,
             })
             .unwrap();
         let frame = view

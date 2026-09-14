@@ -366,6 +366,21 @@ describe("formatComputedScalar", () => {
       )
     ).toBe("4.25%");
   });
+
+  it("reads an amount in accounting style at the default scale", () => {
+    // A scalar has no column to declare places on, so it reads the way a
+    // column that never said otherwise does: two places, symbol pinned
+    // ahead of the digits, negatives in parentheses, zero as a dash.
+    expect(
+      formatComputedScalar({ type: "number", value: 1234.5 }, "accounting", "1234.50")
+    ).toBe("$ 1,234.50");
+    expect(
+      formatComputedScalar({ type: "number", value: -1234.5 }, "accounting", "-1234.50")
+    ).toBe("$ (1,234.50)");
+    expect(
+      formatComputedScalar({ type: "number", value: 0 }, "accounting", "0.00")
+    ).toBe("$ \u2013");
+  });
 });
 
 describe("formatCellText", () => {

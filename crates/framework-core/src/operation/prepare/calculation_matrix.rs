@@ -218,6 +218,7 @@ pub(crate) fn matrix_scope(
                 name: item.name.clone(),
                 source_name: None,
                 data_type: item.data_type,
+                scale: None,
                 categories: Vec::new(),
                 format: None,
                 formula: None,

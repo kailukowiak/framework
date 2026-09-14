@@ -172,18 +172,23 @@ impl Document {
         column_id: &Id,
     ) -> Result<Vec<ReplicatedOperation>, CoreError> {
         let column = self.column(frame_id, column_id)?;
-        Ok(vec![
-            ReplicatedOperation::SetColumnType {
-                frame_id: frame_id.clone(),
-                column_id: column_id.clone(),
-                data_type: column.data_type,
-            },
-            ReplicatedOperation::SetColumnCategories {
+        let mut inverse = vec![ReplicatedOperation::SetColumnType {
+            frame_id: frame_id.clone(),
+            column_id: column_id.clone(),
+            data_type: column.data_type,
+            scale: column.scale,
+        }];
+        // Only a column that had a list gets it back. Setting an empty list
+        // is refused, and an inverse that is refused is dropped by undo —
+        // which then reaches for the edit before this one.
+        if !column.categories.is_empty() {
+            inverse.push(ReplicatedOperation::SetColumnCategories {
                 frame_id: frame_id.clone(),
                 column_id: column_id.clone(),
                 categories: column.categories.clone(),
-            },
-        ])
+            });
+        }
+        Ok(inverse)
     }
 
     pub(crate) fn invert_set_cell_override(

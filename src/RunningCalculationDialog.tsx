@@ -52,7 +52,7 @@ export function RunningCalculationDialog({
   const numericColumns = useMemo(
     () =>
       columns.filter((column) =>
-        ["integer", "number", "currency", "percentage"].includes(column.dataType)
+        ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)
       ),
     [columns]
   );

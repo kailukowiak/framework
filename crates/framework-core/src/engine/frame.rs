@@ -106,6 +106,7 @@ impl FrameObject {
                         name: output.output_column_id.clone(),
                         source_name: None,
                         data_type: DataType::String,
+                        scale: None,
                         categories: Vec::new(),
                         format: None,
                         formula: None,
@@ -168,6 +169,7 @@ impl FrameObject {
                     name: fallback_name,
                     source_name: None,
                     data_type: DataType::String,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -564,10 +566,11 @@ impl FrameObject {
                                         })
                                 })
                         } else {
-                            parse_scalar_value(
-                                cell.map(|cell| cell.raw.as_str()).unwrap_or_default(),
-                                column.data_type,
-                            )
+                            let raw = cell.map(|cell| cell.raw.as_str()).unwrap_or_default();
+                            match column.data_type {
+                                DataType::Accounting => parse_accounting_value(raw, column.scale),
+                                _ => parse_scalar_value(raw, column.data_type),
+                            }
                         };
                         (
                             column.id.clone(),
@@ -736,6 +739,13 @@ impl FrameObject {
                             DataType::Number | DataType::Currency | DataType::Percentage => {
                                 source.cast(pl::DataType::Float64)
                             }
+                            // Exact at the declared scale; with none declared
+                            // the file's own scale is kept rather than
+                            // rounded to a default.
+                            DataType::Accounting => match column.scale {
+                                Some(scale) => source.cast(accounting_dtype(Some(scale))),
+                                None => source,
+                            },
                             _ => source,
                         };
                         source.alias(&column.id)
@@ -822,6 +832,16 @@ impl FrameObject {
                         })
                         .collect::<Vec<_>>(),
                 ),
+                DataType::Accounting => decimal_series(
+                    name,
+                    column.scale,
+                    self.rows.iter().map(|row| {
+                        row.cells
+                            .get(&column.id)
+                            .map(|cell| cell.raw.as_str())
+                            .unwrap_or_default()
+                    }),
+                )?,
                 DataType::Boolean => pl::Series::new(
                     name,
                     self.rows
@@ -881,6 +901,9 @@ impl FrameObject {
                 .map_err(|error| error.to_string())?,
             DataType::Number | DataType::Currency | DataType::Percentage => series
                 .cast(&pl::DataType::Float64)
+                .map_err(|error| error.to_string())?,
+            DataType::Accounting => series
+                .cast(&accounting_dtype(column.scale))
                 .map_err(|error| error.to_string())?,
             _ => series,
         };
@@ -1106,12 +1129,27 @@ impl FrameObject {
         document: &Document,
         expression: &Expr,
     ) -> Result<DataType, String> {
+        self.inferred_column_typing(document, expression)
+            .map(|(data_type, _)| data_type)
+    }
+
+    /// The same, with the decimal places an accounting result carries —
+    /// the one part of a type Polars decides that the document has to write
+    /// down, since the column's scale is what its cells are exact at.
+    pub(crate) fn inferred_column_typing(
+        &self,
+        document: &Document,
+        expression: &Expr,
+    ) -> Result<(DataType, Option<u8>), String> {
         if crate::formula::financial_window::lifts_period_join(expression) {
-            return expression.declared_type(document).ok_or_else(|| {
-                "FrameWork cannot tell what type this period-relative formula produces because the value it reads has no declared type".to_string()
-            });
+            return expression
+                .declared_type(document)
+                .map(|data_type| (data_type, None))
+                .ok_or_else(|| {
+                    "FrameWork cannot tell what type this period-relative formula produces because the value it reads has no declared type".to_string()
+                });
         }
-        self.infer_polars_expression_type(document, expression)
+        self.infer_polars_expression_typing(document, expression)
     }
 
     /// What a column of this expression holds, asked of Polars and then of
@@ -1127,10 +1165,24 @@ impl FrameObject {
         document: &Document,
         expression: &Expr,
     ) -> Result<DataType, String> {
+        self.infer_polars_expression_typing(document, expression)
+            .map(|(data_type, _)| data_type)
+    }
+
+    /// [`Self::infer_polars_expression_type`] with the decimal scale of an
+    /// accounting result alongside.
+    pub(crate) fn infer_polars_expression_typing(
+        &self,
+        document: &Document,
+        expression: &Expr,
+    ) -> Result<(DataType, Option<u8>), String> {
         let frame = document.materialize_frame_frame(&self.id, Layer::Data, &mut HashSet::new())?;
         let series = self.evaluate_polars_series(document, &frame, expression)?;
         let found = framework_type_from_polars(series.dtype())?;
-        Ok(written_type(found, expression.declared_type(document)))
+        Ok((
+            written_type(found, expression.declared_type(document)),
+            decimal_scale_from_polars(series.dtype()),
+        ))
     }
 }
 
@@ -1246,6 +1298,7 @@ fn null_column_expression(column: &Column) -> pl::Expr {
     let data_type = match column.data_type {
         DataType::Integer => pl::DataType::Int64,
         DataType::Number | DataType::Currency | DataType::Percentage => pl::DataType::Float64,
+        DataType::Accounting => accounting_dtype(column.scale),
         DataType::Boolean => pl::DataType::Boolean,
         DataType::Date => pl::DataType::Date,
         DataType::Categorical if !column.categories.is_empty() => {
@@ -1301,6 +1354,7 @@ mod tests {
                     name: name.into(),
                     source_name: None,
                     data_type: DataType::Number,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: Some(Formula { expression }),

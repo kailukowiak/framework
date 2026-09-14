@@ -251,7 +251,8 @@ impl Document {
                 frame_id,
                 column_id,
                 data_type,
-            } => self.prepare_set_column_type(frame_id, column_id, data_type)?,
+                scale,
+            } => self.prepare_set_column_type(frame_id, column_id, data_type, scale)?,
             Operation::SetColumnCategories {
                 frame_id,
                 column_id,

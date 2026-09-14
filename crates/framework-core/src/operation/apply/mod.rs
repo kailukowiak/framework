@@ -239,7 +239,8 @@ impl Document {
                 frame_id,
                 column_id,
                 data_type,
-            } => self.apply_set_column_type(frame_id, column_id, data_type)?,
+                scale,
+            } => self.apply_set_column_type(frame_id, column_id, data_type, scale)?,
             ReplicatedOperation::SetColumnCategories {
                 frame_id,
                 column_id,

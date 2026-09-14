@@ -289,6 +289,7 @@ mod tests {
                     name: (*name).into(),
                     source_name: None,
                     data_type: crate::model::value::DataType::Number,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,

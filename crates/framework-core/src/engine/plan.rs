@@ -1452,8 +1452,14 @@ impl Document {
         for row_index in 0..data_frame.height() {
             let mut row = Vec::with_capacity(series_by_column.len());
             for series in &series_by_column {
-                let value = polars_value_at(series, row_index).map_err(CoreError::Import)?;
-                row.push(scalar_value_to_raw(value));
+                // An exact amount pages out as its exact text.
+                let raw = match decimal_text_at(series, row_index) {
+                    Some(text) => text,
+                    None => scalar_value_to_raw(
+                        polars_value_at(series, row_index).map_err(CoreError::Import)?,
+                    ),
+                };
+                row.push(raw);
             }
             rows.push(row);
         }

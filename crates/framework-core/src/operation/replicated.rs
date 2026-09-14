@@ -254,6 +254,8 @@ pub enum ReplicatedOperation {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        scale: Option<u8>,
     },
     SetColumnCategories {
         frame_id: Id,

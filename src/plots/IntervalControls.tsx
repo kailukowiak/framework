@@ -16,7 +16,7 @@ export function IntervalControls({ plot, frame, onOperation }: {
     void onOperation({ type: "setPlotSpec", plotId: plot.id, spec });
   };
   const numeric = frame.columns.filter(column =>
-    ["integer", "number", "currency", "percentage"].includes(column.dataType));
+    ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType));
   return <>
     <label className="inspector-field">Interval
       <select value={String(settings.style ?? "none")} disabled={customLayers}

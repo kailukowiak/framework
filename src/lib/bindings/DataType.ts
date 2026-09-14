@@ -6,6 +6,7 @@ export type DataType =
   | "integer"
   | "number"
   | "currency"
+  | "accounting"
   | "percentage"
   | "boolean"
   | "date";

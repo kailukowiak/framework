@@ -372,8 +372,8 @@ export function defaultOutputFor(dataType: DataType): FrameStyleOutput {
     case "categorical":
     case "date":
       return { kind: "category", cases: [], other: fill(SEED_FILL) };
-    // Integer, number, currency, percentage: all numbers, whatever they are
-    // dressed as, and a number is a position on a ramp.
+    // Integer, number, currency, accounting, percentage: all numbers,
+    // whatever they are dressed as, and a number is a position on a ramp.
     default:
       return { kind: "scale", scale: heatmap() };
   }
@@ -428,6 +428,7 @@ export function stylePresets(column: {
     case "integer":
     case "number":
     case "currency":
+    case "accounting":
     case "percentage":
       return [
         {

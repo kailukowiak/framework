@@ -63,16 +63,18 @@ pub(crate) fn literal_summary_cells(
                 .map(|cell| cell.typed_value.clone())
                 .filter(|value| !matches!(value, ScalarValue::Null))
                 .collect::<Vec<_>>();
-            let data_type = frame
+            let column = frame
                 .columns
                 .iter()
-                .find(|column| column.id == summary.column_id)
+                .find(|column| column.id == summary.column_id);
+            let data_type = column
                 .map(|column| column.data_type)
                 .unwrap_or(DataType::Number);
+            let scale = column.and_then(|column| column.scale);
             (
                 summary.id.clone(),
                 computed_cell(
-                    literal_aggregate(summary.operation, data_type, &values, missing),
+                    literal_aggregate(summary.operation, data_type, scale, &values, missing),
                     summary.operation.output_type(data_type),
                     false,
                 ),
@@ -188,6 +190,7 @@ fn summary_expression(operation: SummaryOperation, column_id: &str) -> pl::Expr 
 fn literal_aggregate(
     operation: SummaryOperation,
     data_type: DataType,
+    scale: Option<u8>,
     values: &[ScalarValue],
     missing: usize,
 ) -> Result<ScalarValue, String> {
@@ -198,6 +201,17 @@ fn literal_aggregate(
         ));
     }
     match operation {
+        // Amounts foot in whole units of their scale, the way a ledger is
+        // added: a float sum of cents drifts by the third row.
+        SummaryOperation::Sum if data_type == DataType::Accounting => {
+            let places = scale.unwrap_or(DEFAULT_ACCOUNTING_SCALE) as i32;
+            let factor = 10f64.powi(places);
+            let total: i128 = numeric(values)?
+                .iter()
+                .map(|value| (value * factor).round() as i128)
+                .sum();
+            Ok(ScalarValue::Number(total as f64 / factor))
+        }
         SummaryOperation::Sum => Ok(ScalarValue::Number(numeric(values)?.iter().sum())),
         SummaryOperation::Mean => mean(values),
         SummaryOperation::Quartile25 => quantile(values, 0.25),

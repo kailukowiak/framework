@@ -28,6 +28,7 @@ const SERIES_TYPES: DataType[] = [
   "string",
   "number",
   "currency",
+  "accounting",
   "percentage",
   "boolean",
   "date",

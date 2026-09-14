@@ -165,6 +165,7 @@ impl Document {
                 name: column.name.clone(),
                 source_name: None,
                 data_type: column.data_type,
+                scale: None,
                 categories: column.categories.clone(),
                 format: column.format.clone(),
                 formula: None,
@@ -239,6 +240,7 @@ impl Document {
         source_id: &str,
         column_id: &str,
         data_type: DataType,
+        scale: Option<u8>,
         categories: &[String],
     ) {
         for frame in self.scored_frames_mut(source_id) {
@@ -249,6 +251,7 @@ impl Document {
                 .filter(|column| column.id == column_id)
             {
                 column.data_type = data_type;
+                column.scale = scale;
                 column.categories = categories.to_vec();
             }
         }

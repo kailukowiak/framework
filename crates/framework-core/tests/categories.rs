@@ -165,6 +165,7 @@ fn calling_a_column_categorical_does_not_rearrange_it_behind_your_back() {
             frame_id: frame.id.clone(),
             column_id: column_id(&frame, "Severity"),
             data_type: DataType::Categorical,
+            scale: None,
         })
         .unwrap();
     assert_eq!(

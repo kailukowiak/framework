@@ -38,8 +38,8 @@ impl Document {
             for input in group_keys {
                 let expression =
                     self.prepare_formula_for_frame(&source_frame_id, &input.formula)?;
-                let data_type = source
-                    .infer_polars_expression_type(self, &expression)
+                let (data_type, scale) = source
+                    .infer_polars_expression_typing(self, &expression)
                     .map_err(CoreError::Formula)?;
                 let output_column_id = column_id(&input.name);
                 columns.push(Column {
@@ -47,6 +47,7 @@ impl Document {
                     name: input.name,
                     source_name: None,
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -59,8 +60,8 @@ impl Document {
             for input in aggregates {
                 let expression =
                     self.prepare_formula_for_frame(&source_frame_id, &input.formula)?;
-                let data_type = source
-                    .infer_polars_expression_type(self, &expression)
+                let (data_type, scale) = source
+                    .infer_polars_expression_typing(self, &expression)
                     .map_err(CoreError::Formula)?;
                 let output_column_id = column_id(&input.name);
                 columns.push(Column {
@@ -68,6 +69,7 @@ impl Document {
                     name: input.name,
                     source_name: None,
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -131,6 +133,7 @@ impl Document {
                     name: source_column.name.clone(),
                     source_name: None,
                     data_type: source_column.data_type,
+                    scale: source_column.scale,
                     categories: source_column.categories.clone(),
                     format: source_column.format.clone(),
                     formula: None,
@@ -425,6 +428,7 @@ impl Document {
                     } else {
                         source_column.data_type
                     },
+                    scale: None,
                     categories: if text {
                         Vec::new()
                     } else {
@@ -818,6 +822,7 @@ impl Document {
                                 .or_else(|| carried.get(column_id.as_str()))
                                 .copied(),
                         ),
+                        scale: decimal_scale_from_polars(dtype),
                         categories: declared_categories(dtype),
                         format: retained_format(&column_id),
                         formula: None,

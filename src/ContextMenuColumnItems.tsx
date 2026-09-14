@@ -298,6 +298,7 @@ export function ContextMenuColumnDisplayItems({
               <option value="currency" disabled>
                 Currency
               </option>
+              <option value="accounting">Accounting</option>
               <option value="percentage" disabled>
                 Percentage
               </option>

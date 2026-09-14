@@ -756,6 +756,7 @@ fn ml_scored_frames_follow_their_source_columns() {
             frame_id: source_id.clone(),
             column_id: note_id.clone(),
             data_type: DataType::Number,
+            scale: None,
         })
         .unwrap();
     assert_eq!(

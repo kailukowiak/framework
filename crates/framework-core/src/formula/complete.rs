@@ -157,8 +157,61 @@ pub fn complete_formula_in_scope(
         if result.active_function_id.is_some() {
             result.active_argument = Some(argument);
         }
+        // `.cast` is the one call whose first argument is a closed set of
+        // words rather than an expression, and the set is not guessable:
+        // "accounting" is the name of the exact-decimal type, and nothing in
+        // the surrounding text hints at it. So the completer answers with the
+        // words themselves instead of offering columns that cannot go there.
+        if result.active_function_id.as_deref() == Some("expr.cast") && argument == 0 {
+            result.suggestions =
+                cast_target_suggestions(&chars, result.replace_start, partial_len);
+            result.note = None;
+        }
     }
     result
+}
+
+/// The types `.cast` accepts, as they are written. The quotes come with the
+/// word unless the person already typed the opening one.
+fn cast_target_suggestions(
+    chars: &[char],
+    replace_start: usize,
+    partial_len: usize,
+) -> Vec<Suggestion> {
+    let inside_quotes = replace_start > 0 && chars[replace_start - 1] == '"';
+    let partial: String = chars[replace_start..replace_start + partial_len]
+        .iter()
+        .collect();
+    let items = [
+        ("string", "Text, written the way the gutter shows it"),
+        ("integer", "A whole number"),
+        ("number", "A float"),
+        (
+            "accounting",
+            "An exact amount; add a second argument for the decimal places",
+        ),
+        ("date", "A date, read from strict ISO text"),
+        ("boolean", "True or false"),
+    ];
+    rank(
+        items
+            .into_iter()
+            .map(|(name, detail)| Suggestion {
+                id: format!("cast-target-{name}"),
+                label: format!("\"{name}\""),
+                insert_text: if inside_quotes {
+                    name.to_string()
+                } else {
+                    format!("\"{name}\"")
+                },
+                kind: SuggestionKind::Value,
+                detail: detail.into(),
+                score: 0,
+                match_indices: Vec::new(),
+            })
+            .collect(),
+        &partial,
+    )
 }
 
 #[path = "completion_calls.rs"]
@@ -1095,6 +1148,33 @@ mod tests {
                 _ => None,
             })
             .expect("demo document has a frame")
+    }
+
+    #[test]
+    fn cast_offers_the_type_names_including_the_exact_amount() {
+        let store = demo_store();
+        let frame_id = first_frame_id(&store);
+        let text = "`Units`.cast(";
+        let offered = complete_formula(store.document(), &frame_id, text, text.chars().count())
+            .suggestions
+            .into_iter()
+            .map(|suggestion| (suggestion.label, suggestion.insert_text))
+            .collect::<Vec<_>>();
+        assert!(
+            offered.contains(&("\"accounting\"".into(), "\"accounting\"".into())),
+            "{offered:?}"
+        );
+
+        // With the opening quote already typed, the word alone is inserted.
+        let typed = "`Units`.cast(\"acc";
+        let offered = complete_formula(store.document(), &frame_id, typed, typed.chars().count());
+        assert_eq!(
+            offered
+                .suggestions
+                .first()
+                .map(|suggestion| suggestion.insert_text.clone()),
+            Some("accounting".into())
+        );
     }
 
     fn date_column(frame: &FrameObject) -> Option<&Column> {

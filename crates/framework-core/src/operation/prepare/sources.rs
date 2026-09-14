@@ -141,6 +141,7 @@ impl Document {
                             name: id.clone(),
                             source_name: None,
                             data_type: DataType::String,
+                            scale: None,
                             categories: Vec::new(),
                             format: None,
                             formula: None,
@@ -178,7 +179,7 @@ impl Document {
 
         // Source order is the useful order after a replacement. Identity is
         // found through the physical binding rather than the editable label.
-        for (source_name, data_type) in replacement_schema {
+        for (source_name, data_type, scale) in replacement_schema {
             if let Some(existing) = inputs
                 .iter()
                 .find(|column| column.source_name.as_deref() == Some(source_name.as_str()))
@@ -189,6 +190,13 @@ impl Document {
                         .push((column.name.clone(), column.data_type, data_type));
                 }
                 column.data_type = data_type;
+                // A replacement file's own scale wins when the column never
+                // declared one; a declared scale is the person's choice.
+                if data_type == DataType::Accounting {
+                    column.scale = column.scale.or(scale);
+                } else {
+                    column.scale = None;
+                }
                 matched.insert(column.id.clone());
                 reconciled.push(column);
             } else {
@@ -198,6 +206,7 @@ impl Document {
                     name: source_name.clone(),
                     source_name: Some(source_name),
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: None,

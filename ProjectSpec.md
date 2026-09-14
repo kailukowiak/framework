@@ -641,8 +641,9 @@ The remaining blockers, in priority order, are:
 4. **Finished business workflows.** Reconciliation needs tolerance,
    one-to-many matching, and persistent reviewed matches; planning needs fiscal
    calendars, scenarios, sensitivity, goal seek, and eventually iterative
-   solve; close work needs validation, accounting formats, exact decimal
-   behavior, and templated export.
+   solve; close work needs validation constraints, accounting presentation of
+   subtotals, and templated export. Exact decimal/currency semantics **landed
+   (2026-09-14)** as `DataType::Accounting`.
 5. **An irregular-work escape hatch.** Scratchwork handles one-off calculations
    and crosstabs handle long-to-wide presentation, but compact schedules,
    forms, and mixed scalar layouts still need the constrained Databoard
@@ -1060,8 +1061,8 @@ The outstanding analytical primitives are now:
 3. tolerance, one-to-many matching, and persistent reviewed match objects;
 4. scenario sets, sensitivity views, and goal seek;
 5. named functions as block members;
-6. validation constraints, exact decimal/currency semantics, and accounting
-   presentation;
+6. validation constraints and accounting presentation of subtotals (exact
+   decimal/currency semantics **landed 2026-09-14** as `DataType::Accounting`);
 7. richer fill inference and string-to-date conversion; and
 8. iterative or simultaneous solve, deferred until the workflows above are
    complete.
@@ -1311,11 +1312,13 @@ pretend to be.
 
 Three separate layers:
 
-1. **Value**: Decimal128, never rounded by display. Guard the formula catalog for decimal-safe expression paths as they are admitted.
-2. **Unit**: currency code as column metadata. Mixed-currency aggregation is an error demanding an explicit conversion step (which appears in lineage with its rate as an inspectable assumption). Sibling-column currency codes later for multi-currency ledgers.
-3. **Presentation**: typed format object on the view — accounting style (edge-pinned symbol, parens negatives, zero-as-dash, tabular numerals), display decimals, scale. Scaled views label themselves ("shown in $K") in the header. Dates joined the same `ColumnFormat` on 2026-09-02 as a closed `DatePattern` set (ISO, `1 Sep 2026`, `Sep 1, 2026`, `Sep 2026`, `Q3 2026`) rendered from a fixed month table, never a locale; editing stays `YYYY-MM-DD`.
+1. **Value**: Decimal128, never rounded by display. Guard the formula catalog for decimal-safe expression paths as they are admitted. **Landed 2026-09-14** as `DataType::Accounting` with `Column.scale` holding the column's decimal places.
+2. **Unit**: currency code as column metadata. Mixed-currency aggregation is an error demanding an explicit conversion step (which appears in lineage with its rate as an inspectable assumption). Sibling-column currency codes later for multi-currency ledgers. Still open — no unit layer landed with the value layer.
+3. **Presentation**: typed format object on the view — accounting style (edge-pinned symbol, parens negatives, zero-as-dash, tabular numerals), display decimals, scale. Scaled views label themselves ("shown in $K") in the header. Dates joined the same `ColumnFormat` on 2026-09-02 as a closed `DatePattern` set (ISO, `1 Sep 2026`, `Sep 1, 2026`, `Sep 2026`, `Q3 2026`) rendered from a fixed month table, never a locale; editing stays `YYYY-MM-DD`. Kai decided on 2026-09-14 that the type implies this presentation by default: an accounting column renders in accounting style unless the column has an explicit format, the same way a type already implies a format elsewhere.
 
-**Reconciled rounding**: optional display mode where rounded detail foots exactly to the rounded total (largest-remainder allocation), true values untouched. Excel's alternatives are living with footing errors or destructively rewriting values.
+**Reconciled rounding**: optional display mode where rounded detail foots exactly to the rounded total (largest-remainder allocation), true values untouched. Excel's alternatives are living with footing errors or destructively rewriting values. Still open.
+
+The visible Currency→Accounting rounding step described under *Boundary decision* in [docs/finance-build-plan.md](docs/finance-build-plan.md) is also still open.
 
 ### AI chat panel
 

@@ -41,7 +41,9 @@ validated joins, percentage columns, live recomputation), `reshape`
 (unpivot, editable sources, wide readings), `vectors-joins` (paired vectors,
 row-count-aware dates, and live lookup joins), `predictions` (a fitted
 model, a scored frame, and its prediction paired live beside another
-frame's rows) — so `all` is a broad sweep, not several runs of the same
+frame's rows), `ledger` (the accounting type: amounts written the way a
+bookkeeper writes them, a running balance, and a control total that has to
+read exactly zero) — so `all` is a broad sweep, not several runs of the same
 muscle.
 
 This lane measures what deterministic tests cannot: discoverability. The

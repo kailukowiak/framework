@@ -20,6 +20,7 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
             name: (*name).into(),
             source_name: None,
             data_type: *data_type,
+            scale: None,
             categories: Vec::new(),
             format: None,
             formula: None,

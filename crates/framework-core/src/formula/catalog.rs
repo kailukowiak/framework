@@ -188,13 +188,17 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
             "to text",
             "to number",
             "tonumber",
+            "amount",
+            "decimal",
             "value"
         ],
         "Conversion",
         ".cast(\"string\")",
-        "Convert to another type: \"string\", \"integer\", \"number\", \"date\" or \"boolean\".",
+        "Convert to another type: \"string\", \"integer\", \"number\", \"accounting\", \
+         \"date\" or \"boolean\". An amount takes two decimal places unless a second \
+         argument names them: .cast(\"accounting\", 4).",
         1,
-        1
+        2
     ),
     formula_function!(
         "expr.show",

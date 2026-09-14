@@ -1427,6 +1427,7 @@ fn a_loop_between_two_live_frames_is_reported_rather_than_followed() {
         name: "Again".into(),
         source_name: None,
         data_type: DataType::Integer,
+        scale: None,
         categories: Vec::new(),
         format: None,
         formula: None,

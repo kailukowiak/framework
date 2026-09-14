@@ -26,6 +26,30 @@ The Rust parser resolves backtick references to stable object and column IDs, th
 - Structure: normal precedence, parentheses, lists, positional arguments, keyword arguments, and method chains.
 - The calculated-column name is the alias. Calling `.alias(...)` inside a formula is rejected.
 
+## Data types and casting
+
+Formulas cast between column types with `.cast("type")`.
+
+**Accounting** is a Decimal128 column at a declared scale — the exact type
+for a ledger, where sums must foot and nothing is silently rounded.
+`.cast("accounting")` casts to scale 2; `.cast("accounting", 4)` casts to a
+chosen scale. Arithmetic between an accounting amount and another value
+stays exact: an integer participates as-is, a written number brings its own
+place count (`0.0825` is four places, `1.5` is one), and a float column is
+cast to nine places before combining. The result takes the wider of the two
+scales; division takes the amount's own scale.
+
+`Currency` (the f64 modelling type) and `Accounting` never combine on their
+own — an amount and a price need an explicit cast on one side first:
+`.cast("accounting")` brings money onto the ledger, `.cast("currency")`
+brings an amount back to a modelling number. `.cast("currency")` is only
+accepted on an accounting input.
+
+`.mean()`, `.median()` and quantiles of an accounting column return a plain
+Number; `.sum()`, `.min()` and `.max()` stay accounting. Joining an
+accounting value into text prints its exact digits at its scale: `"Owed " +
+Amount` reads `Owed 12.50`, not a rounded or reformatted number.
+
 ## Exposed expression surface
 
 The catalog returned by the core and MCP is also used for autocomplete.

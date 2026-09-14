@@ -360,6 +360,12 @@ export type Operation =
     frameId: string;
     columnId: string;
     dataType: DataType;
+    /**
+     * Decimal places for an `Accounting` column; ignored for every
+     * other type. Absent keeps the column's current scale, or the
+     * default when it had none.
+     */
+    scale?: number | null;
   }
   | {
     "type": "setColumnCategories";

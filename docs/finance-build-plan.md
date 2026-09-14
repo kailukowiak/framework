@@ -41,6 +41,13 @@ Two consequences for this plan:
   visible rounding step with a declared mode, shown in the chain the way a
   Read type override is.
 
+**Implementation update 2026-09-14.** The Accounting type landed as
+described above: `DataType::Accounting`, Decimal128-backed with a declared
+scale, in `crates/framework-core/src/model/value.rs`, wired through
+`engine/values.rs` and `formula/compile.rs`. The accountant plan itself
+(exact Accounting type, reconciliation with reviewed matches, validation)
+is still to be written.
+
 ## Phases
 
 Each phase stands alone, ships something a finance person would notice, and

@@ -154,6 +154,11 @@ struct ColumnSummary {
     id: String,
     name: String,
     data_type: String,
+    /// Decimal places, for an accounting column only. Absent elsewhere, and
+    /// absent on an amount that has never been asked for a particular scale —
+    /// which means two places for a column typed here, and the source file's
+    /// own places for an imported one.
+    scale: Option<u8>,
     categories: Vec<String>,
     formula: Option<String>,
 }
@@ -277,7 +282,8 @@ struct AddEntryColumnArgs {
     frame: String,
     /// Name for the new entry column.
     name: String,
-    /// Data type: number, integer, string, boolean, date, currency, percentage.
+    /// Data type: number, integer, string, boolean, date, currency,
+    /// accounting, percentage.
     data_type: String,
     /// Names or IDs of the columns whose values identify a row. They are
     /// enforced unique as part of the add; data with duplicates under them
@@ -752,7 +758,10 @@ struct AddLiteralColumnArgs {
     /// Frame name or stable frame ID.
     frame: String,
     name: String,
-    /// One of: string/text, categorical/enum, integer/int, number, currency, percentage/percent, boolean/bool, or date.
+    /// One of: string/text, categorical/enum, integer/int, number, currency,
+    /// accounting, percentage/percent, boolean/bool, or date. An accounting
+    /// column is an exact decimal at two places; set_column_type takes a
+    /// scale to change that.
     data_type: String,
     /// Optional column name or ID after which the new column is inserted. Defaults to the end.
     after_column: Option<String>,
@@ -778,8 +787,10 @@ struct SetColumnTypeArgs {
     frame: String,
     /// Column name or stable column ID.
     column: String,
-    /// One of: string/text, categorical/enum, integer/int, number, currency, percentage/percent, boolean/bool, or date.
+    /// One of: string/text, categorical/enum, integer/int, number, currency, accounting, percentage/percent, boolean/bool, or date.
     data_type: String,
+    /// Decimal places for an accounting column (default 2). Only with dataType accounting.
+    scale: Option<u8>,
     /// Reject the write if the document is no longer at this revision.
     expected_revision: Option<u64>,
 }
@@ -1226,7 +1237,9 @@ impl FrameworkMcp {
         )
     }
 
-    /// Create a frame from a string grid whose first row contains the column names.
+    /// Create a frame from a string grid whose first row contains the column
+    /// names. Cells arrive as text and are typed afterwards with
+    /// set_column_type — which is how a column of amounts becomes exact.
     #[tool(
         name = "create_frame",
         annotations(title = "Create a FrameWork frame", read_only_hint = false)
@@ -1966,7 +1979,11 @@ impl FrameworkMcp {
         )
     }
 
-    /// Change a column's display/data type without rewriting its raw cell values.
+    /// Change a column's display/data type without rewriting its raw cell
+    /// values. Money that has to foot exactly — a ledger, a journal, an
+    /// invoice line — belongs in `accounting`, an exact decimal whose sums
+    /// tie; `scale` names its decimal places and defaults to 2. `currency`
+    /// stays the float for modelling.
     #[tool(
         name = "set_column_type",
         annotations(title = "Set a FrameWork column type", read_only_hint = false)
@@ -1984,6 +2001,7 @@ impl FrameworkMcp {
                 frame_id: frame_id.clone(),
                 column_id: column_id.clone(),
                 data_type,
+                scale: args.scale,
             },
             args.expected_revision,
             format!("Changed column '{}' to {}", args.column, args.data_type),
@@ -2397,6 +2415,7 @@ fn frame_snapshot(
                             DataType::Integer
                                 | DataType::Number
                                 | DataType::Currency
+                                | DataType::Accounting
                                 | DataType::Percentage
                         )
                         .then(|| display.parse().ok())
@@ -2508,7 +2527,11 @@ fn page_scalar_value(display: &str, data_type: DataType) -> ApiScalarValue {
         return ApiScalarValue::Null;
     }
     match data_type {
-        DataType::Integer | DataType::Number | DataType::Currency | DataType::Percentage => display
+        DataType::Integer
+        | DataType::Number
+        | DataType::Currency
+        | DataType::Accounting
+        | DataType::Percentage => display
             .parse()
             .map(ApiScalarValue::Number)
             .unwrap_or(ApiScalarValue::Null),
@@ -2541,6 +2564,7 @@ fn column_summaries(view: &DocumentView, frame: &FrameObject) -> Vec<ColumnSumma
             id: column.id.clone(),
             name: column.name.clone(),
             data_type: data_type_name(column.data_type),
+            scale: column.scale,
             categories: column.categories.clone(),
             formula: computed.and_then(|frame| frame.formulas.get(&column.id).cloned()),
         })
@@ -2822,6 +2846,7 @@ fn data_type_name(data_type: DataType) -> String {
         DataType::Integer => "integer",
         DataType::Number => "number",
         DataType::Currency => "currency",
+        DataType::Accounting => "accounting",
         DataType::Percentage => "percentage",
         DataType::Boolean => "boolean",
         DataType::Date => "date",
@@ -2836,10 +2861,11 @@ fn parse_data_type(value: &str) -> Result<DataType, String> {
         "integer" | "int" => Ok(DataType::Integer),
         "number" | "numeric" => Ok(DataType::Number),
         "currency" | "money" => Ok(DataType::Currency),
+        "accounting" | "decimal" => Ok(DataType::Accounting),
         "percentage" | "percent" => Ok(DataType::Percentage),
         "boolean" | "bool" => Ok(DataType::Boolean),
         "date" => Ok(DataType::Date),
-        _ => Err("dataType must be string/text, categorical/enum, integer/int, number, currency, percentage/percent, boolean/bool, or date".into()),
+        _ => Err("dataType must be string/text, categorical/enum, integer/int, number, currency, accounting, percentage/percent, boolean/bool, or date".into()),
     }
 }
 
@@ -3152,6 +3178,91 @@ mod tests {
             .filter(|cell| !cell.display.is_empty())
             .count();
         assert_eq!(hours_back, 1, "the entered value survived the round trip");
+    }
+
+    #[test]
+    fn a_ledger_foots_exactly_through_named_tools_alone() {
+        // The accounting type has to be reachable without the raw operation
+        // escape hatch, and it has to be worth reaching: a column of cents
+        // that sums to 0.6 rather than 0.6000000000000001 is the whole of
+        // the claim, and a derived column has to stay exact with it.
+        let (server, _path) = test_server();
+        server
+            .create_frame(Parameters(CreateFrameArgs {
+                name: "Journal".into(),
+                grid: vec![
+                    vec!["Memo".into(), "Amount".into()],
+                    vec!["Postage".into(), "0.10".into()],
+                    vec!["Stationery".into(), "0.20".into()],
+                    vec!["Courier".into(), "0.30".into()],
+                ],
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        server
+            .set_column_type(Parameters(SetColumnTypeArgs {
+                frame: "Journal".into(),
+                column: "Amount".into(),
+                data_type: "accounting".into(),
+                scale: Some(2),
+                expected_revision: None,
+            }))
+            .unwrap();
+        server
+            .add_calculated_column(Parameters(AddCalculatedColumnArgs {
+                frame: "Journal".into(),
+                name: "With VAT".into(),
+                formula: "`Amount` * 2".into(),
+                expected_revision: None,
+            }))
+            .unwrap();
+        server
+            .add_summary(Parameters(AddSummaryArgs {
+                frame: "Journal".into(),
+                column: "Amount".into(),
+                operation: "sum".into(),
+                expected_revision: None,
+            }))
+            .unwrap();
+
+        let snapshot = server
+            .get_frame(Parameters(GetFrameArgs {
+                frame: "Journal".into(),
+                limit: None,
+            }))
+            .unwrap()
+            .0;
+        let amount = snapshot
+            .columns
+            .iter()
+            .find(|column| column.name == "Amount")
+            .unwrap();
+        assert_eq!(amount.data_type, "accounting");
+        assert_eq!(amount.scale, Some(2));
+        // Arithmetic over an amount stays an amount; the reader is told so
+        // rather than having to infer it from the digits.
+        let derived = snapshot
+            .columns
+            .iter()
+            .find(|column| column.name == "With VAT")
+            .unwrap();
+        assert_eq!(derived.data_type, "accounting");
+        assert_eq!(derived.scale, Some(2));
+
+        let total = snapshot
+            .summaries
+            .iter()
+            .find(|summary| summary.operation == "sum")
+            .expect("the sum summary is in the snapshot");
+        assert_eq!(total.error, None);
+        assert_eq!(
+            total.numeric_value,
+            Some(0.6),
+            "0.10 + 0.20 + 0.30 foots to 0.6, not 0.6000000000000001"
+        );
+        assert_eq!(total.display, "0.60");
     }
 
     #[test]
@@ -3501,6 +3612,7 @@ mod tests {
                 frame: "Orders".into(),
                 column: "Notes".into(),
                 data_type: "number".into(),
+                scale: None,
                 expected_revision: Some(column.revision),
             }))
             .unwrap()
