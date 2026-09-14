@@ -114,8 +114,35 @@ fn ml_fit_holdout_live_predictions_history_and_persistence() {
     let frame = store.document().frame(&prediction_id).unwrap();
     assert!(frame.rows.is_empty());
     assert!(!frame.owns_its_rows());
-    let output_column = frame.columns[0].id.clone();
-    let output_name = frame.columns[0].name.clone();
+    // A scored table: the source's columns first, then the model's outputs.
+    let source_columns = store
+        .document()
+        .frame(&spec.source_frame_id)
+        .unwrap()
+        .columns
+        .clone();
+    assert_eq!(
+        frame.columns[..source_columns.len()]
+            .iter()
+            .map(|column| (column.id.as_str(), column.name.as_str()))
+            .collect::<Vec<_>>(),
+        source_columns
+            .iter()
+            .map(|column| (column.id.as_str(), column.name.as_str()))
+            .collect::<Vec<_>>()
+    );
+    let output_column = frame.prediction.as_ref().unwrap().output_column_ids[0].clone();
+    let output_name = frame
+        .columns
+        .iter()
+        .find(|column| column.id == output_column)
+        .unwrap()
+        .name
+        .clone();
+    assert_eq!(output_name, "Prediction");
+    let page = store.get_frame_page(&prediction_id, 0, 2).unwrap();
+    assert_eq!(page.rows[0][..source_columns.len()], ["0", "2", "1"]);
+    assert!(page.rows[0][source_columns.len()].parse::<f64>().is_ok());
     store
         .apply(Operation::AddBlock {
             name: "Totals".into(),
@@ -309,10 +336,14 @@ fn ml_logistic_and_summary_exports_are_normal_referenceable_frames() {
     );
     let id = fit(&mut store, &spec);
     let prediction = predictions(&mut store, &id, &spec);
+    let frame = store.document().frame(&prediction).unwrap();
+    // The three source columns carried through, then class and two
+    // probabilities.
     assert_eq!(
-        store.document().frame(&prediction).unwrap().columns.len(),
+        frame.prediction.as_ref().unwrap().output_column_ids.len(),
         3
     );
+    assert_eq!(frame.columns.len(), 6);
     for kind in [
         ModelSummaryKind::Coefficients,
         ModelSummaryKind::TrainingMetrics,
@@ -457,9 +488,16 @@ fn check_refit_and_reopen(
             .id,
         trained_id
     );
+    let refit = store.document().frame(prediction_id).unwrap();
     assert_eq!(
-        store.document().frame(prediction_id).unwrap().columns[0].id,
+        refit.prediction.as_ref().unwrap().output_column_ids[0],
         output_column
+    );
+    assert!(
+        refit
+            .columns
+            .iter()
+            .any(|column| column.id == *output_column)
     );
     store.undo();
     assert_eq!(
@@ -499,4 +537,100 @@ fn check_refit_and_reopen(
             < 1e-9
     );
     std::fs::remove_dir_all(directory).unwrap();
+}
+
+/// The bare vector had no key. Carried beside its source, a prediction can
+/// be joined like any column; and paired by position into a frame that
+/// shares the scoring frame's rows it lands on the right row and stays
+/// live, because the prediction frame is computed row for row from that
+/// same source — no snapshot needed first.
+#[test]
+fn ml_predictions_pair_live_into_a_frame_beside_their_source() {
+    let (mut store, spec) = fixture();
+    let model_id = fit(&mut store, &spec);
+    let prediction_id = predictions(&mut store, &model_id, &spec);
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: spec.source_frame_id.clone(),
+            name: "Scored".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let scored_id = store
+        .document()
+        .objects
+        .iter()
+        .find(|o| o.name() == "Scored")
+        .unwrap()
+        .id()
+        .to_owned();
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id: scored_id.clone(),
+            steps: vec![FrameStepInput::ZipVector {
+                output_column_id: "predicted".into(),
+                name: "Predicted".into(),
+                vector: "`Predictions`.`Prediction`".into(),
+            }],
+        })
+        .unwrap();
+    let last_of = |rows: &[Vec<String>]| {
+        rows.iter()
+            .map(|row| row.last().unwrap().clone())
+            .collect::<Vec<_>>()
+    };
+    let predicted = store.get_frame_page(&prediction_id, 0, 30).unwrap();
+    let scored = store.get_frame_page(&scored_id, 0, 30).unwrap();
+    assert_eq!(scored.rows.len(), 30);
+    assert_eq!(scored.rows[0][..3], ["0", "2", "1"]);
+    assert_eq!(last_of(&scored.rows), last_of(&predicted.rows));
+
+    // Live: a changed input scores differently, and the paired column
+    // follows without the step being written again.
+    let row_id = store.document().frame(&spec.source_frame_id).unwrap().rows[0]
+        .id
+        .clone();
+    store
+        .apply(Operation::SetCell {
+            frame_id: spec.source_frame_id.clone(),
+            row_id,
+            column_id: spec.feature_column_ids[0].clone(),
+            raw: "100".into(),
+        })
+        .unwrap();
+    let rescored = store.get_frame_page(&scored_id, 0, 1).unwrap();
+    assert_ne!(rescored.rows[0].last(), scored.rows[0].last());
+    assert_eq!(
+        rescored.rows[0].last(),
+        store.get_frame_page(&prediction_id, 0, 1).unwrap().rows[0].last()
+    );
+
+    // The list methods read the live column as well.
+    store
+        .apply(Operation::AddBlock {
+            name: "Peek".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let block_id = store
+        .document()
+        .objects
+        .iter()
+        .find(|o| o.name() == "Peek")
+        .unwrap()
+        .id()
+        .to_owned();
+    store
+        .apply(Operation::SetBlockSource {
+            block_id: block_id.clone(),
+            source: "top = `Predictions`.`Prediction`.head(3).len()".into(),
+            editing: None,
+        })
+        .unwrap();
+    assert_eq!(
+        store.view().computed_blocks[&block_id].lines[0].cell.value,
+        Some(3.0)
+    );
 }

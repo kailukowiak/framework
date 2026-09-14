@@ -64,12 +64,32 @@ fn ml_onnx_preserves_typed_labels_missing_policy_and_reopen() {
         })
         .unwrap();
     let output = frame_id(&store, "Scored");
+    let outputs = store
+        .document()
+        .frame(&output)
+        .unwrap()
+        .prediction
+        .as_ref()
+        .unwrap()
+        .output_column_ids
+        .clone();
     let page = store.get_frame_page(&output, 0, 10).unwrap();
+    let at = |id: &str| {
+        page.columns
+            .iter()
+            .position(|column| column.id == id)
+            .unwrap()
+    };
+    // The scoring rows come through beside the outputs.
+    assert_eq!(page.rows[0][..3], ["30", "", "unseen"]);
     assert_eq!(
-        page.rows.iter().map(|r| r[0].as_str()).collect::<Vec<_>>(),
+        page.rows
+            .iter()
+            .map(|r| r[at(&outputs[0])].as_str())
+            .collect::<Vec<_>>(),
         ["no", "yes", "no"]
     );
-    assert!((page.rows[0][2].parse::<f64>().unwrap() - 0.393720984).abs() < 0.0001);
+    assert!((page.rows[0][at(&outputs[2])].parse::<f64>().unwrap() - 0.393720984).abs() < 0.0001);
     let directory = std::env::temp_dir().join(format!("framework-model-{}", framework_core::id()));
     std::fs::create_dir_all(&directory).unwrap();
     let path = directory.join("pipeline.fw");
@@ -154,8 +174,14 @@ fn ml_prediction_frame_supports_wrangle_with_stable_output_ids() {
     let (mut store, spec) = super::ml_models::fixture();
     let model = super::ml_models::fit(&mut store, &spec);
     let output = super::ml_models::predictions(&mut store, &model, &spec);
-    let prediction_column = store.document().frame(&output).unwrap().columns[0]
-        .id
+    let prediction_column = store
+        .document()
+        .frame(&output)
+        .unwrap()
+        .prediction
+        .as_ref()
+        .unwrap()
+        .output_column_ids[0]
         .clone();
     let calculated = id();
     store
@@ -171,19 +197,25 @@ fn ml_prediction_frame_supports_wrangle_with_stable_output_ids() {
         })
         .unwrap();
     let page = store.get_frame_page(&output, 0, 10).unwrap();
-    assert_eq!(page.columns[0].id, prediction_column);
-    assert_eq!(page.columns[1].id, calculated);
-    for row in page.rows {
-        let first: f64 = row[0].parse().unwrap();
-        let second: f64 = row[1].parse().unwrap();
+    let at = |page: &FramePage, id: &str| {
+        page.columns
+            .iter()
+            .position(|column| column.id == id)
+            .unwrap()
+    };
+    assert_eq!(at(&page, &prediction_column), 3);
+    assert_eq!(at(&page, &calculated), 4);
+    for row in &page.rows {
+        let first: f64 = row[3].parse().unwrap();
+        let second: f64 = row[4].parse().unwrap();
         assert!((second - first * 2.0).abs() < 0.02);
     }
     store
         .apply(Operation::FitModel { model_id: model })
         .unwrap();
     let page = store.get_frame_page(&output, 0, 10).unwrap();
-    assert_eq!(page.columns[0].id, prediction_column);
-    assert_eq!(page.columns[1].id, calculated);
+    assert_eq!(at(&page, &prediction_column), 3);
+    assert_eq!(at(&page, &calculated), 4);
 }
 
 #[test]

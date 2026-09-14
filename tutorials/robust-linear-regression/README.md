@@ -39,7 +39,8 @@ prediction intervals for patients and do not establish causation.
 
 Choose **Predictions…** on the model card. Name the result
 **Progression predictions**, select **New patients**, and map **BMI** followed by
-**Blood pressure**. Choose **Create predictions**. The new frame uses the saved fit
+**Blood pressure**. Choose **Create predictions**. The new frame carries the
+**New patients** columns with the prediction beside them; it uses the saved fit
 and does not need known progression values.
 
 ## 4. Try a what-if, undo, and reopen

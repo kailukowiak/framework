@@ -35,8 +35,8 @@ about botanical identification in other places, seasons, or measurement setups.
 Choose **Predictions…** on the model card. Name the result
 **Species predictions**, select **New flowers**, and map the four measurement
 columns in the same order. Choose **Create predictions**. The prediction frame
-shows a class code and one probability per species; the scoring frame needs no
-target column.
+shows the four measurements followed by a class code and one probability per
+species; the scoring frame needs no target column.
 
 ## 4. Try a what-if and preserve it
 

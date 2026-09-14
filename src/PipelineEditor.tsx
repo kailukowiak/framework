@@ -946,6 +946,8 @@ export function DerivedFrameCreator({
                     visible={visible}
                     columnReferences={columnListReferences}
                     references={stepReferences}
+                    frameId={input.completionFrameId}
+                    scope={scope}
                     columnsEditorId={commandId(step, "columns")}
                     vectorEditorId={commandId(step, "vector")}
                     columnsFocusToken={commandFocus(commandId(step, "columns"))}
@@ -975,6 +977,8 @@ export function DerivedFrameCreator({
                   <ZipVectorStepRow
                     step={step}
                     references={stepReferences}
+                    frameId={input.completionFrameId}
+                    scope={scope}
                     editorId={commandId(step)}
                     focusToken={commandFocus(commandId(step))}
                     onDraft={update}

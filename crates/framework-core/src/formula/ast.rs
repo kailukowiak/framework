@@ -1122,9 +1122,20 @@ impl Expr {
                 .map(|arg| arg.shape(document))
                 .unwrap_or(Shape::Scalar),
             Expr::Column { .. } => Shape::Column,
+            // With no snapshot, a literal frame's count is its rows and a
+            // computed frame's is not known short of running it — and a
+            // column of a frame is a column of values until it is known to
+            // hold one.
             Expr::ForeignColumn { frame_id, .. } => {
-                match document.snapshot_row_count(frame_id).unwrap_or(1) {
-                    1 => Shape::Scalar,
+                let rows = document.snapshot_row_count(frame_id).or_else(|| {
+                    document
+                        .frame(frame_id)
+                        .ok()
+                        .filter(|frame| frame.owns_its_rows())
+                        .map(|frame| frame.rows.len())
+                });
+                match rows {
+                    Some(1) => Shape::Scalar,
                     _ => Shape::Column,
                 }
             }

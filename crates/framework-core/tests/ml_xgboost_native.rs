@@ -44,7 +44,8 @@ fn native_xgboost_regression_survives_store_history_and_reopen() {
     let fitted_id = fitted.id.clone();
     let page = store.get_frame_page(&prediction_id, 0, 100).unwrap();
     assert_eq!(page.total_rows, 30);
-    assert_eq!(page.columns.len(), 1);
+    // The three source columns carried through, then the prediction.
+    assert_eq!(page.columns.len(), 4);
 
     let directory =
         std::env::temp_dir().join(format!("framework-native-xgboost-{}", framework_core::id()));
@@ -134,11 +135,13 @@ fn native_xgboost_binary_fit_exposes_probabilities_and_holdout_metrics() {
     );
     let page = store.get_frame_page(&prediction_id, 0, 100).unwrap();
     assert_eq!(page.total_rows, 30);
-    assert_eq!(page.columns.len(), 3);
+    // The three source columns carried through, then class and two
+    // probabilities.
+    assert_eq!(page.columns.len(), 6);
     for row in page.rows {
-        let predicted: usize = row[0].parse().unwrap();
-        let p0: f64 = row[1].parse().unwrap();
-        let p1: f64 = row[2].parse().unwrap();
+        let predicted: usize = row[3].parse().unwrap();
+        let p0: f64 = row[4].parse().unwrap();
+        let p1: f64 = row[5].parse().unwrap();
         assert!(predicted < 2);
         assert!((p0 + p1 - 1.0).abs() < 0.001);
     }

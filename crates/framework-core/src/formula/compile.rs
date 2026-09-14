@@ -8,6 +8,7 @@ use crate::{keyword_argument, parse_scalar_value};
 use polars::prelude as pl;
 use polars::prelude::NamedFrom;
 pub(crate) use root_call::polars_call_declared_type;
+use std::cell::RefCell;
 
 const MAX_SEQUENCE_VALUES: usize = 1_000_000;
 
@@ -409,20 +410,29 @@ fn foreign_column_literal(
         .map_err(|error| {
             format!("‘{frame_name}’.‘{column_name}’ could not be read from the snapshot: {error}")
         })?,
-        None => document
-            .materialize_frame_lazy(
-                frame_id,
-                crate::engine::Layer::Data,
-                &mut Default::default(),
-            )
-            .and_then(|plan| {
-                plan.select([pl::col(column_id)])
-                    .collect()
-                    .map_err(|error| error.to_string())
-            })
-            .map_err(|error| {
-                format!("‘{frame_name}’.‘{column_name}’ could not be read: {error}")
-            })?,
+        None => {
+            let Some(_reading) = LiveRead::enter(frame_id) else {
+                return Err(format!(
+                    "‘{frame_name}’ is still being worked out when ‘{column_name}’ is read \
+                     from it — the two frames read each other. Materialize one of them, and \
+                     the other reads its snapshot."
+                ));
+            };
+            document
+                .materialize_frame_lazy(
+                    frame_id,
+                    crate::engine::Layer::Data,
+                    &mut Default::default(),
+                )
+                .and_then(|plan| {
+                    plan.select([pl::col(column_id)])
+                        .collect()
+                        .map_err(|error| error.to_string())
+                })
+                .map_err(|error| {
+                    format!("‘{frame_name}’.‘{column_name}’ could not be read: {error}")
+                })?
+        }
     };
     let series = frame
         .column(column_id)
@@ -432,6 +442,42 @@ fn foreign_column_literal(
         return scalar_to_polars_literal(crate::polars_value_at(series, 0)?);
     }
     Ok(pl::lit(series.clone()))
+}
+
+thread_local! {
+    /// The frames whose live plans are being read at this moment, innermost
+    /// last. A live read collects another frame's plan from inside the
+    /// compilation of this one, and nothing on that path remembers where it
+    /// came from: `materialize_frame_lazy` starts a fresh cycle set, so two
+    /// frames each pairing a column of the other would recurse until the
+    /// stack ran out. A frame already on this stack is that loop, caught
+    /// one level in — the authoring boundary refuses it first, but a loop
+    /// can also arrive from disk or from a replica.
+    static LIVE_READS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// One frame's turn on [`LIVE_READS`], taken off again when dropped.
+struct LiveRead;
+
+impl LiveRead {
+    fn enter(frame_id: &str) -> Option<LiveRead> {
+        LIVE_READS.with(|reads| {
+            let mut reads = reads.borrow_mut();
+            if reads.iter().any(|reading| reading == frame_id) {
+                return None;
+            }
+            reads.push(frame_id.to_string());
+            Some(LiveRead)
+        })
+    }
+}
+
+impl Drop for LiveRead {
+    fn drop(&mut self) {
+        LIVE_READS.with(|reads| {
+            reads.borrow_mut().pop();
+        });
+    }
 }
 
 /// One value out of a list, addressed the way a spreadsheet addresses

@@ -112,6 +112,8 @@ export function BroadcastStepRow({
   visible,
   columnReferences,
   references,
+  frameId,
+  scope,
   columnsEditorId,
   vectorEditorId,
   columnsFocusToken,
@@ -122,6 +124,8 @@ export function BroadcastStepRow({
   visible: Array<{ id: string; name: string }>;
   columnReferences: FormulaReference[];
   references: FormulaReference[];
+  frameId?: string;
+  scope?: { steps: FrameStepInput[]; stepIndex: number };
   columnsEditorId: string;
   vectorEditorId: string;
   columnsFocusToken?: number;
@@ -172,6 +176,8 @@ export function BroadcastStepRow({
         label="Vector"
         initialDraft={step.vector}
         references={references}
+        frameId={frameId}
+        scope={scope}
         focusToken={vectorFocusToken}
         onChange={(vector) => onUpdate({ vector }, false)}
         onCommit={(vector) => onUpdate({ vector }, true)}
@@ -189,12 +195,16 @@ export function BroadcastStepRow({
 export function ZipVectorStepRow({
   step,
   references,
+  frameId,
+  scope,
   editorId,
   focusToken,
   onDraft,
 }: {
   step: ZipVectorStepDraft;
   references: FormulaReference[];
+  frameId?: string;
+  scope?: { steps: FrameStepInput[]; stepIndex: number };
   editorId: string;
   focusToken?: number;
   onDraft: (draft: string, saveNow: boolean) => void | Promise<void>;
@@ -206,6 +216,8 @@ export function ZipVectorStepRow({
         label="Column"
         initialDraft={`${formulaToken(step.name)} = ${step.vector}`}
         references={references}
+        frameId={frameId}
+        scope={scope}
         focusToken={focusToken}
         onChange={(draft) => onDraft(draft, false)}
         onCommit={(draft) => onDraft(draft, true)}

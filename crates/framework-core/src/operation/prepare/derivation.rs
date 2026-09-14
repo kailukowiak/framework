@@ -1040,14 +1040,14 @@ impl Document {
             ));
         }
         let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
-        let mut foreign_frames = Vec::new();
-        expression.foreign_frames(&mut foreign_frames);
-        if foreign_frames.contains(&edited_frame_id) {
-            return Err(CoreError::InvalidOperation(
-                "A frame cannot apply a list that reads from itself".into(),
-            ));
-        }
-        if expression.shape(self) != Shape::List {
+        self.refuse_vector_loop(
+            &expression,
+            edited_frame_id,
+            "A frame cannot apply a list that reads from itself",
+        )?;
+        // A column of another frame is a list of its values as much as a
+        // written one is; only a single value has nothing to spread.
+        if expression.shape(self) == Shape::Scalar {
             return Err(CoreError::Formula(format!(
                 "‘{vector}’ is one value, not a list. Spreading needs a list with \
                  one value for each column — write one out, or use sequence(…)."
@@ -1089,6 +1089,44 @@ impl Document {
         })
     }
 
+    /// A list step may name a column of another frame, live: the list it
+    /// reads is that frame's whole column, so there is nothing to line up
+    /// by row and no reason to insist on a snapshot first. What it must not
+    /// name is a frame downstream of this one. That frame's rows are worked
+    /// out from this one's, so reading them while this frame is being
+    /// computed would loop — and a live read starts its own cycle set, so
+    /// the loop would not be caught on the way down. A snapshot ends the
+    /// loop, which is why a materialized frame may be named wherever it
+    /// sits, and why the refusal says to take one.
+    fn refuse_vector_loop(
+        &self,
+        expression: &Expr,
+        edited_frame_id: &str,
+        self_read: &str,
+    ) -> Result<(), CoreError> {
+        let mut foreign_frames = Vec::new();
+        expression.foreign_frames(&mut foreign_frames);
+        for frame_id in foreign_frames {
+            if frame_id == edited_frame_id {
+                return Err(CoreError::InvalidOperation(self_read.into()));
+            }
+            let Ok(frame) = self.frame(frame_id) else {
+                continue;
+            };
+            if frame.materialization.is_none() && self.frame_reads_frame(frame_id, edited_frame_id)
+            {
+                return Err(CoreError::InvalidOperation(format!(
+                    "{} is built from this frame, so reading it here would loop. Materialize \
+                     {} and this step will read its snapshot, or pair it into a frame \
+                     downstream of both.",
+                    as_named(&frame.name),
+                    as_named(&frame.name),
+                )));
+            }
+        }
+        Ok(())
+    }
+
     fn prepare_zip_vector_step(
         &self,
         output_column_id: Id,
@@ -1098,14 +1136,12 @@ impl Document {
         edited_frame_id: &str,
     ) -> Result<FrameStep, CoreError> {
         let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
-        let mut foreign_frames = Vec::new();
-        expression.foreign_frames(&mut foreign_frames);
-        if foreign_frames.contains(&edited_frame_id) {
-            return Err(CoreError::InvalidOperation(
-                "A frame cannot pair a list that reads from itself".into(),
-            ));
-        }
-        if expression.shape(self) != Shape::List {
+        self.refuse_vector_loop(
+            &expression,
+            edited_frame_id,
+            "A frame cannot pair a list that reads from itself",
+        )?;
+        if expression.shape(self) == Shape::Scalar {
             return Err(CoreError::Formula(format!(
                 "‘{vector}’ is one value, not a list to pair down the rows"
             )));
