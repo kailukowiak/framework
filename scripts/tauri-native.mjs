@@ -20,7 +20,12 @@ if (platform && ["build", "dev"].includes(args[0])) {
       env.DYLD_FALLBACK_LIBRARY_PATH = [native, resolve(native, "opt/libomp/lib"), env.DYLD_FALLBACK_LIBRARY_PATH].filter(Boolean).join(delimiter);
     }
   } else {
-    env.PATH = [native, env.PATH].filter(Boolean).join(delimiter);
+    // Windows hands Node the variable as `Path`. Writing `PATH` beside it
+    // makes a second variable holding only the native folder, and the
+    // child picked that one -- so `cargo metadata` was "program not found"
+    // and every Windows release build failed at the first step.
+    const pathKey = Object.keys(env).find((key) => key.toUpperCase() === "PATH") ?? "PATH";
+    env[pathKey] = [native, env[pathKey]].filter(Boolean).join(delimiter);
   }
   args.push("--config", resolve(root, `src-tauri/tauri.${platform}-release.conf.json`));
 }
