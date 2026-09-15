@@ -100,7 +100,7 @@ pub fn complete_formula(
     let Ok(frame) = document.frame(frame_id) else {
         return empty_result(cursor_pos.min(formula_text.chars().count()));
     };
-    complete_formula_in_scope(document, frame, frame_id, formula_text, cursor_pos)
+    complete_formula_in_scope(document, frame, frame_id, formula_text, cursor_pos, false)
 }
 
 /// Completion against an explicit scope rather than a frame's own columns.
@@ -110,12 +110,18 @@ pub fn complete_formula(
 /// summarize, the source columns are gone and the aggregates are what
 /// exist. Passing the scope in is what lets the editor ask about a position
 /// in a chain that has not been saved.
+///
+/// `live_frames` widens the canvas to frames without a snapshot. A column
+/// formula may name only a snapshot, so offering more would offer names
+/// the formula cannot use; a list step reads a whole column of another
+/// frame as a list, live or not, so there its menu is every frame.
 pub fn complete_formula_in_scope(
     document: &Document,
     frame: &FrameObject,
     frame_id: &str,
     formula_text: &str,
     cursor_pos: usize,
+    live_frames: bool,
 ) -> CompletionResult {
     let chars: Vec<char> = formula_text.chars().collect();
     let cursor = cursor_pos.min(chars.len());
@@ -127,13 +133,23 @@ pub fn complete_formula_in_scope(
         | CursorContext::AfterDot { partial, .. } => partial.chars().count(),
     };
     let mut result = match context {
-        CursorContext::Backtick { partial } => complete_backtick(document, frame, &partial),
-        CursorContext::Root { partial } => complete_root(document, frame, &partial),
+        CursorContext::Backtick { partial } => {
+            complete_backtick(document, frame, &partial, live_frames)
+        }
+        CursorContext::Root { partial } => complete_root(document, frame, &partial, live_frames),
         CursorContext::AfterDot {
             receiver_text,
             path,
             partial,
-        } => complete_after_dot(document, frame, frame_id, &receiver_text, &path, &partial),
+        } => complete_after_dot(
+            document,
+            frame,
+            frame_id,
+            &receiver_text,
+            &path,
+            &partial,
+            live_frames,
+        ),
     };
     result.replace_start = cursor - partial_len;
     if let Some((spelling, argument)) = active_call_at_cursor(&chars, cursor) {
@@ -141,8 +157,61 @@ pub fn complete_formula_in_scope(
         if result.active_function_id.is_some() {
             result.active_argument = Some(argument);
         }
+        // `.cast` is the one call whose first argument is a closed set of
+        // words rather than an expression, and the set is not guessable:
+        // "accounting" is the name of the exact-decimal type, and nothing in
+        // the surrounding text hints at it. So the completer answers with the
+        // words themselves instead of offering columns that cannot go there.
+        if result.active_function_id.as_deref() == Some("expr.cast") && argument == 0 {
+            result.suggestions =
+                cast_target_suggestions(&chars, result.replace_start, partial_len);
+            result.note = None;
+        }
     }
     result
+}
+
+/// The types `.cast` accepts, as they are written. The quotes come with the
+/// word unless the person already typed the opening one.
+fn cast_target_suggestions(
+    chars: &[char],
+    replace_start: usize,
+    partial_len: usize,
+) -> Vec<Suggestion> {
+    let inside_quotes = replace_start > 0 && chars[replace_start - 1] == '"';
+    let partial: String = chars[replace_start..replace_start + partial_len]
+        .iter()
+        .collect();
+    let items = [
+        ("string", "Text, written the way the gutter shows it"),
+        ("integer", "A whole number"),
+        ("number", "A float"),
+        (
+            "accounting",
+            "An exact amount; add a second argument for the decimal places",
+        ),
+        ("date", "A date, read from strict ISO text"),
+        ("boolean", "True or false"),
+    ];
+    rank(
+        items
+            .into_iter()
+            .map(|(name, detail)| Suggestion {
+                id: format!("cast-target-{name}"),
+                label: format!("\"{name}\""),
+                insert_text: if inside_quotes {
+                    name.to_string()
+                } else {
+                    format!("\"{name}\"")
+                },
+                kind: SuggestionKind::Value,
+                detail: detail.into(),
+                score: 0,
+                match_indices: Vec::new(),
+            })
+            .collect(),
+        &partial,
+    )
 }
 
 #[path = "completion_calls.rs"]
@@ -525,20 +594,27 @@ fn frame_suggestion(frame: &FrameObject, rows: Option<usize>) -> Suggestion {
 /// It is the thing that decides whether the reference is a value or a list,
 /// and knowing it before typing is the difference between writing the
 /// formula and writing it twice.
-fn foreign_column_suggestion(frame: &FrameObject, column: &Column, rows: usize) -> Suggestion {
+///
+/// A frame read live has no count written down — its rows are whatever
+/// its plan makes today — so the detail says only where the column is.
+fn foreign_column_suggestion(
+    frame: &FrameObject,
+    column: &Column,
+    rows: Option<usize>,
+) -> Suggestion {
     let quoted = crate::formula::ast::formula_name;
     Suggestion {
         id: format!("foreignColumn.{}", column.id),
         label: format!("{}.{}", frame.name, column.name),
         insert_text: format!("{}.{}", quoted(&frame.name), quoted(&column.name)),
         kind: SuggestionKind::Column,
-        detail: if rows == 1 {
-            format!("{:?} value from {}", column.data_type, frame.name)
-        } else {
-            format!(
+        detail: match rows {
+            Some(1) => format!("{:?} value from {}", column.data_type, frame.name),
+            Some(rows) => format!(
                 "{:?}, a list of {rows} from {}",
                 column.data_type, frame.name
-            )
+            ),
+            None => format!("{:?} column of {}, read live", column.data_type, frame.name),
         },
         score: 0,
         match_indices: Vec::new(),
@@ -737,10 +813,15 @@ fn rank(items: Vec<Suggestion>, partial: &str) -> Vec<Suggestion> {
 /// Everything on the canvas a formula here may name, as fully backticked
 /// tokens: values and lists (qualified by the containers they sit in), and
 /// every column of every frame holding a snapshot — which is exactly the
-/// set a formula here is allowed to name. Offering them is most of what
-/// makes the feature findable: the syntax is discoverable by looking at
-/// the list rather than by being told about it.
-fn canvas_suggestions(document: &Document, frame: &FrameObject) -> Vec<Suggestion> {
+/// set a formula here is allowed to name — or, for a list step, of every
+/// other frame at all. Offering them is most of what makes the feature
+/// findable: the syntax is discoverable by looking at the list rather than
+/// by being told about it.
+fn canvas_suggestions(
+    document: &Document,
+    frame: &FrameObject,
+    live_frames: bool,
+) -> Vec<Suggestion> {
     let mut suggestions: Vec<Suggestion> = document
         .objects
         .iter()
@@ -768,24 +849,33 @@ fn canvas_suggestions(document: &Document, frame: &FrameObject) -> Vec<Suggestio
         let DataObject::Frame(other) = object else {
             continue;
         };
-        let Some(materialization) = &other.materialization else {
-            continue;
-        };
         if other.id == frame.id {
             continue;
         }
-        suggestions.push(frame_suggestion(
-            other,
-            Some(materialization.artifact.row_count),
-        ));
-        suggestions.extend(other.columns.iter().map(|column| {
-            foreign_column_suggestion(other, column, materialization.artifact.row_count)
-        }));
+        // A literal frame's count is its rows; a computed frame read live
+        // has no count short of running it, which a menu does not do.
+        let rows = match &other.materialization {
+            Some(materialization) => Some(materialization.artifact.row_count),
+            None if live_frames => other.owns_its_rows().then_some(other.rows.len()),
+            None => continue,
+        };
+        suggestions.push(frame_suggestion(other, rows));
+        suggestions.extend(
+            other
+                .columns
+                .iter()
+                .map(|column| foreign_column_suggestion(other, column, rows)),
+        );
     }
     suggestions
 }
 
-fn complete_root(document: &Document, frame: &FrameObject, partial: &str) -> CompletionResult {
+fn complete_root(
+    document: &Document,
+    frame: &FrameObject,
+    partial: &str,
+    live_frames: bool,
+) -> CompletionResult {
     let mut suggestions: Vec<Suggestion> = frame
         .columns
         .iter()
@@ -793,7 +883,7 @@ fn complete_root(document: &Document, frame: &FrameObject, partial: &str) -> Com
         .collect();
     suggestions.push(frame_suggestion(frame, None));
     suggestions.push(financial::namespace(false));
-    suggestions.extend(canvas_suggestions(document, frame));
+    suggestions.extend(canvas_suggestions(document, frame, live_frames));
     suggestions.extend(
         crate::formula_function_catalog()
             .iter()
@@ -811,14 +901,19 @@ fn complete_root(document: &Document, frame: &FrameObject, partial: &str) -> Com
     }
 }
 
-fn complete_backtick(document: &Document, frame: &FrameObject, partial: &str) -> CompletionResult {
+fn complete_backtick(
+    document: &Document,
+    frame: &FrameObject,
+    partial: &str,
+    live_frames: bool,
+) -> CompletionResult {
     let mut suggestions: Vec<Suggestion> = frame
         .columns
         .iter()
         .map(|column| column_suggestion(column, true))
         .collect();
     suggestions.push(frame_suggestion(frame, None));
-    suggestions.extend(canvas_suggestions(document, frame));
+    suggestions.extend(canvas_suggestions(document, frame, live_frames));
     // Every token above is fully backticked; the user already typed the
     // opening one, so it is dropped from what gets inserted.
     for suggestion in &mut suggestions {
@@ -851,14 +946,16 @@ fn trailing_reference(receiver_text: &str) -> Option<ReferenceName> {
 
 /**
  * A frame name is a namespace only when it resolves to one readable frame.
- * Live foreign frames cannot be referenced by formulas, so advertising their
- * members here would make completion write an expression the parser rejects.
+ * A column formula cannot name a live foreign frame, so advertising its
+ * members there would make completion write an expression the parser
+ * rejects; a list step reads live frames, so there every frame answers.
  */
 fn frame_members_after_dot(
     document: &Document,
     current: &FrameObject,
     receiver_text: &str,
     partial: &str,
+    live_frames: bool,
 ) -> Option<CompletionResult> {
     let reference = trailing_reference(receiver_text)?;
     let matches: Vec<&FrameObject> = document
@@ -867,7 +964,9 @@ fn frame_members_after_dot(
         .filter_map(|object| match object {
             DataObject::Frame(frame)
                 if reference_matches(&frame.name, &reference)
-                    && (frame.id == current.id || frame.materialization.is_some()) =>
+                    && (frame.id == current.id
+                        || frame.materialization.is_some()
+                        || live_frames) =>
             {
                 Some(frame)
             }
@@ -904,6 +1003,29 @@ fn frame_members_after_dot(
     })
 }
 
+/// The one member of the `frame` namespace: `frame.len()`.
+fn frame_namespace_after_dot(partial: &str) -> CompletionResult {
+    let suggestions = crate::formula_function_catalog()
+        .into_iter()
+        .find(|entry| entry.id == "root.frame_len")
+        .map(|entry| {
+            let mut suggestion = root_function_suggestion(&entry);
+            suggestion.insert_text = "len(".into();
+            suggestion
+        })
+        .into_iter()
+        .collect();
+    CompletionResult {
+        replace_start: 0,
+        receiver_dtype: None,
+        namespace: Some("frame".into()),
+        suggestions: rank(suggestions, partial),
+        note: None,
+        active_function_id: None,
+        active_argument: None,
+    }
+}
+
 fn complete_after_dot(
     document: &Document,
     frame: &FrameObject,
@@ -911,33 +1033,17 @@ fn complete_after_dot(
     receiver_text: &str,
     path: &[String],
     partial: &str,
+    live_frames: bool,
 ) -> CompletionResult {
     if receiver_text.eq_ignore_ascii_case("finance") && path.is_empty() {
         return financial::complete_static(partial);
     }
     if path.is_empty() && receiver_text.eq_ignore_ascii_case("frame") {
-        let suggestions = crate::formula_function_catalog()
-            .into_iter()
-            .find(|entry| entry.id == "root.frame_len")
-            .map(|entry| {
-                let mut suggestion = root_function_suggestion(&entry);
-                suggestion.insert_text = "len(".into();
-                suggestion
-            })
-            .into_iter()
-            .collect();
-        return CompletionResult {
-            replace_start: 0,
-            receiver_dtype: None,
-            namespace: Some("frame".into()),
-            suggestions: rank(suggestions, partial),
-            note: None,
-            active_function_id: None,
-            active_argument: None,
-        };
+        return frame_namespace_after_dot(partial);
     }
     if path.is_empty()
-        && let Some(result) = frame_members_after_dot(document, frame, receiver_text, partial)
+        && let Some(result) =
+            frame_members_after_dot(document, frame, receiver_text, partial, live_frames)
     {
         return result;
     }
@@ -1044,6 +1150,33 @@ mod tests {
             .expect("demo document has a frame")
     }
 
+    #[test]
+    fn cast_offers_the_type_names_including_the_exact_amount() {
+        let store = demo_store();
+        let frame_id = first_frame_id(&store);
+        let text = "`Units`.cast(";
+        let offered = complete_formula(store.document(), &frame_id, text, text.chars().count())
+            .suggestions
+            .into_iter()
+            .map(|suggestion| (suggestion.label, suggestion.insert_text))
+            .collect::<Vec<_>>();
+        assert!(
+            offered.contains(&("\"accounting\"".into(), "\"accounting\"".into())),
+            "{offered:?}"
+        );
+
+        // With the opening quote already typed, the word alone is inserted.
+        let typed = "`Units`.cast(\"acc";
+        let offered = complete_formula(store.document(), &frame_id, typed, typed.chars().count());
+        assert_eq!(
+            offered
+                .suggestions
+                .first()
+                .map(|suggestion| suggestion.insert_text.clone()),
+            Some("accounting".into())
+        );
+    }
+
     fn date_column(frame: &FrameObject) -> Option<&Column> {
         frame
             .columns
@@ -1097,6 +1230,8 @@ mod tests {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         });
         store
             .apply(crate::Operation::AddFrame {
@@ -1771,5 +1906,62 @@ mod tests {
         let ranked = rank(suggestions, "");
         assert_eq!(ranked[0].label, "apple");
         assert_eq!(ranked[1].label, "banana");
+    }
+
+    /// A column formula is offered only the frames it may name — the
+    /// snapshots — while a list step, which reads a whole column live, is
+    /// offered every other frame, at the root, inside a backtick, and after
+    /// the frame's dot.
+    #[test]
+    fn a_list_step_is_offered_live_frames_and_a_column_formula_is_not() {
+        let mut store = Store::new(Document::blank("Live"));
+        store
+            .apply(crate::Operation::AddFrameFromPastedText {
+                name: "Sales".into(),
+                text: "Region\tAmount\nNorth\t10\nSouth\t20".into(),
+                x: 0.0,
+                y: 0.0,
+            })
+            .unwrap();
+        let sales_id = first_frame_id(&store);
+        store
+            .apply(crate::Operation::AddLinkedFrame {
+                source_frame_id: sales_id.clone(),
+                name: "Copy".into(),
+                x: 0.0,
+                y: 400.0,
+            })
+            .unwrap();
+        let document = store.document();
+        let sales = document.frame(&sales_id).unwrap();
+        let labels = |text: &str, live_frames: bool| {
+            complete_formula_in_scope(document, sales, &sales_id, text, text.len(), live_frames)
+                .suggestions
+                .into_iter()
+                .map(|suggestion| suggestion.label)
+                .collect::<Vec<_>>()
+        };
+        assert!(!labels("Co", false).iter().any(|label| label == "Copy"));
+        assert!(
+            !labels("`Co", false)
+                .iter()
+                .any(|label| label == "Copy.Amount")
+        );
+        assert!(labels("Co", true).iter().any(|label| label == "Copy"));
+        assert!(
+            labels("`Co", true)
+                .iter()
+                .any(|label| label == "Copy.Amount")
+        );
+        assert!(
+            labels("`Copy`.", true)
+                .iter()
+                .any(|label| label == "Amount")
+        );
+        assert!(
+            !labels("`Copy`.", false)
+                .iter()
+                .any(|label| label == "Amount")
+        );
     }
 }

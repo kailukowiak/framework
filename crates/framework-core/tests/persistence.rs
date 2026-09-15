@@ -415,6 +415,8 @@ fn documents_carry_their_data_by_relative_path_and_save_as_copies_all_of_it() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     let document_id = store.document().id.clone();
     let artifact = create_data_artifact(&source, &original.join("data")).unwrap();

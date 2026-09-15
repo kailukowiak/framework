@@ -9,6 +9,7 @@ import type { EntryColumn } from "./EntryColumn";
 import type { FrameDerivation } from "./FrameDerivation";
 import type { FrameDisplay } from "./FrameDisplay";
 import type { FrameGenerator } from "./FrameGenerator";
+import type { FramePeriod } from "./FramePeriod";
 import type { FrameStep } from "./FrameStep";
 import type { Materialization } from "./Materialization";
 import type { ModelPrediction } from "./ModelPrediction";
@@ -79,6 +80,10 @@ export type FrameObject = {
   generator?: FrameGenerator | null;
   materialization?: Materialization | null;
   uniqueKeys: Array<UniqueKeyConstraint>;
+  /**
+   * The declared period column, if any. See [`FramePeriod`].
+   */
+  period?: FramePeriod | null;
   /**
    * Hand-entered values living on a computed frame, keyed by row identity
    * rather than row position.

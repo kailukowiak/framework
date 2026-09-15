@@ -23,6 +23,13 @@ pub(crate) fn polars_value_at(series: &pl::Series, index: usize) -> Result<Scala
         pl::AnyValue::Int64(value) => ScalarValue::Number(value as f64),
         pl::AnyValue::Float32(value) => ScalarValue::Number(value as f64),
         pl::AnyValue::Float64(value) => ScalarValue::Number(value),
+        // The scalar layer is for display and comparison, where a float at
+        // the column's scale is exact for any amount a ledger holds. The
+        // exact value lives in the Polars column; see `decimal_text_at` for
+        // the text a cell keeps.
+        pl::AnyValue::Decimal(unscaled, _, scale) => {
+            ScalarValue::Number(unscaled as f64 / 10f64.powi(scale as i32))
+        }
         pl::AnyValue::Date(days) => ScalarValue::Date(
             NaiveDate::from_ymd_opt(1970, 1, 1)
                 .expect("Unix epoch is a valid date")
@@ -87,6 +94,149 @@ pub(crate) fn expression_value_at(
     })
 }
 
+/// The exact text of a decimal cell, `-12.50` at the column's scale, or
+/// `None` when the series is not decimal or the cell is null.
+pub(crate) fn decimal_text_at(series: &pl::Series, index: usize) -> Option<String> {
+    match series.get(index).ok()? {
+        pl::AnyValue::Decimal(unscaled, _, scale) => Some(decimal_text(unscaled, scale)),
+        _ => None,
+    }
+}
+
+/// `unscaled` written with `scale` decimal places: 1250 at scale 2 is `12.50`.
+pub(crate) fn decimal_text(unscaled: i128, scale: usize) -> String {
+    let negative = unscaled < 0;
+    let digits = unscaled.unsigned_abs().to_string();
+    let digits = if digits.len() <= scale {
+        format!("{}{digits}", "0".repeat(scale + 1 - digits.len()))
+    } else {
+        digits
+    };
+    let (whole, fraction) = digits.split_at(digits.len() - scale);
+    let sign = if negative { "-" } else { "" };
+    if scale == 0 {
+        format!("{sign}{whole}")
+    } else {
+        format!("{sign}{whole}.{fraction}")
+    }
+}
+
+/// The scale a Polars decimal carries; `None` for every other type.
+pub(crate) fn decimal_scale_from_polars(data_type: &pl::DataType) -> Option<u8> {
+    match data_type {
+        pl::DataType::Decimal(_, scale) => Some(*scale as u8),
+        _ => None,
+    }
+}
+
+/// The Polars type an accounting column is stored as.
+pub(crate) fn accounting_dtype(scale: Option<u8>) -> pl::DataType {
+    pl::DataType::Decimal(
+        ACCOUNTING_PRECISION,
+        scale.unwrap_or(DEFAULT_ACCOUNTING_SCALE) as usize,
+    )
+}
+
+/// An accounting amount as typed, read exactly: `$1,234.50`, `(12.50)` and
+/// `-12.50` are all amounts, and the text kept is the canonical `-12.50`
+/// rather than a float that has already lost the cents. `None` when the
+/// text is not an amount.
+pub(crate) fn parse_decimal_text(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    let (negative_parens, inner) = match trimmed.strip_prefix('(').and_then(|s| s.strip_suffix(')'))
+    {
+        Some(inner) => (true, inner.trim()),
+        None => (false, trimmed),
+    };
+    let normalized = inner.trim_start_matches('$').replace([',', ' ', '_'], "");
+    let (negative, digits) = match normalized.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, normalized.strip_prefix('+').unwrap_or(&normalized)),
+    };
+    let negative = negative ^ negative_parens;
+    let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if whole.is_empty() && fraction.is_empty() {
+        return None;
+    }
+    if !whole.chars().all(|c| c.is_ascii_digit()) || !fraction.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let whole = whole.trim_start_matches('0');
+    let whole = if whole.is_empty() { "0" } else { whole };
+    let sign = if negative && (whole != "0" || fraction.chars().any(|c| c != '0')) {
+        "-"
+    } else {
+        ""
+    };
+    Some(if fraction.is_empty() {
+        format!("{sign}{whole}")
+    } else {
+        format!("{sign}{whole}.{fraction}")
+    })
+}
+
+/// Canonical decimal text rounded to `scale` places, half to even — the
+/// same rounding Polars applies when a decimal is cast to fewer places, so a
+/// typed `0.125` shows the same twelve cents as a computed copy of it.
+pub(crate) fn round_decimal_text(text: &str, scale: u8) -> String {
+    let scale = scale as usize;
+    let (negative, digits) = match text.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, text),
+    };
+    let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if fraction.len() <= scale {
+        let padded = format!("{fraction}{}", "0".repeat(scale - fraction.len()));
+        return decimal_text_from_parts(negative, whole, &padded);
+    }
+    let (kept, dropped) = fraction.split_at(scale);
+    let mut unscaled = format!("{whole}{kept}").parse::<i128>().unwrap_or(0);
+    let exactly_half = dropped.starts_with('5') && dropped[1..].chars().all(|c| c == '0');
+    let round_up = if exactly_half {
+        unscaled % 2 == 1
+    } else {
+        dropped.starts_with(|c: char| c >= '5')
+    };
+    if round_up {
+        unscaled += 1;
+    }
+    let text = decimal_text(unscaled, scale);
+    if negative && text.chars().any(|c| c.is_ascii_digit() && c != '0') {
+        format!("-{text}")
+    } else {
+        text
+    }
+}
+
+fn decimal_text_from_parts(negative: bool, whole: &str, fraction: &str) -> String {
+    let sign = if negative { "-" } else { "" };
+    if fraction.is_empty() {
+        format!("{sign}{whole}")
+    } else {
+        format!("{sign}{whole}.{fraction}")
+    }
+}
+
+/// An accounting cell as typed, read exactly and held to the column's
+/// scale, so the grid shows the amount the column actually holds.
+pub(crate) fn parse_accounting_value(raw: &str, scale: Option<u8>) -> Result<ScalarValue, String> {
+    if raw.trim().is_empty() {
+        return Ok(ScalarValue::Null);
+    }
+    parse_decimal_text(raw)
+        .map(|text| round_decimal_text(&text, scale.unwrap_or(DEFAULT_ACCOUNTING_SCALE)))
+        .and_then(|text| text.parse::<f64>().ok())
+        .map(ScalarValue::Number)
+        .ok_or_else(|| "Invalid amount; write digits with an optional sign, decimal point, or parentheses for a negative".into())
+}
+
+/// How many decimal places a written number carries: `0.0825` has four.
+pub(crate) fn decimal_places(text: &str) -> u8 {
+    text.split_once('.')
+        .map_or(0, |(_, fraction)| fraction.trim_end_matches('0').len())
+        .min(u8::MAX as usize) as u8
+}
+
 pub(crate) fn framework_type_from_polars(data_type: &pl::DataType) -> Result<DataType, String> {
     Ok(match data_type {
         pl::DataType::String => DataType::String,
@@ -103,10 +253,11 @@ pub(crate) fn framework_type_from_polars(data_type: &pl::DataType) -> Result<Dat
         | pl::DataType::UInt32
         | pl::DataType::UInt64
         | pl::DataType::UInt128 => DataType::Integer,
-        pl::DataType::Float16
-        | pl::DataType::Float32
-        | pl::DataType::Float64
-        | pl::DataType::Decimal(_, _) => DataType::Number,
+        pl::DataType::Float16 | pl::DataType::Float32 | pl::DataType::Float64 => DataType::Number,
+        // A decimal is a physical fact about the column, not a way of
+        // writing a float: whatever produced it kept the amount exact, and
+        // the document keeps calling it so.
+        pl::DataType::Decimal(_, _) => DataType::Accounting,
         pl::DataType::Null => DataType::String,
         other => {
             return Err(format!(
@@ -123,6 +274,7 @@ pub(crate) fn format_scalar_value(value: &ScalarValue, data_type: DataType) -> S
             DataType::Integer => format!("{value:.0}"),
             DataType::Number => format_float(*value),
             DataType::Currency => format!("${value:.2}"),
+            DataType::Accounting => format!("{value:.2}"),
             // As many figures as the rate has, rather than one: this used to
             // be `{:.1}`, which showed `4.25%` as `4.2%` — a digit somebody
             // typed, dropped on the way to the screen.
@@ -147,6 +299,10 @@ pub(crate) fn parse_scalar_value(raw: &str, data_type: DataType) -> Result<Scala
         DataType::Number | DataType::Currency | DataType::Percentage => parse_number(raw)
             .map(ScalarValue::Number)
             .ok_or_else(|| format!("Invalid {} value", data_type_name(data_type))),
+        DataType::Accounting => parse_decimal_text(raw)
+            .and_then(|text| text.parse::<f64>().ok())
+            .map(ScalarValue::Number)
+            .ok_or_else(|| "Invalid amount; write digits with an optional sign, decimal point, or parentheses for a negative".into()),
         DataType::Boolean => parse_boolean(raw)
             .map(ScalarValue::Boolean)
             .ok_or_else(|| "Invalid boolean; use true or false".into()),
@@ -259,6 +415,7 @@ pub(crate) fn data_type_name(data_type: DataType) -> &'static str {
         DataType::Integer => "integer",
         DataType::Number => "number",
         DataType::Currency => "currency",
+        DataType::Accounting => "accounting",
         DataType::Percentage => "percentage",
         DataType::Boolean => "boolean",
         DataType::Date => "date",
@@ -320,6 +477,9 @@ pub(crate) fn series_to_polars(series: &SeriesObject) -> Result<pl::Series, Stri
                 })
                 .collect::<Vec<_>>(),
         ),
+        DataType::Accounting => {
+            decimal_series(name, None, series.values.iter().map(String::as_str))?
+        }
         DataType::Boolean => pl::Series::new(
             name,
             parsed
@@ -541,10 +701,29 @@ pub(crate) fn polars_type_for(data_type: DataType) -> pl::DataType {
     match data_type {
         DataType::Integer => pl::DataType::Int64,
         DataType::Number | DataType::Currency | DataType::Percentage => pl::DataType::Float64,
+        DataType::Accounting => accounting_dtype(None),
         DataType::Boolean => pl::DataType::Boolean,
         DataType::Date => pl::DataType::Date,
         DataType::String | DataType::Categorical => pl::DataType::String,
     }
+}
+
+/// An exact decimal series from raw text, one value per raw, at `scale`
+/// decimal places. Text that is not an amount is a null, like every other
+/// typed series here. The text is cast rather than parsed through a float,
+/// so `0.10` arrives as ten cents and not as the nearest binary fraction.
+pub(crate) fn decimal_series<'a>(
+    name: pl::PlSmallStr,
+    scale: Option<u8>,
+    raws: impl Iterator<Item = &'a str>,
+) -> Result<pl::Series, String> {
+    let places = scale.unwrap_or(DEFAULT_ACCOUNTING_SCALE);
+    let texts = raws
+        .map(|raw| parse_decimal_text(raw).map(|text| round_decimal_text(&text, places)))
+        .collect::<Vec<_>>();
+    pl::Series::new(name, texts)
+        .cast(&accounting_dtype(scale))
+        .map_err(|error| error.to_string())
 }
 
 /// A typed series built from raw text, one value per raw, parsed exactly
@@ -566,6 +745,7 @@ pub(crate) fn typed_series<'a>(
         DataType::Number | DataType::Currency | DataType::Percentage => {
             pl::Series::new(name, raws.map(parse_number).collect::<Vec<_>>())
         }
+        DataType::Accounting => decimal_series(name, None, raws)?,
         DataType::Boolean => pl::Series::new(name, raws.map(parse_boolean).collect::<Vec<_>>()),
         DataType::Date => pl::Series::new(name, raws.map(parse_date).collect::<Vec<_>>()),
     })
@@ -583,9 +763,14 @@ pub(crate) fn frame_rows_from_polars(frame: &FrameObject, data_frame: &pl::DataF
                         .column(&column.id)
                         .ok()
                         .and_then(|series| {
-                            polars_value_at(series.as_materialized_series(), row_index).ok()
+                            let series = series.as_materialized_series();
+                            // An exact amount keeps its exact text.
+                            decimal_text_at(series, row_index).or_else(|| {
+                                polars_value_at(series, row_index)
+                                    .ok()
+                                    .map(scalar_value_to_raw)
+                            })
                         })
-                        .map(scalar_value_to_raw)
                         .unwrap_or_default();
                     (
                         column.id.clone(),

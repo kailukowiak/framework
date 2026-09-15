@@ -3,7 +3,7 @@ import { displayedSummaryRows } from "./FrameSummaryFooter";
 import { selectionStatistics } from "./lib/selectionStatistics";
 import type { SummaryOperation } from "./lib/types";
 
-const numericTypes = new Set(["integer", "number", "currency", "percentage"]);
+const numericTypes = new Set(["integer", "number", "currency", "accounting", "percentage"]);
 
 function formatStatistic(value: number): string {
   return new Intl.NumberFormat(undefined, {

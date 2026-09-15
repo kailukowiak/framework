@@ -7,7 +7,16 @@ use polars::prelude as pl;
 pub(super) fn receiver_parameter(name: &str) -> &'static str {
     match name {
         "pv" => "pmt",
-        "npv" | "xnpv" | "irr" | "xirr" => "values",
+        "npv" | "xnpv" | "irr" | "xirr" | "mirr" => "values",
+        "effect" => "nominal_rate",
+        "nominal" => "effect_rate",
+        "sln" | "db" | "ddb" => "cost",
+        "period_index" => "date",
+        "prior" => "expr",
+        "ytd" | "ttm" | "same_period_last_year" => "expr",
+        "fiscal_year" | "fiscal_quarter" | "fiscal_period" | "period_start" | "period_end"
+        | "add_periods" | "fiscal_week" | "workday" => "date",
+        "networkdays" => "start_date",
         _ => "pv",
     }
 }

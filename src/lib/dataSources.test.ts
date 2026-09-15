@@ -47,6 +47,7 @@ function documentOf(
     computedCalculationMatrices: {},
     computedValues: {},
     scenarios: [],
+    calendars: [],
     formulaFunctions: [],
     canUndo: false,
     canRedo: false,

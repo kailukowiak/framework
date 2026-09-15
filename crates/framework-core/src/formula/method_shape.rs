@@ -32,7 +32,7 @@ pub(super) fn reduces(path: &[String]) -> bool {
         [namespace, name] if namespace.eq_ignore_ascii_case("finance") => {
             matches!(
                 name.to_ascii_lowercase().as_str(),
-                "npv" | "xnpv" | "irr" | "xirr"
+                "npv" | "xnpv" | "irr" | "xirr" | "mirr"
             )
         }
         _ => false,
@@ -64,13 +64,23 @@ pub(super) fn declared_type(
             [Expr::String { value }] => shown_as(value),
             _ => None,
         },
+        // A cast says what it produces. Only the amount-to-money direction
+        // is named here, since that is the one cast whose result is a way
+        // of writing rather than a Polars type.
+        [name] if name == "cast" => match arguments {
+            [Expr::String { value }, ..] if matches!(value.as_str(), "currency" | "money") => {
+                Some(DataType::Currency)
+            }
+            [Expr::String { value }, ..] if value == "accounting" => Some(DataType::Accounting),
+            _ => None,
+        },
         [name] if matches!(name.as_str(), "count" | "len" | "null_count" | "n_unique") => {
             Some(DataType::Integer)
         }
         [name] if matches!(name.as_str(), "mean" | "median" | "quantile") => input
             .declared_type_among(document, scope)
             .map(|data_type| match data_type {
-                DataType::Integer | DataType::Number => DataType::Number,
+                DataType::Integer | DataType::Number | DataType::Accounting => DataType::Number,
                 other => other,
             }),
         [name] if name == "mode" => input.declared_type_among(document, scope),
@@ -118,6 +128,48 @@ pub(super) fn declared_type(
                 ) =>
         {
             Some(DataType::Integer)
+        }
+        // A period index is a count by the same argument as `count` above:
+        // offsets between two of them are whole periods, which is what
+        // makes them join keys rather than dates. `prior` and the window
+        // aggregates answer whatever they were asked for — the sum of money
+        // is money — so they read their input's type instead of claiming
+        // Number for every receiver.
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "period_index" | "fiscal_year" | "fiscal_quarter" | "fiscal_period"
+                ) =>
+        {
+            Some(DataType::Integer)
+        }
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "fiscal_week" | "networkdays"
+                ) =>
+        {
+            Some(DataType::Integer)
+        }
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "period_start" | "period_end" | "add_periods" | "workday"
+                ) =>
+        {
+            Some(DataType::Date)
+        }
+        [namespace, name]
+            if namespace.eq_ignore_ascii_case("finance")
+                && matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "prior" | "ytd" | "ttm" | "same_period_last_year"
+                ) =>
+        {
+            input.declared_type_among(document, scope)
         }
         [namespace, _] if namespace.eq_ignore_ascii_case("finance") => Some(DataType::Number),
         path if reduces(path) => input.declared_type_among(document, scope),

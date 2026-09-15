@@ -3,6 +3,7 @@ import type { BroadcastOperator } from "./BroadcastOperator";
 import type { ExistingFormulaInput } from "./ExistingFormulaInput";
 import type { PivotAggregate } from "./PivotAggregate";
 import type { SortInput } from "./SortInput";
+import type { ZipFill } from "./ZipFill";
 
 /**
  * A step as the editor supplies it: formulas still text, output columns
@@ -48,5 +49,6 @@ export type FrameStepInput =
     outputColumnId: string;
     name: string;
     vector: string;
+    fill?: ZipFill;
   }
   | { "kind": "comment"; text: string };

@@ -8,6 +8,46 @@ use std::collections::HashSet;
 /// Column name for the row index a page read carries between the data and
 /// display layers. Not a column id, so it cannot collide with one.
 pub(crate) const ROW_INDEX: &str = "__framework_row";
+
+/// How many rows a plan produces, counted without materializing them.
+/// Whether a list of `length` values can be paired down `rows` rows the
+/// way `fill` asks, with the reason when it cannot — phrased to follow the
+/// list's name, so the two callers say the same thing about the same list.
+pub(crate) fn zip_length_fits(length: usize, rows: usize, fill: ZipFill) -> Result<(), String> {
+    let plural = |n: usize| if n == 1 { "" } else { "s" };
+    if length == 0 {
+        return Err("has no values to pair".into());
+    }
+    match fill {
+        ZipFill::Exact if length != rows => Err(format!(
+            "has {length} value{}, but this frame has {rows} row{}. Pairing needs one value for every row, or the list set to repeat.",
+            plural(length),
+            plural(rows)
+        )),
+        ZipFill::Repeat if rows % length != 0 => Err(format!(
+            "has {length} value{}, which does not repeat evenly down {rows} row{}: the frame needs a whole number of repeats.",
+            plural(length),
+            plural(rows)
+        )),
+        _ => Ok(()),
+    }
+}
+
+pub(crate) fn plan_row_count(plan: &pl::LazyFrame) -> Result<usize, String> {
+    const COUNT: &str = "__framework_row_count";
+    let counted = plan
+        .clone()
+        .select([pl::len().alias(COUNT)])
+        .collect()
+        .map_err(|error| error.to_string())?;
+    Ok(counted
+        .column(COUNT)
+        .map_err(|error| error.to_string())?
+        .u32()
+        .map_err(|error| error.to_string())?
+        .get(0)
+        .unwrap_or(0) as usize)
+}
 const OVERLAY_PATCH: &str = "__framework_patch_";
 const OVERLAY_PRESENT: &str = "__framework_patched_";
 
@@ -196,7 +236,7 @@ impl Document {
     ) -> Result<pl::LazyFrame, String> {
         let mut plan = plan;
         for step in &frame.display.steps {
-            plan = self.apply_step(plan, step, &mut HashSet::new())?;
+            plan = self.apply_step(&frame.id, plan, step, &mut HashSet::new())?;
         }
         Ok(plan)
     }
@@ -232,7 +272,7 @@ impl Document {
                     cols.push(pl::col(ROW_INDEX));
                     plan.select(cols)
                 }
-                _ => self.apply_step(plan, step, &mut visiting)?,
+                _ => self.apply_step(&frame.id, plan, step, &mut visiting)?,
             };
         }
         // The projection must be the columns that survive the chain, not the
@@ -376,7 +416,7 @@ impl Document {
                 .iter()
                 .any(|step| matches!(step, FrameStep::Join { .. }));
             for step in steps.iter() {
-                plan = self.apply_step(plan, step, visiting)?;
+                plan = self.apply_step(frame_id, plan, step, visiting)?;
             }
             // Entered values join on after the chain: the chain makes the
             // rows, the entries decorate them by key.
@@ -410,7 +450,7 @@ impl Document {
                 }
                 let mut plan = plan;
                 for step in &frame.steps {
-                    plan = self.apply_step(plan, step, visiting)?;
+                    plan = self.apply_step(&frame.id, plan, step, visiting)?;
                 }
                 let plan = self.apply_entry_columns(plan, frame)?;
                 Ok(plan.select(
@@ -693,6 +733,7 @@ impl Document {
     /// aggregates rather than the source rows.
     fn apply_broadcast_step(
         &self,
+        frame_id: &str,
         plan: pl::LazyFrame,
         step: &FrameStep,
     ) -> Result<pl::LazyFrame, String> {
@@ -736,35 +777,67 @@ impl Document {
                 })
             })
             .collect::<Result<Vec<_>, String>>()?;
-        self.apply_with_columns_step(plan, &columns)
+        self.apply_with_columns_step(frame_id, plan, &columns)
     }
 
+    /// The pairing's one invariant, checked against the frame as it stands
+    /// now: one value for every row. The length recorded when the step was
+    /// written is not what is compared. A list read from a frame that
+    /// shares this one's rows — predictions scored from the same source —
+    /// grows and shrinks with it, and refusing that would break the pairing
+    /// exactly when it is doing its job. A written list edited shorter
+    /// still fails, because the rows did not change with it.
     fn apply_zip_vector_step(
         &self,
+        frame_id: &str,
         plan: pl::LazyFrame,
         step: &FrameStep,
     ) -> Result<pl::LazyFrame, String> {
         let FrameStep::ZipVector {
             output_column_id,
             vector,
-            expected_length,
+            fill,
+            ..
         } = step
         else {
             unreachable!("called only for a paired-list step")
         };
         let (_, values) = self.evaluate_to_series(vector)?;
-        if values.len() != *expected_length {
-            return Err(format!(
-                "This list had {expected_length} value{} when it was paired, but it now has {}. Pair it again to update the rows.",
-                if *expected_length == 1 { "" } else { "s" },
-                values.len()
-            ));
+        let rows = plan_row_count(&plan)?;
+        if let Err(reason) = zip_length_fits(values.len(), rows, *fill) {
+            let column = self
+                .frame(frame_id)
+                .ok()
+                .and_then(|frame| {
+                    frame
+                        .columns
+                        .iter()
+                        .chain(frame.base_columns.iter())
+                        .find(|column| column.id == *output_column_id)
+                        .map(|column| column.name.clone())
+                })
+                .unwrap_or_else(|| output_column_id.clone());
+            return Err(format!("The list paired as ‘{column}’ {reason}"));
         }
-        Ok(plan.with_columns([pl::lit(values.clone()).alias(output_column_id.clone())]))
+        let values = match fill {
+            ZipFill::Exact => values,
+            // Whole repeats only, checked above, so the tiled series is
+            // exactly as long as the frame.
+            ZipFill::Repeat => {
+                let repeats = rows / values.len().max(1);
+                let mut tiled = values.clone();
+                for _ in 1..repeats {
+                    tiled.append(&values).map_err(|error| error.to_string())?;
+                }
+                tiled
+            }
+        };
+        Ok(plan.with_columns([pl::lit(values).alias(output_column_id.clone())]))
     }
 
     pub(crate) fn apply_step(
         &self,
+        frame_id: &str,
         plan: pl::LazyFrame,
         step: &FrameStep,
         visiting: &mut HashSet<Id>,
@@ -805,9 +878,11 @@ impl Document {
                 });
                 Ok(plan.filter(predicate))
             }
-            FrameStep::WithColumns { columns } => self.apply_with_columns_step(plan, columns),
-            FrameStep::Broadcast { .. } => self.apply_broadcast_step(plan, step),
-            FrameStep::ZipVector { .. } => self.apply_zip_vector_step(plan, step),
+            FrameStep::WithColumns { columns } => {
+                self.apply_with_columns_step(frame_id, plan, columns)
+            }
+            FrameStep::Broadcast { .. } => self.apply_broadcast_step(frame_id, plan, step),
+            FrameStep::ZipVector { .. } => self.apply_zip_vector_step(frame_id, plan, step),
             FrameStep::Select { column_ids } => Ok(plan.select(
                 column_ids
                     .iter()
@@ -1173,7 +1248,7 @@ impl Document {
         }
         for step in steps.iter().take(step_index) {
             plan = self
-                .apply_step(plan, step, &mut visiting)
+                .apply_step(frame_id, plan, step, &mut visiting)
                 .map_err(CoreError::Import)?;
         }
         let schema = plan
@@ -1409,8 +1484,14 @@ impl Document {
         for row_index in 0..data_frame.height() {
             let mut row = Vec::with_capacity(series_by_column.len());
             for series in &series_by_column {
-                let value = polars_value_at(series, row_index).map_err(CoreError::Import)?;
-                row.push(scalar_value_to_raw(value));
+                // An exact amount pages out as its exact text.
+                let raw = match decimal_text_at(series, row_index) {
+                    Some(text) => text,
+                    None => scalar_value_to_raw(
+                        polars_value_at(series, row_index).map_err(CoreError::Import)?,
+                    ),
+                };
+                row.push(raw);
             }
             rows.push(row);
         }
@@ -1605,6 +1686,8 @@ mod tests {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         });
         // The desktop app imports through ImportFrameFromArtifact (it stages
         // a parquet artifact first), so measure that path, not the

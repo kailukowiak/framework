@@ -16,10 +16,16 @@ pub(crate) use column_list::parse_column_list;
 pub use complete::{CompletionResult, Suggestion, SuggestionKind, complete_formula};
 pub(crate) use parser::*;
 
+pub(crate) mod controls;
 pub(crate) mod dictionary;
 pub(crate) mod financial;
-pub(crate) mod controls;
+pub(crate) mod financial_calendar;
+mod financial_depreciation;
 mod financial_discount;
+mod financial_fiscal;
 mod financial_namespace;
+pub(crate) mod financial_period;
 mod financial_return;
 mod financial_root;
+pub(crate) mod financial_window;
+mod financial_yield;

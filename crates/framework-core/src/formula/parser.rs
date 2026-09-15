@@ -122,12 +122,19 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn parse(mut self) -> Result<Expr, CoreError> {
-        let expression = self.parse_expression(0)?;
+        let mut expression = self.parse_expression(0)?;
         if self.peek() != &Token::End {
             return Err(CoreError::Formula(
                 "Unexpected text at end of formula".into(),
             ));
         }
+        // Calendars are bound here rather than while the arguments are
+        // being read because which argument is the calendar is a fact
+        // about the function being called, and the call is not complete
+        // until its arguments are. Every other name — a value, a column,
+        // a frame — is resolved to an id as it is read; this is the same
+        // act, one step later.
+        crate::formula::financial_calendar::bind_references(&mut expression, self.document)?;
         expression.validate_list_placement(self.document, self.lists)?;
         expression.validate_comparison_types_among(self.document, &self.frame.columns)?;
         Ok(expression)
@@ -713,8 +720,10 @@ impl<'a> Parser<'a> {
         // semantic query directly, while Result keeps its one-value boundary.
         if !self.scalar && !self.mapping_arguments && other.materialization.is_none() {
             return Err(CoreError::Formula(format!(
-                "‘{}’ has to be materialized before another frame can read from it. \
-                 Materialize it, and this reference will work.",
+                "‘{}’ has to be materialized before a column formula can read from it. \
+                 Materialize it and this reference will work — or, to place the whole \
+                 column beside these rows, use Wrangle’s ‘Pair vector as column’, which \
+                 reads it live.",
                 other.name
             )));
         }

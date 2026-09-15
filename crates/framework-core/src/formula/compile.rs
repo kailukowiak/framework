@@ -3,13 +3,25 @@ mod root_call;
 use crate::formula::ast::{BinaryOperator, Expr, Shape};
 use crate::model::document::{DataObject, Document};
 use crate::model::frame::FrameObject;
-use crate::model::value::{DataType, ScalarValue};
-use crate::{keyword_argument, parse_scalar_value};
+use crate::model::value::{ACCOUNTING_PRECISION, DataType, ScalarValue};
+use crate::{accounting_dtype, decimal_places, keyword_argument, parse_scalar_value};
 use polars::prelude as pl;
 use polars::prelude::NamedFrom;
 pub(crate) use root_call::polars_call_declared_type;
+use std::cell::RefCell;
 
 const MAX_SEQUENCE_VALUES: usize = 1_000_000;
+
+/// A calendar is a rule for reading dates, not a value, so it never
+/// becomes a Polars expression: the function that takes one reads it out
+/// of its argument before compiling anything. Reaching this means a
+/// calendar was named somewhere that does not ask for one.
+fn not_a_value(document: &Document, calendar_id: &str) -> String {
+    format!(
+        "‘{}’ is a calendar, not a value. Name it in the calendar argument of a fiscal function.",
+        crate::formula::financial_calendar::calendar_name(document, calendar_id)
+    )
+}
 
 impl Expr {
     pub(crate) fn to_polars(&self, document: &Document) -> Result<pl::Expr, String> {
@@ -28,6 +40,7 @@ impl Expr {
                 "‘{value}’ is a length of time, not a value. Add it to a date \
                  or subtract it from one."
             )),
+            Expr::Calendar { calendar_id } => Err(not_a_value(document, calendar_id)),
             Expr::Null => Ok(pl::lit(pl::NULL)),
             Expr::Column { column_id } => Ok(pl::col(column_id)),
             Expr::ForeignColumn {
@@ -131,6 +144,11 @@ impl Expr {
                             compiled.is_not_null()
                         });
                     }
+                }
+                if let Some(compiled) =
+                    compile_accounting_arithmetic(operator, left, right, document)?
+                {
+                    return Ok(compiled);
                 }
                 let left = left.to_polars(document)?;
                 let right = right.to_polars(document)?;
@@ -397,20 +415,29 @@ fn foreign_column_literal(
         .map_err(|error| {
             format!("‘{frame_name}’.‘{column_name}’ could not be read from the snapshot: {error}")
         })?,
-        None => document
-            .materialize_frame_lazy(
-                frame_id,
-                crate::engine::Layer::Data,
-                &mut Default::default(),
-            )
-            .and_then(|plan| {
-                plan.select([pl::col(column_id)])
-                    .collect()
-                    .map_err(|error| error.to_string())
-            })
-            .map_err(|error| {
-                format!("‘{frame_name}’.‘{column_name}’ could not be read: {error}")
-            })?,
+        None => {
+            let Some(_reading) = LiveRead::enter(frame_id) else {
+                return Err(format!(
+                    "‘{frame_name}’ is still being worked out when ‘{column_name}’ is read \
+                     from it — the two frames read each other. Materialize one of them, and \
+                     the other reads its snapshot."
+                ));
+            };
+            document
+                .materialize_frame_lazy(
+                    frame_id,
+                    crate::engine::Layer::Data,
+                    &mut Default::default(),
+                )
+                .and_then(|plan| {
+                    plan.select([pl::col(column_id)])
+                        .collect()
+                        .map_err(|error| error.to_string())
+                })
+                .map_err(|error| {
+                    format!("‘{frame_name}’.‘{column_name}’ could not be read: {error}")
+                })?
+        }
     };
     let series = frame
         .column(column_id)
@@ -420,6 +447,42 @@ fn foreign_column_literal(
         return scalar_to_polars_literal(crate::polars_value_at(series, 0)?);
     }
     Ok(pl::lit(series.clone()))
+}
+
+thread_local! {
+    /// The frames whose live plans are being read at this moment, innermost
+    /// last. A live read collects another frame's plan from inside the
+    /// compilation of this one, and nothing on that path remembers where it
+    /// came from: `materialize_frame_lazy` starts a fresh cycle set, so two
+    /// frames each pairing a column of the other would recurse until the
+    /// stack ran out. A frame already on this stack is that loop, caught
+    /// one level in — the authoring boundary refuses it first, but a loop
+    /// can also arrive from disk or from a replica.
+    static LIVE_READS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// One frame's turn on [`LIVE_READS`], taken off again when dropped.
+struct LiveRead;
+
+impl LiveRead {
+    fn enter(frame_id: &str) -> Option<LiveRead> {
+        LIVE_READS.with(|reads| {
+            let mut reads = reads.borrow_mut();
+            if reads.iter().any(|reading| reading == frame_id) {
+                return None;
+            }
+            reads.push(frame_id.to_string());
+            Some(LiveRead)
+        })
+    }
+}
+
+impl Drop for LiveRead {
+    fn drop(&mut self) {
+        LIVE_READS.with(|reads| {
+            reads.borrow_mut().pop();
+        });
+    }
 }
 
 /// One value out of a list, addressed the way a spreadsheet addresses
@@ -543,6 +606,9 @@ fn as_text(
         // meant by it. Anything else would be this function handing back a
         // number the document itself would never print.
         DataType::Currency => pl::lit("$") + plain_number_text(compiled),
+        // An amount's text is its exact digits at its scale: `12.50`, not
+        // `12.5` and not a float's idea of it.
+        DataType::Accounting => compiled.cast(pl::DataType::String),
         DataType::Percentage => plain_number_text(compiled * pl::lit(100.0)) + pl::lit("%"),
     })
 }
@@ -565,6 +631,74 @@ fn plain_number_text(compiled: pl::Expr) -> pl::Expr {
         .strip_suffix(pl::lit(".0"))
 }
 
+/// Arithmetic with an exact amount on either side, kept exact.
+///
+/// Polars drops to a float the moment a decimal meets one, which is the
+/// silent loss this type exists to prevent. So the other side is brought to
+/// decimal first: an integer is already exact; a written number is given
+/// the places it was written with (`8.25%` is four); anything else — a
+/// float column, a rate somebody computed — is given nine, enough for any
+/// rate a ledger applies. Polars then answers at the wider scale, and the
+/// result is exact at that scale rather than exact somewhere unknowable.
+///
+/// Money and an amount do not meet at all. `Currency` is the modelling
+/// type and knows nothing of scale; asking for a cast is the honest answer.
+///
+/// `None` when neither side is an amount, so the ordinary arithmetic runs.
+fn compile_accounting_arithmetic(
+    operator: &BinaryOperator,
+    left: &Expr,
+    right: &Expr,
+    document: &Document,
+) -> Result<Option<pl::Expr>, String> {
+    use BinaryOperator::*;
+    if !matches!(
+        operator,
+        Add | Subtract | Multiply | Divide | FloorDivide | Modulo
+    ) {
+        return Ok(None);
+    }
+    let left_type = left.declared_type(document);
+    let right_type = right.declared_type(document);
+    let accounting = |data_type: Option<DataType>| data_type == Some(DataType::Accounting);
+    if !accounting(left_type) && !accounting(right_type) {
+        return Ok(None);
+    }
+    for (this, other) in [(left_type, right_type), (right_type, left_type)] {
+        if accounting(this) && other == Some(DataType::Currency) {
+            return Err(
+                "An accounting amount and money do not combine on their own: \
+                        cast one side first, `.cast(\"accounting\")` to keep the amount exact \
+                        or `.cast(\"currency\")` to model with it."
+                    .into(),
+            );
+        }
+    }
+    let exact = |expression: &Expr, data_type: Option<DataType>| -> Result<pl::Expr, String> {
+        let compiled = expression.to_polars(document)?;
+        Ok(match (expression, data_type) {
+            (_, Some(DataType::Accounting | DataType::Integer)) => compiled,
+            (Expr::Integer { .. }, _) => compiled,
+            (Expr::Number { value } | Expr::Percentage { value }, _) => {
+                let places = decimal_places(&value.to_string());
+                compiled.cast(accounting_dtype(Some(places.max(1))))
+            }
+            _ => compiled.cast(accounting_dtype(Some(9))),
+        })
+    };
+    let left = exact(left, left_type)?;
+    let right = exact(right, right_type)?;
+    Ok(Some(match operator {
+        Add => left + right,
+        Subtract => left - right,
+        Multiply => left * right,
+        Divide => left / right,
+        FloorDivide => left.floor_div(right),
+        Modulo => left % right,
+        _ => unreachable!("filtered above"),
+    }))
+}
+
 /// The types `cast` can be asked for, by the word somebody writes.
 ///
 /// Storage rather than presentation: money and a percentage are a number
@@ -578,6 +712,7 @@ fn cast_target(name: &str) -> Option<DataType> {
         "number" => Some(DataType::Number),
         "boolean" => Some(DataType::Boolean),
         "date" => Some(DataType::Date),
+        "accounting" => Some(DataType::Accounting),
         _ => None,
     }
 }
@@ -598,16 +733,37 @@ fn compile_cast(
     if !keyword_arguments.is_empty() {
         return Err(".cast does not accept keyword arguments".into());
     }
-    let named = match arguments {
-        [Expr::String { value }] => value.as_str(),
+    let (named, scale) = match arguments {
+        [Expr::String { value }] => (value.as_str(), None),
+        // Only an amount has a scale to name: `.cast("accounting", 4)`.
+        [Expr::String { value }, Expr::Integer { value: scale }]
+            if value == "accounting" && (0..=ACCOUNTING_PRECISION as i64).contains(scale) =>
+        {
+            (value.as_str(), Some(*scale as u8))
+        }
+        [Expr::String { value }, _] if value == "accounting" => {
+            return Err(format!(
+                ".cast(\"accounting\", places) takes the decimal places as a whole number \
+                 from 0 to {ACCOUNTING_PRECISION}"
+            ));
+        }
         _ => {
             return Err(
                 ".cast expects one type in quotes — \"string\", \"integer\", \
-                        \"number\", \"date\" or \"boolean\""
+                        \"number\", \"accounting\", \"date\" or \"boolean\""
                     .into(),
             );
         }
     };
+    // Money is the one target that is a way of writing rather than a
+    // storage type, and the one conversion that asks for it by name: an
+    // exact amount handed to the modelling side. Every other input is told
+    // to `.show("money")` instead, below.
+    if matches!(named, "currency" | "money")
+        && input.declared_type(document) == Some(DataType::Accounting)
+    {
+        return Ok(input.to_polars(document)?.cast(pl::DataType::Float64));
+    }
     let Some(target) = cast_target(named) else {
         // Category is the one refusal worth explaining rather than listing
         // past. It is a real type here, so being told it does not exist
@@ -627,7 +783,7 @@ fn compile_cast(
         }
         return Err(format!(
             "‘{named}’ is not a type this can convert to. Write \"string\", \
-             \"integer\", \"number\", \"date\" or \"boolean\"."
+             \"integer\", \"number\", \"accounting\", \"date\" or \"boolean\"."
         ));
     };
     let compiled = input.to_polars(document)?;
@@ -641,6 +797,20 @@ fn compile_cast(
         },
         DataType::Integer => compiled.cast(pl::DataType::Int64),
         DataType::Number => compiled.cast(pl::DataType::Float64),
+        // Exact from here on. Text is read as written; a float or money is
+        // rounded to the scale, which is the one place a binary fraction
+        // becomes an amount and so the place to look when a cent moves.
+        DataType::Accounting => match input.declared_type(document) {
+            // Read the way a cell is: `$1,234.50` and `(12.50)` are amounts
+            // in a file the same as in a grid.
+            Some(DataType::String | DataType::Categorical) => compiled
+                .str()
+                .replace_all(pl::lit(r"[$,\s]"), pl::lit(""), false)
+                .str()
+                .replace(pl::lit(r"^\((.+)\)$"), pl::lit("-${1}"), false)
+                .cast(accounting_dtype(scale)),
+            _ => compiled.cast(accounting_dtype(scale)),
+        },
         DataType::Boolean => compiled.cast(pl::DataType::Boolean),
         DataType::Date => match input.declared_type(document) {
             // Reading a date out of text is parsing, not reinterpreting the
@@ -721,7 +891,13 @@ fn compile_show(
     match input.declared_type(document) {
         // Only a number is written as money or a rate. Saying it of a date
         // or a piece of text would be a promise the gutter cannot keep.
-        Some(DataType::Integer | DataType::Number | DataType::Currency | DataType::Percentage)
+        Some(
+            DataType::Integer
+            | DataType::Number
+            | DataType::Currency
+            | DataType::Accounting
+            | DataType::Percentage,
+        )
         | None => input.to_polars(document),
         Some(other) => Err(format!(
             "{} cannot be written as {named}. Only a number can.",

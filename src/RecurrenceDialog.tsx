@@ -159,7 +159,7 @@ export function RecurrenceDialog({
     source ? formulaToken(source.name) : initialSeed(target)
   );
   const [next, setNext] = useState(
-    source && ["integer", "number", "currency", "percentage"].includes(source.dataType)
+    source && ["integer", "number", "currency", "accounting", "percentage"].includes(source.dataType)
       ? `previous() + ${formulaToken(source.name)}`
       : "previous()"
   );

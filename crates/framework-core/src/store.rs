@@ -118,6 +118,13 @@ impl Store {
             )
         };
         let mut document = document;
+        // A calendar that will not resolve is worth refusing at the door:
+        // loaded quietly, it makes every bare fiscal call answer with
+        // January arithmetic while the same call naming the calendar
+        // errors, which is a wrong number rather than a missing one.
+        document
+            .validate_calendars()
+            .map_err(|error| CoreError::Load(error.to_string()))?;
         document.normalize_frame_names();
         // A relative path is relative to this file; an absolute one was
         // written by an older build, or points somewhere of the user's own,
@@ -745,6 +752,15 @@ impl Store {
         // an unrelated formula into a scan of a live frame. Truncating the
         // draft also gives index zero its proper meaning -- start directly
         // from the input schema without applying any transformation.
+        //
+        // Which step is being written is read before the draft is cut: a
+        // list step reads whole columns of other frames, live ones
+        // included, so its menu offers every frame, where a column formula
+        // is offered only the snapshots it may name.
+        let live_frames = matches!(
+            steps.get(step_index),
+            Some(crate::FrameStepInput::ZipVector { .. } | crate::FrameStepInput::Broadcast { .. })
+        );
         steps.truncate(step_index.min(steps.len()));
         let Ok((walk, _)) = self.document.walk_pipeline(frame_id, steps, None) else {
             return self.complete_formula(frame_id, formula_text, cursor_pos);
@@ -777,9 +793,9 @@ impl Store {
             &scope_id,
             formula_text,
             cursor_pos,
+            live_frames,
         )
     }
-
 
     /// Whether this store is evaluating. Read at the command boundary to
     /// refuse ingest while a document is being recovered.

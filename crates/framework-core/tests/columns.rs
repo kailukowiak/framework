@@ -46,6 +46,8 @@ fn date_columns_and_nulls_are_typed_and_formula_aware() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {

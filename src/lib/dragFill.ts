@@ -8,7 +8,7 @@ import type { Column, Row } from "./types";
  */
 export function dragFillCells(column: Column, rows: Row[], first: number, last: number, destination: number) {
   const seeds = rows.slice(first, last + 1).map((row) => row.cells[column.id]?.raw ?? "");
-  const numeric = seeds.length > 1 && ["integer", "number"].includes(column.dataType)
+  const numeric = seeds.length > 1 && ["integer", "number", "accounting"].includes(column.dataType)
     ? inferNumericGeneratorPattern(seeds) : null;
   const date = column.dataType === "date" ? inferDateGeneratorPattern(seeds) : null;
   const hasBlanks = seeds.some((raw) => !raw.trim());

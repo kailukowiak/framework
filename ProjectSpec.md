@@ -641,8 +641,9 @@ The remaining blockers, in priority order, are:
 4. **Finished business workflows.** Reconciliation needs tolerance,
    one-to-many matching, and persistent reviewed matches; planning needs fiscal
    calendars, scenarios, sensitivity, goal seek, and eventually iterative
-   solve; close work needs validation, accounting formats, exact decimal
-   behavior, and templated export.
+   solve; close work needs validation constraints, accounting presentation of
+   subtotals, and templated export. Exact decimal/currency semantics **landed
+   (2026-09-14)** as `DataType::Accounting`.
 5. **An irregular-work escape hatch.** Scratchwork handles one-off calculations
    and crosstabs handle long-to-wide presentation, but compact schedules,
    forms, and mixed scalar layouts still need the constrained Databoard
@@ -813,6 +814,11 @@ Four backlog workflows, one primitive plus the already-planned pivot. It also ma
 
 `Expand` remains the ordinary long-frame cross-product primitive, and HStack
 and VStack remain explicit ways to combine compatible frame columns or rows.
+*(2026-09-14: all four ways two tables relate — match on a key, same rows in
+order, rows under rows, every row with every row — are authored from one
+**Combine** dialog, since each is an answer to the same question the join
+dialog already asked. Underneath they stay a joined frame and the pair, stack
+and expand chain steps; the pair step gained a repeat-to-fill choice.)*
 A sensitivity grid is nevertheless too common, and too different while it is
 being authored, to disguise as a Frame with an unfinished chain. It begins as
 a **Calculation Matrix** object with three formula surfaces: Rows, Columns,
@@ -1031,7 +1037,7 @@ surface have since landed. Financial solvers, business-day arithmetic,
 2. **`.filter(...)` on expressions** — one orthogonal method that replaces the entire SUMIF/SUMIFS/COUNTIF/AVERAGEIF/MAXIFS family: `` `amount`.filter(`region` == "West").sum() ``. The single highest-leverage addition on this list, and the aliases `sumif`/`countif`/`averageif` all signpost to it.
 3. **Strings** — the catalog note under Formula UX already names the gap; the working set is `split`, `replace`/`replace_all`, `strip_chars`, `len_chars`, `slice`, `starts_with`/`ends_with`, `extract`, `zfill`, root-level `concat_str` and `format`, plus `str.to_date` for the period-string case. Mechanisms 1–2.
 4. **Cumulative and change** — `cum_sum`, `cum_count`, `diff`, `pct_change`, `rank`, `rolling_std`, `rolling_median`, `ewm_mean`. Running totals and period-over-period are the §12.3/§12.4 promise.
-5. **Financial** — closed forms by mechanism 3, solvers by mechanism 4. Core to the finance wedge; nothing upstream of Polars provides these. **Phases 1a and the IRR/XIRR slice of 1b implemented:** `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`, `irr` and `xirr`; the [finance build plan](docs/finance-build-plan.md) tracks the remaining pack and solvers. Discounted totals use a validated native aggregate so missing flows and mismatched dates cannot disappear into a sum.
+5. **Financial** — closed forms by mechanism 3, solvers by mechanism 4. Core to the finance wedge; nothing upstream of Polars provides these. **Phase 1 implemented:** `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db` and `ddb`; the [finance build plan](docs/finance-build-plan.md) tracks the remaining grouped-IRR stretch. Discounted totals use a validated native aggregate so missing flows and mismatched dates cannot disappear into a sum.
 6. **Business dates** — mechanism 4, riding on the existing date/duration literals.
 7. **Percent literals** — `5%` lexes as `0.05`; `` `price` + 5% `` sugars to `` `price` * 1.05 ``. Lexer work, not catalog work, and the duration-literal machinery is the template. This is most of what made Numi's *arithmetic* feel effortless, acquired without any natural-language layer. Unit conversion is deferred (real scope, low relevance to tabular work); live currency is out on the determinism boundary — a hand-maintained rates frame and a relationship is the honest version.
 
@@ -1060,8 +1066,8 @@ The outstanding analytical primitives are now:
 3. tolerance, one-to-many matching, and persistent reviewed match objects;
 4. scenario sets, sensitivity views, and goal seek;
 5. named functions as block members;
-6. validation constraints, exact decimal/currency semantics, and accounting
-   presentation;
+6. validation constraints and accounting presentation of subtotals (exact
+   decimal/currency semantics **landed 2026-09-14** as `DataType::Accounting`);
 7. richer fill inference and string-to-date conversion; and
 8. iterative or simultaneous solve, deferred until the workflows above are
    complete.
@@ -1311,11 +1317,13 @@ pretend to be.
 
 Three separate layers:
 
-1. **Value**: Decimal128, never rounded by display. Guard the formula catalog for decimal-safe expression paths as they are admitted.
-2. **Unit**: currency code as column metadata. Mixed-currency aggregation is an error demanding an explicit conversion step (which appears in lineage with its rate as an inspectable assumption). Sibling-column currency codes later for multi-currency ledgers.
-3. **Presentation**: typed format object on the view — accounting style (edge-pinned symbol, parens negatives, zero-as-dash, tabular numerals), display decimals, scale. Scaled views label themselves ("shown in $K") in the header. Dates joined the same `ColumnFormat` on 2026-09-02 as a closed `DatePattern` set (ISO, `1 Sep 2026`, `Sep 1, 2026`, `Sep 2026`, `Q3 2026`) rendered from a fixed month table, never a locale; editing stays `YYYY-MM-DD`.
+1. **Value**: Decimal128, never rounded by display. Guard the formula catalog for decimal-safe expression paths as they are admitted. **Landed 2026-09-14** as `DataType::Accounting` with `Column.scale` holding the column's decimal places.
+2. **Unit**: currency code as column metadata. Mixed-currency aggregation is an error demanding an explicit conversion step (which appears in lineage with its rate as an inspectable assumption). Sibling-column currency codes later for multi-currency ledgers. Still open — no unit layer landed with the value layer.
+3. **Presentation**: typed format object on the view — accounting style (edge-pinned symbol, parens negatives, zero-as-dash, tabular numerals), display decimals, scale. Scaled views label themselves ("shown in $K") in the header. Dates joined the same `ColumnFormat` on 2026-09-02 as a closed `DatePattern` set (ISO, `1 Sep 2026`, `Sep 1, 2026`, `Sep 2026`, `Q3 2026`) rendered from a fixed month table, never a locale; editing stays `YYYY-MM-DD`. Kai decided on 2026-09-14 that the type implies this presentation by default: an accounting column renders in accounting style unless the column has an explicit format, the same way a type already implies a format elsewhere.
 
-**Reconciled rounding**: optional display mode where rounded detail foots exactly to the rounded total (largest-remainder allocation), true values untouched. Excel's alternatives are living with footing errors or destructively rewriting values.
+**Reconciled rounding**: optional display mode where rounded detail foots exactly to the rounded total (largest-remainder allocation), true values untouched. Excel's alternatives are living with footing errors or destructively rewriting values. Still open.
+
+The visible Currency→Accounting rounding step described under *Boundary decision* in [docs/finance-build-plan.md](docs/finance-build-plan.md) is also still open.
 
 ### AI chat panel
 

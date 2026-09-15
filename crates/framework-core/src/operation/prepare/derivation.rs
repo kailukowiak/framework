@@ -38,8 +38,8 @@ impl Document {
             for input in group_keys {
                 let expression =
                     self.prepare_formula_for_frame(&source_frame_id, &input.formula)?;
-                let data_type = source
-                    .infer_polars_expression_type(self, &expression)
+                let (data_type, scale) = source
+                    .infer_polars_expression_typing(self, &expression)
                     .map_err(CoreError::Formula)?;
                 let output_column_id = column_id(&input.name);
                 columns.push(Column {
@@ -47,6 +47,7 @@ impl Document {
                     name: input.name,
                     source_name: None,
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -59,8 +60,8 @@ impl Document {
             for input in aggregates {
                 let expression =
                     self.prepare_formula_for_frame(&source_frame_id, &input.formula)?;
-                let data_type = source
-                    .infer_polars_expression_type(self, &expression)
+                let (data_type, scale) = source
+                    .infer_polars_expression_typing(self, &expression)
                     .map_err(CoreError::Formula)?;
                 let output_column_id = column_id(&input.name);
                 columns.push(Column {
@@ -68,6 +69,7 @@ impl Document {
                     name: input.name,
                     source_name: None,
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -131,6 +133,7 @@ impl Document {
                     name: source_column.name.clone(),
                     source_name: None,
                     data_type: source_column.data_type,
+                    scale: source_column.scale,
                     categories: source_column.categories.clone(),
                     format: source_column.format.clone(),
                     formula: None,
@@ -260,6 +263,42 @@ impl Document {
         })
     }
 
+    pub(crate) fn prepare_set_frame_period(
+        &self,
+        frame_id: Id,
+        period: Option<FramePeriod>,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        Ok({
+            let frame = self.frame(&frame_id)?;
+            if let Some(period) = &period {
+                let column = frame
+                    .columns
+                    .iter()
+                    .find(|column| column.id == period.column_id)
+                    .ok_or(CoreError::ColumnNotFound)?;
+                if column.data_type != DataType::Date {
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ cannot use ‘{}’ as its period column because it holds {:?} values, not dates. Declare a Date column instead.",
+                        frame.name, column.name, column.data_type
+                    )));
+                }
+                if period
+                    .partition_column_ids
+                    .iter()
+                    .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
+                {
+                    return Err(CoreError::ColumnNotFound);
+                }
+                if period.partition_column_ids.contains(&period.column_id) {
+                    return Err(CoreError::InvalidOperation(
+                        "A period column cannot partition itself".into(),
+                    ));
+                }
+            }
+            ReplicatedOperation::SetFramePeriod { frame_id, period }
+        })
+    }
+
     // The parameter list mirrors the operation's own fields; collapsing it
     // into a struct would just rename the variant.
     #[allow(clippy::too_many_arguments)]
@@ -282,11 +321,6 @@ impl Document {
                     "Choose two different frames to create a join".into(),
                 ));
             }
-            if primary_key_column_ids.len() != 1 || lookup_key_column_ids.len() != 1 {
-                return Err(CoreError::InvalidOperation(
-                    "This version supports one column on each side of a join".into(),
-                ));
-            }
             if output_inputs.is_empty() {
                 return Err(CoreError::InvalidOperation(
                     "Choose at least one output column".into(),
@@ -296,6 +330,12 @@ impl Document {
             let lookup = self.frame(&lookup_frame_id)?;
             // Anti and semi joins skip the unique-lookup-key requirement;
             // see validate_join_derivations for the rationale.
+            check_join_key_pairs(
+                primary,
+                lookup,
+                &primary_key_column_ids,
+                &lookup_key_column_ids,
+            )?;
             if join_type.keeps_lookup_columns()
                 && !lookup
                     .unique_keys
@@ -320,21 +360,6 @@ impl Document {
                         lookup_outputs.join(", ")
                     )));
                 }
-            }
-            let primary_key = primary
-                .columns
-                .iter()
-                .find(|column| column.id == primary_key_column_ids[0])
-                .ok_or(CoreError::ColumnNotFound)?;
-            let lookup_key = lookup
-                .columns
-                .iter()
-                .find(|column| column.id == lookup_key_column_ids[0])
-                .ok_or(CoreError::ColumnNotFound)?;
-            if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
-                return Err(CoreError::InvalidOperation(
-                    "Join columns must have compatible types".into(),
-                ));
             }
 
             // Key columns whose two sides allow different sets of values.
@@ -389,6 +414,7 @@ impl Document {
                     } else {
                         source_column.data_type
                     },
+                    scale: None,
                     categories: if text {
                         Vec::new()
                     } else {
@@ -455,13 +481,14 @@ impl Document {
         let old_join = derivation.join.clone().ok_or_else(|| {
             CoreError::InvalidOperation("Only a joined frame has join keys to change".into())
         })?;
-        if primary_key_column_ids.len() != 1 || lookup_key_column_ids.len() != 1 {
-            return Err(CoreError::InvalidOperation(
-                "This version supports one column on each side of a join".into(),
-            ));
-        }
         let primary = self.frame(&derivation.source_frame_id)?;
         let lookup = self.frame(&old_join.lookup_frame_id)?;
+        check_join_key_pairs(
+            primary,
+            lookup,
+            &primary_key_column_ids,
+            &lookup_key_column_ids,
+        )?;
         if old_join.join_type.keeps_lookup_columns()
             && !lookup
                 .unique_keys
@@ -472,22 +499,6 @@ impl Document {
                 "The lookup column must be marked as a unique key".into(),
             ));
         }
-        let primary_key = primary
-            .columns
-            .iter()
-            .find(|column| column.id == primary_key_column_ids[0])
-            .ok_or(CoreError::ColumnNotFound)?;
-        let lookup_key = lookup
-            .columns
-            .iter()
-            .find(|column| column.id == lookup_key_column_ids[0])
-            .ok_or(CoreError::ColumnNotFound)?;
-        if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
-            return Err(CoreError::InvalidOperation(
-                "Join columns must have compatible types".into(),
-            ));
-        }
-
         let next_join = FrameJoin {
             primary_key_column_ids,
             lookup_key_column_ids,
@@ -562,6 +573,7 @@ impl Document {
                 } else if let Some(join) = &fixed_join {
                     source_plan = self
                         .apply_step(
+                            frame_id,
                             source_plan,
                             &FrameStep::Join { join: join.clone() },
                             &mut HashSet::new(),
@@ -662,7 +674,7 @@ impl Document {
             // before it becomes a document no plan can run.
             let mut visiting = HashSet::new();
             visiting.insert(frame_id.to_string());
-            plan = match self.apply_step(plan, &step, &mut visiting) {
+            plan = match self.apply_step(frame_id, plan, &step, &mut visiting) {
                 Ok(plan) => plan,
                 Err(error) => {
                     let error = CoreError::Transform(in_plain_words(error));
@@ -781,6 +793,7 @@ impl Document {
                                 .or_else(|| carried.get(column_id.as_str()))
                                 .copied(),
                         ),
+                        scale: decimal_scale_from_polars(dtype),
                         categories: declared_categories(dtype),
                         format: retained_format(&column_id),
                         formula: None,
@@ -958,11 +971,13 @@ impl Document {
                 output_column_id,
                 name,
                 vector,
+                fill,
             } => {
                 names.insert(output_column_id.clone(), name);
                 self.prepare_zip_vector_step(
                     output_column_id,
                     &vector,
+                    fill,
                     &scope,
                     plan,
                     edited_frame_id,
@@ -1003,14 +1018,14 @@ impl Document {
             ));
         }
         let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
-        let mut foreign_frames = Vec::new();
-        expression.foreign_frames(&mut foreign_frames);
-        if foreign_frames.contains(&edited_frame_id) {
-            return Err(CoreError::InvalidOperation(
-                "A frame cannot apply a list that reads from itself".into(),
-            ));
-        }
-        if expression.shape(self) != Shape::List {
+        self.refuse_vector_loop(
+            &expression,
+            edited_frame_id,
+            "A frame cannot apply a list that reads from itself",
+        )?;
+        // A column of another frame is a list of its values as much as a
+        // written one is; only a single value has nothing to spread.
+        if expression.shape(self) == Shape::Scalar {
             return Err(CoreError::Formula(format!(
                 "‘{vector}’ is one value, not a list. Spreading needs a list with \
                  one value for each column — write one out, or use sequence(…)."
@@ -1052,23 +1067,60 @@ impl Document {
         })
     }
 
+    /// A list step may name a column of another frame, live: the list it
+    /// reads is that frame's whole column, so there is nothing to line up
+    /// by row and no reason to insist on a snapshot first. What it must not
+    /// name is a frame downstream of this one. That frame's rows are worked
+    /// out from this one's, so reading them while this frame is being
+    /// computed would loop — and a live read starts its own cycle set, so
+    /// the loop would not be caught on the way down. A snapshot ends the
+    /// loop, which is why a materialized frame may be named wherever it
+    /// sits, and why the refusal says to take one.
+    fn refuse_vector_loop(
+        &self,
+        expression: &Expr,
+        edited_frame_id: &str,
+        self_read: &str,
+    ) -> Result<(), CoreError> {
+        let mut foreign_frames = Vec::new();
+        expression.foreign_frames(&mut foreign_frames);
+        for frame_id in foreign_frames {
+            if frame_id == edited_frame_id {
+                return Err(CoreError::InvalidOperation(self_read.into()));
+            }
+            let Ok(frame) = self.frame(frame_id) else {
+                continue;
+            };
+            if frame.materialization.is_none() && self.frame_reads_frame(frame_id, edited_frame_id)
+            {
+                return Err(CoreError::InvalidOperation(format!(
+                    "{} is built from this frame, so reading it here would loop. Materialize \
+                     {} and this step will read its snapshot, or pair it into a frame \
+                     downstream of both.",
+                    as_named(&frame.name),
+                    as_named(&frame.name),
+                )));
+            }
+        }
+        Ok(())
+    }
+
     fn prepare_zip_vector_step(
         &self,
         output_column_id: Id,
         vector: &str,
+        fill: ZipFill,
         scope: &FrameObject,
         plan: &pl::LazyFrame,
         edited_frame_id: &str,
     ) -> Result<FrameStep, CoreError> {
         let expression = Parser::new_scalar_list(vector, scope, self)?.parse()?;
-        let mut foreign_frames = Vec::new();
-        expression.foreign_frames(&mut foreign_frames);
-        if foreign_frames.contains(&edited_frame_id) {
-            return Err(CoreError::InvalidOperation(
-                "A frame cannot pair a list that reads from itself".into(),
-            ));
-        }
-        if expression.shape(self) != Shape::List {
+        self.refuse_vector_loop(
+            &expression,
+            edited_frame_id,
+            "A frame cannot pair a list that reads from itself",
+        )?;
+        if expression.shape(self) == Shape::Scalar {
             return Err(CoreError::Formula(format!(
                 "‘{vector}’ is one value, not a list to pair down the rows"
             )));
@@ -1078,30 +1130,15 @@ impl Document {
             .map_err(CoreError::Formula)?
             .1
             .len();
-        let count_column = "__framework_zip_row_count";
-        let counts = plan
-            .clone()
-            .select([pl::len().alias(count_column)])
-            .collect()
-            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?;
-        let row_count = counts
-            .column(count_column)
-            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?
-            .u32()
-            .map_err(|error| CoreError::Transform(in_plain_words(error.to_string())))?
-            .get(0)
-            .unwrap_or(0) as usize;
-        if length == 0 || length != row_count {
-            return Err(CoreError::Formula(format!(
-                "‘{vector}’ has {length} value{}, but this frame has {row_count} row{}. Pairing lists needs one value for every row.",
-                if length == 1 { "" } else { "s" },
-                if row_count == 1 { "" } else { "s" }
-            )));
-        }
+        let row_count = crate::engine::plan::plan_row_count(plan)
+            .map_err(|error| CoreError::Transform(in_plain_words(error)))?;
+        crate::engine::plan::zip_length_fits(length, row_count, fill)
+            .map_err(|reason| CoreError::Formula(format!("‘{vector}’ {reason}")))?;
         Ok(FrameStep::ZipVector {
             output_column_id,
             vector: expression,
             expected_length: length,
+            fill,
         })
     }
 
@@ -1785,11 +1822,13 @@ fn rendered_vector_step_input(
             output_column_id,
             output_column_name,
             vector,
+            fill,
             ..
         } => Some(FrameStepInput::ZipVector {
             output_column_id: output_column_id.clone(),
             name: output_column_name.clone(),
             vector: vector.clone(),
+            fill: *fill,
         }),
         _ => None,
     }
@@ -1825,4 +1864,48 @@ fn step_outputs(step: &FrameStep) -> Box<dyn Iterator<Item = (&Id, &Expr)> + '_>
         | FrameStep::Broadcast { .. }
         | FrameStep::Comment { .. } => Box::new(std::iter::empty()),
     }
+}
+
+/// The key pairs a join is asked to match on: at least one, the same count
+/// on both sides, every column present, and each pair of a type that can be
+/// compared. Several pairs are one composite key — account, department and
+/// period — matched together, the way a budget meets its actuals.
+fn check_join_key_pairs(
+    primary: &FrameObject,
+    lookup: &FrameObject,
+    primary_key_column_ids: &[Id],
+    lookup_key_column_ids: &[Id],
+) -> Result<(), CoreError> {
+    if primary_key_column_ids.is_empty() {
+        return Err(CoreError::InvalidOperation(
+            "A join needs at least one key column on each side".into(),
+        ));
+    }
+    if primary_key_column_ids.len() != lookup_key_column_ids.len() {
+        return Err(CoreError::InvalidOperation(format!(
+            "A join matches key columns in pairs: {} on this side, {} on the other",
+            primary_key_column_ids.len(),
+            lookup_key_column_ids.len()
+        )));
+    }
+    for (primary_id, lookup_id) in primary_key_column_ids.iter().zip(lookup_key_column_ids) {
+        let primary_key = primary
+            .columns
+            .iter()
+            .find(|column| column.id == *primary_id)
+            .ok_or(CoreError::ColumnNotFound)?;
+        let lookup_key = lookup
+            .columns
+            .iter()
+            .find(|column| column.id == *lookup_id)
+            .ok_or(CoreError::ColumnNotFound)?;
+        if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
+            return Err(CoreError::InvalidOperation(format!(
+                "Join columns must have compatible types: {} and {} do not",
+                as_named(&primary_key.name),
+                as_named(&lookup_key.name)
+            )));
+        }
+    }
+    Ok(())
 }

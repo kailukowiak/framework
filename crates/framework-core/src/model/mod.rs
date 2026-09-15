@@ -4,10 +4,10 @@ pub mod derivation;
 pub mod document;
 pub mod frame;
 pub mod layout;
+mod parameter;
 pub mod plot;
 pub mod scenario;
 pub mod value;
-mod parameter;
 pub use parameter::*;
 
 pub use data_artifact::*;
@@ -20,6 +20,8 @@ pub use scenario::*;
 pub use value::*;
 pub mod calculation_matrix;
 pub use calculation_matrix::*;
+pub mod calendar;
+pub use calendar::*;
 
 pub mod read_recipe;
 pub use read_recipe::*;

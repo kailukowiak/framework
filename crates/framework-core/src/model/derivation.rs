@@ -123,13 +123,19 @@ pub enum FrameStep {
         expected_length: usize,
     },
     /// A standalone list paired down the rows as one new column. This is
-    /// positional on purpose and therefore exact-length only: the author
-    /// made the pairing explicit by dropping one list beside another.
+    /// positional on purpose: the author made the pairing explicit by
+    /// dropping one list beside another. `fill` says whether the list must
+    /// be one value per row or may repeat to fill a frame whose row count
+    /// is a whole multiple of its length — five scenario values down a
+    /// hundred-row frame, twenty times over.
     ZipVector {
         output_column_id: Id,
         #[ts(type = "unknown")]
         vector: Expr,
         expected_length: usize,
+        #[serde(default)]
+        #[ts(optional, as = "Option<ZipFill>")]
+        fill: ZipFill,
     },
     /// A remark standing in the chain, saying nothing to the engine.
     ///
@@ -171,6 +177,20 @@ impl FrameStep {
 /// value for `column_id`. `None` means the stacked frame had no column
 /// with a matching name when the step was written, so its rows hold
 /// nothing there.
+/// How a paired list meets the rows.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ZipFill {
+    /// One value for every row, no more and no fewer.
+    #[default]
+    Exact,
+    /// The list repeated end to end until the rows run out; the frame's row
+    /// count must be a whole multiple of the list's length, so the last
+    /// repeat is a complete one.
+    Repeat,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -296,6 +316,9 @@ pub enum RenderedFrameStep {
         output_column_name: String,
         vector: String,
         expected_length: usize,
+        #[serde(default)]
+        #[ts(optional, as = "Option<ZipFill>")]
+        fill: ZipFill,
     },
     Comment {
         text: String,
@@ -605,10 +628,37 @@ impl FrameDerivation {
             return true;
         }
         self.source_frame_id == frame_id
-            && self
+            && (self
                 .step_expressions()
                 .iter()
                 .any(|expression| expression.references_column(column_id))
+                || self
+                    .steps()
+                    .iter()
+                    .any(|step| step_names_column(step, column_id)))
+    }
+}
+
+/// Whether a step names `column_id` outright rather than through an
+/// expression — a selection, a sort key, a pivot's axes, an unpivot's
+/// melted columns, a spread's targets. Each is as much a read of the
+/// column as a formula naming it, and dropping the column out from under
+/// any of them has to be refused the same way.
+fn step_names_column(step: &FrameStep, column_id: &str) -> bool {
+    match step {
+        FrameStep::Select { column_ids } | FrameStep::Broadcast { column_ids, .. } => {
+            column_ids.iter().any(|id| id == column_id)
+        }
+        FrameStep::Sort { keys } => keys.iter().any(|key| key.column_id == column_id),
+        FrameStep::Pivot {
+            names_column_id,
+            values_column_id,
+            ..
+        } => names_column_id == column_id || values_column_id == column_id,
+        FrameStep::Unpivot { columns, .. } => {
+            columns.iter().any(|column| column.column_id == column_id)
+        }
+        _ => false,
     }
 }
 

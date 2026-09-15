@@ -224,3 +224,36 @@ describe("referenceInsertionRange", () => {
       ).toEqual({ start: 0, end: predicate.length });
   });
 });
+
+describe("picking a column that two cards share", () => {
+  const references = [
+    {
+      id: "input",
+      label: "Input",
+      token: "`Input`",
+      kind: "column" as const,
+      detail: "column",
+      frameId: "source",
+    },
+    {
+      id: "input",
+      label: "Predictions.Input",
+      token: "`Predictions`.`Input`",
+      kind: "column" as const,
+      detail: "column of Predictions",
+      frameId: "predictions",
+    },
+  ];
+
+  it("prefers the clicked card's own reference", () => {
+    expect(columnReferenceForPick(references, "input", "predictions")?.token).toBe(
+      "`Predictions`.`Input`"
+    );
+    expect(columnReferenceForPick(references, "input", "source")?.token).toBe("`Input`");
+  });
+
+  it("falls back to the first declared reference, as it always did", () => {
+    expect(columnReferenceForPick(references, "input")?.token).toBe("`Input`");
+    expect(columnReferenceForPick(references, "input", "elsewhere")?.token).toBe("`Input`");
+  });
+});

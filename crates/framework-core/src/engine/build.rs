@@ -31,6 +31,11 @@ const FRAME_MIN_HEIGHT: f64 = 300.0;
 /// A frame card tall enough to show what arrived, up to a dozen rows: a card
 /// that clips the last row of a six-row paste is the first thing a person has
 /// to fix, every time.
+/// The width a frame card opens at: room for its columns, within reason.
+pub(crate) fn frame_card_width(column_count: usize) -> f64 {
+    (column_count.max(1) as f64 * 150.0 + 48.0).clamp(420.0, 900.0)
+}
+
 pub(crate) fn frame_card_height(row_count: usize) -> f64 {
     let maximum = FRAME_CHROME_HEIGHT + FRAME_AUTOMATIC_ROW_CAP as f64 * FRAME_ROW_HEIGHT;
     (FRAME_CHROME_HEIGHT + row_count.min(FRAME_AUTOMATIC_ROW_CAP) as f64 * FRAME_ROW_HEIGHT)
@@ -117,6 +122,7 @@ impl Document {
                     name: name.clone(),
                     source_name: Some(header.clone()),
                     data_type: data_types.get(index).copied().unwrap_or(DataType::String),
+                    scale: None,
                     // A file that names its own allowed values arrives with the
                     // dropdown already filled in.
                     categories: categories.get(index).cloned().unwrap_or_default(),
@@ -138,7 +144,7 @@ impl Document {
             object_id: frame_id,
             x,
             y,
-            width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
+            width: frame_card_width(width),
             height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),
@@ -184,6 +190,7 @@ impl Document {
                     source_name: Some(source_name),
                     data_type: framework_type_from_polars(source.dtype())
                         .unwrap_or(DataType::String),
+                    scale: decimal_scale_from_polars(source.dtype()),
                     categories: declared_categories(source.dtype()),
                     format: None,
                     formula: None,
@@ -204,7 +211,7 @@ impl Document {
             object_id: frame_id,
             x,
             y,
-            width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
+            width: frame_card_width(width),
             // A frozen or connected frame is paged rather than held in the
             // document, but the card still has to show rows: it was fixed at
             // the minimum height, which is two rows once the chrome is
@@ -241,6 +248,7 @@ impl Document {
                     source_name: None,
                     data_type: framework_type_from_polars(source.dtype())
                         .unwrap_or(DataType::String),
+                    scale: decimal_scale_from_polars(source.dtype()),
                     categories: declared_categories(source.dtype()),
                     format: None,
                     formula: None,
@@ -300,6 +308,7 @@ impl Document {
                     name,
                     source_name: None,
                     data_type: data_types.get(index).copied().unwrap_or(DataType::String),
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -353,7 +362,7 @@ impl Document {
             object_id: frame_id,
             x,
             y,
-            width: (width as f64 * 150.0 + 48.0).clamp(420.0, 900.0),
+            width: frame_card_width(width),
             height: frame_card_height(row_count),
             collapsed: false,
             tab_object_ids: Vec::new(),
@@ -382,6 +391,7 @@ impl FrameObject {
                 name: source.name.clone(),
                 source_name: None,
                 data_type: source.data_type,
+                scale: source.scale,
                 categories: source.categories.clone(),
                 format: source.format.clone(),
                 formula: None,
@@ -432,6 +442,7 @@ impl FrameObject {
             entry_columns: Vec::new(),
             materialization: None,
             unique_keys: Vec::new(),
+            period: None,
             summaries: Vec::new(),
         }
     }

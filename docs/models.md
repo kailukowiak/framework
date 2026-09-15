@@ -37,8 +37,23 @@ or numerically unstable fits produce inline errors.
 
 The model's coefficient and metric tables are compact summaries. Create a summary
 frame to use these numbers in normal FrameWork formulas. Create predictions to
-score rows with the saved fit. These outputs are ordinary frames and can be
-transformed through Wrangle.
+score rows with the saved fit: the prediction frame is the scoring frame's columns
+with the model's outputs added at the end, so it can be joined, filtered and
+built on like any other table. These outputs are ordinary frames and can be
+transformed through Wrangle — delete the carried columns there if only the
+outputs are wanted. To place a prediction column into another frame that shares
+the scoring frame's rows, use Wrangle's **Pair vector as column** and name the
+column, `` `Species predictions`.`Predicted class` ``, or drag the column's header
+onto the other table's **+** edge. The pairing is by position and reads the live
+predictions; it is checked against the rows the frame has now, so a scoring frame
+that grows keeps its paired predictions, and a list that no longer has one value
+per row is refused with both counts.
+
+The prediction frame follows its scoring frame's columns. A column added,
+renamed, retyped or removed there is added, renamed, retyped or removed here; a
+name or number format chosen on the prediction frame itself is kept, and a
+column one of the prediction frame's own Wrangle steps reads cannot be removed
+from the scoring frame until that step changes.
 
 ## Random forests and standalone statistics
 

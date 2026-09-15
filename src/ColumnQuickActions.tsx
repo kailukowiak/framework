@@ -30,7 +30,7 @@ export function columnQuickActions(column: Column): ColumnQuickAction[] {
       },
     ];
   }
-  if (["integer", "number", "currency", "percentage"].includes(column.dataType)) {
+  if (["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)) {
     return [
       {
         label: "Fill missing with 0",

@@ -124,6 +124,11 @@ impl Document {
             .collect()
     }
 
+    /// The source rows with the model's outputs stacked beside them: a
+    /// scored table, which is what `AddModelPredictions` declares. The
+    /// chain ends by selecting the declared columns, so a prediction frame
+    /// from before the source columns were carried — one declaring the
+    /// outputs alone — still comes out as it did.
     pub(crate) fn model_prediction_plan(
         &self,
         frame: &FrameObject,
@@ -140,14 +145,33 @@ impl Document {
             .fitted
             .as_ref()
             .ok_or("Fit the model before predicting")?;
-        let rows = typed_model_rows(source, &binding.feature_column_ids, &fitted.result)?;
+        let mut scored = source
+            .limit((MAX_MODEL_ROWS + 1) as u32)
+            .collect()
+            .map_err(|e| e.to_string())?;
+        if scored.height() > MAX_MODEL_ROWS {
+            return Err("Models currently accept at most 100,000 rows".into());
+        }
+        let rows = typed_model_rows(
+            scored.clone().lazy(),
+            &binding.feature_column_ids,
+            &fitted.result,
+        )?;
         let predictions =
             framework_ml::predict_scalars(&fitted.result, &rows).map_err(|e| e.to_string())?;
         let columns =
             typed_prediction_columns(&predictions, &binding.output_column_ids, &fitted.result)?;
-        Ok(pl::DataFrame::new(rows.len(), columns)
-            .map_err(|e| e.to_string())?
-            .lazy())
+        // An output id was once minted from its name alone, so an older
+        // document may have one that a source column also answers to. That
+        // frame declares only its outputs, so the output is the one it
+        // means.
+        for column in &columns {
+            let name = column.name().as_str();
+            if scored.get_column_index(name).is_some() {
+                scored = scored.drop(name).map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(scored.hstack(&columns).map_err(|e| e.to_string())?.lazy())
     }
 }
 

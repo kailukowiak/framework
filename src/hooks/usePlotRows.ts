@@ -24,7 +24,7 @@ export function usePlotRows(frame: FrameObject, computed: ComputedFrame, gated: 
         if (!page.rows.length && rows.length < total) throw new Error("The source changed while loading. Refresh the chart again.");
         rows.push(...page.rows.map((row) => Object.fromEntries(fields.map((column, index) => {
           const raw = row[index] ?? "";
-          const value = !raw ? null : ["integer", "number", "currency", "percentage"].includes(column.dataType)
+          const value = !raw ? null : ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)
             ? Number(raw) : column.dataType === "boolean" ? raw.toLowerCase() === "true" : raw;
           return [column.id, typeof value === "number" && !Number.isFinite(value) ? null : value];
         }))));

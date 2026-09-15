@@ -1774,6 +1774,15 @@ export default function App() {
               );
               setJoin(null);
             }}
+            onChained={(frameId) => {
+              // A chain relationship changed this frame rather than making a
+              // new one, so the answer is where the chain lives: select the
+              // frame and open the step list, the same landing the vector
+              // drop's VStack choice performs.
+              setJoin(null);
+              setSelection({ objectId: frameId });
+              setInspectorSection("wrangle");
+            }}
           />
         )}
 

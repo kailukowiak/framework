@@ -254,6 +254,8 @@ pub enum ReplicatedOperation {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        scale: Option<u8>,
     },
     SetColumnCategories {
         frame_id: Id,
@@ -284,6 +286,28 @@ pub enum ReplicatedOperation {
     SetUniqueKeys {
         frame_id: Id,
         unique_keys: Vec<UniqueKeyConstraint>,
+    },
+    /// The resolved form of `SetFramePeriod`. The declaration carries no
+    /// minted ids, so prepare hands it through unchanged after validating
+    /// it; clearing is the same variant with `period: None`.
+    SetFramePeriod {
+        frame_id: Id,
+        period: Option<FramePeriod>,
+    },
+    /// The resolved form of `AddCalendar` and `UpdateCalendar`: the whole
+    /// validated calendar with its minted id. Undo of a removal carries
+    /// the calendar back through here.
+    AddCalendar {
+        calendar: Calendar,
+    },
+    UpdateCalendar {
+        calendar: Calendar,
+    },
+    RemoveCalendar {
+        calendar_id: Id,
+    },
+    SetDefaultCalendar {
+        calendar_id: Option<Id>,
     },
     /// The resolved form of `SetFrameGenerator`: the parsed rule, and the
     /// frame's columns with the generated column's type already following

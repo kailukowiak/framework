@@ -133,6 +133,10 @@ function defaultDecimals(
   if (format.decimals != null) return format.decimals;
   if (format.style === "currency" || format.style === "accounting") return 2;
   if (dataType === "integer") return 0;
+  // An amount carries its own places on the column; a caller that has the
+  // column passes them in `format.decimals` and never reaches here. Without
+  // one, the default scale is the only honest answer.
+  if (dataType === "accounting") return 2;
   if (dataType === "number") return 2;
   return undefined;
 }
@@ -217,15 +221,23 @@ export function formatComputedScalar(
   const style =
     dataType === "currency"
       ? "currency"
-      : dataType === "percentage"
-        ? "percent"
-        : dataType === "integer" || dataType === "number"
-          ? "number"
-          : null;
+      : dataType === "accounting"
+        ? "accounting"
+        : dataType === "percentage"
+          ? "percent"
+          : dataType === "integer" || dataType === "number"
+            ? "number"
+            : null;
   if (!style) return fallback;
+  // A scalar has no column to declare places on, so an amount reads at the
+  // default scale — the same two places the grid shows for a column that
+  // never said otherwise.
   return formatCellText(
     typedValue.value,
-    { style, decimals: dataType === "integer" ? 0 : null },
+    {
+      style,
+      decimals: dataType === "integer" ? 0 : dataType === "accounting" ? 2 : null,
+    },
     { dataType, useGrouping }
   );
 }

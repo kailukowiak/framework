@@ -29,6 +29,7 @@ impl Document {
                     name,
                     source_name: None,
                     data_type,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -71,12 +72,26 @@ impl Document {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        scale: Option<u8>,
     ) -> Result<ReplicatedOperation, CoreError> {
+        if let Some(scale) = scale {
+            if data_type != DataType::Accounting {
+                return Err(CoreError::InvalidOperation(
+                    "Only an accounting column has decimal places to set".into(),
+                ));
+            }
+            if scale as usize > ACCOUNTING_PRECISION {
+                return Err(CoreError::InvalidOperation(format!(
+                    "An accounting column keeps at most {ACCOUNTING_PRECISION} decimal places"
+                )));
+            }
+        }
         Ok({
             ReplicatedOperation::SetColumnType {
                 frame_id,
                 column_id,
                 data_type,
+                scale,
             }
         })
     }
@@ -133,13 +148,21 @@ impl Document {
         Ok({
             let expression = self.prepare_formula_for_frame(&frame_id, &formula)?;
             let frame = self.frame(&frame_id)?;
+            // A period-relative call reads the declaration, so a missing
+            // one is refused here — when the column is saved — rather than
+            // when the frame is read. The Wrangle chain refuses the same
+            // way through the join; both surfaces name the frame and the fix.
+            if let Some(call) = crate::formula::financial_window::first_lift_name(&expression) {
+                crate::formula::financial_period::require_period(frame, &call)
+                    .map_err(CoreError::Formula)?;
+            }
             if after_column_id.as_ref().is_some_and(|column_id| {
                 !frame.columns.iter().any(|column| column.id == *column_id)
             }) {
                 return Err(CoreError::ColumnNotFound);
             }
-            let data_type = frame
-                .infer_polars_expression_type(self, &expression)
+            let (data_type, scale) = frame
+                .inferred_column_typing(self, &expression)
                 .map_err(CoreError::Formula)?;
             ReplicatedOperation::AddColumn {
                 frame_id,
@@ -150,6 +173,7 @@ impl Document {
                     name,
                     source_name: None,
                     data_type,
+                    scale,
                     categories: Vec::new(),
                     format: None,
                     formula: Some(Formula { expression }),
@@ -166,9 +190,14 @@ impl Document {
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             let expression = self.prepare_formula_for_frame(&frame_id, &formula)?;
+            if let Some(call) = crate::formula::financial_window::first_lift_name(&expression) {
+                let frame = self.frame(&frame_id)?;
+                crate::formula::financial_period::require_period(frame, &call)
+                    .map_err(CoreError::Formula)?;
+            }
             let data_type = self
                 .frame(&frame_id)?
-                .infer_polars_expression_type(self, &expression)
+                .inferred_column_type(self, &expression)
                 .map_err(CoreError::Formula)?;
             ReplicatedOperation::SetColumnFormula {
                 frame_id,
@@ -315,6 +344,7 @@ mod tests {
                 frame_id: frame_id.clone(),
                 column_id: column_id.clone(),
                 data_type: DataType::Categorical,
+                scale: None,
             })
             .unwrap();
         let after_type_change = store.view();

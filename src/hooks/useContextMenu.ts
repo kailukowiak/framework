@@ -198,7 +198,7 @@ export function useContextMenu({
       .find(
         (column) =>
           column.id !== contextColumn.id &&
-          ["number", "integer", "currency", "percentage"].includes(column.dataType)
+          ["number", "integer", "currency", "accounting", "percentage"].includes(column.dataType)
       );
     return numeric?.id ?? null;
   })();

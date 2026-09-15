@@ -33,8 +33,8 @@ export function PipelineJoinStep({
   const { diagnostics, loading } = useJoinDiagnostics(
     primary?.id,
     lookup?.id,
-    primaryKeyId,
-    lookupKeyId,
+    [primaryKeyId],
+    [lookupKeyId],
     compatible
   );
   const outputNames = (join?.outputs ?? [])

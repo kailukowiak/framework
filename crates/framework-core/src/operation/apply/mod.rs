@@ -4,6 +4,7 @@
 //! module that owns it.
 
 pub mod blocks;
+pub mod calendar;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
@@ -238,7 +239,8 @@ impl Document {
                 frame_id,
                 column_id,
                 data_type,
-            } => self.apply_set_column_type(frame_id, column_id, data_type)?,
+                scale,
+            } => self.apply_set_column_type(frame_id, column_id, data_type, scale)?,
             ReplicatedOperation::SetColumnCategories {
                 frame_id,
                 column_id,
@@ -268,6 +270,19 @@ impl Document {
                 frame_id,
                 unique_keys,
             } => self.apply_set_unique_keys(frame_id, unique_keys)?,
+            ReplicatedOperation::SetFramePeriod { frame_id, period } => {
+                self.apply_set_frame_period(frame_id, period)?
+            }
+            ReplicatedOperation::AddCalendar { calendar } => self.apply_add_calendar(calendar)?,
+            ReplicatedOperation::UpdateCalendar { calendar } => {
+                self.apply_update_calendar(calendar)?
+            }
+            ReplicatedOperation::RemoveCalendar { calendar_id } => {
+                self.apply_remove_calendar(calendar_id)?
+            }
+            ReplicatedOperation::SetDefaultCalendar { calendar_id } => {
+                self.apply_set_default_calendar(calendar_id)?
+            }
             ReplicatedOperation::SetFrameGenerator {
                 frame_id,
                 generator,
@@ -358,6 +373,8 @@ impl Document {
         }
         self.validate_unique_keys()?;
         self.validate_join_derivations()?;
+        self.validate_period_declarations()?;
+        self.validate_calendars()?;
         Ok(())
     }
 }

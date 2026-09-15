@@ -30,10 +30,10 @@ pub(crate) struct FormulaFunctionDefinition {
     maximum_arguments: usize,
 }
 
-#[path = "catalog_financial.rs"]
-pub(crate) mod financial;
 #[path = "catalog_controls.rs"]
 pub(crate) mod controls;
+#[path = "catalog_financial.rs"]
+pub(crate) mod financial;
 #[path = "catalog_financial_namespace.rs"]
 mod financial_namespace;
 
@@ -188,13 +188,17 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
             "to text",
             "to number",
             "tonumber",
+            "amount",
+            "decimal",
             "value"
         ],
         "Conversion",
         ".cast(\"string\")",
-        "Convert to another type: \"string\", \"integer\", \"number\", \"date\" or \"boolean\".",
+        "Convert to another type: \"string\", \"integer\", \"number\", \"accounting\", \
+         \"date\" or \"boolean\". An amount takes two decimal places unless a second \
+         argument names them: .cast(\"accounting\", 4).",
         1,
-        1
+        2
     ),
     formula_function!(
         "expr.show",
@@ -689,6 +693,26 @@ pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
         1
     ),
     formula_function!(
+        "expr.head",
+        ".head",
+        ["first rows", "top"],
+        "Window",
+        ".head(length)",
+        "The first values of a list or column; ten without a count.",
+        0,
+        1
+    ),
+    formula_function!(
+        "expr.tail",
+        ".tail",
+        ["last rows", "bottom"],
+        "Window",
+        ".tail(length)",
+        "The last values of a list or column; ten without a count.",
+        0,
+        1
+    ),
+    formula_function!(
         "expr.over",
         ".over",
         ["window", "partition"],
@@ -1086,6 +1110,9 @@ fn argument_guidance(id: &str, name: &str) -> (&'static str, Option<&'static str
             "Rows to move: positive reads an earlier row, negative a later one.",
             Some("1"),
         ),
+        ("expr.head", "length") | ("expr.tail", "length") => {
+            ("How many values to keep; ten when left out.", Some("10"))
+        }
         (_, "reverse") if id.starts_with("expr.cum_") => (
             "True accumulates from the last row upward; False accumulates top to bottom.",
             Some("False"),

@@ -1,6 +1,7 @@
 use crate::Id;
 use crate::error::CoreError;
 use crate::model::calculation_matrix::CalculationMatrixObject;
+use crate::model::calendar::Calendar;
 use crate::model::frame::FrameObject;
 use crate::model::plot::PlotObject;
 use crate::model::scenario::Scenario;
@@ -121,6 +122,16 @@ pub struct Document {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub active_scenario: Option<Id>,
+    /// Fiscal calendars named on the document, in the order they were
+    /// added. Formulas name one per call; the default supplies the year
+    /// start when a call names none.
+    #[serde(default)]
+    pub calendars: Vec<Calendar>,
+    /// The calendar bare fiscal calls read, or `None` for calendar months
+    /// starting in January.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub default_calendar_id: Option<Id>,
 }
 
 /// Measured: 704 bytes, all of it `FrameObject`. The other variants are
@@ -215,6 +226,8 @@ impl Document {
             frozen_values: BTreeMap::new(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         }
     }
 
@@ -396,6 +409,47 @@ impl Document {
         })
     }
 
+    /// Which formula anywhere in the document reads the thing `target_id`
+    /// names, named the way a refusal names it.
+    ///
+    /// One question for every by-id reference a formula can hold — a
+    /// value, a result, a list, a block line, a fiscal calendar — because
+    /// they are all held in place by the same fact: a formula naming
+    /// something is a reason that something cannot be taken away. `except`
+    /// is the object being removed, which does not hold itself in place;
+    /// a block's lines reading each other go out together.
+    pub(crate) fn read_by(&self, target_id: &str, except: Option<&str>) -> Option<String> {
+        self.objects.iter().find_map(|object| {
+            if Some(object.id()) == except {
+                return None;
+            }
+            match object {
+                DataObject::Frame(frame) => (frame.references_object(target_id)
+                    || frame.display.references_object(target_id))
+                .then(|| as_named(&frame.name)),
+                DataObject::Result(result) => result
+                    .formula
+                    .expression
+                    .references_object(target_id)
+                    .then(|| as_named(&result.name)),
+                DataObject::Block(block) => block.lines.iter().find_map(|line| {
+                    line.expression()?
+                        .references_object(target_id)
+                        .then(|| as_line_named(block, line))
+                }),
+                DataObject::CalculationMatrix(matrix) => matrix
+                    .rows
+                    .iter()
+                    .chain(&matrix.columns)
+                    .filter_map(|item| item.formula.as_ref())
+                    .chain(matrix.body.formula.as_ref())
+                    .find(|formula| formula.expression.references_object(target_id))
+                    .map(|_| as_named(&matrix.name)),
+                _ => None,
+            }
+        })
+    }
+
     /// The container holding `object_id`, if any.
     pub fn container_of(&self, object_id: &str) -> Option<&ContainerObject> {
         self.objects.iter().find_map(|object| match object {
@@ -450,6 +504,18 @@ impl Document {
             .iter()
             .find(|object| object.id() == object_id)
             .ok_or(CoreError::ObjectNotFound)
+    }
+
+    /// The calendar a reference names, by id or by name. Names match
+    /// without regard to case because a person typing `calendar="nrf"`
+    /// into a formula means the calendar they called `NRF`, and because
+    /// calendar names are already unique case-insensitively. This is the
+    /// one lookup: formula resolution and the MCP tools both come here so
+    /// a name that works in one cannot fail in the other.
+    pub fn find_calendar(&self, reference: &str) -> Option<&Calendar> {
+        self.calendars.iter().find(|calendar| {
+            calendar.id == reference || calendar.name.eq_ignore_ascii_case(reference)
+        })
     }
 
     pub(crate) fn object_mut(&mut self, object_id: &str) -> Result<&mut DataObject, CoreError> {

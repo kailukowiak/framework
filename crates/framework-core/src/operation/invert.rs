@@ -359,9 +359,16 @@ impl Document {
             ReplicatedOperation::SetFrameContent { frame_id, .. }
             | ReplicatedOperation::SetFrameDerivation { frame_id, .. }
             | ReplicatedOperation::SetFrameSteps { frame_id, .. }
-            | ReplicatedOperation::DeleteColumn { frame_id, .. }
             | ReplicatedOperation::AddSummary { frame_id, .. } => {
                 vec![Self::restore_frame(self.frame(frame_id)?)]
+            }
+
+            // Deleting a column drops it from every frame scored from this
+            // one as well, so all of them go back together.
+            ReplicatedOperation::DeleteColumn { frame_id, .. } => {
+                let mut restored = vec![Self::restore_frame(self.frame(frame_id)?)];
+                restored.extend(self.scored_frames(frame_id).map(Self::restore_frame));
+                restored
             }
 
             // The row goes back where it was, which is what `after_row_id`
@@ -465,6 +472,58 @@ impl Document {
                 vec![ReplicatedOperation::SetUniqueKeys {
                     frame_id: frame_id.clone(),
                     unique_keys: self.frame(frame_id)?.unique_keys.clone(),
+                }]
+            }
+
+            ReplicatedOperation::SetFramePeriod { frame_id, .. } => {
+                vec![ReplicatedOperation::SetFramePeriod {
+                    frame_id: frame_id.clone(),
+                    period: self.frame(frame_id)?.period.clone(),
+                }]
+            }
+
+            ReplicatedOperation::AddCalendar { calendar } => {
+                vec![ReplicatedOperation::RemoveCalendar {
+                    calendar_id: calendar.id.clone(),
+                }]
+            }
+            ReplicatedOperation::UpdateCalendar { calendar } => {
+                let before = self
+                    .calendars
+                    .iter()
+                    .find(|existing| existing.id == calendar.id)
+                    .cloned()
+                    .ok_or(CoreError::InvalidOperation(format!(
+                        "There is no calendar with id ‘{}’.",
+                        calendar.id
+                    )))?;
+                vec![ReplicatedOperation::UpdateCalendar { calendar: before }]
+            }
+            ReplicatedOperation::RemoveCalendar { calendar_id } => {
+                let removed = self
+                    .calendars
+                    .iter()
+                    .find(|calendar| &calendar.id == calendar_id)
+                    .cloned()
+                    .ok_or(CoreError::InvalidOperation(format!(
+                        "There is no calendar with id ‘{calendar_id}’."
+                    )))?;
+                // Removing the default clears `default_calendar_id`, so
+                // putting the calendar back is only half of undoing it:
+                // without the second operation the document comes back
+                // with the calendar present and nothing defaulting to it,
+                // and every bare fiscal call silently returns to January.
+                let mut inverse = vec![ReplicatedOperation::AddCalendar { calendar: removed }];
+                if self.default_calendar_id.as_deref() == Some(calendar_id.as_str()) {
+                    inverse.push(ReplicatedOperation::SetDefaultCalendar {
+                        calendar_id: self.default_calendar_id.clone(),
+                    });
+                }
+                inverse
+            }
+            ReplicatedOperation::SetDefaultCalendar { .. } => {
+                vec![ReplicatedOperation::SetDefaultCalendar {
+                    calendar_id: self.default_calendar_id.clone(),
                 }]
             }
 

@@ -143,6 +143,7 @@ impl Document {
             name: "Value".into(),
             source_name: None,
             data_type,
+            scale: None,
             categories: Vec::new(),
             format: None,
             formula: None,

@@ -153,6 +153,8 @@ impl Document {
             frozen_values: std::collections::BTreeMap::new(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
             objects: vec![
                 // The one assumption this playground makes, written where an
                 // assumption goes: a line of a block. A card holding `5%` and
@@ -172,6 +174,7 @@ impl Document {
                             name: "Quantity".into(),
                             source_name: None,
                             data_type: DataType::Number,
+                            scale: None,
                             categories: Vec::new(),
                             format: None,
                             formula: None,
@@ -181,6 +184,7 @@ impl Document {
                             name: "Unit price".into(),
                             source_name: None,
                             data_type: DataType::Currency,
+                            scale: None,
                             categories: Vec::new(),
                             format: None,
                             formula: None,
@@ -190,6 +194,7 @@ impl Document {
                             name: "Total".into(),
                             source_name: None,
                             data_type: DataType::Currency,
+                            scale: None,
                             categories: Vec::new(),
                             format: None,
                             formula: Some(total_formula),

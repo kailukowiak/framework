@@ -3,12 +3,42 @@ use framework_core::*;
 #[test]
 fn dropdown_and_date_inputs_keep_their_types_and_domains() {
     let (mut store, _, _, matrix) = setup();
-    for (name, formula) in [("region", "dropdown([\"\",\"North\"] )"), ("cutoff", "date_input(date(2026,1,1))")] {
-        store.apply(Operation::AddVariable { name: name.into(), formula: formula.into(), x: 0.0, y: 0.0 }).unwrap();
+    for (name, formula) in [
+        ("region", "dropdown([\"\",\"North\"] )"),
+        ("cutoff", "date_input(date(2026,1,1))"),
+    ] {
+        store
+            .apply(Operation::AddVariable {
+                name: name.into(),
+                formula: formula.into(),
+                x: 0.0,
+                y: 0.0,
+            })
+            .unwrap();
     }
-    let region = store.document().objects.iter().find(|o| o.name() == "region").unwrap().id().to_string();
-    let cutoff = store.document().objects.iter().find(|o| o.name() == "cutoff").unwrap().id().to_string();
-    set(&mut store, &matrix, vec![axis("r", "[\"\",\"North\",\"Invalid\"]", Some(&region))], vec![axis("c", "[date(2026,1,1),date(2027,1,1)]", Some(&cutoff))], "`region` + `cutoff`.dt.year().cast(\"string\")");
+    let region = store
+        .document()
+        .objects
+        .iter()
+        .find(|o| o.name() == "region")
+        .unwrap()
+        .id()
+        .to_string();
+    let cutoff = store
+        .document()
+        .objects
+        .iter()
+        .find(|o| o.name() == "cutoff")
+        .unwrap()
+        .id()
+        .to_string();
+    set(
+        &mut store,
+        &matrix,
+        vec![axis("r", "[\"\",\"North\",\"Invalid\"]", Some(&region))],
+        vec![axis("c", "[date(2026,1,1),date(2027,1,1)]", Some(&cutoff))],
+        "`region` + `cutoff`.dt.year().cast(\"string\")",
+    );
     let output = &store.view().computed_calculation_matrices[&matrix];
     assert_eq!(output.cells[0][0].display, "2026", "{output:?}");
     assert_eq!(output.cells[1][1].display, "North2027");
@@ -20,14 +50,33 @@ fn frozen_inputs_are_refused_and_recorded_outputs_stay_recorded() {
     let (mut store, growth, _, matrix) = setup();
     let directory = std::env::temp_dir().join(format!("framework-sensitivity-{}", id()));
     std::fs::create_dir_all(&directory).unwrap();
-    let revenue = store.document().objects.iter().find(|o| o.name() == "revenue").unwrap().id().to_string();
+    let revenue = store
+        .document()
+        .objects
+        .iter()
+        .find(|o| o.name() == "revenue")
+        .unwrap()
+        .id()
+        .to_string();
     store.freeze_value(&revenue, &directory).unwrap();
-    set(&mut store, &matrix, vec![axis("r", "[0,1]", Some(&growth))], vec![], "`revenue`");
+    set(
+        &mut store,
+        &matrix,
+        vec![axis("r", "[0,1]", Some(&growth))],
+        vec![],
+        "`revenue`",
+    );
     let output = &store.view().computed_calculation_matrices[&matrix];
     assert_eq!(output.cells[0][0].value, Some(12.0));
     assert_eq!(output.cells[1][0].value, Some(12.0));
     store.freeze_value(&growth, &directory).unwrap();
-    assert!(store.view().computed_calculation_matrices[&matrix].error.as_ref().unwrap().contains("frozen"));
+    assert!(
+        store.view().computed_calculation_matrices[&matrix]
+            .error
+            .as_ref()
+            .unwrap()
+            .contains("frozen")
+    );
     std::fs::remove_dir_all(directory).unwrap();
 }
 
@@ -66,15 +115,58 @@ fn setup() -> (Store, String, String, String) {
 #[test]
 fn sensitivity_rebuilds_live_filtered_frames_for_each_point() {
     let (mut store, _, price, matrix) = setup();
-    store.apply(Operation::AddFrame { name: "Sales".into(), grid: vec![vec!["Amount".into()],vec!["10".into()],vec!["30".into()]], x: 0.0, y: 0.0 }).unwrap();
+    store
+        .apply(Operation::AddFrame {
+            name: "Sales".into(),
+            grid: vec![vec!["Amount".into()], vec!["10".into()], vec!["30".into()]],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
     let source_frame_id = store.document().objects.last().unwrap().id().to_string();
-    store.apply(Operation::AddLinkedFrame { source_frame_id, name: "Filtered".into(), x: 0.0, y: 0.0 }).unwrap();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id,
+            name: "Filtered".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
     let frame_id = store.document().objects.last().unwrap().id().to_string();
-    store.apply(Operation::SetFramePipeline { frame_id, steps: vec![FrameStepInput::Filter { predicates: vec!["`Amount` >= `price`".into()], match_all: true }] }).unwrap();
-    store.apply(Operation::AddVariable { name: "total".into(), formula: "`Filtered`.`Amount`.sum()".into(), x: 0.0, y: 0.0 }).unwrap();
-    set(&mut store, &matrix, vec![axis("r", "[10,20,50]", Some(&price))], vec![], "`total`");
+    store
+        .apply(Operation::SetFramePipeline {
+            frame_id,
+            steps: vec![FrameStepInput::Filter {
+                predicates: vec!["`Amount` >= `price`".into()],
+                match_all: true,
+            }],
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddVariable {
+            name: "total".into(),
+            formula: "`Filtered`.`Amount`.sum()".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    set(
+        &mut store,
+        &matrix,
+        vec![axis("r", "[10,20,50]", Some(&price))],
+        vec![],
+        "`total`",
+    );
     let output = &store.view().computed_calculation_matrices[&matrix];
-    assert_eq!(output.cells.iter().map(|row| row[0].value).collect::<Vec<_>>(), vec![Some(40.0),Some(30.0),Some(0.0)], "{output:?}");
+    assert_eq!(
+        output
+            .cells
+            .iter()
+            .map(|row| row[0].value)
+            .collect::<Vec<_>>(),
+        vec![Some(40.0), Some(30.0), Some(0.0)],
+        "{output:?}"
+    );
 }
 
 fn axis(name: &str, source: &str, target: Option<&str>) -> CalculationMatrixFormulaInput {

@@ -45,6 +45,9 @@ fn published_and_hand_calculated_financial_examples() {
     // Independent published examples, not output recorded from this engine:
     // numpy.org/numpy-financial/latest/{pv,fv,pmt,nper}.html and Microsoft's
     // IPMT/XNPV help. The small zero-rate cases are direct cash conservation.
+    // Microsoft rounds DDB to cents; the tenth-year and first-day cases below
+    // carry the full precision behind that rounding, verified by hand against
+    // the published MIN formula.
     for (source, expected) in [
         ("pmt(0.075/12, 12*15, 200000)", -1854.0247200054619),
         ("pv(0.05/12, 10*12, -100, 15692.93)", -100.00067131625819),
@@ -84,6 +87,42 @@ fn published_and_hand_calculated_financial_examples() {
             0.373362535,
         ),
         ("xirr([-100,110], [date(2025,1,1),date(2026,1,1)])", 0.1),
+        // Microsoft EFFECT/NOMINAL/SLN/DB/DDB examples and the RATE loan
+        // from Microsoft's RATE help (monthly rate ~0.77%, annual 9.24%).
+        ("effect(0.0525, 4)", 0.0535427),
+        ("nominal(0.053543, 4)", 0.05250032),
+        ("sln(30000, 7500, 10)", 2250.0),
+        ("sln(10000, 2000, 5)", 1600.0),
+        ("db(1000000, 100000, 6, 1, 7)", 186083.33),
+        ("db(1000000, 100000, 6, 2, 7)", 259639.42),
+        ("db(1000000, 100000, 6, 3, 7)", 176814.44),
+        ("db(1000000, 100000, 6, 4, 7)", 120410.64),
+        ("db(1000000, 100000, 6, 5, 7)", 81999.64),
+        ("db(1000000, 100000, 6, 6, 7)", 55841.76),
+        ("db(1000000, 100000, 6, 7, 7)", 15845.10),
+        ("db(10000, 1000, 5, 1)", 3690.0),
+        ("ddb(2400, 300, 10, 1, 2)", 480.0),
+        ("ddb(2400, 300, 10, 2, 1.5)", 306.0),
+        ("ddb(2400, 300, 10, 10)", 22.1225472),
+        ("ddb(2400, 300, 10*12, 1, 2)", 40.0),
+        ("ddb(2400, 300, 10*365, 1)", 1.315068493150685),
+        ("ddb(10000, 1000, 5, 1)", 4000.0),
+        ("ddb(10000, 1000, 5, 5)", 296.0),
+        ("rate(48, -200, 8000)", 0.00770147248823337),
+        ("rate(12*15, -1854.0247200054619, 200000)", 0.00625),
+        ("rate(60, -93.22, 5000) * 12", 0.04502156849021323),
+        (
+            "mirr([-120000,39000,30000,21000,37000,46000], 0.1, 0.12)",
+            0.1260941303659051,
+        ),
+        (
+            "mirr([-120000,39000,30000,21000], 0.1, 0.12)",
+            -0.0480446552499809,
+        ),
+        (
+            "mirr([-1000,400,400,400,400], 0.1, 0.12)",
+            0.17586295137979602,
+        ),
     ] {
         close(source, expected);
     }
@@ -115,6 +154,33 @@ fn financial_errors_are_visible_and_nulls_are_not_zero() {
         "xirr([-100,110], [1,2])",
         "xirr([-100,100], [date(2025,1,1),date(2025,1,1)])",
         "irr([-1e300,1e-300])",
+        "effect(0, 4)",
+        "effect(0.05, 0)",
+        "effect(0.05, 0.5)",
+        "nominal(0, 4)",
+        "nominal(0.05, 0)",
+        "sln(10000, 1000, 0)",
+        "db(0, 0, 5, 1)",
+        "db(10000, 20000, 5, 1)",
+        "db(10000, 1000, 0, 1)",
+        "db(10000, 1000, 5, 0)",
+        "db(10000, 1000, 5, 6)",
+        "db(10000, 1000, 5, 1, 0)",
+        "db(10000, 1000, 5, 1, 13)",
+        "ddb(10000, 1000, 5, 0)",
+        "ddb(10000, 1000, 5, 6)",
+        "ddb(10000, 1000, 0, 1)",
+        "ddb(10000, 20000, 5, 1)",
+        "ddb(10000, 1000, 5, 1, -1)",
+        "rate(0, -100, 1000)",
+        "rate(10, -100, 1000, type=2)",
+        "rate(10, -100, 1000, guess=-1)",
+        "rate(10, 100, 100)",
+        "mirr([10,20], 0.1, 0.1)",
+        "mirr([-100,110], -1, 0.1)",
+        "mirr([-100,110], 0.1, -2)",
+        "mirr([-100,None,110], 0.1, 0.1)",
+        "mirr([-100,110], 0.1)",
     ] {
         let cell = evaluate(formula);
         assert!(
@@ -126,6 +192,17 @@ fn financial_errors_are_visible_and_nulls_are_not_zero() {
     let cell = evaluate("pmt(0.1, 10, None)");
     assert!(cell.error.is_none(), "{:?}", cell.error);
     assert!(cell.value.is_none());
+    for blank in [
+        "effect(None, 4)",
+        "sln(None, 0, 1)",
+        "db(None, 0, 1, 1)",
+        "ddb(1, 0, 1, None)",
+        "rate(None, -100, 1000)",
+    ] {
+        let cell = evaluate(blank);
+        assert!(cell.error.is_none(), "{blank}: {:?}", cell.error);
+        assert!(cell.value.is_none(), "{blank}");
+    }
 }
 
 #[test]
@@ -144,7 +221,8 @@ fn financial_catalog_and_uppercase_calls_are_available() {
         })
         .unwrap();
     for name in [
-        "pv", "fv", "pmt", "ipmt", "ppmt", "nper", "npv", "xnpv", "irr", "xirr",
+        "pv", "fv", "pmt", "ipmt", "ppmt", "nper", "npv", "xnpv", "irr", "xirr", "effect",
+        "nominal", "sln", "db", "ddb", "rate", "mirr",
     ] {
         let entry = catalog.iter().find(|f| f.name == name).unwrap();
         assert!(entry.aliases.contains(&name.to_uppercase()));
@@ -157,6 +235,11 @@ fn financial_catalog_and_uppercase_calls_are_available() {
     close("PMT(0, 10, 100)", -10.0);
     close("NPV(0, [10,20])", 30.0);
     close("IRR([-100,110])", 0.1);
+    close("EFFECT(0.0525, 4)", 0.0535427);
+    close(
+        "MIRR([-1000,400,400,400,400], 0.1, 0.12)",
+        0.17586295137979602,
+    );
 }
 
 #[test]

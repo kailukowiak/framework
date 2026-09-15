@@ -22,6 +22,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FormulaErrorDetails } from "./FormulaEditor";
 import { QueryPlanDetails } from "./DebugTracePanel";
 import { ColumnFormatEditor } from "./ColumnFormatEditor";
+import { ColumnTypeFields } from "./ColumnTypeFields";
 import { FormatColorField } from "./FormatColorField";
 import { FILL_SWATCHES, INK_SWATCHES } from "./lib/palette";
 import {
@@ -57,7 +58,6 @@ import type {
   Column,
   ComputedFrame,
   DataObject,
-  DataType,
   FormulaFunction,
   FrameCellStyle,
   FrameObject,
@@ -76,7 +76,9 @@ import type { InspectorSection } from "./Inspector";
 
 function canFormatColumn(column: Column): boolean {
   return (
-    ["integer", "number", "currency", "percentage", "date"].includes(column.dataType) ||
+    ["integer", "number", "currency", "accounting", "percentage", "date"].includes(
+      column.dataType
+    ) ||
     Boolean(column.format)
   );
 }
@@ -410,7 +412,7 @@ export function FrameInspector({
             );
           })()}
         <button className="secondary-action branch-derived-action" onClick={onJoin}>
-          <GitMerge size={13} /> Join another frame
+          <GitMerge size={13} /> Combine with…
         </button>
         <button
           className="secondary-action branch-derived-action"
@@ -468,89 +470,13 @@ export function FrameInspector({
                 })
               }
             />
-            <>
-              <label className="inspector-field">
-                Column type
-                <select
-                  value={column.dataType}
-                  onChange={(event) => {
-                    const dataType = event.target.value as DataType;
-                    if (computed.editing.rows) {
-                      void onOperation({
-                        type: "setColumnType",
-                        frameId: frame.id,
-                        columnId: column.id,
-                        dataType,
-                      });
-                    } else {
-                      onTransformColumn(
-                        column,
-                        `${formulaToken(column.name)}.cast("${dataType}")`
-                      );
-                    }
-                  }}
-                >
-                  <option value="string">Text</option>
-                  <option value="categorical" disabled={!computed.editing.rows}>
-                    Categorical
-                  </option>
-                  <option value="integer">Integer</option>
-                  <option value="number">Number</option>
-                  <option value="currency" disabled={!computed.editing.rows}>
-                    Currency
-                  </option>
-                  <option value="percentage" disabled={!computed.editing.rows}>
-                    Percentage
-                  </option>
-                  <option value="boolean">Boolean</option>
-                  <option value="date">Date</option>
-                </select>
-              </label>
-              {computed.editing.rows && (
-                <>
-                  {column.dataType === "categorical" && (
-                    <Field
-                      label="Allowed values"
-                      help="In order — this is how the column sorts and compares."
-                      initial={(column.categories ?? []).join(", ")}
-                      onCommit={(raw) =>
-                        onOperation({
-                          type: "setColumnCategories",
-                          frameId: frame.id,
-                          columnId: column.id,
-                          categories: raw
-                            .split(",")
-                            .map((category) => category.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                    />
-                  )}
-                <button
-                  className="secondary-action key-action"
-                  onClick={() =>
-                    onOperation({
-                      type: "setUniqueKey",
-                      frameId: frame.id,
-                      columnIds: [column.id],
-                      enabled: !frame.uniqueKeys.some(
-                        (key) =>
-                          key.columnIds.length === 1 && key.columnIds[0] === column.id
-                      ),
-                    })
-                  }
-                >
-                  <KeyRound size={14} />{" "}
-                  {frame.uniqueKeys.some(
-                    (key) =>
-                      key.columnIds.length === 1 && key.columnIds[0] === column.id
-                  )
-                    ? "Remove unique key"
-                    : "Mark as unique key"}
-                </button>
-                </>
-              )}
-            </>
+            <ColumnTypeFields
+              frame={frame}
+              column={column}
+              computed={computed}
+              onOperation={onOperation}
+              onTransformColumn={onTransformColumn}
+            />
             {frame.derivation && (
               <div className="info-panel">
                 <GitBranch size={16} />

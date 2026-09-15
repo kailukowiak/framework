@@ -9,6 +9,7 @@ import type { DataType } from "./DataType";
 import type { DerivedSort } from "./DerivedSort";
 import type { FrameCellStyle } from "./FrameCellStyle";
 import type { FrameJoinType } from "./FrameJoinType";
+import type { FramePeriod } from "./FramePeriod";
 import type { FrameStepInput } from "./FrameStepInput";
 import type { FrameStyleRuleInput } from "./FrameStyleRuleInput";
 import type { FrameStyleTarget } from "./FrameStyleTarget";
@@ -22,6 +23,9 @@ import type { NamedFormulaInput } from "./NamedFormulaInput";
 import type { ScalarValue } from "./ScalarValue";
 import type { StatsRequest } from "./StatsRequest";
 import type { SummaryOperation } from "./SummaryOperation";
+import type { WeekPattern } from "./WeekPattern";
+import type { YearEndRule } from "./YearEndRule";
+import type { YearLabel } from "./YearLabel";
 
 export type Operation =
   | {
@@ -356,6 +360,12 @@ export type Operation =
     frameId: string;
     columnId: string;
     dataType: DataType;
+    /**
+     * Decimal places for an `Accounting` column; ignored for every
+     * other type. Absent keeps the column's current scale, or the
+     * default when it had none.
+     */
+    scale?: number | null;
   }
   | {
     "type": "setColumnCategories";
@@ -452,6 +462,30 @@ export type Operation =
     columnIds: Array<string>;
     enabled: boolean;
   }
+  | { "type": "setFramePeriod"; frameId: string; period?: FramePeriod | null }
+  | {
+    "type": "addCalendar";
+    name: string;
+    fyStart: number;
+    pattern: WeekPattern;
+    yearEnd: YearEndRule;
+    yearLabel: YearLabel;
+    weekend: Array<number>;
+    holidays: Array<string>;
+  }
+  | {
+    "type": "updateCalendar";
+    calendarId: string;
+    name: string;
+    fyStart: number;
+    pattern: WeekPattern;
+    yearEnd: YearEndRule;
+    yearLabel: YearLabel;
+    weekend: Array<number>;
+    holidays: Array<string>;
+  }
+  | { "type": "removeCalendar"; calendarId: string }
+  | { "type": "setDefaultCalendar"; calendarId?: string | null }
   | {
     "type": "addJoinFrame";
     primaryFrameId: string;

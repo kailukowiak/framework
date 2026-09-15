@@ -8,6 +8,7 @@ import type { PivotOutput } from "./PivotOutput";
 import type { RenderedDerivedExpression } from "./RenderedDerivedExpression";
 import type { UnionColumn } from "./UnionColumn";
 import type { UnpivotColumn } from "./UnpivotColumn";
+import type { ZipFill } from "./ZipFill";
 
 export type RenderedFrameStep =
   | { "kind": "filter"; predicates: Array<string>; matchAll: boolean }
@@ -51,5 +52,6 @@ export type RenderedFrameStep =
     outputColumnName: string;
     vector: string;
     expectedLength: number;
+    fill?: ZipFill;
   }
   | { "kind": "comment"; text: string };

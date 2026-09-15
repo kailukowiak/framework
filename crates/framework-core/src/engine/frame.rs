@@ -106,6 +106,7 @@ impl FrameObject {
                         name: output.output_column_id.clone(),
                         source_name: None,
                         data_type: DataType::String,
+                        scale: None,
                         categories: Vec::new(),
                         format: None,
                         formula: None,
@@ -168,6 +169,7 @@ impl FrameObject {
                     name: fallback_name,
                     source_name: None,
                     data_type: DataType::String,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: None,
@@ -268,7 +270,9 @@ impl FrameObject {
                     output_column_id,
                     vector,
                     expected_length,
+                    fill,
                 } => RenderedFrameStep::ZipVector {
+                    fill: *fill,
                     output_column_id: output_column_id.clone(),
                     output_column_name: self
                         .columns
@@ -564,10 +568,11 @@ impl FrameObject {
                                         })
                                 })
                         } else {
-                            parse_scalar_value(
-                                cell.map(|cell| cell.raw.as_str()).unwrap_or_default(),
-                                column.data_type,
-                            )
+                            let raw = cell.map(|cell| cell.raw.as_str()).unwrap_or_default();
+                            match column.data_type {
+                                DataType::Accounting => parse_accounting_value(raw, column.scale),
+                                _ => parse_scalar_value(raw, column.data_type),
+                            }
                         };
                         (
                             column.id.clone(),
@@ -736,6 +741,13 @@ impl FrameObject {
                             DataType::Number | DataType::Currency | DataType::Percentage => {
                                 source.cast(pl::DataType::Float64)
                             }
+                            // Exact at the declared scale; with none declared
+                            // the file's own scale is kept rather than
+                            // rounded to a default.
+                            DataType::Accounting => match column.scale {
+                                Some(scale) => source.cast(accounting_dtype(Some(scale))),
+                                None => source,
+                            },
                             _ => source,
                         };
                         source.alias(&column.id)
@@ -822,6 +834,16 @@ impl FrameObject {
                         })
                         .collect::<Vec<_>>(),
                 ),
+                DataType::Accounting => decimal_series(
+                    name,
+                    column.scale,
+                    self.rows.iter().map(|row| {
+                        row.cells
+                            .get(&column.id)
+                            .map(|cell| cell.raw.as_str())
+                            .unwrap_or_default()
+                    }),
+                )?,
                 DataType::Boolean => pl::Series::new(
                     name,
                     self.rows
@@ -882,6 +904,9 @@ impl FrameObject {
             DataType::Number | DataType::Currency | DataType::Percentage => series
                 .cast(&pl::DataType::Float64)
                 .map_err(|error| error.to_string())?,
+            DataType::Accounting => series
+                .cast(&accounting_dtype(column.scale))
+                .map_err(|error| error.to_string())?,
             _ => series,
         };
         pl::DataFrame::new(series.len(), vec![series.into()])
@@ -917,6 +942,47 @@ impl FrameObject {
         };
         plan = document.apply_row_patches(plan, self, retain_index)?;
         for layer in self.calculated_column_layers()? {
+            let columns: Vec<DerivedExpression> = layer
+                .iter()
+                .map(|column| DerivedExpression {
+                    output_column_id: column.id.clone(),
+                    expression: column
+                        .formula
+                        .as_ref()
+                        .expect("calculated-column layer contains formulas")
+                        .expression
+                        .clone(),
+                })
+                .collect();
+            if columns.iter().any(|column| {
+                crate::formula::financial_window::lifts_period_join(&column.expression)
+            }) {
+                // A period-relative call lifts into a self-join at plan
+                // time, so these layers compile through the same pre-pass
+                // a Wrangle step uses. Compiling them straight to Polars
+                // would fail with no plan to join into — the error the
+                // grid's calculated column used to report.
+                let (joined, rewritten, mut answers) =
+                    crate::formula::financial_period::join_prior_periods(
+                        document, &self.id, plan, &columns,
+                    )?;
+                let (joined, rewritten, window_answers) =
+                    crate::formula::financial_window::join_window_aggregates(
+                        document, &self.id, joined, &rewritten,
+                    )?;
+                answers.extend(window_answers);
+                let expressions = rewritten
+                    .iter()
+                    .map(|column| {
+                        column
+                            .expression
+                            .to_polars(document)
+                            .map(|expression| expression.alias(column.output_column_id.clone()))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                plan = joined.with_columns(expressions).drop(pl::cols(answers));
+                continue;
+            }
             let expressions = layer
                 .iter()
                 .map(|column| {
@@ -1052,6 +1118,42 @@ impl FrameObject {
         Ok(output)
     }
 
+    /// What a stored calculated column holds, without evaluating what
+    /// only the plan can answer.
+    ///
+    /// A period-relative call lifts into a self-join at plan time, so
+    /// compiling it here — with no plan to join into — fails by design.
+    /// Its declared type is the value it reads, the way the method shape
+    /// already answers for receiver spellings, which keeps the grid's
+    /// calculated column and the Wrangle chain accepting the same formulas.
+    pub(crate) fn inferred_column_type(
+        &self,
+        document: &Document,
+        expression: &Expr,
+    ) -> Result<DataType, String> {
+        self.inferred_column_typing(document, expression)
+            .map(|(data_type, _)| data_type)
+    }
+
+    /// The same, with the decimal places an accounting result carries —
+    /// the one part of a type Polars decides that the document has to write
+    /// down, since the column's scale is what its cells are exact at.
+    pub(crate) fn inferred_column_typing(
+        &self,
+        document: &Document,
+        expression: &Expr,
+    ) -> Result<(DataType, Option<u8>), String> {
+        if crate::formula::financial_window::lifts_period_join(expression) {
+            return expression
+                .declared_type(document)
+                .map(|data_type| (data_type, None))
+                .ok_or_else(|| {
+                    "FrameWork cannot tell what type this period-relative formula produces because the value it reads has no declared type".to_string()
+                });
+        }
+        self.infer_polars_expression_typing(document, expression)
+    }
+
     /// What a column of this expression holds, asked of Polars and then of
     /// the document.
     ///
@@ -1065,10 +1167,24 @@ impl FrameObject {
         document: &Document,
         expression: &Expr,
     ) -> Result<DataType, String> {
+        self.infer_polars_expression_typing(document, expression)
+            .map(|(data_type, _)| data_type)
+    }
+
+    /// [`Self::infer_polars_expression_type`] with the decimal scale of an
+    /// accounting result alongside.
+    pub(crate) fn infer_polars_expression_typing(
+        &self,
+        document: &Document,
+        expression: &Expr,
+    ) -> Result<(DataType, Option<u8>), String> {
         let frame = document.materialize_frame_frame(&self.id, Layer::Data, &mut HashSet::new())?;
         let series = self.evaluate_polars_series(document, &frame, expression)?;
         let found = framework_type_from_polars(series.dtype())?;
-        Ok(written_type(found, expression.declared_type(document)))
+        Ok((
+            written_type(found, expression.declared_type(document)),
+            decimal_scale_from_polars(series.dtype()),
+        ))
     }
 }
 
@@ -1184,6 +1300,7 @@ fn null_column_expression(column: &Column) -> pl::Expr {
     let data_type = match column.data_type {
         DataType::Integer => pl::DataType::Int64,
         DataType::Number | DataType::Currency | DataType::Percentage => pl::DataType::Float64,
+        DataType::Accounting => accounting_dtype(column.scale),
         DataType::Boolean => pl::DataType::Boolean,
         DataType::Date => pl::DataType::Date,
         DataType::Categorical if !column.categories.is_empty() => {
@@ -1239,6 +1356,7 @@ mod tests {
                     name: name.into(),
                     source_name: None,
                     data_type: DataType::Number,
+                    scale: None,
                     categories: Vec::new(),
                     format: None,
                     formula: Some(Formula { expression }),

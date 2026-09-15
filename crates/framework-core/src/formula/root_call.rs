@@ -8,9 +8,16 @@ pub(super) fn compile_polars_root_call(
     document: &Document,
 ) -> Result<pl::Expr, String> {
     if crate::formula::controls::is_control(name) {
-        let call = Expr::PolarsCall { name: name.into(), arguments: arguments.to_vec(), keyword_arguments: keyword_arguments.to_vec() };
+        let call = Expr::PolarsCall {
+            name: name.into(),
+            arguments: arguments.to_vec(),
+            keyword_arguments: keyword_arguments.to_vec(),
+        };
         let control = crate::formula::controls::read(&call)?.expect("known constructor");
-        return crate::formula::controls::expression(&crate::formula::controls::selected(&control))?.to_polars(document);
+        return crate::formula::controls::expression(&crate::formula::controls::selected(
+            &control,
+        ))?
+        .to_polars(document);
     }
     if crate::formula::financial::is_financial(name) {
         return crate::formula::financial::compile(name, arguments, keyword_arguments, document);
@@ -135,9 +142,18 @@ pub(crate) fn polars_call_declared_type(
     document: &Document,
     scope: &[crate::Column],
 ) -> Option<DataType> {
-    match name {
+    match name.strip_prefix("finance.").unwrap_or(name) {
         "slider" => Some(DataType::Number),
         "date_input" => Some(DataType::Date),
+        // A period-relative read answers whatever it was asked for — the
+        // sum of money is money — so it declares its value's type. This is
+        // what lets a stored calculated column type itself without
+        // evaluating a join that only the plan can answer.
+        "prior" | "ytd" | "ttm" | "same_period_last_year" => arguments
+            .first()
+            .and_then(|value| value.declared_type_among(document, scope)),
+        "fiscal_week" | "networkdays" => Some(DataType::Integer),
+        "workday" => Some(DataType::Date),
         "recur" => arguments
             .first()
             .and_then(|seed| seed.declared_type_among(document, scope))

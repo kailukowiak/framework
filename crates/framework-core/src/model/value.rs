@@ -290,10 +290,25 @@ pub enum DataType {
     Integer,
     Number,
     Currency,
+    /// An exact amount: Decimal128 at the column's declared scale, never a
+    /// float. The ledger type — cents foot, sums tie, and the rounding a
+    /// calculation does is at the scale, not wherever a binary fraction
+    /// happened to fall. Presented in accounting style by default:
+    /// parentheses for a negative, a dash for zero, the symbol pinned left.
+    /// `Currency` stays the f64-backed modelling type; converting between
+    /// the two is an explicit cast.
+    Accounting,
     Percentage,
     Boolean,
     Date,
 }
+
+/// The decimal places an accounting column keeps when none are declared.
+pub const DEFAULT_ACCOUNTING_SCALE: u8 = 2;
+
+/// The precision every accounting column is stored at: the widest Polars
+/// offers, so the scale is the only choice a column has to make.
+pub const ACCOUNTING_PRECISION: usize = 38;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(tag = "type", content = "value", rename_all = "camelCase")]

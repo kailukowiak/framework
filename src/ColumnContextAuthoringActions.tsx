@@ -9,7 +9,7 @@ import type { GridContext } from "./FrameGrid";
 import { formulaToken } from "./lib/formulaReferences";
 import type { Column, FrameObject } from "./lib/types";
 
-const numericTypes = new Set(["integer", "number", "currency", "percentage"]);
+const numericTypes = new Set(["integer", "number", "currency", "accounting", "percentage"]);
 
 export function ColumnContextAuthoringActions({
   frame,

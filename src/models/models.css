@@ -13,6 +13,7 @@
 .model-card .object-name-input { font-size: var(--text-base); font-weight: 600; }
 .model-status { font-size: var(--text-sm); margin: 3px 0 6px; }
 .model-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 7px 0; }
+.model-actions button { width: auto; margin: 0; }
 .model-actions button, .model-summary-actions summary { font-size: var(--text-sm); }
 .model-summary-actions { position: relative; }
 .model-summary-actions summary { cursor: pointer; }

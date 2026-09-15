@@ -8,7 +8,6 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use ts_rs::TS;
 
-
 /// A value object as the canvas shows it under the scenario in force.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -667,7 +666,6 @@ impl Document {
             })
             .collect()
     }
-
 
     fn compute_text(&self, text: &TextObject) -> ComputedText {
         let mut source = String::new();
@@ -1623,6 +1621,44 @@ impl Document {
                 .is_ok_and(|frame| frame.materialization.is_some())
         });
         order
+    }
+
+    /// Whether `frame_id`'s rows are worked out from `target_id`'s — through
+    /// the frame it derives from, the frames its steps look up, stack or
+    /// expand, and the frames its formulas name — stopping at a snapshot,
+    /// since a frame read from its file is where a lineage ends rather
+    /// than another step along it.
+    ///
+    /// The question a list step asks before naming another frame live: a
+    /// frame downstream of the one being edited would be computed from it
+    /// while it is still being computed, and that loop starts its own cycle
+    /// set, so it has to be refused here rather than caught there.
+    pub(crate) fn frame_reads_frame(&self, frame_id: &str, target_id: &str) -> bool {
+        self.frame_reaches(frame_id, target_id, &mut HashSet::new())
+    }
+
+    fn frame_reaches(&self, frame_id: &str, target_id: &str, visiting: &mut HashSet<Id>) -> bool {
+        let Ok(frame) = self.frame(frame_id) else {
+            return false;
+        };
+        if frame.materialization.is_some() {
+            return false;
+        }
+        if frame_id == target_id {
+            return true;
+        }
+        if !visiting.insert(frame_id.to_string()) {
+            return false;
+        }
+        let mut upstream: Vec<String> = Vec::new();
+        if let Some(derivation) = &frame.derivation {
+            upstream.push(derivation.source_frame_id.clone());
+        }
+        upstream.extend(frame.lookup_frame_ids());
+        upstream.extend(frame.foreign_frames().into_iter().map(str::to_string));
+        upstream
+            .iter()
+            .any(|upstream_id| self.frame_reaches(upstream_id, target_id, visiting))
     }
 
     fn push_lineage_first(

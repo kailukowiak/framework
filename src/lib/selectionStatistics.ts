@@ -43,12 +43,17 @@ function statisticValue(
   const raw = target.row.cells[target.column.id]?.raw?.trim() ?? "";
   if (!raw) return null;
   if (
-    !["integer", "number", "currency", "percentage"].includes(
+    !["integer", "number", "currency", "accounting", "percentage"].includes(
       target.column.dataType
     )
   )
     return {};
-  const number = Number(raw.replace(/[$,%\s]/g, ""));
+  // An amount may have been typed the way accountants write one, so the
+  // wrapping parentheses are read as the negative sign they are rather than
+  // turning the cell into a non-number.
+  const number = Number(
+    raw.replace(/[$,%\s]/g, "").replace(/^\((.*)\)$/, "-$1")
+  );
   if (!Number.isFinite(number)) return {};
   return {
     numeric: target.column.dataType === "percentage" ? number / 100 : number,

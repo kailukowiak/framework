@@ -3,7 +3,7 @@ import type { CanvasView, DocumentView, FrameObject } from "./types";
 /** A first, reasonable chart for a frame nobody has plotted before. */
 export function defaultPlotSpec(frame: FrameObject): Record<string, unknown> {
   const quantitative = frame.columns.filter((column) =>
-    ["integer", "number", "currency", "percentage"].includes(column.dataType)
+    ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)
   );
   const temporal = frame.columns.find((column) => column.dataType === "date");
   const categorical = frame.columns.find((column) =>

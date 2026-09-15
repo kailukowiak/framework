@@ -4,8 +4,10 @@ Status: proposed 2026-09-11, drafted from a design conversation with Kai.
 Implementation update 2026-09-12: the recurrence precision fix and phase 1a
 (`pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `npv`, `xnpv`) are implemented.
 Phase 1b adds `irr` and `xirr`, including namespace and receiver calls;
-Price a deal now solves its return and checks the XNPV residual. `rate`, `mirr`,
-the remaining closed forms, and grouped IRR remain planned. Iterations and
+Price a deal now solves its return and checks the XNPV residual.
+Implementation update 2026-09-12: phase 1 is complete with `rate`, `mirr`,
+`effect`, `nominal`, `sln`, `db` and `ddb`, including namespace and receiver
+calls. Only the grouped-IRR stretch remains planned. Iterations and
 brackets are retained internally, but exposing convergence diagnostics in the
 dependency trace is deferred: that trace has no runtime-result payload today.
 The bounded root-search policy is documented in the function reference; it
@@ -39,6 +41,13 @@ Two consequences for this plan:
   visible rounding step with a declared mode, shown in the chain the way a
   Read type override is.
 
+**Implementation update 2026-09-14.** The Accounting type landed as
+described above: `DataType::Accounting`, Decimal128-backed with a declared
+scale, in `crates/framework-core/src/model/value.rs`, wired through
+`engine/values.rs` and `formula/compile.rs`. The accountant plan itself
+(exact Accounting type, reconciliation with reviewed matches, validation)
+is still to be written.
+
 ## Phases
 
 Each phase stands alone, ships something a finance person would notice, and
@@ -57,6 +66,10 @@ that lands it.
 | 5. Declared iterative solve | later | three-statement model, debt schedule |
 
 ### Phase 1: financial function pack
+
+Implemented 2026-09-12: the full pack below is in the catalog with
+`finance.` and receiver spellings, Excel argument order, and inline errors;
+only the grouped-IRR stretch remains future work.
 
 **Purpose.** Remove the day-one disqualifier. "Does it have XIRR" is the
 first question a finance person asks, and today the answer is no: nothing
@@ -122,6 +135,50 @@ tutorial under `tutorials/`, an MCP smoke scenario under `tools/mcp-smoke/`.
 
 ### Phase 2: period-aware time spine
 
+Slice 1 landed 2026-09-12 on the timespine branch: the frame-level period
+declaration (`FramePeriod` + `SetFramePeriod`, validated unique per
+partition with no missing dates), monthly `period_index(date, fy_start=1)`,
+and `prior(expr, n=1, fy_start=1)` as a left self-join on `index - n`
+within the declared partitions. `prior` outside a calculated column is
+refused naming the frame and the fix; a missing earlier period reads blank.
+Slice 2 landed 2026-09-12 on the same branch: the fiscal-calendar date
+functions `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`,
+`period_end` and `add_periods`, each with `finance.` and receiver spellings.
+They read the date itself, so they need no declaration and work in
+Scratchwork; `fy_start` follows the slice 1 literal-or-named-value rule, and
+`add_periods` accepts a per-row count with EDATE month-end clamping.
+Slice 3 landed 2026-09-12 on the same branch: the declaration-gated window
+aggregates `ytd(expr, fy_start=1)`, `ttm(expr)` and
+`same_period_last_year(expr)` as self-joins on the period index — range
+joins with per-row sums for the first two, the prior machinery at offset
+twelve for the third. Only `ytd` takes `fy_start`; the twelve-period forms
+are index-relative and year-start-invariant. Windows sum the periods
+present and blank only a window with no readable value; every call in a
+step derives from the pre-pass input snapshot and joins back by the
+declaration's natural keys, keeping the cost linear in the number of calls.
+Slice 3 also closed two cross-surface gaps the slices exposed: the
+`finance.` namespace spelling lifts like the root call, and the grid's
+calculated column accepts period-relative formulas (typed from the value
+they read) with the same save-time declaration refusal as the chain.
+Slice 4 landed 2026-09-12 on the same branch and closes the phase:
+document calendars (`Calendar` with year start, week pattern, year-end
+rule, year labelling, weekend and inline holidays; add, update, remove
+and set-default operations with exact undo; MCP tools), `fiscal_week`,
+`workday` and `networkdays` as native scalars, and a `calendar` keyword
+on the fiscal date functions that reads the week table under a retail
+pattern. Bare calls read the document default, and an explicit `fy_start`
+still wins over the calendar's. Years are numbered by the calendar year
+they end in unless the calendar says otherwise — the tutorial's answer
+key demanded it, and the NRF labels its calendars by the start, so the
+convention lives on the calendar rather than in the function. The
+Driver-based forecast tutorial walks the whole phase: its section 7
+replaces the hand arithmetic with the bare calls, adds the trailing
+twelve months, checks an NRF retail week, and repeats the deletion test
+against the answer key. Calendar creation stays MCP-only (the start file
+carries both calendars); declaring a period is one choice in the frame
+menu. Retail blocks do not yet reach the period declaration or
+`period_index` — `prior` and the windows stay monthly — and holidays stay
+an inline list rather than a frame.
 **Purpose.** Nearly every finance model is a monthly or quarterly series
 with period-relative logic, and a finance person's first FrameWork document
 is a forecast. Today the spine is a date `sequence` generator and the only

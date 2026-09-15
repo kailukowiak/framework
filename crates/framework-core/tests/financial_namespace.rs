@@ -57,6 +57,32 @@ fn finance_namespace_and_receivers_share_the_financial_functions() {
         ),
         ("FINANCE.PMT(rate=0, nper=10, pv=100)", -10.0),
         ("[-100,110].FINANCE.IRR()", 0.1),
+        ("finance.effect(0.0525, 4)", 0.0535427),
+        ("finance.nominal(0.053543, 4)", 0.05250032),
+        ("finance.sln(30000, 7500, 10)", 2250.0),
+        ("finance.db(1000000, 100000, 6, 1, 7)", 186083.33),
+        ("finance.ddb(2400, 300, 10, 1, 2)", 480.0),
+        ("finance.rate(48, -200, 8000)", 0.00770147248823337),
+        (
+            "finance.mirr([-120000,39000,30000,21000,37000,46000], 0.1, 0.12)",
+            0.1260941303659051,
+        ),
+        ("(0.0525).finance.effect(4)", 0.0535427),
+        ("(0.053543).finance.nominal(4)", 0.05250032),
+        ("cost = 30000\ncost.finance.sln(7500, 10)", 2250.0),
+        (
+            "cost = 1000000\ncost.finance.db(100000, 6, 1, month=7)",
+            186083.33,
+        ),
+        ("cost = 2400\ncost.finance.ddb(300, 10, 1)", 480.0),
+        (
+            "principal = 8000\nprincipal.finance.rate(48, -200)",
+            0.00770147248823337,
+        ),
+        (
+            "flows = [-120000,39000,30000,21000,37000,46000]\nflows.finance.mirr(0.1, 0.12)",
+            0.1260941303659051,
+        ),
     ] {
         close(formula, expected);
     }
@@ -71,6 +97,9 @@ fn receiver_binding_refuses_duplicates_and_keeps_argument_validation() {
         "principal = 100\nprincipal.finance.fv(0, 10)",
         "finance.irr([1, 2])",
         "[1, 2].finance.irr()",
+        "finance.mirr([1, 2], 0.1, 0.1)",
+        "cost = 100\ncost.finance.sln(10, 5, 1)",
+        "cost = 100\ncost.finance.db(10, 5, 1, 12, 1, 1)",
     ] {
         assert!(evaluate(source).error.is_some(), "{source}");
     }
@@ -145,4 +174,17 @@ fn namespace_completion_has_receiver_specific_signatures() {
     assert_eq!(irr.signature, ".finance.irr(guess=0.1)");
     assert_eq!(irr.minimum_arguments, 0);
     assert_eq!(irr.maximum_arguments, 1);
+    let rate = catalog.iter().find(|f| f.id == "finance.rate").unwrap();
+    assert_eq!(
+        rate.signature,
+        ".finance.rate(nper, pmt, fv=0, type=0, guess=0.1)"
+    );
+    assert_eq!(rate.minimum_arguments, 2);
+    assert_eq!(rate.maximum_arguments, 5);
+    let mirr = catalog.iter().find(|f| f.id == "finance.mirr").unwrap();
+    assert_eq!(mirr.signature, ".finance.mirr(finance_rate, reinvest_rate)");
+    assert_eq!(mirr.minimum_arguments, 2);
+    assert_eq!(mirr.maximum_arguments, 2);
+    let sln = catalog.iter().find(|f| f.id == "finance.sln").unwrap();
+    assert_eq!(sln.signature, ".finance.sln(salvage, life)");
 }

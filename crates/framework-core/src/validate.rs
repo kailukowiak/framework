@@ -329,6 +329,28 @@ pub(crate) fn validate_category_values(
 }
 
 impl Document {
+    /// Whether any two rows of `data_frame` agree on every key column.
+    ///
+    /// Vectorised on purpose: both callers run after every apply, and the
+    /// row-by-row version they shared built a formatted `Vec<String>` per
+    /// row and looked every column up by name inside the loop. Polars
+    /// marks the repeats in one pass instead. Nulls count as equal to each
+    /// other here, as they did before — a period column refuses them
+    /// outright a few lines below, and a unique key over two missing
+    /// values is still two rows that cannot be told apart.
+    fn has_duplicate_rows(
+        data_frame: &polars::prelude::DataFrame,
+        column_ids: &[Id],
+    ) -> Result<bool, CoreError> {
+        let keys = data_frame
+            .select(column_ids.iter().map(|column_id| column_id.as_str()))
+            .map_err(|error| CoreError::InvalidOperation(error.to_string()))?;
+        Ok(keys
+            .is_duplicated()
+            .map_err(|error| CoreError::InvalidOperation(error.to_string()))?
+            .any())
+    }
+
     pub(crate) fn validate_unique_keys(&self) -> Result<(), CoreError> {
         for frame in self.objects.iter().filter_map(|object| match object {
             DataObject::Frame(frame) if !frame.unique_keys.is_empty() => Some(frame),
@@ -347,39 +369,139 @@ impl Document {
                         "A unique key references a missing column".into(),
                     ));
                 }
-                let mut values = HashSet::with_capacity(data_frame.height());
-                for row_index in 0..data_frame.height() {
-                    let row_key = key
+                if Self::has_duplicate_rows(&data_frame, &key.column_ids)? {
+                    let names = key
                         .column_ids
                         .iter()
-                        .map(|column_id| {
-                            data_frame
-                                .column(column_id)
-                                .map_err(|error| CoreError::InvalidOperation(error.to_string()))?
-                                .get(row_index)
-                                .map(|value| format!("{value:?}"))
-                                .map_err(|error| CoreError::InvalidOperation(error.to_string()))
+                        .filter_map(|column_id| {
+                            frame
+                                .columns
+                                .iter()
+                                .find(|column| column.id == *column_id)
+                                .map(|column| column.name.as_str())
                         })
-                        .collect::<Result<Vec<_>, _>>()?;
-                    if !values.insert(row_key) {
-                        let names = key
-                            .column_ids
-                            .iter()
-                            .filter_map(|column_id| {
-                                frame
-                                    .columns
-                                    .iter()
-                                    .find(|column| column.id == *column_id)
-                                    .map(|column| column.name.as_str())
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", ");
-                        return Err(CoreError::InvalidOperation(format!(
-                            "{} cannot use {} as a unique key because it contains duplicates",
-                            frame.name, names
-                        )));
-                    }
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    return Err(CoreError::InvalidOperation(format!(
+                        "{} cannot use {} as a unique key because it contains duplicates",
+                        frame.name, names
+                    )));
                 }
+            }
+        }
+        Ok(())
+    }
+
+    /// Every calendar on the document parses, and the default names one
+    /// that exists.
+    ///
+    /// Cheap — a few string parses over a list that is almost always
+    /// empty or tiny — and worth running on every write and every load,
+    /// because the failure it catches is a silent one: a calendar that
+    /// will not resolve used to leave bare fiscal calls quietly reading
+    /// January months while the same call naming the calendar outright
+    /// errored. Surfaced here, a hand-edited `.fw` says so at the door.
+    pub(crate) fn validate_calendars(&self) -> Result<(), CoreError> {
+        for calendar in &self.calendars {
+            calendar.resolve().map_err(|error| {
+                CoreError::InvalidOperation(format!(
+                    "The calendar ‘{}’ cannot be read: {error}",
+                    calendar.name
+                ))
+            })?;
+        }
+        if let Some(id) = &self.default_calendar_id
+            && !self.calendars.iter().any(|calendar| &calendar.id == id)
+        {
+            return Err(CoreError::InvalidOperation(format!(
+                "The default calendar ‘{id}’ is not on this document."
+            )));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn validate_period_declarations(&self) -> Result<(), CoreError> {
+        for frame in self.objects.iter().filter_map(|object| match object {
+            DataObject::Frame(frame) if frame.period.is_some() => Some(frame),
+            _ => None,
+        }) {
+            let period = frame.period.as_ref().expect("filtered period");
+            let name = |column_id: &Id| {
+                frame
+                    .columns
+                    .iter()
+                    .find(|column| column.id == *column_id)
+                    .map(|column| column.name.clone())
+                    .unwrap_or_else(|| column_id.clone())
+            };
+            // Cheap checks first, before materializing anything.
+            match frame
+                .columns
+                .iter()
+                .find(|column| column.id == period.column_id)
+            {
+                None => {
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ declares a period column that no longer exists. Declare another column or clear the declaration.",
+                        frame.name
+                    )));
+                }
+                Some(column) if column.data_type != DataType::Date => {
+                    return Err(CoreError::InvalidOperation(format!(
+                        "‘{}’ cannot use ‘{}’ as its period column because it no longer holds dates. Declare a Date column instead.",
+                        frame.name, column.name
+                    )));
+                }
+                _ => {}
+            }
+            if period
+                .partition_column_ids
+                .iter()
+                .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
+            {
+                return Err(CoreError::InvalidOperation(format!(
+                    "‘{}’ declares a partition column that no longer exists. Declare another column or clear the declaration.",
+                    frame.name
+                )));
+            }
+            let data_frame = self
+                .materialize_frame_frame(&frame.id, Layer::Data, &mut HashSet::new())
+                .map_err(CoreError::InvalidOperation)?;
+            // A row with no date belongs to no period, and a null would
+            // join against other nulls — so unlike a unique key, a period
+            // column refuses missing values outright.
+            let missing = data_frame
+                .column(&period.column_id)
+                .map_err(|error| CoreError::InvalidOperation(error.to_string()))?
+                .as_materialized_series()
+                .null_count();
+            if missing != 0 {
+                return Err(CoreError::InvalidOperation(format!(
+                    "‘{}’ declares ‘{}’ as its period column, but {} row{} ha{} no date. Fill {} or clear the declaration.",
+                    frame.name,
+                    name(&period.column_id),
+                    missing,
+                    if missing == 1 { "" } else { "s" },
+                    if missing == 1 { "s" } else { "ve" },
+                    if missing == 1 { "it" } else { "them" }
+                )));
+            }
+            let key_column_ids = period
+                .partition_column_ids
+                .iter()
+                .chain(std::iter::once(&period.column_id))
+                .cloned()
+                .collect::<Vec<_>>();
+            if Self::has_duplicate_rows(&data_frame, &key_column_ids)? {
+                let names = key_column_ids
+                    .iter()
+                    .map(&name)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                return Err(CoreError::InvalidOperation(format!(
+                    "‘{}’ declares {} as its period, but two rows share the same period. Periods must be unique within each partition.",
+                    frame.name, names
+                )));
             }
         }
         Ok(())
@@ -650,6 +772,8 @@ mod tests {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         });
         store
             .apply(Operation::AddFrame {

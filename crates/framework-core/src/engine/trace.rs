@@ -361,6 +361,11 @@ fn collect_references(
         | Expr::Date { .. }
         | Expr::Duration { .. }
         | Expr::Null
+        // A calendar is a document-level rule rather than a canvas object,
+        // so it is not a node the dependency graph can walk to. What holds
+        // it in place is `Expr::references_object`, which the removal
+        // refusal asks — the same question, from the other end.
+        | Expr::Calendar { .. }
         | Expr::Column { .. } => {}
     }
 }
@@ -379,6 +384,8 @@ mod tests {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         })
     }
 

@@ -3,6 +3,7 @@ use crate::engine::values::normalize_name;
 use crate::error::CoreError;
 use crate::format_number;
 use crate::formula::compile::format_polars_call;
+use crate::formula::financial_calendar::calendar_name;
 use crate::formula::lexer::ReferenceName;
 use crate::model::document::{DataObject, Document};
 use crate::model::frame::{Column, FrameObject};
@@ -168,6 +169,23 @@ pub enum Expr {
     },
     Value {
         object_id: Id,
+    },
+    /// A fiscal calendar the formula names: `calendar="NRF 4-5-4"`.
+    ///
+    /// Written as a string and read back as one, but held as an id, for
+    /// the same reason every other reference in this document is held as
+    /// an id: the name is what a person types and reads, and the id is
+    /// what survives them changing it. Binding happens where every other
+    /// name is bound — when the formula is parsed (see
+    /// `financial_calendar::bind_references`) — so a calendar that is not
+    /// there is refused at the boundary rather than at plan time, and a
+    /// rename is nothing at all.
+    ///
+    /// The other way to supply a calendar stays a name to the last
+    /// moment: [`Expr::Value`] holding one is read at plan time, because
+    /// what that value says is the user's to change between plans.
+    Calendar {
+        calendar_id: Id,
     },
     /// A named list on the canvas: `` `Allowed currencies` ``.
     ///
@@ -355,12 +373,20 @@ pub(crate) fn arithmetic_type(
     // Only numbers carry a way of being written. Anything else here is a
     // date, a span, or text, and what those do under arithmetic is not a
     // question about notation.
-    if !matches!(left, Integer | Number | Currency | Percentage)
-        || !matches!(right, Integer | Number | Currency | Percentage)
+    if !matches!(left, Integer | Number | Currency | Accounting | Percentage)
+        || !matches!(right, Integer | Number | Currency | Accounting | Percentage)
     {
         return None;
     }
     Some(match (operator, left, right) {
+        // An exact amount stays exact under everything but a power, which
+        // leaves every dimension behind. Against money the answer is a
+        // refusal — the compiler asks for a cast — so there is nothing to
+        // write here for that pair.
+        (_, Accounting, Currency) | (_, Currency, Accounting) => return None,
+        (Power, Accounting, _) | (Power, _, Accounting) => Number,
+        (_, Accounting, _) | (_, _, Accounting) => Accounting,
+
         // Money and money is money; money and a plain number or a rate is
         // still money, because the dimension has nowhere to go.
         (Add | Subtract, Currency, _) | (Add | Subtract, _, Currency) => Currency,
@@ -406,6 +432,7 @@ pub(crate) fn type_name(data_type: DataType) -> &'static str {
         DataType::Integer => "an integer",
         DataType::Number => "a number",
         DataType::Currency => "money",
+        DataType::Accounting => "an accounting amount",
         DataType::Percentage => "a percentage",
         DataType::Boolean => "a true/false value",
         DataType::Date => "a date",
@@ -451,8 +478,10 @@ impl Expr {
             Expr::Date { .. } => Some(DataType::Date),
             // A gap sits in a list of anything, so it brings no type of its
             // own for the others to disagree with. A duration is not a
-            // value at all — see [`Expr::Duration`].
-            Expr::Null | Expr::Duration { .. } => None,
+            // value at all — see [`Expr::Duration`] — and neither is a
+            // calendar reference, which only means anything in the one
+            // argument slot that asks for it.
+            Expr::Null | Expr::Duration { .. } | Expr::Calendar { .. } => None,
             Expr::Column { column_id } | Expr::ForeignColumn { column_id, .. } => scope
                 .iter()
                 .find(|column| column.id == *column_id)
@@ -634,8 +663,10 @@ impl Expr {
             argument.validate_list_placement(document, true)?;
         }
         for (_, argument) in keyword_arguments {
-            argument
-                .validate_list_placement(document, crate::formula::financial::is_financial(name) || name == "dropdown")?;
+            argument.validate_list_placement(
+                document,
+                crate::formula::financial::is_financial(name) || name == "dropdown",
+            )?;
         }
         Ok(())
     }
@@ -1068,12 +1099,17 @@ impl Expr {
         })
     }
 
-    /// Whether this expression names a given object on the canvas — a value
-    /// or a list, both of which are read by id and both of which something
-    /// would break by deleting.
+    /// Whether this expression names a given thing the document holds — a
+    /// value, a list, or a fiscal calendar, all of which are read by id and
+    /// all of which something would break by deleting.
+    ///
+    /// Calendars answer here rather than through a question of their own so
+    /// that one rule keeps every by-id reference alive: whatever a formula
+    /// holds in place cannot be taken away underneath it.
     pub(crate) fn references_object(&self, target_object_id: &str) -> bool {
         self.any(|expression| match expression {
             Expr::Value { object_id } | Expr::Series { object_id } => object_id == target_object_id,
+            Expr::Calendar { calendar_id } => calendar_id == target_object_id,
             _ => false,
         })
     }
@@ -1095,9 +1131,20 @@ impl Expr {
                 .map(|arg| arg.shape(document))
                 .unwrap_or(Shape::Scalar),
             Expr::Column { .. } => Shape::Column,
+            // With no snapshot, a literal frame's count is its rows and a
+            // computed frame's is not known short of running it — and a
+            // column of a frame is a column of values until it is known to
+            // hold one.
             Expr::ForeignColumn { frame_id, .. } => {
-                match document.snapshot_row_count(frame_id).unwrap_or(1) {
-                    1 => Shape::Scalar,
+                let rows = document.snapshot_row_count(frame_id).or_else(|| {
+                    document
+                        .frame(frame_id)
+                        .ok()
+                        .filter(|frame| frame.owns_its_rows())
+                        .map(|frame| frame.rows.len())
+                });
+                match rows {
+                    Some(1) => Shape::Scalar,
                     _ => Shape::Column,
                 }
             }
@@ -1181,10 +1228,9 @@ impl Expr {
             // sign is put back on the figure a person would have typed.
             Expr::Percentage { value } => format!("{}%", format_number(*value * 100.0)),
             Expr::Money { value } => format!("${}", format_number(*value)),
-            Expr::String { value } => {
-                serde_json::to_string(value).unwrap_or_else(|_| "\"\"".into())
-            }
+            Expr::String { value } => quoted(value),
             Expr::Boolean { value } => if *value { "True" } else { "False" }.into(),
+            Expr::Calendar { calendar_id } => quoted(calendar_name(document, calendar_id)),
             Expr::Date { value } => value.format("%Y-%m-%d").to_string(),
             Expr::Duration { value } => value.clone(),
             Expr::Null => "None".into(),
@@ -1345,6 +1391,15 @@ pub(crate) fn keyword_argument<'a>(
     arguments
         .iter()
         .find_map(|(candidate, value)| (candidate == name).then_some(value))
+}
+
+/// A string as the formula language writes one, escapes and all.
+///
+/// A calendar reference comes out this way too: it is written as a string
+/// argument and has to lex as one when the text is read back, so the
+/// rename it carries lands inside the quotes. See [`Expr::Calendar`].
+fn quoted(value: &str) -> String {
+    serde_json::to_string(value).unwrap_or_else(|_| "\"\"".into())
 }
 
 pub(crate) fn formula_name(name: &str) -> String {

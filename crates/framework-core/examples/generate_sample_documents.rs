@@ -20,6 +20,7 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
             name: (*name).into(),
             source_name: None,
             data_type: *data_type,
+            scale: None,
             categories: Vec::new(),
             format: None,
             formula: None,
@@ -70,6 +71,7 @@ fn frame(name: &str, columns: &[(&str, DataType)], rows: Vec<Vec<String>>) -> Fr
         generator: None,
         materialization: None,
         entry_columns: Vec::new(),
+        period: None,
         summaries: Vec::new(),
     }
 }
@@ -114,6 +116,8 @@ fn document(name: &str, note: &str, frames: Vec<FrameObject>) -> Document {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     }
 }
 

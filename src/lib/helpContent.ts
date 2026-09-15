@@ -202,11 +202,11 @@ export const HELP_GUIDES: HelpGuide[] = [
     questions: ["What replaces VLOOKUP?", "How do I bring a column from another table?"],
     body: [
       "A lookup is a relationship between keys, so FrameWork represents it as a Join rather than as a formula that searches row positions.",
-      "Drag the columns you want from the lookup frame onto the key header in the receiving frame, or choose Join another frame. The joined result shows its keys as the first compact step in Wrangle.",
+      "Drag the columns you want from the lookup frame onto the key header in the receiving frame, or choose Combine with… from the frame menu. The joined result shows its keys as the first compact step in Wrangle.",
     ],
     steps: [
       "Identify the key column shared by both frames.",
-      "Drag the lookup columns onto that key, or choose Join another frame.",
+      "Drag the lookup columns onto that key, or choose Combine with… from the frame menu.",
       "Review missing and duplicate-key counts before accepting the relationship.",
     ],
     surfaces: ["Wrangle", "Canvas header drag"],
@@ -407,5 +407,26 @@ export const HELP_GUIDES: HelpGuide[] = [
       { label: "First present value", code: "coalesce([`Actual`, `Budget`])" },
     ],
     related: ["Formula references use names", "Ownership controls literal editing"],
+  },
+  {
+    id: "rule.accounting-type",
+    scopes: ["guide", "formulas"],
+    kind: "Rule",
+    title: "Money is a column type, not a format",
+    summary: "An Accounting column holds exact amounts at the decimal places it declares.",
+    searchTerms: [
+      "accounting", "amount", "money", "exact", "decimal", "decimal places", "scale",
+      "cents", "rounding", "sum", "footing", "currency",
+    ],
+    questions: ["How do I store money?", "Why does my total not foot?"],
+    body: [
+      "Accounting is an exact type: amounts add up to the cent because they are never floats. The decimal places live on the column, so the cells display in accounting style at exactly those places without anyone setting a format.",
+      "Money is never inferred — a Number or Currency column becomes exact only when you say so, with `.cast(\"accounting\")` for two places or `.cast(\"accounting\", places)` for any other number of them.",
+    ],
+    examples: [
+      { label: "Read a column as exact amounts", code: "`Invoiced`.cast(\"accounting\")" },
+      { label: "Four decimal places", code: "`Rate`.cast(\"accounting\", 4)" },
+    ],
+    related: ["Number formats", "Null is a missing value, not a datatype"],
   },
 ];

@@ -15,7 +15,13 @@ pub(super) fn write(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     })?;
     super::write_view(&store, &output.join("parameters.json"))?;
     let inputs = store.view().parameter_inputs;
-    store.apply(Operation::SetParameterValue { object_id: inputs[0].id.clone(), value: ScalarValue::Number(0.4) })?;
-    store.apply(Operation::SetParameterValue { object_id: inputs[2].id.clone(), value: ScalarValue::Date(chrono::NaiveDate::from_ymd_opt(2027,1,1).unwrap()) })?;
+    store.apply(Operation::SetParameterValue {
+        object_id: inputs[0].id.clone(),
+        value: ScalarValue::Number(0.4),
+    })?;
+    store.apply(Operation::SetParameterValue {
+        object_id: inputs[2].id.clone(),
+        value: ScalarValue::Date(chrono::NaiveDate::from_ymd_opt(2027, 1, 1).unwrap()),
+    })?;
     super::write_view(&store, &output.join("parameters-selected.json"))
 }

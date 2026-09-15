@@ -14,6 +14,8 @@ fn blank_store() -> Store {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     })
 }
 
@@ -1276,6 +1278,7 @@ fn two_lists_make_a_live_two_column_frame_when_their_lengths_match() {
                 output_column_id: "forecast~paired".into(),
                 name: "Forecast".into(),
                 vector: "`Holder`.`Forecast`".into(),
+                fill: ZipFill::Exact,
             }],
         })
         .unwrap();
@@ -1315,5 +1318,213 @@ fn two_lists_make_a_live_two_column_frame_when_their_lengths_match() {
         .get_frame_page(&frame_id, 0, 10)
         .unwrap_err()
         .to_string();
-    assert!(error.contains("had 3") && error.contains("now has 2"));
+    assert!(
+        error.contains("has 2 values") && error.contains("3 rows"),
+        "{error}"
+    );
+}
+
+fn sales_and_copy(store: &mut Store) -> (Id, Id) {
+    store
+        .apply(Operation::AddFrameFromPastedText {
+            name: "Sales".into(),
+            text: "Region\tAmount\nNorth\t10\nSouth\t20\nEast\t30".into(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let sales_id = frame_named(store.document(), "Sales").id.clone();
+    store
+        .apply(Operation::AddLinkedFrame {
+            source_frame_id: sales_id.clone(),
+            name: "Copy".into(),
+            x: 0.0,
+            y: 400.0,
+        })
+        .unwrap();
+    let copy_id = frame_named(store.document(), "Copy").id.clone();
+    (sales_id, copy_id)
+}
+
+/// A list step may read another frame live — that is the whole point of
+/// pairing a prediction beside the rows it scored — but not a frame built
+/// from the one being edited: that frame's rows are worked out from this
+/// one's, and reading them here would loop. A snapshot ends the loop.
+#[test]
+fn pairing_a_frame_built_from_this_one_is_refused_as_a_loop() {
+    let mut store = blank_store();
+    let (sales_id, copy_id) = sales_and_copy(&mut store);
+    let pair_the_copy = |store: &mut Store| {
+        store.apply(Operation::SetFramePipeline {
+            frame_id: sales_id.clone(),
+            steps: vec![FrameStepInput::ZipVector {
+                output_column_id: "again".into(),
+                name: "Again".into(),
+                vector: "`Copy`.`Amount`".into(),
+                fill: ZipFill::Exact,
+            }],
+        })
+    };
+    let error = pair_the_copy(&mut store).unwrap_err().to_string();
+    assert!(error.contains("would loop"), "{error}");
+    assert!(error.contains("Materialize ‘Copy’"), "{error}");
+
+    // Applying across columns asks the same question.
+    let error = store
+        .apply(Operation::SetFramePipeline {
+            frame_id: sales_id.clone(),
+            steps: vec![FrameStepInput::Broadcast {
+                columns: "`Amount`".into(),
+                vector: "`Copy`.`Amount`".into(),
+                operator: BroadcastOperator::Multiply,
+            }],
+        })
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("would loop"), "{error}");
+
+    let directory = std::env::temp_dir().join(format!("framework-loop-{}", framework_core::id()));
+    std::fs::create_dir_all(&directory).unwrap();
+    store.materialize_frame(&copy_id, &directory).unwrap();
+    pair_the_copy(&mut store).unwrap();
+    assert_eq!(
+        store
+            .get_frame_page(&sales_id, 0, 10)
+            .unwrap()
+            .rows
+            .iter()
+            .map(|row| row[2].clone())
+            .collect::<Vec<_>>(),
+        ["10", "20", "30"]
+    );
+}
+
+/// A loop that arrives without passing the authoring boundary — from disk,
+/// from a replica — is reported rather than followed until the stack runs
+/// out. A live read starts its own cycle set, so this is the one place it
+/// can be caught.
+#[test]
+fn a_loop_between_two_live_frames_is_reported_rather_than_followed() {
+    let mut store = blank_store();
+    let (sales_id, copy_id) = sales_and_copy(&mut store);
+    let mut document = store.document().clone();
+    let sales = document
+        .objects
+        .iter_mut()
+        .find_map(|object| match object {
+            DataObject::Frame(frame) if frame.id == sales_id => Some(frame),
+            _ => None,
+        })
+        .unwrap();
+    sales.steps.push(FrameStep::ZipVector {
+        output_column_id: "again".into(),
+        vector: Expr::ForeignColumn {
+            frame_id: copy_id,
+            column_id: "amount".into(),
+        },
+        expected_length: 3,
+        fill: ZipFill::Exact,
+    });
+    sales.columns.push(Column {
+        id: "again".into(),
+        name: "Again".into(),
+        source_name: None,
+        data_type: DataType::Integer,
+        scale: None,
+        categories: Vec::new(),
+        format: None,
+        formula: None,
+    });
+    let store = Store::new(document);
+    let error = store
+        .get_frame_page(&sales_id, 0, 10)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("read each other"), "{error}");
+}
+
+#[test]
+fn a_short_list_repeats_down_the_rows_when_asked_and_only_when_it_fits() {
+    let mut store = Store::new(Document::demo());
+    store
+        .apply(Operation::AddFrame {
+            name: "Scenarios".into(),
+            grid: vec![
+                vec!["Case".into()],
+                vec!["Low".into()],
+                vec!["Base".into()],
+                vec!["High".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddFrame {
+            name: "Periods".into(),
+            grid: (0..7)
+                .map(|i| {
+                    vec![if i == 0 {
+                        "Period".to_string()
+                    } else {
+                        format!("P{i}")
+                    }]
+                })
+                .collect(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let periods = crate::common::frame_named(store.document(), "Periods")
+        .id
+        .clone();
+    let paired = |fill: ZipFill| Operation::SetFramePipeline {
+        frame_id: periods.clone(),
+        steps: vec![FrameStepInput::ZipVector {
+            output_column_id: "case~paired".into(),
+            name: "Case".into(),
+            vector: "`Scenarios`.`Case`".into(),
+            fill,
+        }],
+    };
+    // Six rows, three values: exact pairing refuses and says how to fix it.
+    let refused = store.apply(paired(ZipFill::Exact)).unwrap_err().to_string();
+    assert!(
+        refused.contains("3 values") && refused.contains("6 rows") && refused.contains("repeat"),
+        "{refused}"
+    );
+
+    store.apply(paired(ZipFill::Repeat)).unwrap();
+    let cases: Vec<String> = store
+        .get_frame_page(&periods, 0, 10)
+        .unwrap()
+        .rows
+        .iter()
+        .map(|row| row[1].clone())
+        .collect();
+    assert_eq!(cases, ["Low", "Base", "High", "Low", "Base", "High"]);
+    let view = store.view();
+    assert!(matches!(
+        &view.computed_frames[&periods].steps[0],
+        RenderedFrameStep::ZipVector {
+            fill: ZipFill::Repeat,
+            ..
+        }
+    ));
+
+    // Four values do not repeat evenly down six rows, and the page says so.
+    let scenarios = crate::common::frame_named(store.document(), "Scenarios")
+        .id
+        .clone();
+    store
+        .apply(Operation::AddRow {
+            frame_id: scenarios,
+            values: Default::default(),
+        })
+        .unwrap();
+    let error = store
+        .get_frame_page(&periods, 0, 10)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("whole number of repeats"), "{error}");
 }

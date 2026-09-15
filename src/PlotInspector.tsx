@@ -18,7 +18,7 @@ function vegaType(column: Column | undefined): "nominal" | "quantitative" | "tem
   if (column?.dataType === "date") return "temporal";
   if (
     column &&
-    ["integer", "number", "currency", "percentage"].includes(column.dataType)
+    ["integer", "number", "currency", "accounting", "percentage"].includes(column.dataType)
   )
     return "quantitative";
   return "nominal";

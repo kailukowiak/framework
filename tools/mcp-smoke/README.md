@@ -39,8 +39,19 @@ Scenarios deliberately cover different surface areas — `timesheet`
 (generators, expand, entry columns, crosstab), `budget` (summarize,
 validated joins, percentage columns, live recomputation), `reshape`
 (unpivot, editable sources, wide readings), `vectors-joins` (paired vectors,
-row-count-aware dates, and live lookup joins) — so `all` is a broad sweep,
-not several runs of the same muscle.
+row-count-aware dates, and live lookup joins), `predictions` (a fitted
+model, a scored frame, and its prediction paired live beside another
+frame's rows), `ledger` (the accounting type: amounts written the way a
+bookkeeper writes them, a running balance over a row order declared with
+`sort_frame`, and a control total that has to read exactly zero) — so `all`
+is a broad sweep, not several runs of the same muscle.
+
+The four ways two tables can relate all arrive through one tool,
+`combine_frames`: `key` (matching columns, making a new joined frame),
+`rows` (same order, columns laid alongside, `fill: exact | repeat`),
+`stack` (rows underneath, columns lined up by name), and `cross` (every row
+with every row). `expand_frame` remains the gesture that makes a *new*
+linked frame from a cross; `combine_frames` grows the frame it is asked on.
 
 This lane measures what deterministic tests cannot: discoverability. The
 history that motivated it — three hand-driven runs of the timesheet

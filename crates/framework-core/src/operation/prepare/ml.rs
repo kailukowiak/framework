@@ -185,21 +185,53 @@ impl Document {
                 "Select one source feature for each model input, in fitted order",
             ));
         }
-        let columns = framework_ml::output_names(&fitted.result)
+        // A scored table, not a bare vector. The outputs land beside the
+        // rows they were computed from, because that is the frame anyone
+        // building on a prediction wants — and the only one they can build
+        // on: a lone column has no key, so nothing could join it and no
+        // formula could line it up with its source except by position. The
+        // carried columns keep the source's ids and the plan reads them
+        // straight through; the output ids are minted clear of them.
+        let source = self.frame(&source_frame_id)?;
+        let mut columns: Vec<Column> = source
+            .columns
+            .iter()
+            .map(|column| Column {
+                id: column.id.clone(),
+                name: column.name.clone(),
+                source_name: None,
+                data_type: column.data_type,
+                scale: None,
+                categories: column.categories.clone(),
+                format: column.format.clone(),
+                formula: None,
+            })
+            .collect();
+        let mut output_column_ids = Vec::new();
+        for (name, dtype) in framework_ml::output_names(&fitted.result)
             .into_iter()
             .zip(framework_ml::output_types(&fitted.result))
-            .map(|(name, dtype)| Column {
-                id: column_id(&name),
+        {
+            let name = untaken(&name, ' ', |candidate| {
+                columns.iter().any(|column| column.name == candidate)
+            });
+            let output_column_id = untaken(&column_id(&name), '_', |candidate| {
+                columns.iter().any(|column| column.id == candidate)
+            });
+            output_column_ids.push(output_column_id.clone());
+            columns.push(Column {
+                id: output_column_id,
                 name,
                 source_name: None,
                 data_type: crate::engine::model_inputs::model_output_type(dtype),
+                scale: None,
                 categories: Vec::new(),
                 format: None,
                 formula: None,
-            })
-            .collect::<Vec<_>>();
+            });
+        }
         let object_id = id();
-        let output_column_ids = columns.iter().map(|c| c.id.clone()).collect();
+        let width = crate::engine::build::frame_card_width(columns.len());
         Ok(ReplicatedOperation::AddObject {
             object: DataObject::Frame(FrameObject {
                 id: object_id.clone(),
@@ -218,16 +250,32 @@ impl Document {
                 }),
                 ..FrameObject::default()
             }),
-            view: model_view(object_id, x, y, 480.0, 360.0),
+            view: model_view(object_id, x, y, width, 360.0),
             container_id: None,
         })
     }
 }
 
+/// `base` if nothing has it, else the first of `base 2`, `base 3`, … that
+/// nothing has. An output column is named for what it is — "Prediction" —
+/// and a source column that already answers to that name keeps it; the
+/// output is the one that moves, numbered the way a person would number
+/// the second of two things. Ids take the same count behind an underscore,
+/// which keeps them the slug shape every other id has.
+fn untaken(base: &str, separator: char, taken: impl Fn(&str) -> bool) -> String {
+    if !taken(base) {
+        return base.to_string();
+    }
+    (2..)
+        .map(|suffix| format!("{base}{separator}{suffix}"))
+        .find(|candidate| !taken(candidate))
+        .expect("an unbounded range always yields an untaken name")
+}
+
 pub(crate) fn add_model(model: ModelObject, x: f64, y: f64) -> ReplicatedOperation {
-    let height = model.fitted.as_ref().map_or(140.0, |fit| {
+    let height = model.fitted.as_ref().map_or(160.0, |fit| {
         let rows = fit.result.summary.coefficients.len();
-        (140.0
+        (160.0
             + if rows == 0 {
                 0.0
             } else {

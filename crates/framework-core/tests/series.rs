@@ -12,6 +12,8 @@ fn orders_store() -> (Store, String) {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     store
         .apply(Operation::AddFrame {
@@ -163,6 +165,8 @@ fn a_list_is_read_out_of_whatever_shape_it_was_copied_from() {
             frozen_values: Default::default(),
             scenarios: Vec::new(),
             active_scenario: None,
+            calendars: Vec::new(),
+            default_calendar_id: None,
         });
         let holder = a_container(&mut store);
         store
@@ -200,6 +204,8 @@ fn a_list_can_be_read_out_of_a_column_of_a_file() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     let holder = a_container(&mut store);
     store
@@ -257,6 +263,8 @@ fn a_list_can_be_retyped_only_where_every_value_still_reads() {
         frozen_values: Default::default(),
         scenarios: Vec::new(),
         active_scenario: None,
+        calendars: Vec::new(),
+        default_calendar_id: None,
     });
     let holder = a_container(&mut store);
     store

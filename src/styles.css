@@ -1089,6 +1089,8 @@ button.frame-resize-handle { cursor: nw-resize; cursor: nwse-resize; }
 .pipeline-broadcast-operator select { width: 30px; height: 24px; padding: 0; border: 0; background: transparent; color: inherit; font: 600 var(--text-base) "DM Mono", monospace; text-align: center; }
 .pipeline-broadcast small { grid-column: 1 / -1; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
 .pipeline-zip-vector small { display: block; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
+.pipeline-zip-fill { display: flex; align-items: center; gap: 5px; margin-top: 3px; color: light-dark(#96978f, #6f7169); font: 500 var(--text-xs) "DM Mono", monospace; }
+.pipeline-zip-fill select { height: 22px; padding: 0 2px; border: 0; background: transparent; color: inherit; font: 500 var(--text-xs) "DM Mono", monospace; }
 small[data-vector-drag="true"] { cursor: grab; touch-action: none; }
 small[data-vector-drag="true"]::before { content: "↗ "; color: var(--accent); }
 small.vector-dragging { cursor: grabbing; }
@@ -1448,6 +1450,44 @@ small.vector-dragging { cursor: grabbing; }
 .join-columns > div > strong { display: block; margin: 1px 3px 7px; font-size: var(--text-base); }
 .join-columns label { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 6px; padding: 5px 3px; color: var(--ink); font-size: var(--text-sm); text-transform: none; }
 .join-columns label input { width: 15px; height: 15px; }
+
+/* Combine. Four relationships in one dialog, and the dialog is a form: the
+   controls sit on single lines at the ordinary type size, because every row
+   spent framing a choice is a row not spent showing the answer it produces. */
+.combine-dialog { width: min(660px, calc(100vw - 40px)); }
+.combine-dialog h2 { font-size: var(--text-base); }
+.combine-line { display: flex; align-items: center; gap: 8px; margin: 7px 0; color: light-dark(#6d6f68, #959790); font-size: var(--text-sm); font-weight: 600; }
+.combine-line select, .combine-line input { height: 26px; padding: 0 6px; border: 1px solid light-dark(#d8d5cc, #3a3c30); border-radius: 5px; background: light-dark(#fff, #2c2d24); color: var(--ink); font-size: var(--text-sm); }
+.combine-line input { flex: 1 1 auto; min-width: 0; }
+.combine-relationship { margin-bottom: 10px; }
+.combine-relationship select { font-weight: 600; }
+.combine-row { display: flex; align-items: center; gap: 14px; }
+.combine-row label { display: flex; align-items: center; gap: 6px; color: light-dark(#6d6f68, #959790); font-size: var(--text-sm); font-weight: 600; }
+.combine-row select { height: 26px; padding: 0 6px; border: 1px solid light-dark(#d8d5cc, #3a3c30); border-radius: 5px; background: light-dark(#fff, #2c2d24); color: var(--ink); font-size: var(--text-sm); }
+.combine-row strong { color: var(--ink); font-size: var(--text-sm); }
+.combine-keys { display: grid; gap: 4px; margin: 7px 0; }
+.combine-key-pair { display: grid; grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr) auto; align-items: center; gap: 5px; }
+.combine-key-pair select { height: 26px; padding: 0 6px; border: 1px solid light-dark(#d8d5cc, #3a3c30); border-radius: 5px; background: light-dark(#fff, #2c2d24); color: var(--ink); font-size: var(--text-sm); }
+.combine-key-pair > span { color: light-dark(#96978f, #6f7169); text-align: center; }
+.combine-drop-key, .combine-add-key { height: 22px; padding: 0 6px; border: 0; background: transparent; color: light-dark(#85877f, #7e8078); font-size: var(--text-sm); }
+.combine-add-key { justify-self: start; color: var(--accent); }
+.combine-add-key::before { content: "+ "; }
+.combine-diagnostics { display: flex; gap: 12px; margin: 6px 0; color: light-dark(#85877f, #7e8078); font-size: var(--text-sm); }
+.combine-diagnostics .invalid { color: var(--danger); }
+.combine-counts { display: flex; gap: 16px; margin: 6px 0; font-size: var(--text-sm); }
+.combine-counts span { color: var(--ink); }
+.combine-checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); max-height: 190px; margin: 6px 0 10px; overflow: auto; padding: 6px; border: 1px solid light-dark(#ddd9d0, #3a3c30); border-radius: 7px; background: light-dark(#fff, #2c2d24); }
+.combine-checklist label { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 5px; padding: 3px; font-size: var(--text-sm); }
+.combine-checklist input { width: 14px; height: 14px; }
+.combine-checklist small { color: light-dark(#96978f, #6f7169); font-size: var(--text-xs); }
+.combine-mapping { display: grid; max-height: 200px; margin: 6px 0; overflow: auto; border: 1px solid light-dark(#ddd9d0, #3a3c30); border-radius: 7px; background: light-dark(#fff, #2c2d24); }
+.combine-mapping > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 3px 7px; font-size: var(--text-sm); }
+.combine-mapping > div:nth-child(2n) { background: light-dark(#faf9f5, #26271f); }
+.combine-blank { color: light-dark(#96978f, #6f7169); }
+.combine-mismatch { color: var(--danger); font-style: normal; }
+.combine-note { margin: 4px 0; color: light-dark(#85877f, #7e8078); font-size: var(--text-sm); }
+.combine-product { margin: 8px 0; font: 600 var(--text-base) "DM Mono", monospace; }
+.combine-refusal { margin: 6px 0; color: light-dark(#8d4526, #e2775a); font-size: var(--text-sm); }
 .join-columns label small { color: light-dark(#8b8d85, #787a72); font-size: var(--text-xs); }
 .join-summary { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 12px; padding: 11px; border-radius: 9px; background: light-dark(#edf3ef, #223229); }
 .join-summary svg { color: var(--accent); }

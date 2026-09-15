@@ -1,10 +1,11 @@
 pub use super::replicated::ReplicatedOperation;
 use crate::Id;
+use crate::model::calendar::{WeekPattern, YearEndRule, YearLabel};
 use crate::model::data_artifact::{ConnectorRecipe, DataArtifact};
 use crate::model::derivation::{DerivedSort, FrameJoinType};
 use crate::model::frame::{
-    CellUpdate, CrosstabDisplay, FrameCellStyle, FrameStyleTarget, FrameViewOrientation,
-    SummaryOperation,
+    CellUpdate, CrosstabDisplay, FrameCellStyle, FramePeriod, FrameStyleTarget,
+    FrameViewOrientation, SummaryOperation,
 };
 use crate::model::value::{ColumnFormat, DataType, FrozenValue, ScalarValue};
 use crate::operation::input::{
@@ -557,6 +558,12 @@ pub enum Operation {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        /// Decimal places for an `Accounting` column; ignored for every
+        /// other type. Absent keeps the column's current scale, or the
+        /// default when it had none.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
+        scale: Option<u8>,
     },
     SetColumnCategories {
         frame_id: Id,
@@ -747,6 +754,65 @@ pub enum Operation {
         frame_id: Id,
         column_ids: Vec<Id>,
         enabled: bool,
+    },
+    /// Declares which column says what time a row belongs to, so
+    /// period-relative formulas read the period before rather than the row
+    /// above. `None` clears the declaration. The column must hold dates;
+    /// uniqueness of each period within its partitions is enforced on
+    /// apply, the way a unique key's is.
+    SetFramePeriod {
+        frame_id: Id,
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        period: Option<FramePeriod>,
+    },
+    /// Adds a fiscal calendar to the document: the month its year starts
+    /// on, the week pattern its periods follow, the rule ending its year,
+    /// and the days the business counts. Names are unique because a
+    /// formula names a calendar by writing its name; what the formula
+    /// then holds is the id. The default supplies the year start when a
+    /// call names none.
+    AddCalendar {
+        name: String,
+        fy_start: u8,
+        pattern: WeekPattern,
+        year_end: YearEndRule,
+        year_label: YearLabel,
+        weekend: Vec<u8>,
+        holidays: Vec<String>,
+    },
+    /// Replaces a calendar wholesale by id. Removing a holiday is an
+    /// update with a shorter list, and every formula reading the calendar
+    /// simply gets the new answer.
+    ///
+    /// The name is no exception. A formula holds the calendar's id and is
+    /// written back out with whatever the calendar is called now, so a
+    /// rename reaches every formula that names it and changes nothing
+    /// about what they read. Names stay unique, because the name is still
+    /// what a person types.
+    UpdateCalendar {
+        calendar_id: Id,
+        name: String,
+        fy_start: u8,
+        pattern: WeekPattern,
+        year_end: YearEndRule,
+        year_label: YearLabel,
+        weekend: Vec<u8>,
+        holidays: Vec<String>,
+    },
+    /// Removes a calendar by id. The default calendar cannot be removed —
+    /// set another default first — and neither can one a formula names:
+    /// that refusal is the same one that keeps a value from being deleted
+    /// while something reads it, and it says who is reading.
+    RemoveCalendar {
+        calendar_id: Id,
+    },
+    /// Sets the calendar bare fiscal calls read, or `None` for calendar
+    /// months starting in January.
+    SetDefaultCalendar {
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        calendar_id: Option<Id>,
     },
     AddJoinFrame {
         primary_frame_id: Id,

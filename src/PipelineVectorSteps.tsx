@@ -8,6 +8,7 @@ import type {
   Column,
   FrameStepInput,
   RenderedFrameStep,
+  ZipFill,
 } from "./lib/types";
 import { formattedFormula } from "./PipelineFormulaFormatting";
 
@@ -26,6 +27,13 @@ export type ZipVectorStepDraft = {
   outputColumnId: string;
   name: string;
   vector: string;
+  /**
+   * How the list meets the rows. Held on every draft, never absent: the
+   * saved step may omit it (absent means exact), and a draft that mirrored
+   * that absence would not compare equal to its own round trip once the
+   * engine started echoing the normalized value back.
+   */
+  fill: ZipFill;
   expectedLength?: number;
 };
 
@@ -45,6 +53,7 @@ export function blankVectorStep(
         outputColumnId: mintColumnId("Column"),
         name: "Column",
         vector: "",
+        fill: "exact",
       }
     : null;
 }
@@ -76,6 +85,7 @@ export function vectorDraftFromRendered(
         outputColumnId: step.outputColumnId,
         name: step.outputColumnName,
         vector: formattedFormula(step.vector),
+        fill: step.fill ?? "exact",
         expectedLength: step.expectedLength,
       }
     : null;
@@ -94,6 +104,7 @@ export function vectorStepInput(step: VectorStepDraft): FrameStepInput {
         outputColumnId: step.outputColumnId,
         name: step.name,
         vector: step.vector,
+        fill: step.fill,
       };
 }
 
@@ -112,6 +123,8 @@ export function BroadcastStepRow({
   visible,
   columnReferences,
   references,
+  frameId,
+  scope,
   columnsEditorId,
   vectorEditorId,
   columnsFocusToken,
@@ -122,6 +135,8 @@ export function BroadcastStepRow({
   visible: Array<{ id: string; name: string }>;
   columnReferences: FormulaReference[];
   references: FormulaReference[];
+  frameId?: string;
+  scope?: { steps: FrameStepInput[]; stepIndex: number };
   columnsEditorId: string;
   vectorEditorId: string;
   columnsFocusToken?: number;
@@ -172,6 +187,8 @@ export function BroadcastStepRow({
         label="Vector"
         initialDraft={step.vector}
         references={references}
+        frameId={frameId}
+        scope={scope}
         focusToken={vectorFocusToken}
         onChange={(vector) => onUpdate({ vector }, false)}
         onCommit={(vector) => onUpdate({ vector }, true)}
@@ -189,15 +206,21 @@ export function BroadcastStepRow({
 export function ZipVectorStepRow({
   step,
   references,
+  frameId,
+  scope,
   editorId,
   focusToken,
   onDraft,
+  onFill,
 }: {
   step: ZipVectorStepDraft;
   references: FormulaReference[];
+  frameId?: string;
+  scope?: { steps: FrameStepInput[]; stepIndex: number };
   editorId: string;
   focusToken?: number;
   onDraft: (draft: string, saveNow: boolean) => void | Promise<void>;
+  onFill: (fill: ZipFill) => void | Promise<void>;
 }) {
   return (
     <div className="pipeline-zip-vector">
@@ -206,12 +229,35 @@ export function ZipVectorStepRow({
         label="Column"
         initialDraft={`${formulaToken(step.name)} = ${step.vector}`}
         references={references}
+        frameId={frameId}
+        scope={scope}
         focusToken={focusToken}
         onChange={(draft) => onDraft(draft, false)}
         onCommit={(draft) => onDraft(draft, true)}
       />
+      <label className="pipeline-zip-fill">
+        <span>Fill</span>
+        <select
+          aria-label="Pair fill"
+          value={step.fill}
+          onChange={(event) =>
+            // The rejection a refused save reports has nowhere to go from
+            // here: this select lives inside Wrangle, beside the step's own
+            // inline error, which is where the refusal already shows.
+            void Promise.resolve(onFill(event.target.value as ZipFill)).catch(
+              reportIgnoredFailure("pair fill update")
+            )
+          }
+        >
+          <option value="exact">Exact</option>
+          <option value="repeat">Repeat to fill</option>
+        </select>
+      </label>
       {step.expectedLength !== undefined && (
-        <small>{step.expectedLength} rows, paired by position</small>
+        <small>
+          {step.expectedLength} value{step.expectedLength === 1 ? "" : "s"}
+          {step.fill === "repeat" ? ", repeated to fill" : ", paired by position"}
+        </small>
       )}
     </div>
   );
@@ -284,6 +330,7 @@ export function useVectorStepRequests<T>({
         outputColumnId: mintColumnId(name),
         name,
         vector: pairRequest.vector,
+        fill: "exact",
         expectedLength: pairRequest.expectedLength,
       },
     ]);

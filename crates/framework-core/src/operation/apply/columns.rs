@@ -18,7 +18,7 @@ impl Document {
         if let Some(formula) = &column.formula {
             let inferred_type = self
                 .frame(&frame_id)?
-                .infer_polars_expression_type(self, &formula.expression)
+                .inferred_column_type(self, &formula.expression)
                 .map_err(CoreError::Formula)?;
             if inferred_type != column.data_type {
                 return Err(CoreError::InvalidOperation(
@@ -36,7 +36,7 @@ impl Document {
                 "column ID already exists in the target frame".into(),
             ));
         }
-        let insert_at = match after_column_id {
+        let insert_at = match after_column_id.as_deref() {
             Some(column_id) => frame
                 .columns
                 .iter()
@@ -47,13 +47,14 @@ impl Document {
         };
         let column_id = column.id.clone();
         let has_formula = column.formula.is_some();
-        frame.columns.insert(insert_at, column);
+        frame.columns.insert(insert_at, column.clone());
         for row in &mut frame.rows {
             row.cells.insert(column_id.clone(), Cell::default());
         }
         if has_formula {
             self.ensure_acyclic(&frame_id)?;
         }
+        self.carry_column_into_scored_frames(&frame_id, &column, after_column_id.as_deref());
         Ok(())
     }
 
@@ -114,6 +115,19 @@ impl Document {
                  Change that plot first."
             )));
         }
+        // A scored frame carries this column and will drop it too; what it
+        // shows sorted or filtered by the column has to be cleared first,
+        // the same as here.
+        if let Some(scored) = self
+            .scored_frames(&frame_id)
+            .find(|scored| scored.display.references_column(&column_id))
+            .map(|scored| as_named(&scored.name))
+        {
+            return Err(CoreError::ReferencedByFormula(format!(
+                "{scored} is sorted or filtered by {going}, so it cannot be deleted. \
+                 Clear that first."
+            )));
+        }
 
         let frame = self.frame_mut(&frame_id)?;
         frame.columns.retain(|column| column.id != column_id);
@@ -135,6 +149,7 @@ impl Document {
             } => *styled_column_id != column_id,
             _ => true,
         });
+        self.drop_column_from_scored_frames(&frame_id, &column_id);
         Ok(())
     }
 
@@ -167,6 +182,7 @@ impl Document {
                 update_plot_field_titles(&mut plot.spec, &column_id, &old_name, &next_name);
             }
         }
+        self.rename_carried_column(&frame_id, &column_id, &old_name, &next_name);
         Ok(())
     }
 
@@ -175,6 +191,7 @@ impl Document {
         frame_id: Id,
         column_id: Id,
         data_type: DataType,
+        scale: Option<u8>,
     ) -> Result<(), CoreError> {
         if self.frame(&frame_id)?.is_computed() {
             return Err(CoreError::DerivedFrameReadOnly);
@@ -186,11 +203,21 @@ impl Document {
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = data_type;
+        // The scale is a fact about an amount and nothing else: it goes
+        // when the type does, and an amount arrives with the places it was
+        // asked for, or keeps its own, or gets the default.
+        column.scale = match data_type {
+            DataType::Accounting => scale.or(column.scale).or(Some(DEFAULT_ACCOUNTING_SCALE)),
+            _ => None,
+        };
         column.categories = if data_type == DataType::Categorical {
             distinct_category_values(column, &frame.rows)
         } else {
             Vec::new()
         };
+        let categories = column.categories.clone();
+        let scale = column.scale;
+        self.retype_carried_column(&frame_id, &column_id, data_type, scale, &categories);
         Ok(())
     }
 
@@ -218,7 +245,14 @@ impl Document {
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = DataType::Categorical;
-        column.categories = categories;
+        column.categories = categories.clone();
+        self.retype_carried_column(
+            &frame_id,
+            &column_id,
+            DataType::Categorical,
+            None,
+            &categories,
+        );
         Ok(())
     }
 
@@ -236,7 +270,8 @@ impl Document {
             .iter_mut()
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
-        column.format = format;
+        let old_format = std::mem::replace(&mut column.format, format.clone());
+        self.reformat_carried_column(&frame_id, &column_id, old_format.as_ref(), format.as_ref());
         Ok(())
     }
 
@@ -250,9 +285,9 @@ impl Document {
         if self.frame(&frame_id)?.is_computed() {
             return Err(CoreError::DerivedFrameReadOnly);
         }
-        let inferred_type = self
+        let (inferred_type, scale) = self
             .frame(&frame_id)?
-            .infer_polars_expression_type(self, &formula.expression)
+            .inferred_column_typing(self, &formula.expression)
             .map_err(CoreError::Formula)?;
         if inferred_type != data_type {
             return Err(CoreError::InvalidOperation(
@@ -266,6 +301,7 @@ impl Document {
             .find(|column| column.id == column_id)
             .ok_or(CoreError::ColumnNotFound)?;
         column.data_type = data_type;
+        column.scale = scale;
         column.categories.clear();
         column.formula = Some(formula);
         self.ensure_acyclic(&frame_id)?;
