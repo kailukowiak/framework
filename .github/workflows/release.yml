@@ -52,6 +52,34 @@ jobs:
           fi
           echo "$TAG matches src-tauri/tauri.conf.json ($version)."
 
+      # A release is cut from main, and CI is what says main is sound; the
+      # release itself only packages. Nothing else stops a tag landing on a
+      # commit whose CI failed -- which is how 0.1.10 was first built from a
+      # main that could not pass its own tests on Linux. So ask GitHub for
+      # the CI run on exactly this commit and stop unless it passed. A run
+      # still in progress is a reason to wait, not to build.
+      - name: CI passed on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          runs=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$sha&per_page=10" \
+            --jq '.workflow_runs[] | "\(.status) \(.conclusion)"')
+          if [ -z "$runs" ]; then
+            echo "::error::No CI run found for $sha. Push the commit to main and let CI finish before tagging it."
+            exit 1
+          fi
+          if echo "$runs" | grep -q '^completed success$'; then
+            echo "CI passed on $sha."
+          elif echo "$runs" | grep -qv '^completed'; then
+            echo "::error::CI is still running on $sha. Wait for it to pass, then run this workflow again against the tag."
+            exit 1
+          else
+            echo "::error::CI did not pass on $sha ($runs). Fix main, move the tag, and push it again."
+            exit 1
+          fi
+
       # The same argument as the version check, for the other half of a
       # release: notes written at tag time are notes written by whoever is
       # cutting it, at the moment they have least context about what went in.
