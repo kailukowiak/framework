@@ -163,8 +163,7 @@ pub fn complete_formula_in_scope(
         // the surrounding text hints at it. So the completer answers with the
         // words themselves instead of offering columns that cannot go there.
         if result.active_function_id.as_deref() == Some("expr.cast") && argument == 0 {
-            result.suggestions =
-                cast_target_suggestions(&chars, result.replace_start, partial_len);
+            result.suggestions = cast_target_suggestions(&chars, result.replace_start, partial_len);
             result.note = None;
         }
     }
