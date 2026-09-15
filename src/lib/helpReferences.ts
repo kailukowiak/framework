@@ -47,7 +47,7 @@ export const HELP_REFERENCES: HelpGuide[] = [
     questions: ["What does Join do?", "Which Join type should I use?"],
     body: [
       "A Join matches a primary frame to a lookup frame using equal key values. The lookup key must be marked unique so one primary row cannot silently multiply into several rows.",
-      "Create one by dragging lookup columns onto the receiving key header or choosing Join another frame. The result is a new frame; its key pair and match counts appear as the first compact Wrangle step.",
+      "Create one by dragging lookup columns onto the receiving key header or choosing Combine with… from the frame menu. The result is a new frame; its key pair and match counts appear as the first compact Wrangle step.",
     ],
     facts: [
       { term: "Left", description: "Keep every primary row and leave lookup values missing when no key matches." },

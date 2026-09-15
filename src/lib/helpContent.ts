@@ -202,11 +202,11 @@ export const HELP_GUIDES: HelpGuide[] = [
     questions: ["What replaces VLOOKUP?", "How do I bring a column from another table?"],
     body: [
       "A lookup is a relationship between keys, so FrameWork represents it as a Join rather than as a formula that searches row positions.",
-      "Drag the columns you want from the lookup frame onto the key header in the receiving frame, or choose Join another frame. The joined result shows its keys as the first compact step in Wrangle.",
+      "Drag the columns you want from the lookup frame onto the key header in the receiving frame, or choose Combine with… from the frame menu. The joined result shows its keys as the first compact step in Wrangle.",
     ],
     steps: [
       "Identify the key column shared by both frames.",
-      "Drag the lookup columns onto that key, or choose Join another frame.",
+      "Drag the lookup columns onto that key, or choose Combine with… from the frame menu.",
       "Review missing and duplicate-key counts before accepting the relationship.",
     ],
     surfaces: ["Wrangle", "Canvas header drag"],

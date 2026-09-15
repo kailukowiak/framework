@@ -7,6 +7,7 @@ import { stepsFromRendered } from "./pipelineChainEdits";
 import {
   isOrderingOnlySelect,
   mintColumnId,
+  stepInput,
 } from "./pipelineSteps";
 import type { Column, FrameObject } from "./types";
 
@@ -53,6 +54,39 @@ describe("pipeline step drafts", () => {
     expect(uniqueColumnName("amount", ["amount", "amount_2"])).toBe("amount_3");
     expect(uniqueColumnName("amount_2", ["amount_2"])).toBe("amount_3");
     expect(uniqueColumnName("Column 1", ["Column 1", "Column 2"])).toBe("Column 3");
+  });
+
+  // `fill` is absent on a step saved before the choice existed, and the
+  // draft must still round trip: absent reads as exact, and a repeat written
+  // in Wrangle has to survive the save it echoes back.
+  it("round trips a pair step's fill through the draft and back", () => {
+    const paired = column("rate", "Rate");
+    const frame = { columns: [paired] } as FrameObject;
+    const read = (fill?: "exact" | "repeat") =>
+      stepsFromRendered(
+        [
+          {
+            kind: "zipVector",
+            outputColumnId: paired.id,
+            outputColumnName: paired.name,
+            vector: "`Rates`.`Rate`",
+            expectedLength: 5,
+            fill,
+          },
+        ],
+        frame,
+        []
+      )[0];
+    expect(read()).toMatchObject({ kind: "zipVector", fill: "exact" });
+    expect(read("repeat")).toMatchObject({ kind: "zipVector", fill: "repeat" });
+    expect(stepInput(read("repeat"))).toMatchObject({
+      kind: "zipVector",
+      outputColumnId: paired.id,
+      name: "Rate",
+      vector: "`Rates`.`Rate`",
+      fill: "repeat",
+    });
+    expect(stepInput(read())).toMatchObject({ kind: "zipVector", fill: "exact" });
   });
 
   it("mints readable immutable column ids", () => {

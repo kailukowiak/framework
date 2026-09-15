@@ -572,6 +572,7 @@ fn ml_predictions_pair_live_into_a_frame_beside_their_source() {
                 output_column_id: "predicted".into(),
                 name: "Predicted".into(),
                 vector: "`Predictions`.`Prediction`".into(),
+                fill: ZipFill::Exact,
             }],
         })
         .unwrap();
@@ -654,6 +655,7 @@ fn pair_predictions_into(store: &mut Store, scored_id: &Id) {
                 output_column_id: "predicted".into(),
                 name: "Predicted".into(),
                 vector: "`Predictions`.`Prediction`".into(),
+                fill: ZipFill::Exact,
             }],
         })
         .unwrap();

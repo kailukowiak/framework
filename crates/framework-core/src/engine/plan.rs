@@ -10,6 +10,29 @@ use std::collections::HashSet;
 pub(crate) const ROW_INDEX: &str = "__framework_row";
 
 /// How many rows a plan produces, counted without materializing them.
+/// Whether a list of `length` values can be paired down `rows` rows the
+/// way `fill` asks, with the reason when it cannot — phrased to follow the
+/// list's name, so the two callers say the same thing about the same list.
+pub(crate) fn zip_length_fits(length: usize, rows: usize, fill: ZipFill) -> Result<(), String> {
+    let plural = |n: usize| if n == 1 { "" } else { "s" };
+    if length == 0 {
+        return Err("has no values to pair".into());
+    }
+    match fill {
+        ZipFill::Exact if length != rows => Err(format!(
+            "has {length} value{}, but this frame has {rows} row{}. Pairing needs one value for every row, or the list set to repeat.",
+            plural(length),
+            plural(rows)
+        )),
+        ZipFill::Repeat if rows % length != 0 => Err(format!(
+            "has {length} value{}, which does not repeat evenly down {rows} row{}: the frame needs a whole number of repeats.",
+            plural(length),
+            plural(rows)
+        )),
+        _ => Ok(()),
+    }
+}
+
 pub(crate) fn plan_row_count(plan: &pl::LazyFrame) -> Result<usize, String> {
     const COUNT: &str = "__framework_row_count";
     let counted = plan
@@ -773,6 +796,7 @@ impl Document {
         let FrameStep::ZipVector {
             output_column_id,
             vector,
+            fill,
             ..
         } = step
         else {
@@ -780,7 +804,7 @@ impl Document {
         };
         let (_, values) = self.evaluate_to_series(vector)?;
         let rows = plan_row_count(&plan)?;
-        if values.len() != rows {
+        if let Err(reason) = zip_length_fits(values.len(), rows, *fill) {
             let column = self
                 .frame(frame_id)
                 .ok()
@@ -793,14 +817,22 @@ impl Document {
                         .map(|column| column.name.clone())
                 })
                 .unwrap_or_else(|| output_column_id.clone());
-            return Err(format!(
-                "The list paired as ‘{column}’ has {} value{}, but this frame has {rows} row{} here. Pairing needs one value for every row.",
-                values.len(),
-                if values.len() == 1 { "" } else { "s" },
-                if rows == 1 { "" } else { "s" },
-            ));
+            return Err(format!("The list paired as ‘{column}’ {reason}"));
         }
-        Ok(plan.with_columns([pl::lit(values.clone()).alias(output_column_id.clone())]))
+        let values = match fill {
+            ZipFill::Exact => values,
+            // Whole repeats only, checked above, so the tiled series is
+            // exactly as long as the frame.
+            ZipFill::Repeat => {
+                let repeats = rows / values.len().max(1);
+                let mut tiled = values.clone();
+                for _ in 1..repeats {
+                    tiled.append(&values).map_err(|error| error.to_string())?;
+                }
+                tiled
+            }
+        };
+        Ok(plan.with_columns([pl::lit(values).alias(output_column_id.clone())]))
     }
 
     pub(crate) fn apply_step(

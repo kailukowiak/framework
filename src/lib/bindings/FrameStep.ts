@@ -8,6 +8,7 @@ import type { PivotAggregate } from "./PivotAggregate";
 import type { PivotOutput } from "./PivotOutput";
 import type { UnionColumn } from "./UnionColumn";
 import type { UnpivotColumn } from "./UnpivotColumn";
+import type { ZipFill } from "./ZipFill";
 
 export type FrameStep =
   | { "kind": "filter"; predicates: Array<unknown>; matchAll: boolean }
@@ -48,5 +49,6 @@ export type FrameStep =
     outputColumnId: string;
     vector: unknown;
     expectedLength: number;
+    fill?: ZipFill;
   }
   | { "kind": "comment"; text: string };

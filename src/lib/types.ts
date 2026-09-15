@@ -131,6 +131,7 @@ export type { FrameCellAlignment } from "./bindings/FrameCellAlignment";
 export type { FrameLineStyle } from "./bindings/FrameLineStyle";
 export type { FrameStep } from "./bindings/FrameStep";
 export type { UnionColumn } from "./bindings/UnionColumn";
+export type { ZipFill } from "./bindings/ZipFill";
 export type { UnpivotColumn } from "./bindings/UnpivotColumn";
 
 // ---------------------------------------------------------------------------

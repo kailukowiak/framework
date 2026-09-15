@@ -1,4 +1,5 @@
 use crate::model::derivation::PivotAggregate;
+use crate::model::derivation::ZipFill;
 use crate::model::frame::FrameStyleOutput;
 use crate::{BroadcastOperator, Id};
 use serde::{Deserialize, Serialize};
@@ -144,6 +145,9 @@ pub enum FrameStepInput {
         output_column_id: Id,
         name: String,
         vector: String,
+        #[serde(default)]
+        #[ts(optional, as = "Option<ZipFill>")]
+        fill: ZipFill,
     },
     // Markdown, taken exactly as typed. The one step input with nothing to
     // resolve: no formula to parse, no column to look up, nothing that can

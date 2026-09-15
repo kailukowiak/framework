@@ -270,7 +270,9 @@ impl FrameObject {
                     output_column_id,
                     vector,
                     expected_length,
+                    fill,
                 } => RenderedFrameStep::ZipVector {
+                    fill: *fill,
                     output_column_id: output_column_id.clone(),
                     output_column_name: self
                         .columns

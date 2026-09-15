@@ -412,7 +412,7 @@ export function FrameInspector({
             );
           })()}
         <button className="secondary-action branch-derived-action" onClick={onJoin}>
-          <GitMerge size={13} /> Join another frame
+          <GitMerge size={13} /> Combine with…
         </button>
         <button
           className="secondary-action branch-derived-action"

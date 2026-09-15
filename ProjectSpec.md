@@ -814,6 +814,11 @@ Four backlog workflows, one primitive plus the already-planned pivot. It also ma
 
 `Expand` remains the ordinary long-frame cross-product primitive, and HStack
 and VStack remain explicit ways to combine compatible frame columns or rows.
+*(2026-09-14: all four ways two tables relate — match on a key, same rows in
+order, rows under rows, every row with every row — are authored from one
+**Combine** dialog, since each is an answer to the same question the join
+dialog already asked. Underneath they stay a joined frame and the pair, stack
+and expand chain steps; the pair step gained a repeat-to-fill choice.)*
 A sensitivity grid is nevertheless too common, and too different while it is
 being authored, to disguise as a Frame with an unfinished chain. It begins as
 a **Calculation Matrix** object with three formula surfaces: Rows, Columns,

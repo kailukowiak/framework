@@ -1013,6 +1013,11 @@ export function DerivedFrameCreator({
                     editorId={commandId(step)}
                     focusToken={commandFocus(commandId(step))}
                     onDraft={update}
+                    onFill={(fill) =>
+                      commitPatch(step.id, (current) =>
+                        current.kind === "zipVector" ? { ...current, fill } : current
+                      )
+                    }
                   />
                 );
               })()}

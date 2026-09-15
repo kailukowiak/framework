@@ -41,25 +41,12 @@ def main():
             },
         )
         # A running balance needs the row order declared, and the journal's
-        # order is its line numbering. There is no named tool for a sort
-        # step yet, so this goes through the canonical operation.
-        journal = client.call("get_frame", {"frame": "Journal", "limit": 1})
-        line_id = next(
-            column["id"] for column in journal["columns"] if column["name"] == "Line"
-        )
+        # order is its line numbering.
         client.call(
-            "apply_operation",
+            "sort_frame",
             {
-                "operation": {
-                    "type": "setFramePipeline",
-                    "frameId": journal["id"],
-                    "steps": [
-                        {
-                            "kind": "sort",
-                            "keys": [{"columnId": line_id, "descending": False}],
-                        }
-                    ],
-                }
+                "frame": "Journal",
+                "keys": [{"column": "Line", "descending": False}],
             },
         )
         client.call(

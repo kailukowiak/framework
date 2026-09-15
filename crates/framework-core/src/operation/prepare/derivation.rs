@@ -321,11 +321,6 @@ impl Document {
                     "Choose two different frames to create a join".into(),
                 ));
             }
-            if primary_key_column_ids.len() != 1 || lookup_key_column_ids.len() != 1 {
-                return Err(CoreError::InvalidOperation(
-                    "This version supports one column on each side of a join".into(),
-                ));
-            }
             if output_inputs.is_empty() {
                 return Err(CoreError::InvalidOperation(
                     "Choose at least one output column".into(),
@@ -335,6 +330,12 @@ impl Document {
             let lookup = self.frame(&lookup_frame_id)?;
             // Anti and semi joins skip the unique-lookup-key requirement;
             // see validate_join_derivations for the rationale.
+            check_join_key_pairs(
+                primary,
+                lookup,
+                &primary_key_column_ids,
+                &lookup_key_column_ids,
+            )?;
             if join_type.keeps_lookup_columns()
                 && !lookup
                     .unique_keys
@@ -359,21 +360,6 @@ impl Document {
                         lookup_outputs.join(", ")
                     )));
                 }
-            }
-            let primary_key = primary
-                .columns
-                .iter()
-                .find(|column| column.id == primary_key_column_ids[0])
-                .ok_or(CoreError::ColumnNotFound)?;
-            let lookup_key = lookup
-                .columns
-                .iter()
-                .find(|column| column.id == lookup_key_column_ids[0])
-                .ok_or(CoreError::ColumnNotFound)?;
-            if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
-                return Err(CoreError::InvalidOperation(
-                    "Join columns must have compatible types".into(),
-                ));
             }
 
             // Key columns whose two sides allow different sets of values.
@@ -495,13 +481,14 @@ impl Document {
         let old_join = derivation.join.clone().ok_or_else(|| {
             CoreError::InvalidOperation("Only a joined frame has join keys to change".into())
         })?;
-        if primary_key_column_ids.len() != 1 || lookup_key_column_ids.len() != 1 {
-            return Err(CoreError::InvalidOperation(
-                "This version supports one column on each side of a join".into(),
-            ));
-        }
         let primary = self.frame(&derivation.source_frame_id)?;
         let lookup = self.frame(&old_join.lookup_frame_id)?;
+        check_join_key_pairs(
+            primary,
+            lookup,
+            &primary_key_column_ids,
+            &lookup_key_column_ids,
+        )?;
         if old_join.join_type.keeps_lookup_columns()
             && !lookup
                 .unique_keys
@@ -512,22 +499,6 @@ impl Document {
                 "The lookup column must be marked as a unique key".into(),
             ));
         }
-        let primary_key = primary
-            .columns
-            .iter()
-            .find(|column| column.id == primary_key_column_ids[0])
-            .ok_or(CoreError::ColumnNotFound)?;
-        let lookup_key = lookup
-            .columns
-            .iter()
-            .find(|column| column.id == lookup_key_column_ids[0])
-            .ok_or(CoreError::ColumnNotFound)?;
-        if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
-            return Err(CoreError::InvalidOperation(
-                "Join columns must have compatible types".into(),
-            ));
-        }
-
         let next_join = FrameJoin {
             primary_key_column_ids,
             lookup_key_column_ids,
@@ -1000,11 +971,13 @@ impl Document {
                 output_column_id,
                 name,
                 vector,
+                fill,
             } => {
                 names.insert(output_column_id.clone(), name);
                 self.prepare_zip_vector_step(
                     output_column_id,
                     &vector,
+                    fill,
                     &scope,
                     plan,
                     edited_frame_id,
@@ -1136,6 +1109,7 @@ impl Document {
         &self,
         output_column_id: Id,
         vector: &str,
+        fill: ZipFill,
         scope: &FrameObject,
         plan: &pl::LazyFrame,
         edited_frame_id: &str,
@@ -1158,17 +1132,13 @@ impl Document {
             .len();
         let row_count = crate::engine::plan::plan_row_count(plan)
             .map_err(|error| CoreError::Transform(in_plain_words(error)))?;
-        if length == 0 || length != row_count {
-            return Err(CoreError::Formula(format!(
-                "‘{vector}’ has {length} value{}, but this frame has {row_count} row{}. Pairing lists needs one value for every row.",
-                if length == 1 { "" } else { "s" },
-                if row_count == 1 { "" } else { "s" }
-            )));
-        }
+        crate::engine::plan::zip_length_fits(length, row_count, fill)
+            .map_err(|reason| CoreError::Formula(format!("‘{vector}’ {reason}")))?;
         Ok(FrameStep::ZipVector {
             output_column_id,
             vector: expression,
             expected_length: length,
+            fill,
         })
     }
 
@@ -1852,11 +1822,13 @@ fn rendered_vector_step_input(
             output_column_id,
             output_column_name,
             vector,
+            fill,
             ..
         } => Some(FrameStepInput::ZipVector {
             output_column_id: output_column_id.clone(),
             name: output_column_name.clone(),
             vector: vector.clone(),
+            fill: *fill,
         }),
         _ => None,
     }
@@ -1892,4 +1864,48 @@ fn step_outputs(step: &FrameStep) -> Box<dyn Iterator<Item = (&Id, &Expr)> + '_>
         | FrameStep::Broadcast { .. }
         | FrameStep::Comment { .. } => Box::new(std::iter::empty()),
     }
+}
+
+/// The key pairs a join is asked to match on: at least one, the same count
+/// on both sides, every column present, and each pair of a type that can be
+/// compared. Several pairs are one composite key — account, department and
+/// period — matched together, the way a budget meets its actuals.
+fn check_join_key_pairs(
+    primary: &FrameObject,
+    lookup: &FrameObject,
+    primary_key_column_ids: &[Id],
+    lookup_key_column_ids: &[Id],
+) -> Result<(), CoreError> {
+    if primary_key_column_ids.is_empty() {
+        return Err(CoreError::InvalidOperation(
+            "A join needs at least one key column on each side".into(),
+        ));
+    }
+    if primary_key_column_ids.len() != lookup_key_column_ids.len() {
+        return Err(CoreError::InvalidOperation(format!(
+            "A join matches key columns in pairs: {} on this side, {} on the other",
+            primary_key_column_ids.len(),
+            lookup_key_column_ids.len()
+        )));
+    }
+    for (primary_id, lookup_id) in primary_key_column_ids.iter().zip(lookup_key_column_ids) {
+        let primary_key = primary
+            .columns
+            .iter()
+            .find(|column| column.id == *primary_id)
+            .ok_or(CoreError::ColumnNotFound)?;
+        let lookup_key = lookup
+            .columns
+            .iter()
+            .find(|column| column.id == *lookup_id)
+            .ok_or(CoreError::ColumnNotFound)?;
+        if !join_types_compatible(primary_key.data_type, lookup_key.data_type) {
+            return Err(CoreError::InvalidOperation(format!(
+                "Join columns must have compatible types: {} and {} do not",
+                as_named(&primary_key.name),
+                as_named(&lookup_key.name)
+            )));
+        }
+    }
+    Ok(())
 }

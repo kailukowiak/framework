@@ -324,6 +324,65 @@ struct ExpandFrameArgs {
     expected_revision: Option<u64>,
 }
 
+/// One pair of key columns, one from each side. Several pairs make a
+/// composite key: the rows match where every pair agrees.
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct CombineKeyPair {
+    /// Column on `frame` — name or stable ID.
+    frame_column: String,
+    /// Column on `with` that must equal it — name or stable ID.
+    with_column: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct CombineFramesArgs {
+    /// The frame being added to — name or stable frame ID.
+    frame: String,
+    /// The other frame — name or stable frame ID.
+    with: String,
+    /// How the two sets of rows relate: "key", "rows", "stack", or "cross".
+    relationship: String,
+    /// relationship "key": one or more column pairs that must agree.
+    keys: Option<Vec<CombineKeyPair>>,
+    /// relationship "key": "left" (default), "inner", "anti", or "semi".
+    keep: Option<String>,
+    /// Columns of `with` to bring across. Default: every column for "rows",
+    /// every non-key column for "key". Ignored by "stack" and "cross",
+    /// which bring the other frame's columns wholesale.
+    columns: Option<Vec<String>>,
+    /// relationship "rows": "exact" (default, one value per row) or
+    /// "repeat" (the list tiled down a whole number of repeats).
+    fill: Option<String>,
+    /// relationship "key": name for the new joined frame.
+    name: Option<String>,
+    x: Option<f64>,
+    y: Option<f64>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct SortKeyArg {
+    /// Column to order by — name or stable ID.
+    column: String,
+    /// True for largest (or latest, or Z) first. Default false.
+    descending: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct SortFrameArgs {
+    /// Frame name or stable frame ID.
+    frame: String,
+    /// Order by the first key, ties broken by the next, and so on.
+    keys: Vec<SortKeyArg>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 struct SetCrosstabArgs {
@@ -917,6 +976,207 @@ impl FrameworkMcp {
             affected_row_id,
         )))
     }
+
+    /// Re-save a frame's own chain with `extra` on the end. The chain is
+    /// read back out of the computed frame and re-sent whole because
+    /// `SetFramePipeline` replaces it; a tool that appends one step must
+    /// therefore carry the steps it found, or it silently deletes them.
+    fn append_steps(
+        &self,
+        view: &DocumentView,
+        frame_id: &str,
+        extra: Vec<FrameStepInput>,
+        message: String,
+        expected_revision: Option<u64>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let frame = frame_by_id(view, frame_id)?;
+        let computed = view
+            .computed_frames
+            .get(frame_id)
+            .ok_or_else(|| format!("Computed data for frame '{}' is unavailable", frame.name))?;
+        let mut steps = rendered_pipeline_inputs(frame, &computed.steps)?;
+        steps.extend(extra);
+        self.mutate(
+            Operation::SetFramePipeline {
+                frame_id: frame_id.to_string(),
+                steps,
+            },
+            expected_revision,
+            message,
+            Some(frame_id.to_string()),
+            None,
+            None,
+        )
+    }
+
+    /// One paired-column step per column brought across, each reading the
+    /// other frame live by name — the same qualified spelling the drag
+    /// gesture writes, so the saved chain reconciles with an interface
+    /// edit rather than forking from it.
+    fn paired_column_steps(
+        &self,
+        view: &DocumentView,
+        args: &CombineFramesArgs,
+        frame_id: &str,
+        with_id: &str,
+    ) -> Result<Vec<FrameStepInput>, String> {
+        let with = frame_by_id(view, with_id)?;
+        let fill = match args
+            .fill
+            .as_deref()
+            .unwrap_or("exact")
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "exact" => framework_core::ZipFill::Exact,
+            "repeat" => framework_core::ZipFill::Repeat,
+            other => {
+                return Err(format!(
+                    "Unknown fill '{other}'. Use exact (one value per row) or repeat."
+                ));
+            }
+        };
+        let taken = match &args.columns {
+            Some(references) => references
+                .iter()
+                .map(|reference| resolve_column_id(with, reference))
+                .collect::<Result<Vec<_>, String>>()?,
+            None => with
+                .columns
+                .iter()
+                .map(|column| column.id.clone())
+                .collect(),
+        };
+        if taken.is_empty() {
+            return Err(format!("'{}' has no columns to pair across", with.name));
+        }
+        let frame = frame_by_id(view, frame_id)?;
+        taken
+            .iter()
+            .map(|column_id| {
+                let column = with
+                    .columns
+                    .iter()
+                    .find(|candidate| &candidate.id == column_id)
+                    .ok_or_else(|| format!("Unknown column '{column_id}' in '{}'", with.name))?;
+                Ok(FrameStepInput::ZipVector {
+                    output_column_id: Uuid::new_v4().to_string(),
+                    name: unclashed_name(&column.name, frame, &with.name),
+                    vector: format!(
+                        "{}.{}",
+                        formula_token(&with.name),
+                        formula_token(&column.name)
+                    ),
+                    fill,
+                })
+            })
+            .collect()
+    }
+
+    /// The keyed match: a new frame whose rows are `frame`'s, carrying the
+    /// chosen columns of `with` wherever every key pair agrees.
+    fn combine_on_key(
+        &self,
+        view: &DocumentView,
+        args: &CombineFramesArgs,
+        frame_id: String,
+        with_id: String,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let pairs = args
+            .keys
+            .as_deref()
+            .filter(|keys| !keys.is_empty())
+            .ok_or("Matching on a key needs keys: [{frameColumn, withColumn}], one pair per column that has to agree")?;
+        let name = args
+            .name
+            .clone()
+            .ok_or("A keyed match makes a new frame; give it a name")?;
+        let join_type = match args
+            .keep
+            .as_deref()
+            .unwrap_or("left")
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "left" => framework_core::FrameJoinType::Left,
+            "inner" => framework_core::FrameJoinType::Inner,
+            "anti" => framework_core::FrameJoinType::Anti,
+            "semi" => framework_core::FrameJoinType::Semi,
+            other => {
+                return Err(format!(
+                    "Unknown keep '{other}'. Use left (every row of the first frame), \
+                     inner (only matched rows), anti (only unmatched), or semi (matched, \
+                     nothing brought across)."
+                ));
+            }
+        };
+        let primary = frame_by_id(view, &frame_id)?;
+        let lookup = frame_by_id(view, &with_id)?;
+        let mut primary_key_column_ids = Vec::with_capacity(pairs.len());
+        let mut lookup_key_column_ids = Vec::with_capacity(pairs.len());
+        for pair in pairs {
+            primary_key_column_ids.push(resolve_column_id(primary, &pair.frame_column)?);
+            lookup_key_column_ids.push(resolve_column_id(lookup, &pair.with_column)?);
+        }
+        let mut columns: Vec<framework_core::JoinColumnInput> = primary
+            .columns
+            .iter()
+            .map(|column| framework_core::JoinColumnInput {
+                source_frame_id: frame_id.clone(),
+                source_column_id: column.id.clone(),
+                name: column.name.clone(),
+            })
+            .collect();
+        // Anti and semi keep no lookup columns at all — the core refuses
+        // any, and naming some would only turn a sound request into an
+        // error the caller did not ask for.
+        if join_type.keeps_lookup_columns() {
+            let brought = match &args.columns {
+                Some(references) => references
+                    .iter()
+                    .map(|reference| resolve_column_id(lookup, reference))
+                    .collect::<Result<Vec<_>, String>>()?,
+                None => lookup
+                    .columns
+                    .iter()
+                    .filter(|column| !lookup_key_column_ids.contains(&column.id))
+                    .map(|column| column.id.clone())
+                    .collect(),
+            };
+            for column_id in brought {
+                let column = lookup
+                    .columns
+                    .iter()
+                    .find(|candidate| candidate.id == column_id)
+                    .ok_or_else(|| format!("Unknown column '{column_id}' in '{}'", lookup.name))?;
+                columns.push(framework_core::JoinColumnInput {
+                    source_frame_id: with_id.clone(),
+                    source_column_id: column.id.clone(),
+                    name: unclashed_name(&column.name, primary, &lookup.name),
+                });
+            }
+        }
+        self.mutate(
+            Operation::AddJoinFrame {
+                primary_frame_id: frame_id,
+                lookup_frame_id: with_id,
+                primary_key_column_ids,
+                lookup_key_column_ids,
+                join_type,
+                columns,
+                name: name.clone(),
+                x: args.x.unwrap_or(0.0),
+                y: args.y.unwrap_or(0.0),
+            },
+            args.expected_revision,
+            format!("Matched '{}' to '{}' as '{name}'", args.frame, args.with),
+            None,
+            None,
+            None,
+        )
+    }
 }
 
 #[tool_router]
@@ -1417,6 +1677,103 @@ impl FrameworkMcp {
             }
         }
         expanded
+    }
+
+    /// Combine two frames by saying how their rows relate. `key` matches
+    /// rows where the named column pairs agree (several pairs make a
+    /// composite key) and makes a **new** joined frame, the way a lookup
+    /// does; the other three append a step to `frame`'s own chain and
+    /// leave it where it is. `rows` takes the two frames as already in the
+    /// same order and lays the chosen columns of `with` alongside, one
+    /// paired column per step — `fill: "exact"` wants one value per row,
+    /// `fill: "repeat"` tiles a short list a whole number of times.
+    /// `stack` puts the rows of `with` underneath, lining columns up by
+    /// name so a column present on one side only reads null on the other.
+    /// `cross` pairs every row with every row, which is the table-shaped
+    /// `for each` behind calendars and scenario grids.
+    #[tool(
+        name = "combine_frames",
+        annotations(title = "Combine two frames", read_only_hint = false)
+    )]
+    fn combine_frames(
+        &self,
+        Parameters(args): Parameters<CombineFramesArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let view = self.lock()?.store.view();
+        let frame_id = resolve_frame_id(&view, &args.frame)?;
+        let with_id = resolve_frame_id(&view, &args.with)?;
+        if frame_id == with_id {
+            return Err("Combine relates two different frames; pick another one".into());
+        }
+        match args.relationship.trim().to_ascii_lowercase().as_str() {
+            "key" => self.combine_on_key(&view, &args, frame_id, with_id),
+            "rows" => {
+                let steps = self.paired_column_steps(&view, &args, &frame_id, &with_id)?;
+                self.append_steps(
+                    &view,
+                    &frame_id,
+                    steps,
+                    format!("Paired '{}' beside '{}'", args.with, args.frame),
+                    args.expected_revision,
+                )
+            }
+            "stack" => self.append_steps(
+                &view,
+                &frame_id,
+                vec![FrameStepInput::Union { frame_id: with_id }],
+                format!("Stacked '{}' under '{}'", args.with, args.frame),
+                args.expected_revision,
+            ),
+            "cross" => self.append_steps(
+                &view,
+                &frame_id,
+                vec![FrameStepInput::Expand { frame_id: with_id }],
+                format!("Expanded '{}' against '{}'", args.frame, args.with),
+                args.expected_revision,
+            ),
+            other => Err(format!(
+                "Unknown relationship '{other}'. Say how the rows relate: \
+                 key (matching columns), rows (same order, side by side), \
+                 stack (rows underneath), or cross (every row with every row)."
+            )),
+        }
+    }
+
+    /// Declare a frame's row order. A running total, a first/last reading,
+    /// or anything else that depends on what comes before a row needs the
+    /// order said out loud, because a frame's stored order is not a
+    /// promise. Ties break on the next key.
+    #[tool(
+        name = "sort_frame",
+        annotations(title = "Order a frame's rows", read_only_hint = false)
+    )]
+    fn sort_frame(
+        &self,
+        Parameters(args): Parameters<SortFrameArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let view = self.lock()?.store.view();
+        let frame_id = resolve_frame_id(&view, &args.frame)?;
+        if args.keys.is_empty() {
+            return Err("sort_frame needs at least one key: [{column, descending}]".into());
+        }
+        let frame = frame_by_id(&view, &frame_id)?;
+        let keys = args
+            .keys
+            .iter()
+            .map(|key| {
+                Ok(SortInput {
+                    column_id: resolve_column_id(frame, &key.column)?,
+                    descending: key.descending.unwrap_or(false),
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        self.append_steps(
+            &view,
+            &frame_id,
+            vec![FrameStepInput::Sort { keys }],
+            format!("Ordered the rows of '{}'", args.frame),
+            args.expected_revision,
+        )
     }
 
     /// Show a long frame wide: one column per value of `names_column`,
@@ -2373,11 +2730,13 @@ fn rendered_vector_pipeline_input(
             output_column_id,
             output_column_name,
             vector,
+            fill,
             ..
         } => Some(FrameStepInput::ZipVector {
             output_column_id: output_column_id.clone(),
             name: output_column_name.clone(),
             vector: vector.clone(),
+            fill: *fill,
         }),
         _ => None,
     }
@@ -2816,6 +3175,30 @@ fn resolve_column_id(frame: &FrameObject, reference: &str) -> Result<String, Str
     }
 }
 
+/// A column or frame name as a formula reads it, backticks doubled so a
+/// name containing one still names itself.
+fn formula_token(name: &str) -> String {
+    format!("`{}`", name.replace('`', "``"))
+}
+
+/// The name a column brought in from `source` should carry on `frame`. A
+/// second "Amount" beside the first is two columns nobody can tell apart
+/// in a formula, and the joined frame mints column ids from these names,
+/// so a clash is not cosmetic — it collides. Qualifying with the frame it
+/// came from is what a person would have written anyway.
+fn unclashed_name(name: &str, frame: &FrameObject, source: &str) -> String {
+    let normalized = normalize_name(name);
+    if frame
+        .columns
+        .iter()
+        .any(|column| normalize_name(&column.name) == normalized)
+    {
+        format!("{source} {name}")
+    } else {
+        name.to_string()
+    }
+}
+
 fn resolve_row_id(frame: &FrameObject, reference: &str) -> Result<String, String> {
     if let Some(row) = frame.rows.iter().find(|row| row.id == reference) {
         return Ok(row.id.clone());
@@ -3178,6 +3561,363 @@ mod tests {
             .filter(|cell| !cell.display.is_empty())
             .count();
         assert_eq!(hours_back, 1, "the entered value survived the round trip");
+    }
+
+    /// Every value of one column, in row order, as the frame renders them.
+    fn column_of(snapshot: &FrameSnapshot, column: &str) -> Vec<String> {
+        snapshot
+            .rows
+            .iter()
+            .map(|row| {
+                row.cells
+                    .iter()
+                    .find(|cell| cell.column_name == column)
+                    .map(|cell| cell.display.clone())
+                    .unwrap_or_default()
+            })
+            .collect()
+    }
+
+    fn frame_of(server: &FrameworkMcp, name: &str) -> FrameSnapshot {
+        server
+            .get_frame(Parameters(GetFrameArgs {
+                frame: name.into(),
+                limit: Some(1000),
+            }))
+            .unwrap()
+            .0
+    }
+
+    fn typed_frame(server: &FrameworkMcp, name: &str, grid: Vec<Vec<&str>>) {
+        server
+            .create_frame(Parameters(CreateFrameArgs {
+                name: name.into(),
+                grid: grid
+                    .into_iter()
+                    .map(|row| row.into_iter().map(String::from).collect())
+                    .collect(),
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+    }
+
+    #[test]
+    fn stacking_puts_rows_underneath_and_nulls_what_is_missing() {
+        // The columns line up by name, and a column only one side has is
+        // not a reason to refuse the stack — it is a gap, and a gap reads
+        // as nothing.
+        let (server, _path) = test_server();
+        typed_frame(
+            &server,
+            "North",
+            vec![
+                vec!["City", "Sales"],
+                vec!["Oslo", "10"],
+                vec!["Bergen", "20"],
+            ],
+        );
+        typed_frame(
+            &server,
+            "South",
+            vec![vec!["City", "Note"], vec!["Nice", "seasonal"]],
+        );
+        server
+            .combine_frames(Parameters(CombineFramesArgs {
+                frame: "North".into(),
+                with: "South".into(),
+                relationship: "stack".into(),
+                keys: None,
+                keep: None,
+                columns: None,
+                fill: None,
+                name: None,
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        let stacked = frame_of(&server, "North");
+        assert_eq!(stacked.total_row_count, 3, "two rows plus one");
+        assert_eq!(column_of(&stacked, "City"), ["Oslo", "Bergen", "Nice"]);
+        assert_eq!(
+            column_of(&stacked, "Sales"),
+            ["10", "20", ""],
+            "the stacked row has no sales figure, and says so by saying nothing"
+        );
+    }
+
+    #[test]
+    fn a_repeating_list_tiles_down_the_rows_and_an_exact_one_refuses() {
+        // Three shift names down six rows is the pattern Kai asked for by
+        // name; the same list without repeat is an honest refusal that
+        // names both counts, because that is the number the caller has to
+        // reconcile.
+        let (server, _path) = test_server();
+        typed_frame(
+            &server,
+            "Hours",
+            vec![
+                vec!["Slot"],
+                vec!["1"],
+                vec!["2"],
+                vec!["3"],
+                vec!["4"],
+                vec!["5"],
+                vec!["6"],
+            ],
+        );
+        typed_frame(
+            &server,
+            "Shifts",
+            vec![vec!["Shift"], vec!["Early"], vec!["Late"], vec!["Night"]],
+        );
+        let pair = |fill: &str| {
+            server.combine_frames(Parameters(CombineFramesArgs {
+                frame: "Hours".into(),
+                with: "Shifts".into(),
+                relationship: "rows".into(),
+                keys: None,
+                keep: None,
+                columns: None,
+                fill: Some(fill.into()),
+                name: None,
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+        };
+        let refused = pair("exact").err().expect("exact must refuse");
+        assert!(
+            refused.contains('3') && refused.contains('6'),
+            "the refusal has to name both counts: {refused}"
+        );
+        pair("repeat").unwrap();
+        let hours = frame_of(&server, "Hours");
+        assert_eq!(
+            column_of(&hours, "Shift"),
+            ["Early", "Late", "Night", "Early", "Late", "Night"]
+        );
+    }
+
+    #[test]
+    fn crossing_multiplies_the_rows_in_place() {
+        // expand_frame makes a new linked frame; the same relationship
+        // asked for through combine_frames grows the frame it is asked on.
+        let (server, _path) = test_server();
+        typed_frame(
+            &server,
+            "Lines",
+            vec![vec!["Line"], vec!["Admin"], vec!["Marketing"]],
+        );
+        typed_frame(&server, "Days", vec![vec!["Day"], vec!["Mon"], vec!["Tue"]]);
+        server
+            .combine_frames(Parameters(CombineFramesArgs {
+                frame: "Lines".into(),
+                with: "Days".into(),
+                relationship: "cross".into(),
+                keys: None,
+                keep: None,
+                columns: None,
+                fill: None,
+                name: None,
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        let sheet = frame_of(&server, "Lines");
+        assert_eq!(sheet.total_row_count, 4, "two lines × two days");
+        assert_eq!(column_of(&sheet, "Day"), ["Mon", "Tue", "Mon", "Tue"]);
+    }
+
+    /// Two frames a rate lookup would join: work by role and region, and
+    /// the rate that depends on both.
+    fn work_and_rates(server: &FrameworkMcp) {
+        typed_frame(
+            server,
+            "Work",
+            vec![
+                vec!["Role", "Region", "Hours"],
+                vec!["Fitter", "North", "10"],
+                vec!["Fitter", "South", "20"],
+            ],
+        );
+        typed_frame(
+            server,
+            "Rates",
+            vec![
+                vec!["Role", "Region", "Rate"],
+                vec!["Fitter", "North", "50"],
+                vec!["Fitter", "South", "60"],
+            ],
+        );
+    }
+
+    fn match_on(
+        server: &FrameworkMcp,
+        name: &str,
+        keys: Vec<(&str, &str)>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        server.combine_frames(Parameters(CombineFramesArgs {
+            frame: "Work".into(),
+            with: "Rates".into(),
+            relationship: "key".into(),
+            keys: Some(
+                keys.into_iter()
+                    .map(|(frame_column, with_column)| CombineKeyPair {
+                        frame_column: frame_column.into(),
+                        with_column: with_column.into(),
+                    })
+                    .collect(),
+            ),
+            keep: None,
+            columns: None,
+            fill: None,
+            name: Some(name.into()),
+            x: None,
+            y: None,
+            expected_revision: None,
+        }))
+    }
+
+    #[test]
+    fn a_key_match_makes_a_joined_frame() {
+        let (server, _path) = test_server();
+        work_and_rates(&server);
+        server
+            .set_unique_key(Parameters(SetUniqueKeyArgs {
+                frame: "Rates".into(),
+                columns: vec!["Role".into(), "Region".into()],
+                enabled: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        server
+            .set_unique_key(Parameters(SetUniqueKeyArgs {
+                frame: "Rates".into(),
+                columns: vec!["Region".into()],
+                enabled: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        match_on(&server, "Costed", vec![("Region", "Region")]).unwrap();
+        let costed = frame_of(&server, "Costed");
+        assert_eq!(costed.total_row_count, 2);
+        assert_eq!(column_of(&costed, "Rate"), ["50", "60"]);
+        // The key columns of the lookup are not brought across twice, and
+        // a name both frames carry is qualified rather than duplicated.
+        assert_eq!(
+            column_of(&costed, "Rates Role"),
+            ["Fitter", "Fitter"],
+            "the lookup's own Role column arrives qualified by its frame"
+        );
+    }
+
+    // A rate that depends on both the role and the region is a composite
+    // key, and one pair cannot express it: matching on role alone would
+    // multiply the rows. The pairs travel as parallel key vectors and the
+    // rows match where every pair agrees.
+    #[test]
+    fn a_two_pair_key_match_makes_a_joined_frame() {
+        let (server, _path) = test_server();
+        typed_frame(
+            &server,
+            "Work",
+            vec![
+                vec!["Role", "Region", "Hours"],
+                vec!["Fitter", "North", "10"],
+                vec!["Fitter", "South", "20"],
+            ],
+        );
+        typed_frame(
+            &server,
+            "Rates",
+            vec![
+                vec!["Role", "Region", "Rate"],
+                vec!["Fitter", "North", "50"],
+                vec!["Fitter", "South", "60"],
+            ],
+        );
+        server
+            .set_unique_key(Parameters(SetUniqueKeyArgs {
+                frame: "Rates".into(),
+                columns: vec!["Role".into(), "Region".into()],
+                enabled: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        server
+            .combine_frames(Parameters(CombineFramesArgs {
+                frame: "Work".into(),
+                with: "Rates".into(),
+                relationship: "key".into(),
+                keys: Some(vec![
+                    CombineKeyPair {
+                        frame_column: "Role".into(),
+                        with_column: "Role".into(),
+                    },
+                    CombineKeyPair {
+                        frame_column: "Region".into(),
+                        with_column: "Region".into(),
+                    },
+                ]),
+                keep: None,
+                columns: None,
+                fill: None,
+                name: Some("Costed".into()),
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        let costed = frame_of(&server, "Costed");
+        assert_eq!(
+            costed.total_row_count, 2,
+            "both key columns agree, so each row matches exactly one rate"
+        );
+        assert_eq!(column_of(&costed, "Rate"), ["50", "60"]);
+    }
+
+    #[test]
+    fn sort_frame_declares_the_row_order_a_running_total_needs() {
+        let (server, _path) = test_server();
+        typed_frame(
+            &server,
+            "Journal",
+            vec![
+                vec!["Line", "Amount"],
+                vec!["3", "30"],
+                vec!["1", "10"],
+                vec!["2", "20"],
+            ],
+        );
+        server
+            .sort_frame(Parameters(SortFrameArgs {
+                frame: "Journal".into(),
+                keys: vec![SortKeyArg {
+                    column: "Line".into(),
+                    descending: None,
+                }],
+                expected_revision: None,
+            }))
+            .unwrap();
+        let sorted = frame_of(&server, "Journal");
+        assert_eq!(column_of(&sorted, "Line"), ["1", "2", "3"]);
+        // The declared order is what the running total reads, and the
+        // calculated column must survive the sort step already in the
+        // chain rather than replacing it.
+        server
+            .add_calculated_column(Parameters(AddCalculatedColumnArgs {
+                frame: "Journal".into(),
+                name: "Running".into(),
+                formula: "`Amount`.cum_sum(false)".into(),
+                expected_revision: None,
+            }))
+            .unwrap();
+        let running = frame_of(&server, "Journal");
+        assert_eq!(column_of(&running, "Running"), ["10", "30", "60"]);
     }
 
     #[test]

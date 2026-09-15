@@ -1278,6 +1278,7 @@ fn two_lists_make_a_live_two_column_frame_when_their_lengths_match() {
                 output_column_id: "forecast~paired".into(),
                 name: "Forecast".into(),
                 vector: "`Holder`.`Forecast`".into(),
+                fill: ZipFill::Exact,
             }],
         })
         .unwrap();
@@ -1360,6 +1361,7 @@ fn pairing_a_frame_built_from_this_one_is_refused_as_a_loop() {
                 output_column_id: "again".into(),
                 name: "Again".into(),
                 vector: "`Copy`.`Amount`".into(),
+                fill: ZipFill::Exact,
             }],
         })
     };
@@ -1421,6 +1423,7 @@ fn a_loop_between_two_live_frames_is_reported_rather_than_followed() {
             column_id: "amount".into(),
         },
         expected_length: 3,
+        fill: ZipFill::Exact,
     });
     sales.columns.push(Column {
         id: "again".into(),
@@ -1438,4 +1441,90 @@ fn a_loop_between_two_live_frames_is_reported_rather_than_followed() {
         .unwrap_err()
         .to_string();
     assert!(error.contains("read each other"), "{error}");
+}
+
+#[test]
+fn a_short_list_repeats_down_the_rows_when_asked_and_only_when_it_fits() {
+    let mut store = Store::new(Document::demo());
+    store
+        .apply(Operation::AddFrame {
+            name: "Scenarios".into(),
+            grid: vec![
+                vec!["Case".into()],
+                vec!["Low".into()],
+                vec!["Base".into()],
+                vec!["High".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    store
+        .apply(Operation::AddFrame {
+            name: "Periods".into(),
+            grid: (0..7)
+                .map(|i| {
+                    vec![if i == 0 {
+                        "Period".to_string()
+                    } else {
+                        format!("P{i}")
+                    }]
+                })
+                .collect(),
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let periods = crate::common::frame_named(store.document(), "Periods")
+        .id
+        .clone();
+    let paired = |fill: ZipFill| Operation::SetFramePipeline {
+        frame_id: periods.clone(),
+        steps: vec![FrameStepInput::ZipVector {
+            output_column_id: "case~paired".into(),
+            name: "Case".into(),
+            vector: "`Scenarios`.`Case`".into(),
+            fill,
+        }],
+    };
+    // Six rows, three values: exact pairing refuses and says how to fix it.
+    let refused = store.apply(paired(ZipFill::Exact)).unwrap_err().to_string();
+    assert!(
+        refused.contains("3 values") && refused.contains("6 rows") && refused.contains("repeat"),
+        "{refused}"
+    );
+
+    store.apply(paired(ZipFill::Repeat)).unwrap();
+    let cases: Vec<String> = store
+        .get_frame_page(&periods, 0, 10)
+        .unwrap()
+        .rows
+        .iter()
+        .map(|row| row[1].clone())
+        .collect();
+    assert_eq!(cases, ["Low", "Base", "High", "Low", "Base", "High"]);
+    let view = store.view();
+    assert!(matches!(
+        &view.computed_frames[&periods].steps[0],
+        RenderedFrameStep::ZipVector {
+            fill: ZipFill::Repeat,
+            ..
+        }
+    ));
+
+    // Four values do not repeat evenly down six rows, and the page says so.
+    let scenarios = crate::common::frame_named(store.document(), "Scenarios")
+        .id
+        .clone();
+    store
+        .apply(Operation::AddRow {
+            frame_id: scenarios,
+            values: Default::default(),
+        })
+        .unwrap();
+    let error = store
+        .get_frame_page(&periods, 0, 10)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("whole number of repeats"), "{error}");
 }

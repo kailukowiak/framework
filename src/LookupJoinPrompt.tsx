@@ -45,8 +45,8 @@ export function LookupJoinPrompt({
   const { diagnostics, error: diagnosticsError, loading } = useJoinDiagnostics(
     primary.id,
     lookup.id,
-    primaryKeyId,
-    lookupKeyId,
+    [primaryKeyId],
+    [lookupKeyId],
     compatible
   );
   const [joinError, setJoinError] = useState<string | null>(null);

@@ -83,7 +83,7 @@ export function ContextMenuFrameActions({
         }}
       >
         <GitMerge size={14} />
-        <span>Join another frame</span>
+        <span>Combine with…</span>
       </button>
       <button
         onClick={() => {

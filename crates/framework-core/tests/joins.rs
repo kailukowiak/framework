@@ -626,3 +626,108 @@ fn anti_and_semi_joins_partition_rows_and_allow_duplicate_lookup_keys() {
         Some(0.0)
     );
 }
+
+#[test]
+fn a_join_matches_on_several_key_columns_together() {
+    let mut store = Store::new(Document::demo());
+    for (name, grid) in [
+        (
+            "Actuals",
+            vec![
+                vec!["Account", "Dept", "Amount"],
+                vec!["4000", "East", "100"],
+                vec!["4000", "West", "200"],
+                vec!["5000", "East", "300"],
+            ],
+        ),
+        (
+            "Budget",
+            vec![
+                vec!["Account", "Dept", "Plan"],
+                vec!["4000", "East", "90"],
+                vec!["4000", "West", "210"],
+                vec!["5000", "West", "999"],
+            ],
+        ),
+    ] {
+        store
+            .apply(Operation::AddFrame {
+                name: name.into(),
+                grid: grid
+                    .into_iter()
+                    .map(|row| row.into_iter().map(String::from).collect())
+                    .collect(),
+                x: 0.0,
+                y: 0.0,
+            })
+            .unwrap();
+    }
+    let actuals = crate::common::frame_named(store.document(), "Actuals").clone();
+    let budget = crate::common::frame_named(store.document(), "Budget").clone();
+    let id = |frame: &FrameObject, name: &str| {
+        frame
+            .columns
+            .iter()
+            .find(|c| c.name == name)
+            .unwrap()
+            .id
+            .clone()
+    };
+    store
+        .apply(Operation::SetUniqueKey {
+            frame_id: budget.id.clone(),
+            column_ids: vec![id(&budget, "Account"), id(&budget, "Dept")],
+            enabled: true,
+        })
+        .unwrap();
+    let join = |keys: (Vec<Id>, Vec<Id>)| Operation::AddJoinFrame {
+        primary_frame_id: actuals.id.clone(),
+        lookup_frame_id: budget.id.clone(),
+        primary_key_column_ids: keys.0,
+        lookup_key_column_ids: keys.1,
+        join_type: FrameJoinType::Left,
+        columns: vec![
+            JoinColumnInput {
+                source_frame_id: actuals.id.clone(),
+                source_column_id: id(&actuals, "Dept"),
+                name: "Dept".into(),
+            },
+            JoinColumnInput {
+                source_frame_id: actuals.id.clone(),
+                source_column_id: id(&actuals, "Amount"),
+                name: "Amount".into(),
+            },
+            JoinColumnInput {
+                source_frame_id: budget.id.clone(),
+                source_column_id: id(&budget, "Plan"),
+                name: "Plan".into(),
+            },
+        ],
+        name: "Variance".into(),
+        x: 0.0,
+        y: 0.0,
+    };
+    // Pairs must line up.
+    let lopsided = store
+        .apply(join((
+            vec![id(&actuals, "Account"), id(&actuals, "Dept")],
+            vec![id(&budget, "Account")],
+        )))
+        .unwrap_err()
+        .to_string();
+    assert!(lopsided.contains("in pairs"), "{lopsided}");
+
+    store
+        .apply(join((
+            vec![id(&actuals, "Account"), id(&actuals, "Dept")],
+            vec![id(&budget, "Account"), id(&budget, "Dept")],
+        )))
+        .unwrap();
+    let variance = crate::common::frame_named(store.document(), "Variance")
+        .id
+        .clone();
+    let page = store.get_frame_page(&variance, 0, 10).unwrap();
+    let plans: Vec<String> = page.rows.iter().map(|row| row[2].clone()).collect();
+    // 4000/East → 90, 4000/West → 210, 5000/East → no budget line.
+    assert_eq!(plans, ["90", "210", ""]);
+}
