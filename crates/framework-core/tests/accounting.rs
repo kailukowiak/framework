@@ -208,6 +208,21 @@ fn the_scale_is_declared_on_the_column_and_survives_undo() {
         cell(&store, &frame, 0, "Amount").typed_value,
         ScalarValue::Number(1.23)
     );
+    // Half to even, the same as a computed copy: a typed 0.125 and
+    // `Amount * 1` of it both read 0.12, and 0.135 reads 0.14.
+    let (mut halves, half_frame) = ledger(&["0.125", "0.135"]);
+    add_column(&mut halves, &half_frame.id, "Copy", "`Amount` * 1").unwrap();
+    let half_frame = frame_named(halves.document(), "Ledger").clone();
+    for (row, expected) in [(0, 0.12), (1, 0.14)] {
+        assert_eq!(
+            cell(&halves, &half_frame, row, "Amount").typed_value,
+            ScalarValue::Number(expected)
+        );
+        assert_eq!(
+            cell(&halves, &half_frame, row, "Copy").typed_value,
+            ScalarValue::Number(expected)
+        );
+    }
     let amount_id = column(&frame, "Amount").id.clone();
     store
         .apply(Operation::SetColumnType {

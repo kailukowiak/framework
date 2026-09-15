@@ -175,11 +175,9 @@ pub(crate) fn parse_decimal_text(raw: &str) -> Option<String> {
     })
 }
 
-/// Canonical decimal text rounded to `scale` places, half away from zero:
-/// `1.235` at two places is `1.24`, `-1.235` is `-1.24`. Digits, not a
-/// float, so the rounding is the one an accountant would do by hand and
-/// the same one the Polars column holds, since the column is cast from
-/// this text.
+/// Canonical decimal text rounded to `scale` places, half to even — the
+/// same rounding Polars applies when a decimal is cast to fewer places, so a
+/// typed `0.125` shows the same twelve cents as a computed copy of it.
 pub(crate) fn round_decimal_text(text: &str, scale: u8) -> String {
     let scale = scale as usize;
     let (negative, digits) = match text.strip_prefix('-') {
@@ -192,8 +190,13 @@ pub(crate) fn round_decimal_text(text: &str, scale: u8) -> String {
         return decimal_text_from_parts(negative, whole, &padded);
     }
     let (kept, dropped) = fraction.split_at(scale);
-    let round_up = dropped.starts_with(|c: char| c >= '5');
     let mut unscaled = format!("{whole}{kept}").parse::<i128>().unwrap_or(0);
+    let exactly_half = dropped.starts_with('5') && dropped[1..].chars().all(|c| c == '0');
+    let round_up = if exactly_half {
+        unscaled % 2 == 1
+    } else {
+        dropped.starts_with(|c: char| c >= '5')
+    };
     if round_up {
         unscaled += 1;
     }

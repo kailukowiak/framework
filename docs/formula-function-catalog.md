@@ -50,6 +50,8 @@ Number; `.sum()`, `.min()` and `.max()` stay accounting. Joining an
 accounting value into text prints its exact digits at its scale: `"Owed " +
 Amount` reads `Owed 12.50`, not a rounded or reformatted number.
 
+Wherever an amount is rounded to fewer places — a typed cell with too many, a cast to a smaller scale, a product or quotient landing on the wider operand's scale — the rounding is half to even, the same rule Polars applies, so a typed `0.125` and a computed copy of it both read `0.12`. A per-call rounding mode for tax or interest rules is not offered yet.
+
 ## Exposed expression surface
 
 The catalog returned by the core and MCP is also used for autocomplete.
