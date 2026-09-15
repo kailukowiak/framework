@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.10
+
 - Add an Accounting column type for ledger work: an exact decimal value held at a declared number of places, so a column of amounts sums exactly instead of drifting the way ordinary floating-point money can. A column's scale is its number of decimal places — leaving it unset gives cents — and an accounting column now renders in accounting style automatically: parentheses for negatives, a dash for zero, the currency symbol pinned to the left edge, and thousands separators, unless a format has already been chosen for it. The type implying its own presentation is the same rule any other typed column already follows.
 - Type an accounting amount the way it would be written on a ledger — `(12.50)`, `$1,234.56`, `-0.05`, or a bare `7` all read as the same kind of value — and anything else is refused rather than guessed at.
 - `.cast("accounting")` turns a column into an accounting amount at two decimal places, and `.cast("accounting", 4)` picks the number of places directly. Money and an accounting amount no longer combine on their own: adding a price to an amount is refused until one side is cast, `.cast("accounting")` to bring money onto the ledger or `.cast("currency")` to bring an amount back off it.
