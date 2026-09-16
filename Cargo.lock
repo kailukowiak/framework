@@ -2928,7 +2928,7 @@ dependencies = [
 
 [[package]]
 name = "framework-core"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "calamine",
  "chrono",
@@ -2947,7 +2947,7 @@ dependencies = [
 
 [[package]]
 name = "framework-desktop"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "connectorx",
  "env_logger 0.11.11",
@@ -2971,7 +2971,7 @@ dependencies = [
 
 [[package]]
 name = "framework-mcp"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "dirs",
  "framework-core",
@@ -2985,7 +2985,7 @@ dependencies = [
 
 [[package]]
 name = "framework-ml"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "anofox-regression",
  "faer",
