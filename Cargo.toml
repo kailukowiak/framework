@@ -7,7 +7,7 @@ exclude = ["vendor/xgboost_lib-sys"]
 
 [workspace.package]
 edition = "2024"
-version = "0.1.11"
+version = "0.1.12"
 license = "MIT OR Apache-2.0"
 
 # These are the structural smells that matter in a codebase whose core is a
