@@ -57,3 +57,7 @@ demo-data*/
 # Local CSV/TSV scratch files for the editable-file path. The e2e specs write
 # their own fixtures into a temporary directory, so nothing tracked reads these.
 test-data/
+
+# Checksum-pinned XGBoost runtime staged by scripts/prepare-xgboost-native.mjs
+# for the linker and the bundler; every build re-verifies it from the pins.
+src-tauri/native/

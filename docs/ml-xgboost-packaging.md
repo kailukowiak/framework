@@ -1,9 +1,17 @@
 # Native XGBoost release packaging
 
 FrameWork trains XGBoost models through `xgb = 3.0.6`, whose default native
-binding is `xgboost_lib-sys = 3.0.5`. Native training is built only for the
-supported macOS arm64 and Windows x64 targets. Linux keeps the model import and
-pure Rust prediction path, but reports native training as unsupported.
+binding is `xgboost_lib-sys = 3.0.5`. Native training is built for the
+supported macOS arm64, Windows x64 and Linux x64 targets. Any other target
+keeps the model import and pure Rust prediction path, but reports native
+training as unsupported.
+
+The workspace applies the sys crate through `[patch.crates-io]` from
+`vendor/xgboost_lib-sys`: the published crate with `bindgen` moved from 0.71
+to 0.72, because 0.71 generates fieldless C structs against libclang 20 or
+newer and its own layout assertion then fails to compile. Its build script,
+download pins and link directives are the published ones; the directory's
+README says what to remove once upstream carries the bump.
 
 The native preparation step is `node scripts/prepare-xgboost-native.mjs`. It
 runs before the release build and fetches exact artifacts into the ignored
@@ -44,6 +52,28 @@ which is beside the installed executable where the Windows loader searches for
 an ordinary imported DLL. The XGBoost license is included as an application
 resource.
 
+## Linux x64
+
+The preparation step downloads the checksum-pinned `linux_amd64`
+`libxgboost.so` from the same sys-crate tag. Cargo links against the staged
+copy, and `src-tauri/build.rs` gives the executable an rpath of
+`$ORIGIN/../lib/framework`. The Linux release config installs the shared
+object at `/usr/lib/framework/libxgboost.so` in the `.deb` and `.rpm`, which
+is where that rpath resolves from `/usr/bin`, and declares the GNU OpenMP
+runtime (`libgomp1` on Debian, `libgomp` on RPM systems) as a package
+dependency, because the prebuilt library takes OpenMP and the C++ runtime
+from the host rather than carrying its own. The AppImage bundler resolves the
+executable's shared libraries with `ldd`, so the release step and the
+`tauri-native.mjs` wrapper export `LD_LIBRARY_PATH` pointing at the staged
+directory; linuxdeploy then copies `libxgboost.so` and `libgomp` into the
+image and rewrites the rpath to its own layout.
+
+The prebuilt library requires glibc 2.34 and `GLIBCXX_3.4.30`, the GCC 12
+C++ runtime. Ubuntu 22.04, the release builder and oldest supported
+distribution, ships both. Building the sys crate needs libclang for bindgen,
+so the Linux CI and release jobs install `libclang-dev`. The XGBoost license
+is included as an application resource.
+
 ## Release verification still required
 
 The preparation script and relocated macOS dylibs have been executed locally;
@@ -63,9 +93,13 @@ considered proven end to end:
   Windows 11, the installer must add the matching redistributable before the
   target can be called self-contained.
 
-Linux release packaging is deliberately unchanged because native training is
-not compiled there. Supporting it later requires a separate pinned `libgomp`
-and C++ runtime policy plus clean Ubuntu compatibility testing.
+- A debug `.deb` built locally on Ubuntu 24.04 (2026-09-15) carried
+  `libgomp1` in `Depends`, `libxgboost.so` at `/usr/lib/framework`, and an
+  executable whose `RUNPATH` of `$ORIGIN/../lib/framework` resolved it under
+  `ldd` with no `LD_LIBRARY_PATH`. Still to do: build the `.rpm` and AppImage
+  on the Ubuntu 22.04 release runner, confirm the AppImage resolves the
+  library from its own `usr/lib`, and run fit/predict on clean Ubuntu 22.04
+  and 24.04 installs without Rust, a compiler, or a developer environment.
 
 ## Building on macOS 27
 

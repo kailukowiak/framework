@@ -1,20 +1,20 @@
 use super::{Model, Objective, Settings};
 use crate::{MlError, NumericDataset, Result};
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 use xgb::{Booster, DMatrix, parameters::BoosterParameters};
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
 pub(crate) fn train(
     _data: &NumericDataset,
     _feature_names: &[String],
     _settings: &Settings,
 ) -> Result<Model> {
     Err(MlError::Unsupported(
-        "Native XGBoost training is available on macOS and Windows".into(),
+        "Native XGBoost training is available on macOS, Windows and Linux".into(),
     ))
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 pub(crate) fn train(
     data: &NumericDataset,
     feature_names: &[String],
@@ -81,7 +81,7 @@ pub(crate) fn train(
     Ok(model)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 fn validate(data: &NumericDataset, settings: &Settings) -> Result<()> {
     let features = data.rows[0].len();
     let valid_fraction = |value: f32| value.is_finite() && value > 0.0 && value <= 1.0;
@@ -119,7 +119,7 @@ fn validate(data: &NumericDataset, settings: &Settings) -> Result<()> {
     Ok(())
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 fn validate_targets(labels: &[f32], objective: Objective) -> Result<Option<usize>> {
     if objective == Objective::Regression {
         return Ok(None);
@@ -162,7 +162,7 @@ fn validate_targets(labels: &[f32], objective: Objective) -> Result<Option<usize
     Ok((objective == Objective::Multiclass).then_some(classes.len()))
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 fn native_error(error: xgb::XGBError) -> MlError {
     MlError::Numerical(format!("XGBoost training failed: {error}"))
 }

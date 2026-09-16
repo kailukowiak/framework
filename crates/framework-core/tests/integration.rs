@@ -65,8 +65,8 @@ mod ml_extended;
 
 #[path = "ml_tutorials.rs"]
 mod ml_tutorials;
-// Native training exists only where the XGBoost runtime is packaged, and
-// the Linux CI runner is not one of those places; the module's tests would
-// fail there on the platform refusal rather than on anything they check.
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+// Native training exists only where the XGBoost runtime is packaged
+// (macOS, Windows and Linux); elsewhere the module's tests would fail on
+// the platform refusal rather than on anything they check.
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod ml_xgboost_native;

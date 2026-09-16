@@ -21,6 +21,12 @@ const artifacts = {
       librarySha256: "ec784b1b000012b16db34f4990d5c7eb86324d1ce096761a2a2706d681750d70",
     },
   },
+  linux: {
+    xgboost: {
+      url: "https://github.com/marcomq/rust-xgboost/raw/refs/tags/v3.0.5/xgboost-sys/lib/linux_amd64/libxgboost.so",
+      sha256: "9f710fabebce59e1142942b0b95cad4f4088847224684ed52f12aa6f98c5b20b",
+    },
+  },
   win32: {
     dll: {
       url: "https://github.com/marcomq/rust-xgboost/raw/refs/tags/v3.0.5/xgboost-sys/lib/win_amd64/xgboost.dll",
@@ -99,6 +105,18 @@ async function prepareWindows() {
   console.log(`prepared XGBoost native libraries in ${destination}`);
 }
 
+async function prepareLinux() {
+  if (process.arch !== "x64") throw new Error(`unsupported Linux architecture: ${process.arch}`);
+  const destination = join(nativeRoot, "linux");
+  const xgboost = join(destination, "libxgboost.so");
+  await downloadPinned(artifacts.linux.xgboost, xgboost);
+  // The shared object takes libgomp and libstdc++ from the host: the deb and
+  // rpm declare the OpenMP runtime as a dependency, the AppImage bundles it.
+  await chmod(xgboost, 0o755);
+  console.log(`prepared XGBoost native libraries in ${destination}`);
+}
+
 if (process.platform === "darwin") await prepareMacos();
 else if (process.platform === "win32") await prepareWindows();
+else if (process.platform === "linux") await prepareLinux();
 else console.log(`XGBoost native training is not packaged for ${process.platform}`);

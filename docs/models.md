@@ -81,7 +81,8 @@ The default uses 100 boosting rounds, depth 6 and a 0.1 learning rate. Advanced
 settings are optional. Holdout evaluation and live prediction frames work just
 like regression; editing data never silently retrains the saved booster.
 
-Native training is available on supported macOS and Windows builds. Predictor
+Native training is available on the supported macOS, Windows and Linux x64
+builds. Predictor
 columns currently need finite numeric values; prepare missing values and category
 encodings before fitting, observing the training-only preprocessing rule above.
 The saved model contains typed trees and can score without a native training

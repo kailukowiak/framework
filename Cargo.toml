@@ -1,6 +1,9 @@
 [workspace]
 members = ["crates/framework-core", "crates/framework-ml", "crates/framework-mcp", "src-tauri"]
 resolver = "2"
+# The vendored sys-crate override below is not a member: it keeps upstream's
+# edition and its own unit test needs XGBoost demo data that is not here.
+exclude = ["vendor/xgboost_lib-sys"]
 
 [workspace.package]
 edition = "2024"
@@ -65,3 +68,13 @@ strip = "none"
 
 [profile.release.build-override]
 strip = "none"
+
+# xgboost_lib-sys 3.0.5 pins bindgen 0.71, which with libclang 20 or newer
+# emits every C struct without its fields while still asserting the real size,
+# so the generated `size_of::<_IO_FILE>() - 216` fails to compile on any Linux
+# host with a libclang that new. The override is the published crate with
+# bindgen moved to 0.72 and the header tree trimmed to the one file the build
+# script parses; vendor/xgboost_lib-sys/README.md has the details. Drop both
+# once a published sys release carries the bump.
+[patch.crates-io]
+xgboost_lib-sys = { path = "vendor/xgboost_lib-sys" }

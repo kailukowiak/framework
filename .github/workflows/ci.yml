@@ -70,6 +70,7 @@ jobs:
             libssl-dev \
             libkrb5-dev \
             libgtk-3-dev \
+            libclang-dev \
             build-essential curl wget file
 
       # rust-toolchain.toml pins the channel and the clippy/rustfmt

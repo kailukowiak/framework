@@ -135,7 +135,7 @@ jobs:
           # else respectively.
           - platform: ubuntu-22.04
             label: Linux (.deb + .rpm + .AppImage)
-            args: --config src-tauri/tauri.release.conf.json
+            args: --config src-tauri/tauri.release.conf.json --config src-tauri/tauri.linux-release.conf.json
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
@@ -160,6 +160,7 @@ jobs:
             libssl-dev \
             libkrb5-dev \
             libgtk-3-dev \
+            libclang-dev \
             build-essential curl wget file patchelf
 
       - name: Install pinned Rust toolchain
@@ -205,9 +206,10 @@ jobs:
       # Fetch it independently of Cargo so both the linker and Tauri bundler
       # consume the same checksum-pinned files. On macOS this also supplies a
       # pinned LLVM OpenMP runtime and rewrites both copied dylibs to @rpath;
-      # Tauri signs the nested copies with the app below.
+      # Tauri signs the nested copies with the app below. On Linux the deb and
+      # rpm install the shared object under /usr/lib/framework, where the
+      # executable's rpath looks, and the AppImage carries its own copy.
       - name: Prepare native XGBoost runtime
-        if: runner.os == 'macOS' || runner.os == 'Windows'
         run: node scripts/prepare-xgboost-native.mjs
 
       - name: Build and bundle installers
@@ -243,7 +245,12 @@ jobs:
           # with a real identity plus notarization credentials to remove the
           # warning entirely.
           APPLE_SIGNING_IDENTITY: '-'
-          XGBOOST_LIB_DIR: ${{ github.workspace }}/src-tauri/native/${{ runner.os == 'macOS' && 'macos' || 'windows' }}
+          XGBOOST_LIB_DIR: ${{ github.workspace }}/src-tauri/native/${{ runner.os == 'macOS' && 'macos' || runner.os == 'Windows' && 'windows' || 'linux' }}
+          # The AppImage bundler resolves the executable's shared libraries
+          # with ldd before copying them into the image, and libxgboost.so is
+          # only in the staged directory at that point. Other platforms ignore
+          # this variable.
+          LD_LIBRARY_PATH: ${{ github.workspace }}/src-tauri/native/linux
           # xgboost_lib-sys derives its macOS OpenMP link search from this
           # prefix. The preparation script deliberately creates that layout.
           HOMEBREW_PREFIX: ${{ github.workspace }}/src-tauri/native/macos

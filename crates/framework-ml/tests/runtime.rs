@@ -9,8 +9,8 @@ mod regression;
 #[path = "cases/statistics.rs"]
 mod statistics;
 // Native training exists only where the XGBoost runtime is packaged
-// (macOS and Windows); elsewhere `train` refuses by design, so these cases
-// would fail on the refusal rather than on anything they check.
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+// (macOS, Windows and Linux); elsewhere `train` refuses by design, so these
+// cases would fail on the refusal rather than on anything they check.
+#[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 #[path = "cases/xgboost_training.rs"]
 mod xgboost_training;
