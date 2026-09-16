@@ -1710,6 +1710,14 @@ small.vector-dragging { cursor: grabbing; }
 .block-stripe { height: calc(var(--text-sm) * 1.7); }
 .block-stripe.on { background: light-dark(#f3f2eb, #24251f); }
 .block-gutter-row.banded { background: light-dark(#f3f2eb, #24251f); }
+/* A solved line's row: the answer keeps the width it had, and the search's
+   own account of itself rides beside it on the same line. Text only, and
+   the row height is still one line of text -- a goal seek that pushed the
+   rest of the gutter out of alignment with the lines it answers would have
+   broken the one thing the gutter is for. */
+.block-gutter-solve { display: flex; align-items: center; justify-content: flex-end; white-space: nowrap; overflow: hidden; }
+.block-gutter-solve > :first-child { flex: 1 1 auto; min-width: 0; }
+.block-solve-note { color: light-dark(#777a73, #969990); }
 /* A spanning row's answer sits beside its first physical row, where the
    name is, rather than floating mid-band. */
 button.block-gutter-row.spanning { align-items: start; }

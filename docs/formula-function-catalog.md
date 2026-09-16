@@ -60,6 +60,7 @@ The catalog returned by the core and MCP is also used for autocomplete.
 | --- | --- |
 | Horizontal | `sum_horizontal`, `mean_horizontal`, `min_horizontal`, `max_horizontal` |
 | Financial | `pv`, `fv`, `pmt`, `ipmt`, `ppmt`, `nper`, `rate`, `npv`, `xnpv`, `irr`, `xirr`, `mirr`, `effect`, `nominal`, `sln`, `db`, `ddb`, `period_index`, `prior`, `fiscal_year`, `fiscal_quarter`, `fiscal_period`, `period_start`, `period_end`, `add_periods`, `ytd`, `ttm`, `same_period_last_year`, `fiscal_week`, `workday`, `networkdays` (uppercase Excel names also work) |
+| Scenarios | `under(scenario, expression)` — the expression as a named scenario would read it, on a private copy of the document; `solve(expression == target, by=`Value`, within=[low, high], tolerance=1e-12)` — goal seek by bisection, refused when the bracket holds no crossing; on its own Scratchwork line it reports steps and residual and offers Apply |
 | Generators / row order | `sequence(stop)`, `sequence(start, stop, step)`, `table.len()`; `recur(first, next, restart_by=[columns])` with `previous()` inside `next` |
 | Conditional/null | `when().then()` — chained as many times as you like — `.otherwise()`, `coalesce`, `.is_null`, `.is_not_null`, `.fill_null`, `.filter(predicate)` → `.sum()` / `.mean()` / `.count()` |
 | Numeric | `.abs`, `.sign`, `.round`, `.round_sig_figs`, `.truncate`, `.floor`, `.ceil`, `.sqrt`, `.cbrt`, `.pow`, `.exp`, `.log`, `.log1p`, `.normalize`, `.clip`, `.clip_min`, `.clip_max`, `.floor_div` |
@@ -290,6 +291,27 @@ Unsupported methods fail visibly instead of falling back to another evaluator. T
 ## Generated expression surface
 
 The table above is the hand-written core. Beyond it, [formula-function-catalog.generated.md](formula-function-catalog.generated.md) lists a much wider, code-generated surface covering most of the remaining Polars 0.55.2 `Expr` methods and namespaces (root functions, and the `str`/`dt`/`list`/`arr`/`struct`/`cat` namespaces). It is produced by `tools/generate_expr_bindings.py` from the vendored `polars-plan` source and compiled by `crates/framework-core/src/generated_expr_bindings.rs`; both files carry regeneration instructions in their headers. Methods that take closures/UDFs, IO/serialization/meta/plugin methods, and `alias` are excluded by rule; anything else the generator can't bind with certainty (an options-struct or enum argument, for example) is left out and recorded with a reason in `tools/expr_bindings_spec.json` rather than silently misbound.
+
+## Scenarios: `under` and `solve`
+
+A document reads one scenario at a time; `under` asks what a result would be in another one without switching:
+
+```text
+upside ebitda = under(`Upside`, ebitda)
+downside revenue = under("Downside", `Plan`.`Revenue`.sum())
+```
+
+The scenario is named in backticks, resolved to the scenario's id once every canvas object has declined the name (a value called `Upside` wins over a scenario called `Upside`), or as a string matched without regard to case. The expression is evaluated on a private copy of the document with that scenario active and folded to a literal, so `under(...)` sits anywhere a number does — a Scratchwork line, a calculated column, a result, a Calculation Matrix body — and never changes `active_scenario`, materializes anything, or lands in history. A scenario a formula names cannot be removed while it is read; renaming it changes nothing the formula holds.
+
+`solve` is goal seek for one variable:
+
+```text
+target price = solve(`Model`.ebitda == 300000, by=`Price`, within=[100, 200])
+```
+
+It bisects `within` for the value of `by` that makes the two sides meet, evaluating the model on a private copy at each step, and snaps the answer to its shortest exact spelling (`138.75`, not `138.749999972`). A bracket whose ends sit on the same side of zero is refused with both end values named; `tolerance=` is relative to the bracket width and defaults to `1e-12`. A whole-number value is varied continuously on the copy. When the whole line is one `solve(...)` call the gutter shows the steps taken and the residual, and an *Apply* action sets the value as an ordinary undoable edit. Inside arithmetic, `solve(...)` is its number.
+
+The map form of `under` — overriding named values inline rather than through a scenario — is what `solve` and a bound-axis Calculation Matrix use internally; it has no written form yet.
 
 ## Variable controls
 

@@ -494,6 +494,7 @@ export function BlockCard({
               onToggle={() =>
                 setOpenResultId((current) => (current === line.id ? null : line.id))
               }
+              onOperation={onOperation}
             />
           ))}
         </div>

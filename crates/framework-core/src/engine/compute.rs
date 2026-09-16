@@ -62,6 +62,18 @@ pub struct ComputedCalculationMatrix {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub output: Option<CalculationMatrixOutput>,
+    /// How many times the model was evaluated to fill the grid, and how
+    /// long that took — reported only by sensitivity mode, where each cell
+    /// is a private copy of the document. An ordinary vectorized matrix is
+    /// one expression and says nothing here. Shown on the card because a
+    /// grid over a large model is expensive by nature and the person
+    /// asking should see the bill, not guess at it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub evaluations: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub elapsed_ms: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub error: Option<String>,
@@ -134,6 +146,12 @@ pub struct ComputedBlockLine {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub frozen: Option<FrozenState>,
+    /// Present when the whole line is one `solve(...)` call: how the
+    /// answer was reached and which value it is for, so the gutter can
+    /// say so and offer to apply it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub solve: Option<crate::formula::overrides::SolveReport>,
     #[serde(flatten)]
     pub cell: ComputedCell,
 }
@@ -736,7 +754,27 @@ impl Document {
                 .map(|line| {
                     let mut list = None;
                     let mut value_count = 0;
+                    let mut solve = None;
                     let (data_type, evaluated) = match line.expression() {
+                        // A line that is one whole `solve` call is computed
+                        // natively so its search facts reach the gutter;
+                        // a frozen one reads its frozen answer like any
+                        // other line, because a frozen line is a record,
+                        // not a search.
+                        Some(expression)
+                            if !self.frozen_values.contains_key(&line.id)
+                                && let Some(report) = self.solve_report(expression) =>
+                        {
+                            value_count = 1;
+                            match report {
+                                Ok(report) => {
+                                    let answer = ScalarValue::Number(report.answer);
+                                    solve = Some(report);
+                                    (DataType::Number, Ok(answer))
+                                }
+                                Err(error) => (DataType::Number, Err(error)),
+                            }
+                        }
                         Some(expression) => {
                             let answer = self.evaluate_line(&line.id, expression);
                             list = answer.2;
@@ -762,6 +800,7 @@ impl Document {
                         frozen: line
                             .expression()
                             .and_then(|expression| self.frozen_state(&line.id, expression)),
+                        solve,
                         cell: match list {
                             // A list has no single value to project, so the
                             // cell carries only what it reads as.

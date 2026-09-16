@@ -205,8 +205,28 @@ function MatrixOutput({
           ))}
         </tbody>
       </table>
+      {computed.evaluations != null && (
+        <small className="calculation-matrix-cost">
+          {evaluationCost(computed.evaluations, computed.elapsedMs)}
+        </small>
+      )}
     </div>
   );
+}
+
+/**
+ * What the grid cost. Sensitivity mode runs the whole model once per cell,
+ * each on a private copy of the document, so a 5x5 over a large model is a
+ * real bill rather than one vectorized expression -- and the person who
+ * asked for it should be able to read the price rather than guess at it. A
+ * vectorized matrix reports no count and says nothing here.
+ */
+function evaluationCost(evaluations: number, elapsedMs?: number): string {
+  const spent = `${evaluations} evaluation${evaluations === 1 ? "" : "s"}`;
+  if (elapsedMs == null) return spent;
+  const took =
+    elapsedMs < 1000 ? `${Math.round(elapsedMs)} ms` : `${(elapsedMs / 1000).toFixed(1)} s`;
+  return `${spent} \u00b7 ${took}`;
 }
 
 function axisInputs(axis: CalculationMatrixAxisFormula[]): CalculationMatrixFormulaDraft[] {

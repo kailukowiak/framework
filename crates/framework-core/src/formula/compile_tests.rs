@@ -80,6 +80,7 @@ pub(crate) fn polars_methods_render_canonically_and_evaluate() {
         crate::formula::catalog::POLARS_FORMULA_FUNCTIONS.len()
             + 3 * crate::formula::catalog::financial::FUNCTIONS.len()
             + crate::formula::catalog::controls::FUNCTIONS.len()
+            + crate::formula::catalog::overrides::FUNCTIONS.len()
             + formula::generated_bindings::GENERATED_FORMULA_FUNCTIONS.len()
     );
     assert!(catalog.iter().any(|function| {

@@ -431,6 +431,19 @@ export default function App() {
     []
   );
 
+  /**
+   * The same edit, for the gestures that need the document back rather than
+   * only "did it fail": a second operation naming an object the first one
+   * created cannot be written without it. Failures throw, which is what puts
+   * them on the caller's own error surface.
+   */
+  const applyAndShow = useCallback(async (operation: Operation) => {
+    const next = await applyOperation(operation);
+    setDocument(next);
+    setError(null);
+    return next;
+  }, []);
+
   const {
     contextObject,
     contextFrame,
@@ -2071,6 +2084,7 @@ export default function App() {
             requestAddCalculatedColumn={requestAddCalculatedColumn}
             requestCalculatedColumnEdit={requestCalculatedColumnEdit}
             requestColumnTransformation={requestColumnTransformation}
+            apply={applyAndShow}
             run={run}
             setAppendImport={setAppendImport}
             setContextMenu={setContextMenu}

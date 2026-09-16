@@ -68,7 +68,16 @@ impl Document {
         &self,
         scenario_id: Id,
     ) -> Result<ReplicatedOperation, CoreError> {
-        self.require_scenario(&scenario_id)?;
+        let scenario = self.require_scenario(&scenario_id)?;
+        // The same rule that holds a value in place while a formula reads
+        // it, asked of a scenario id: `under(`Upside`, …)` holds Upside the
+        // way `` `Price` `` holds Price, and the refusal says who is reading.
+        if let Some(reader) = self.read_by(&scenario_id, None) {
+            return Err(CoreError::InvalidOperation(format!(
+                "{reader} reads ‘{}’ with under(…), so it cannot be removed. Change that formula first.",
+                scenario.name
+            )));
+        }
         Ok(ReplicatedOperation::RemoveScenario { scenario_id })
     }
 

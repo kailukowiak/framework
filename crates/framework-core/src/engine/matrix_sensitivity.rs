@@ -32,6 +32,7 @@ impl Document {
             &matrix.rows,
             &matrix.columns,
         );
+        let started = std::time::Instant::now();
         let mut cells = Vec::new();
         let mut output_rows = Vec::new();
         let value_id = format!("{}:value", matrix.id);
@@ -82,6 +83,7 @@ impl Document {
             }
             cells.push(cell_row);
         }
+        let output_rows_len = output_rows.len();
         let mut output_columns = scope.columns;
         output_columns.push(Column {
             id: value_id,
@@ -107,6 +109,8 @@ impl Document {
                 columns: output_columns,
                 rows: output_rows,
             }),
+            evaluations: Some(output_rows_len),
+            elapsed_ms: Some(started.elapsed().as_millis() as u64),
             error: None,
         })
     }

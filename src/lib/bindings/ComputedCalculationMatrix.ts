@@ -8,5 +8,15 @@ export type ComputedCalculationMatrix = {
   columnTuples: Array<CalculationMatrixTuple>;
   cells: Array<Array<ComputedCell>>;
   output?: CalculationMatrixOutput;
+  /**
+   * How many times the model was evaluated to fill the grid, and how
+   * long that took — reported only by sensitivity mode, where each cell
+   * is a private copy of the document. An ordinary vectorized matrix is
+   * one expression and says nothing here. Shown on the card because a
+   * grid over a large model is expensive by nature and the person
+   * asking should see the bill, not guess at it.
+   */
+  evaluations?: number;
+  elapsedMs?: number;
   error?: string;
 };

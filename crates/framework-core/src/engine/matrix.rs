@@ -23,6 +23,8 @@ impl Document {
             column_tuples: Vec::new(),
             cells: Vec::new(),
             output: None,
+            evaluations: None,
+            elapsed_ms: None,
             error: Some(error),
         };
         if let Some(error) = matrix
@@ -39,6 +41,8 @@ impl Document {
                 column_tuples: Vec::new(),
                 cells: Vec::new(),
                 output: None,
+                evaluations: None,
+                elapsed_ms: None,
                 error: matrix.body.error.clone(),
             };
         }
@@ -162,6 +166,8 @@ impl Document {
                 columns: output_columns,
                 rows: output_rows,
             }),
+            evaluations: None,
+            elapsed_ms: None,
             error: None,
         })
     }

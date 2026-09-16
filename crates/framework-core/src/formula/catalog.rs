@@ -36,6 +36,8 @@ pub(crate) mod controls;
 pub(crate) mod financial;
 #[path = "catalog_financial_namespace.rs"]
 mod financial_namespace;
+#[path = "catalog_overrides.rs"]
+pub(crate) mod overrides;
 
 pub(crate) const POLARS_FORMULA_FUNCTIONS: &[FormulaFunctionDefinition] = &[
     formula_function!(

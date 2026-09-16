@@ -252,6 +252,72 @@ describe("BlockCard", () => {
     );
   });
 
+  it("applies a solved answer as an ordinary SetValue from the gutter", async () => {
+    // The gutter reports how the search got there and offers to make the
+    // answer real. What SetValue *means* is Rust's test; this pins that the
+    // Apply the person clicks emits exactly that operation, with the target
+    // and the rounded raw the report carried.
+    const view = fixtures.salesBeforeFormula;
+    const checks = objectNamed(view, "block", "Checks");
+    const onOperation = vi.fn<OperationHandler>(async () => null);
+    const computed: ComputedBlock = {
+      source: "solve(`Model`.ebitda == 300000, by=`Price`, within=[100, 200])",
+      lines: [
+        {
+          id: "goal",
+          name: "",
+          text: "solve(`Model`.ebitda == 300000, by=`Price`, within=[100, 200])",
+          comment: false,
+          blank: false,
+          dataType: "number",
+          valueCount: 1,
+          value: 138.75,
+          typedValue: { type: "number", value: 138.75 },
+          display: "138.75",
+          error: null,
+          isOverride: false,
+          solve: {
+            targetId: "price",
+            targetName: "Price",
+            answer: 138.75,
+            answerRaw: "138.75",
+            iterations: 47,
+            residual: 2.7e-10,
+            low: 100,
+            high: 200,
+            evaluations: 48,
+          },
+        },
+      ],
+    };
+
+    render(
+      <ActiveFormulaEditorProvider>
+        <BlockCard
+          block={checks}
+          computed={computed}
+          objects={view.objects}
+          computedFrames={view.computedFrames}
+          formulaFunctions={view.formulaFunctions}
+          onOperation={onOperation}
+          onFreeze={vi.fn(async () => undefined)}
+        />
+      </ActiveFormulaEditorProvider>
+    );
+
+    // Said in the row, in the ordinary type size, beside the answer.
+    expect(screen.getByText(/47 steps · residual 0$/)).not.toBeNull();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Apply solved value to Price" })
+    );
+    expect(onOperation).toHaveBeenCalledWith({
+      type: "setValue",
+      objectId: "price",
+      raw: "138.75",
+    });
+  });
+
   it("replaces a partial qualified column without repeating its frame", async () => {
     const view = fixtures.salesBeforeFormula;
     const checks = objectNamed(view, "block", "Checks");

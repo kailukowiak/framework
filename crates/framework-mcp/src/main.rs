@@ -491,6 +491,31 @@ impl From<CalendarYearLabelArg> for YearLabel {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
+struct ScenarioValueInput {
+    /// Value name or stable value ID whose number this scenario disagrees
+    /// with the base about.
+    value: String,
+    /// The overriding raw, in the value's own data type and the same
+    /// spelling its card would hold.
+    raw: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+struct AddScenarioArgs {
+    /// Scenario name, unique on the document because formulas and the
+    /// Scenario menu resolve it by name.
+    name: String,
+    /// Values this scenario disagrees with the base about. A value left
+    /// out is agreed, and reads its own card. Never activates the scenario.
+    #[serde(default)]
+    values: Vec<ScenarioValueInput>,
+    /// Reject the write if the document is no longer at this revision.
+    expected_revision: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
 struct AddCalendarArgs {
     /// Calendar name, unique on the document because formulas resolve it by name.
     name: String,
@@ -2148,6 +2173,66 @@ impl FrameworkMcp {
             None,
             None,
         )
+    }
+
+    /// Add a named scenario — Upside, Downside — and the values it
+    /// disagrees with the base about, in one call. Scenarios otherwise
+    /// reach an agent only through `apply_operation`'s generic surface
+    /// (`addScenario`, `setScenarioValue`, `activateScenario`, ...); this
+    /// is the friendly path for the common case of adding one with its
+    /// overrides together. It never activates the scenario it creates —
+    /// use `apply_operation`'s `activateScenario` for that.
+    #[tool(
+        name = "add_scenario",
+        annotations(title = "Add a scenario", read_only_hint = false)
+    )]
+    fn add_scenario(
+        &self,
+        Parameters(args): Parameters<AddScenarioArgs>,
+    ) -> Result<Json<MutationReceipt>, String> {
+        let view = self.lock()?.store.view();
+        let mut resolved = Vec::with_capacity(args.values.len());
+        for entry in &args.values {
+            resolved.push((resolve_value_id(&view, &entry.value)?, entry.raw.clone()));
+        }
+        let mut result = self.mutate(
+            Operation::AddScenario {
+                scenario_id: None,
+                name: args.name.clone(),
+                copy_from: None,
+            },
+            args.expected_revision,
+            format!("Added scenario '{}'", args.name),
+            None,
+            None,
+            None,
+        )?;
+        if resolved.is_empty() {
+            return Ok(result);
+        }
+        let view = self.lock()?.store.view();
+        let scenario_id = view
+            .document
+            .scenarios
+            .iter()
+            .find(|scenario| scenario.name == args.name)
+            .map(|scenario| scenario.id.clone())
+            .ok_or_else(|| format!("Scenario '{}' was not created", args.name))?;
+        for (value_id, raw) in resolved {
+            result = self.mutate(
+                Operation::SetScenarioValue {
+                    scenario_id: scenario_id.clone(),
+                    value_id: value_id.clone(),
+                    raw: Some(raw),
+                },
+                None,
+                format!("Set a value for scenario '{}'", args.name),
+                Some(scenario_id.clone()),
+                Some(value_id),
+                None,
+            )?;
+        }
+        Ok(result)
     }
 
     /// Delete a canvas value, frame, or text object. Referenced values are protected.
@@ -4003,6 +4088,167 @@ mod tests {
             "0.10 + 0.20 + 0.30 foots to 0.6, not 0.6000000000000001"
         );
         assert_eq!(total.display, "0.60");
+    }
+
+    /// A container and a value on it, through `apply_operation` — neither
+    /// has a named tool, the same escape hatch the finance and timesheet
+    /// twins use for CSV import.
+    fn add_container(server: &FrameworkMcp, name: &str) -> String {
+        server
+            .apply_operation(Parameters(ApplyOperationArgs {
+                operation: serde_json::json!({"type": "addContainer", "name": name, "x": 0.0, "y": 0.0}),
+                expected_revision: None,
+            }))
+            .unwrap();
+        let view = server.lock().unwrap().store.view();
+        resolve_any_object_id(&view, name).unwrap()
+    }
+
+    fn add_value(server: &FrameworkMcp, name: &str, raw: &str, container_id: &str) {
+        server
+            .apply_operation(Parameters(ApplyOperationArgs {
+                operation: serde_json::json!({
+                    "type": "addValue", "name": name, "raw": raw,
+                    "x": 0.0, "y": 0.0, "containerId": container_id,
+                }),
+                expected_revision: None,
+            }))
+            .unwrap();
+    }
+
+    /// `add_scenario`, the one named tool this session adds: a scenario and
+    /// every value it disagrees with the base about, in one call, never
+    /// activated.
+    fn add_scenario_with(server: &FrameworkMcp, name: &str, values: &[(&str, &str)]) {
+        server
+            .add_scenario(Parameters(AddScenarioArgs {
+                name: name.into(),
+                values: values
+                    .iter()
+                    .map(|(value, raw)| ScenarioValueInput {
+                        value: (*value).into(),
+                        raw: (*raw).into(),
+                    })
+                    .collect(),
+                expected_revision: None,
+            }))
+            .unwrap();
+    }
+
+    /// The scenarios-and-sensitivity tutorial's model (README section 1),
+    /// then the phase-3 acceptance target from section 5: `under` reading
+    /// two scenarios and `solve` finding a price, both as ordinary block
+    /// lines that never touch `active_scenario`.
+    #[test]
+    fn evaluating_under_scenarios_and_solving_for_price_runs_through_named_tools() {
+        let (server, _path) = test_server();
+
+        // Named "Scenario inputs" rather than "Assumptions": the demo
+        // document `test_server` opens already carries a Block called
+        // "Assumptions" (its one hard-coded tax rate), and object names
+        // must stay unique for name-based resolution to work.
+        let container_id = add_container(&server, "Scenario inputs");
+        for (name, raw) in [
+            ("Price", "120"),
+            ("Annual units", "8000"),
+            ("Unit cost", "70"),
+            ("Fixed costs", "250000"),
+        ] {
+            add_value(&server, name, raw, &container_id);
+        }
+        add_scenario_with(
+            &server,
+            "Upside",
+            &[("Price", "125"), ("Annual units", "9500")],
+        );
+        add_scenario_with(
+            &server,
+            "Downside",
+            &[("Price", "115"), ("Annual units", "6500")],
+        );
+
+        server
+            .create_frame(Parameters(CreateFrameArgs {
+                name: "Plan".into(),
+                grid: std::iter::once(vec!["Weight".to_string()])
+                    .chain(
+                        [6, 6, 7, 8, 9, 9, 9, 9, 8, 9, 10, 10]
+                            .map(|weight| vec![weight.to_string()]),
+                    )
+                    .collect(),
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        for (name, formula) in [
+            ("Units", "`Annual units` * `Weight` / 100"),
+            ("Revenue", "`Units` * `Price`"),
+            ("Cost", "`Units` * `Unit cost`"),
+        ] {
+            server
+                .add_calculated_column(Parameters(AddCalculatedColumnArgs {
+                    frame: "Plan".into(),
+                    name: name.into(),
+                    formula: formula.into(),
+                    expected_revision: None,
+                }))
+                .unwrap();
+        }
+
+        server
+            .create_block(Parameters(CreateBlockArgs {
+                name: "Model".into(),
+                x: None,
+                y: None,
+                expected_revision: None,
+            }))
+            .unwrap();
+        server
+            .set_block_source(Parameters(SetBlockSourceArgs {
+                block: "Model".into(),
+                source: [
+                    "revenue = `Plan`.`Revenue`.sum()",
+                    "gross = revenue - `Plan`.`Cost`.sum()",
+                    "ebitda = gross - `Fixed costs`",
+                    "margin = ebitda / revenue",
+                    "upside ebitda = under(`Upside`, ebitda)",
+                    "downside ebitda = under(`Downside`, ebitda)",
+                    "target price = solve(ebitda == 300000, by=`Price`, within=[100, 200])",
+                ]
+                .join("\n"),
+                expected_revision: None,
+            }))
+            .unwrap();
+
+        let view = server.lock().unwrap().store.view();
+        assert_eq!(
+            view.document.active_scenario, None,
+            "evaluating under a scenario and solving must never activate one"
+        );
+        let block_id = resolve_block_id(&view, "Model").unwrap();
+        let lines = &view.computed_blocks[&block_id].lines;
+        let value_of = |name: &str| -> f64 {
+            lines
+                .iter()
+                .find(|line| line.name == name)
+                .unwrap_or_else(|| panic!("no line named '{name}'"))
+                .cell
+                .value
+                .unwrap_or_else(|| panic!("line '{name}' has no numeric answer"))
+        };
+        for (name, expected) in [
+            ("ebitda", 150000.0),
+            ("upside ebitda", 272500.0),
+            ("downside ebitda", 42500.0),
+            ("target price", 138.75),
+        ] {
+            let actual = value_of(name);
+            assert!(
+                (actual - expected).abs() < 1e-6,
+                "'{name}' should read {expected}, the tutorial's checkpoint, got {actual}"
+            );
+        }
     }
 
     #[test]

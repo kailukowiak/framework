@@ -4,10 +4,12 @@ About 25 minutes. Open **Scenarios, sensitivity and goal seek — Start** from
 **Data library → Tutorials and examples**, or open the linked `.fw` files
 with **File → Open**. The answer key is a separate workbook.
 
-This is the third finance lesson. It builds the job with today's FrameWork,
-shows where that hurts, and then shows what it becomes when phase 3 of
+This is the third finance lesson. It builds the job the hard way first, with
+`under` and `solve` not yet in view, so the pain they remove is visible
+before they show up. Phase 3 of
 [the finance build plan](../../docs/finance-build-plan.md), evaluate under
-overrides, lands.
+overrides, has landed, and section 5 below replaces sections 2-4's hand work
+with it.
 
 ## Why this lesson exists
 
@@ -18,7 +20,8 @@ what price hits a target. Every one of those is "compute the model as if
 this assumption were different, without changing it". Today FrameWork can
 only change it. So the comparison is a table you fill in by hand, the grid
 is the model retyped as a formula, and the goal seek is a scan you read by
-eye. This lesson does all three the hard way so the easy way is obvious.
+eye. This lesson does all three the hard way first, in sections 2-4, so
+section 5's `under` and `solve` read as the obvious fix rather than magic.
 
 ## Files
 
@@ -129,44 +132,47 @@ Checkpoint: the column climbs from `-10000.00` at 100 to `310000.00` at 140. The
 target falls between 135 and 140. To get closer you narrow the scan and
 look again.
 
-## 5. What changes when evaluate-under-overrides lands
+## 5. The easy way
 
-None of the following computes today. It is the acceptance target for
-phase 3 of the finance plan, and the checkpoints above are its expected
-numbers.
+Everything sections 2-4 did by hand — reading a scenario, retyping the
+model into a grid, scanning for a target — is `under` and `solve` doing it
+in place, against the model itself.
 
-Section 2's table becomes lines in `Model`, or one **Compare scenarios**
-gesture:
+Add two lines to `Model`:
 
 ```text
 upside ebitda = under(`Upside`, ebitda)
 downside ebitda = under(`Downside`, ebitda)
 ```
 
-Expected: `272500.00` and `42500.00`, with the document still on Base.
+Checkpoint: `272500.00` and `42500.00`, with the document still on Base —
+no scenario switch, section 2's table gone.
 
-Section 3's grid keeps its two axes but binds them to the assumptions they
-vary, and its body becomes the model itself:
+Open the section-3 matrix card, `EBITDA by price and units`. On the Rows
+axis, use the "Rows · Row input" selector to bind `Price axis` to `Price`;
+on the Columns axis, use "Columns · Column input" to bind `Units axis` to
+`Annual units`. Replace the body with:
 
 ```text
 `Model`.ebitda
 ```
 
-Expected: the same twenty-five numbers, now computed through `Plan` rather
-than around it. Change a seasonality weight so the months no longer sum to
-100 and the grid must follow, which the retyped version cannot do. The card
-must show how many evaluations it ran.
+Checkpoint: the same 25 numbers as before (centre `150000.00`, corners
+`-70000.00`, `50000.00`, `170000.00`, `450000.00`), now computed through
+`Plan` rather than retyped around it, and the card says `25 evaluations`.
+Change a seasonality weight in `Plan` — the grid follows, which the retyped
+version in section 3 could not do.
 
-Section 4 becomes one line:
+Add one more line to `Model`:
 
 ```text
 target price = solve(`Model`.ebitda == 300000, by=`Price`, within=[100, 200])
 ```
 
-Expected: `138.75`, with the iterations and residual visible in the trace,
-and an **Apply** action that sets `Price` to the answer as an ordinary,
-undoable edit. Asking for a bracket that contains no solution must refuse
-with a reason rather than return a number.
+Checkpoint: `138.75`. The gutter shows the iterations and residual, and an
+**Apply** action sets `Price` to the answer as an ordinary, undoable edit.
+Ask for a bracket that contains no crossing, `within=[100, 120]`, and it is
+refused with a reason rather than a number.
 
 The rule under all three: evaluating under an override must not activate a
 scenario, materialise anything, or change the document. Property test:
@@ -179,7 +185,7 @@ If a named control is missing, a step cannot be completed, or a checkpoint
 differs, record it with the template in the parent tutorial README rather
 than working around it. Expected awkwardness that is product feedback, not
 a lesson error: the hand-filled table in section 2, and the retyped model in
-sections 3 and 4.
+sections 3 and 4 — that is the contrast section 5 exists to make.
 
 ## Rebuilding the files
 

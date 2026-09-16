@@ -88,6 +88,32 @@ describe("CalculationMatrixCard", () => {
     expect(screen.getByRole("columnheader", { name: "Feb" })).toBeTruthy();
   });
 
+  it("reports what a sensitivity grid cost, and says nothing without one", () => {
+    // Sensitivity mode runs the model once per cell; a vectorized matrix is
+    // one expression and reports no count. The card must not invent a bill
+    // for the cheap case.
+    const { rerender } = render(
+      <ActiveFormulaEditorProvider>
+        <CalculationMatrixCard matrix={matrix()} computed={computed} references={references} onRename={vi.fn()} onCommit={vi.fn(async () => null)} />
+      </ActiveFormulaEditorProvider>
+    );
+    expect(screen.queryByText(/evaluations/)).toBeNull();
+
+    rerender(
+      <ActiveFormulaEditorProvider>
+        <CalculationMatrixCard matrix={matrix()} computed={{ ...computed, evaluations: 25, elapsedMs: 1400 }} references={references} onRename={vi.fn()} onCommit={vi.fn(async () => null)} />
+      </ActiveFormulaEditorProvider>
+    );
+    expect(screen.getByText("25 evaluations · 1.4 s")).toBeTruthy();
+
+    rerender(
+      <ActiveFormulaEditorProvider>
+        <CalculationMatrixCard matrix={matrix()} computed={{ ...computed, evaluations: 25, elapsedMs: 312 }} references={references} onRename={vi.fn()} onCommit={vi.fn(async () => null)} />
+      </ActiveFormulaEditorProvider>
+    );
+    expect(screen.getByText("25 evaluations · 312 ms")).toBeTruthy();
+  });
+
   it("keeps output blank until the body formula is valid", () => {
     render(
       <ActiveFormulaEditorProvider>

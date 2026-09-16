@@ -19,6 +19,9 @@ pub(super) fn compile_polars_root_call(
         ))?
         .to_polars(document);
     }
+    if matches!(name, "under" | "solve") {
+        return crate::formula::overrides::compile(name, arguments, keyword_arguments, document);
+    }
     if crate::formula::financial::is_financial(name) {
         return crate::formula::financial::compile(name, arguments, keyword_arguments, document);
     }
@@ -162,6 +165,13 @@ pub(crate) fn polars_call_declared_type(
             .filter(|kind| *kind != DataType::Integer),
         "format" => Some(DataType::String),
         "today" => Some(DataType::Date),
+        // An answer under a scenario is the same kind of thing as the
+        // answer itself; a solved input is always a number, whatever the
+        // card's type, because the search bisects a continuous value.
+        "under" => arguments
+            .get(1)
+            .and_then(|expression| expression.declared_type_among(document, scope)),
+        "solve" => Some(DataType::Number),
         _ => None,
     }
 }

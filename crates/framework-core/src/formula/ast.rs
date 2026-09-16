@@ -187,6 +187,17 @@ pub enum Expr {
     Calendar {
         calendar_id: Id,
     },
+    /// A scenario named in a formula: `` under(`Upside`, ebitda) ``.
+    ///
+    /// Held by id for the same reason a calendar is: a rename changes
+    /// nothing a formula holds, and a scenario a formula names cannot be
+    /// removed underneath it. It is not a value — it only means anything
+    /// in the first slot of `under`, which is the one place a formula can
+    /// ask "what would this be if the document were reading that
+    /// scenario" without switching the document into it.
+    Scenario {
+        scenario_id: Id,
+    },
     /// A named list on the canvas: `` `Allowed currencies` ``.
     ///
     /// Always a list, however many values are in it, because that is what it
@@ -481,7 +492,9 @@ impl Expr {
             // value at all — see [`Expr::Duration`] — and neither is a
             // calendar reference, which only means anything in the one
             // argument slot that asks for it.
-            Expr::Null | Expr::Duration { .. } | Expr::Calendar { .. } => None,
+            Expr::Null | Expr::Duration { .. } | Expr::Calendar { .. } | Expr::Scenario { .. } => {
+                None
+            }
             Expr::Column { column_id } | Expr::ForeignColumn { column_id, .. } => scope
                 .iter()
                 .find(|column| column.id == *column_id)
@@ -665,7 +678,10 @@ impl Expr {
         for (_, argument) in keyword_arguments {
             argument.validate_list_placement(
                 document,
-                crate::formula::financial::is_financial(name) || name == "dropdown",
+                crate::formula::financial::is_financial(name)
+                    || name == "dropdown"
+                    // `within=[low, high]` is a bracket, written as a list.
+                    || name == "solve",
             )?;
         }
         Ok(())
@@ -1110,6 +1126,7 @@ impl Expr {
         self.any(|expression| match expression {
             Expr::Value { object_id } | Expr::Series { object_id } => object_id == target_object_id,
             Expr::Calendar { calendar_id } => calendar_id == target_object_id,
+            Expr::Scenario { scenario_id } => scenario_id == target_object_id,
             _ => false,
         })
     }
@@ -1231,6 +1248,12 @@ impl Expr {
             Expr::String { value } => quoted(value),
             Expr::Boolean { value } => if *value { "True" } else { "False" }.into(),
             Expr::Calendar { calendar_id } => quoted(calendar_name(document, calendar_id)),
+            // Written back the way it was typed: a backticked name, which
+            // the parser resolves to a scenario only after every value,
+            // line and column has declined it.
+            Expr::Scenario { scenario_id } => formula_name(
+                crate::formula::overrides::scenario_name(document, scenario_id),
+            ),
             Expr::Date { value } => value.format("%Y-%m-%d").to_string(),
             Expr::Duration { value } => value.clone(),
             Expr::Null => "None".into(),

@@ -15,6 +15,7 @@ mod cross_frame;
 mod derived_frames;
 mod edit_cost_probe;
 mod entry_columns;
+mod evaluate_under;
 mod export_scope;
 mod finance_tutorials;
 mod financial_functions;

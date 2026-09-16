@@ -5,6 +5,7 @@ pub fn formula_function_catalog() -> Vec<FormulaFunction> {
         .iter()
         .chain(financial::FUNCTIONS.iter())
         .chain(controls::FUNCTIONS.iter())
+        .chain(overrides::FUNCTIONS.iter())
         .map(|function| FormulaFunction {
             id: function.id.into(),
             name: function.name.into(),

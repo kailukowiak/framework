@@ -41,6 +41,11 @@ impl Expr {
                  or subtract it from one."
             )),
             Expr::Calendar { calendar_id } => Err(not_a_value(document, calendar_id)),
+            Expr::Scenario { scenario_id } => Err(format!(
+                "‘{}’ is a scenario, not a value. Ask what something would be under it: under(`{}`, …).",
+                crate::formula::overrides::scenario_name(document, scenario_id),
+                crate::formula::overrides::scenario_name(document, scenario_id)
+            )),
             Expr::Null => Ok(pl::lit(pl::NULL)),
             Expr::Column { column_id } => Ok(pl::col(column_id)),
             Expr::ForeignColumn {

@@ -266,6 +266,22 @@ a smoke scenario.
 
 ### Phase 3: evaluate under overrides
 
+Implementation update 2026-09-14: landed on `main`. `Expr::Scenario` is a by-id
+reference like a calendar (removal refused while read, rename free);
+`under(scenario, expr)` and `solve(expr == target, by=, within=)` live in
+`formula/overrides.rs` and fold to literals before Scratchwork prepares live
+lines, on a private clone of the document — the same act the matrix's
+sensitivity mode already performed per cell. The matrix card reports its
+evaluation count and elapsed time. What the plan describes and this does
+not do: no cache by lineage fingerprint (each evaluation is a clone, as the
+matrix already was; the "overriding a value nothing reads costs nothing"
+gate is met by skipping the clone when the override cannot reach the
+expression), no written inline-map form of `under` (waits for a map
+literal; the map form exists internally and is what `solve` and the matrix
+use), no cancel on the grid (the 2,500-cell cap stands), and no tornado
+chart. Compare scenarios is a frontend gesture building an ordinary frame of
+`under(...)` calculated columns, two undo steps today.
+
 **Purpose.** One engine primitive that unlocks three features finance
 people ask for by name: a scenario comparison table, a sensitivity grid,
 and goal seek. Scenario bundles landed 2026-09-02; the Calculation Matrix
@@ -430,4 +446,4 @@ rule.
 
 - *Phase 1:* (draft at merge)
 - *Phase 2:* (draft at merge)
-- *Phase 3:* (draft at merge)
+- *Phase 3:* moved to `## Unreleased` 2026-09-14.

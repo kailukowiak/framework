@@ -366,6 +366,7 @@ fn collect_references(
         // it in place is `Expr::references_object`, which the removal
         // refusal asks — the same question, from the other end.
         | Expr::Calendar { .. }
+        | Expr::Scenario { .. }
         | Expr::Column { .. } => {}
     }
 }

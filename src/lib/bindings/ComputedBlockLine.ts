@@ -2,6 +2,7 @@
 import type { DataType } from "./DataType";
 import type { FrozenState } from "./FrozenState";
 import type { ScalarValue } from "./ScalarValue";
+import type { SolveReport } from "./SolveReport";
 
 /**
  * One line's worth of [`ComputedResult`], carrying the line's identity so
@@ -29,6 +30,12 @@ export type ComputedBlockLine = {
    */
   valueCount: number;
   frozen?: FrozenState;
+  /**
+   * Present when the whole line is one `solve(...)` call: how the
+   * answer was reached and which value it is for, so the gutter can
+   * say so and offer to apply it.
+   */
+  solve?: SolveReport;
   /**
    * Backward-compatible numeric projection. Non-numeric and null values use `None`.
    */

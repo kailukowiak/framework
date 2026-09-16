@@ -1049,7 +1049,7 @@ Acceptance-scenario style, roughly in build order:
 
 1. **Bank/subledger reconciliation** — tolerance and one-to-many matching, persistent match state with provenance, aging exception views. No recurrence needed; best first target.
 2. **Budget vs. actuals** — append/refresh import, join on (account, dept, period), variance columns, anti-join exception view.
-3. **Scenarios and sensitivity** — named assumption bundles (Base/Upside/Downside), two-variable sensitivity grid object, goal seek. Assumptions-as-objects is the native advantage over Excel here. *Bundles landed 2026-09-02:* a `Scenario` is a name plus a map of value-object id → raw literal held on the document with one `active_scenario`; `Document::effective_value_raw` is the single answer to "which number is this" and feeds compilation, the lineage fingerprint (so activation recomputes everything that reads the value), export and the dependency trace. Five operations with exact undo; the switcher lives in the canvas status bar and a value's scenarios are one editable table in its inspector. Sensitivity grids and goal seek remain.
+3. **Scenarios and sensitivity** — named assumption bundles (Base/Upside/Downside), two-variable sensitivity grid object, goal seek. Assumptions-as-objects is the native advantage over Excel here. *Bundles landed 2026-09-02:* a `Scenario` is a name plus a map of value-object id → raw literal held on the document with one `active_scenario`; `Document::effective_value_raw` is the single answer to "which number is this" and feeds compilation, the lineage fingerprint (so activation recomputes everything that reads the value), export and the dependency trace. Five operations with exact undo; the switcher lives in the canvas status bar and a value's scenarios are one editable table in its inspector. Sensitivity grids and goal seek landed 2026-09-14 as the finance plan's phase 3: `under(scenario, x)` and `solve(...)` evaluate a private clone of the document and fold to literals, the way the matrix's sensitivity mode already did per cell; a scenario named in a formula is an `Expr::Scenario` held by id, so it follows a rename and cannot be removed while read.
 4. **Driver-based rolling forecast** — time spine with fiscal calendars (4-4-5, offset year-ends), actual/forecast switch on a close-date assumption, prior-period drivers.
 5. **Depreciation/amortization schedules** — cross-join expansion against the time spine, roll-forwards, long-to-wide triangle presentation.
 6. **Close package** — debits=credits validation constraints that gate export, templated ERP CSV export, accounting number formats.
@@ -1064,7 +1064,10 @@ The outstanding analytical primitives are now:
 1. append imports and reusable export templates;
 2. fiscal time spines and business calendars;
 3. tolerance, one-to-many matching, and persistent reviewed match objects;
-4. scenario sets, sensitivity views, and goal seek;
+4. scenario sets, sensitivity views, and goal seek (**landed 2026-09-14**:
+   `under(scenario, x)`, `solve(x == target, by=, within=)`, bound-axis
+   grids with an evaluation count, and a Compare scenarios gesture — see
+   the finance build plan, phase 3);
 5. named functions as block members;
 6. validation constraints and accounting presentation of subtotals (exact
    decimal/currency semantics **landed 2026-09-14** as `DataType::Accounting`);

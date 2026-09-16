@@ -19,6 +19,8 @@ impl Document {
         &self,
         expression: &Expr,
     ) -> Result<(DataType, Series), String> {
+        let folded = self.fold_overrides(expression)?;
+        let expression = &folded;
         if !self.has_live_line_dependency(expression, &mut HashSet::new()) {
             return self.evaluate_to_series(expression);
         }

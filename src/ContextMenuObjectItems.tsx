@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Columns3,
   FolderInput,
   FolderOutput,
   FolderPlus,
@@ -11,11 +12,65 @@ import {
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import type { ContextMenuState } from "./FrameGrid";
+import {
+  canCompareScenarios,
+  compareScenariosFromBlock,
+} from "./lib/scenarioComparison";
 import type {
   ContainerObject,
   DataObject,
+  DocumentView,
   Operation,
 } from "./lib/types";
+
+export type ContextMenuScenarioItemsProps = {
+  document: DocumentView;
+  contextObject: DataObject | null;
+  /**
+   * The document after the operation, not just "did it fail" — building the
+   * comparison needs the id of the frame the first operation made. This is
+   * the same handler shape the vector-combine gesture takes, for the same
+   * reason.
+   */
+  apply: (operation: Operation) => Promise<DocumentView>;
+  setContextMenu: Dispatch<SetStateAction<ContextMenuState | null>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+};
+
+/**
+ * Laying a block's answers out against every scenario at once.
+ *
+ * Offered only where it would mean something: a Scratchwork block with at
+ * least one named line, in a document that has scenarios to compare. Absent
+ * otherwise, rather than present and refusing — a menu item that explains
+ * why it cannot run is a menu item spending a line on nothing.
+ */
+export function ContextMenuScenarioItems({
+  document,
+  contextObject,
+  apply,
+  setContextMenu,
+  setError,
+}: ContextMenuScenarioItemsProps) {
+  if (contextObject?.kind !== "block") return null;
+  if (!canCompareScenarios(document, contextObject)) return null;
+  const block = contextObject;
+  return (
+    <button
+      onClick={() => {
+        setContextMenu(null);
+        void compareScenariosFromBlock(document, block, apply).then(
+          () => setError(null),
+          (reason: unknown) =>
+            setError(String(reason).replace(/^Error:\s*/, ""))
+        );
+      }}
+    >
+      <Columns3 size={14} />
+      <span>Compare scenarios</span>
+    </button>
+  );
+}
 
 export type ContextMenuContainerItemsProps = {
   contextObject: DataObject | null;

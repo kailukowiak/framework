@@ -26,8 +26,10 @@ import {
 import {
   ContextMenuContainerItems,
   ContextMenuCreateItems,
+  ContextMenuScenarioItems,
   type ContextMenuContainerItemsProps,
   type ContextMenuCreateItemsProps,
+  type ContextMenuScenarioItemsProps,
 } from "./ContextMenuObjectItems";
 import type { DataObject, FrameObject, Operation } from "./lib/types";
 
@@ -48,7 +50,8 @@ export type CanvasContextMenuProps = ContextMenuGridItemsProps &
   Omit<ContextMenuFrameActionsProps, "contextFrame"> &
   Omit<ContextMenuFramePlotItemsProps, "contextFrame"> &
   Omit<ContextMenuFrameEditItemsProps, "contextFrame"> &
-  Omit<ContextMenuFrameShapeItemsProps, "contextFrame"> & {
+  Omit<ContextMenuFrameShapeItemsProps, "contextFrame"> &
+  Pick<ContextMenuScenarioItemsProps, "apply"> & {
     contextMenu: ContextMenuState;
     contextObject: DataObject | null;
     contextFrame: FrameObject | null;
@@ -108,18 +111,21 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
           </ContextMenuGroup>
         </>
       ) : (
-        <button
-          className="destructive"
-          onClick={() =>
-            deleteFromContext({
-              type: "deleteObject",
-              objectId: contextObject.id,
-            })
-          }
-        >
-          <Trash2 size={14} />
-          <span>Delete {contextObject.kind}</span>
-        </button>
+        <>
+          <ContextMenuScenarioItems {...props} />
+          <button
+            className="destructive"
+            onClick={() =>
+              deleteFromContext({
+                type: "deleteObject",
+                objectId: contextObject.id,
+              })
+            }
+          >
+            <Trash2 size={14} />
+            <span>Delete {contextObject.kind}</span>
+          </button>
+        </>
       )}
     </ContextMenuSurface>
   );

@@ -452,6 +452,20 @@ impl<'a> Parser<'a> {
                         )));
                     }
                 }
+                // Last of all, a scenario. Every canvas thing has had its
+                // turn by now, so a name only reaches here when nothing on
+                // the canvas answers to it — which is why a scenario and a
+                // value sharing a name is not an ambiguity but a value.
+                if let Some(scenario) = self
+                    .document
+                    .scenarios
+                    .iter()
+                    .find(|scenario| reference_matches(&scenario.name, name))
+                {
+                    return Ok(Expr::Scenario {
+                        scenario_id: scenario.id.clone(),
+                    });
+                }
                 // A container named on its own is a place, not a value, and
                 // saying so is more use than saying the name is unknown —
                 // it is right there on the canvas.

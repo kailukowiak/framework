@@ -14,9 +14,9 @@
 #![allow(clippy::too_many_lines)]
 
 use framework_core::{
-    ColumnFormat, ColumnFormatScale, ColumnFormatStyle, DataObject, DataType, Document,
-    ExistingFormulaInput, FrameJoinType, FrameStepInput, JoinColumnInput, Operation, SortInput,
-    Store, column_id,
+    CalculationMatrixFormulaInput, ColumnFormat, ColumnFormatScale, ColumnFormatStyle, DataObject,
+    DataType, Document, ExistingFormulaInput, FrameJoinType, FrameStepInput, JoinColumnInput,
+    Operation, SortInput, Store, column_id,
 };
 use std::path::{Path, PathBuf};
 
@@ -372,6 +372,29 @@ fn assert_block_close(store: &Store, name: &str, expected: &[f64]) {
     for (index, (answer, expected)) in answers.iter().zip(expected).enumerate() {
         assert_close(answer, *expected, &format!("block {name:?} line {index}"));
     }
+}
+
+/// One named line's own computed line, so a checkpoint can look past the
+/// whole block at a single answer — or its `solve` report — without caring
+/// how many other lines the block holds.
+fn block_line(store: &Store, name: &str, line: &str) -> framework_core::ComputedBlockLine {
+    let id = object_id_named(store, name);
+    store.view().computed_blocks[&id]
+        .lines
+        .iter()
+        .find(|candidate| candidate.name == line)
+        .unwrap_or_else(|| panic!("block {name:?} has a line named {line:?}"))
+        .clone()
+}
+
+fn assert_block_line_close(store: &Store, name: &str, line: &str, expected: f64) {
+    let computed = block_line(store, name, line);
+    assert!(
+        computed.cell.error.is_none(),
+        "block {name:?} line {line:?} errs: {}",
+        computed.cell.error.clone().unwrap_or_default()
+    );
+    assert_close(&computed.cell.display, expected, &format!("{name} {line}"));
 }
 
 fn matrix_cells(store: &Store, name: &str) -> Vec<Vec<String>> {
@@ -947,6 +970,75 @@ fn generate_scenarios(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
             &[310000.0],
         ],
     );
+
+    // Section 5: the two `under` lines and the goal seek land in `Model`,
+    // and the section-3 grid is rebound to the assumptions it varies —
+    // the reader's two edits, applied to the same reloaded document so the
+    // finished workbook exercises a real round trip.
+    set_block(
+        &mut reloaded,
+        "Model",
+        "revenue = `Plan`.`Revenue`.sum()\ngross = revenue - `Plan`.`Cost`.sum()\nebitda = gross - `Fixed costs`\nmargin = ebitda / revenue\nupside ebitda = under(`Upside`, ebitda)\ndownside ebitda = under(`Downside`, ebitda)\ntarget price = solve(ebitda == 300000, by=`Price`, within=[100, 200])",
+    )?;
+    let price_id = object_id_named(&reloaded, "Price");
+    let annual_units_id = object_id_named(&reloaded, "Annual units");
+    let grid_id = object_id_named(&reloaded, "EBITDA by price and units");
+    reloaded.apply(Operation::SetCalculationMatrix {
+        object_id: grid_id,
+        rows: vec![CalculationMatrixFormulaInput {
+            target_id: Some(price_id),
+            id: None,
+            name: "Price axis".into(),
+            formula: "`Price axis`".into(),
+        }],
+        columns: vec![CalculationMatrixFormulaInput {
+            target_id: Some(annual_units_id),
+            id: None,
+            name: "Units axis".into(),
+            formula: "`Units axis`".into(),
+        }],
+        body: "`Model`.ebitda".into(),
+    })?;
+    reloaded.save(&finished)?;
+
+    let reloaded = Store::load(&finished)?;
+    dump(
+        &reloaded,
+        &["Plan"],
+        &["Model"],
+        &["EBITDA by price and units", "EBITDA by price"],
+    );
+    assert_block_line_close(&reloaded, "Model", "ebitda", 150000.0);
+    assert_block_line_close(&reloaded, "Model", "upside ebitda", 272500.0);
+    assert_block_line_close(&reloaded, "Model", "downside ebitda", 42500.0);
+    assert_eq!(
+        reloaded.document().active_scenario,
+        None,
+        "under() must not activate a scenario"
+    );
+    assert_matrix_close(
+        &reloaded,
+        "EBITDA by price and units",
+        &[
+            &[-70000.0, -40000.0, -10000.0, 20000.0, 50000.0],
+            &[-10000.0, 30000.0, 70000.0, 110000.0, 150000.0],
+            &[50000.0, 100000.0, 150000.0, 200000.0, 250000.0],
+            &[110000.0, 170000.0, 230000.0, 290000.0, 350000.0],
+            &[170000.0, 240000.0, 310000.0, 380000.0, 450000.0],
+        ],
+    );
+    let bound_grid_id = object_id_named(&reloaded, "EBITDA by price and units");
+    assert_eq!(
+        reloaded.view().computed_calculation_matrices[&bound_grid_id].evaluations,
+        Some(25),
+        "the bound grid runs the model once per cell"
+    );
+    let solved = block_line(&reloaded, "Model", "target price");
+    assert!(solved.cell.error.is_none(), "{:?}", solved.cell.error);
+    let report = solved.solve.expect("a whole-line solve reports its search");
+    assert_eq!(report.answer_raw, "138.75");
+    assert_eq!(report.target_name, "Price");
+
     println!("wrote {}", start.display());
     println!("wrote {}", finished.display());
     Ok(())
