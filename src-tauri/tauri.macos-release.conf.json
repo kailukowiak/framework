@@ -7,6 +7,7 @@
     },
     "macOS": {
       "minimumSystemVersion": "26.0",
+      "hardenedRuntime": false,
       "frameworks": [
         "native/macos/libxgboost.dylib",
         "native/macos/opt/libomp/lib/libomp.dylib"

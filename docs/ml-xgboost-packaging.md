@@ -43,6 +43,18 @@ an invalidated signature; the final bundle signature supersedes it.
 
 The OpenMP and XGBoost license texts are included as application resources.
 
+The release config sets `hardenedRuntime: false` while the app is signed
+ad hoc. The hardened runtime turns on library validation, under which a
+process may only load dylibs signed by Apple or by its own Team ID, and an
+ad-hoc signature has no Team ID at all. Releases 0.1.10 and 0.1.11 were built
+with the default hardened runtime and died at launch with dyld's "mapping
+process and mapped file (non-platform) have different Team IDs" for
+`libomp.dylib`; the shipped bundle's signatures confirmed the executable
+carried the runtime flag and both dylibs were plain ad-hoc. Restore the
+default once a Developer ID signs the bundle: notarization requires the
+hardened runtime, and Tauri then signs the nested dylibs with that same Team
+ID, which satisfies library validation.
+
 ## Windows x64
 
 The preparation step downloads the checksum-pinned XGBoost DLL and import
@@ -81,10 +93,13 @@ their checksums, load commands, macOS floor, and ad-hoc signatures were
 verified. A release candidate still needs these platform checks before this is
 considered proven end to end:
 
-- Build the actual arm64 `.app` and DMG with the release configs, inspect the
-  executable and both nested dylibs with `otool -L`, and run fit/predict on a
-  clean macOS 26 machine after copying through quarantine. Repeat once a real
-  Developer ID and notarization replace the current ad-hoc app signature.
+- The 0.1.11 arm64 `.app` was inspected from the published tarball: the
+  executable loads `@rpath/libomp.dylib` and `@rpath/libxgboost.dylib`, both
+  sit in `Contents/Frameworks`, and all three are ad-hoc signed. Launch on a
+  Mac still needs confirming with the hardened runtime turned off, then
+  fit/predict on a clean macOS 26 machine after copying through quarantine.
+  Repeat once a real Developer ID and notarization replace the ad-hoc app
+  signature.
 - Build MSI and NSIS installers on Windows 11 x64, inspect the executable's DLL
   imports, install each on a clean machine without Rust, Visual Studio, XGBoost,
   or a developer `PATH`, and run fit/predict plus model reload.

@@ -11,6 +11,7 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- FrameWork opens again on macOS. Versions 0.1.10 and 0.1.11 quit the instant they were launched, with a crash report naming `libomp.dylib`, because the app asked macOS for a protection that only fully signed apps can use and macOS then refused the app's own XGBoost libraries. The protection is off until the app is signed with a Developer ID, which it is not yet.
 ## 0.1.11
 
 - XGBoost models now fit on Linux. The native training runtime ships inside the `.deb`, `.rpm` and AppImage, so **Fit** works there the same way it does on macOS and Windows instead of answering that native training is unavailable. The `.deb` and `.rpm` declare the GNU OpenMP runtime (`libgomp1` / `libgomp`) as a dependency, which every mainstream desktop distribution already has.

@@ -243,7 +243,13 @@ jobs:
           # path the release notes describe. This is the same signature
           # `npm run sign:e2e` applies locally for the same reason. Replace
           # with a real identity plus notarization credentials to remove the
-          # warning entirely.
+          # warning entirely -- and when doing so, drop `hardenedRuntime:
+          # false` from tauri.macos-release.conf.json: an ad-hoc signature
+          # has no Team ID, so with the hardened runtime's library validation
+          # on, dyld refused the app's own ad-hoc XGBoost and OpenMP dylibs
+          # ("different Team IDs") and 0.1.10 and 0.1.11 died at launch.
+          # Notarization needs the hardened runtime back, and a real identity
+          # signs the nested dylibs with the same Team ID so it then works.
           APPLE_SIGNING_IDENTITY: '-'
           XGBOOST_LIB_DIR: ${{ github.workspace }}/src-tauri/native/${{ runner.os == 'macOS' && 'macos' || runner.os == 'Windows' && 'windows' || 'linux' }}
           # The AppImage bundler resolves the executable's shared libraries
