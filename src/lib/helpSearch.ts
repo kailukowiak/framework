@@ -222,3 +222,39 @@ export function searchHelpEntries(entries: HelpEntry[], query: string): HelpEntr
     )
     .map(({ entry }) => entry);
 }
+
+/**
+ * Pick the Reference section that owns the best answer to a query handed over
+ * by Quick Commands. The palette is intentionally ignorant of the two tabs:
+ * requiring somebody to choose one before searching is the discoverability
+ * failure this bridge exists to remove.
+ */
+export function helpScopeForQuery(
+  formulaFunctions: FormulaFunction[],
+  query: string
+): HelpScope {
+  const candidates = [
+    ...helpEntries("formulas", formulaFunctions).map((entry) => ({
+      entry,
+      scope: "formulas" as const,
+    })),
+    ...helpEntries("guide", formulaFunctions).map((entry) => ({
+      entry,
+      scope: "guide" as const,
+    })),
+  ];
+  const seen = new Set<string>();
+  const ranked = candidates
+    .filter(({ entry }) => {
+      if (seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    })
+    .map((candidate) => ({ ...candidate, score: scoreEntry(candidate.entry, query) }))
+    .filter(
+      (candidate): candidate is typeof candidate & { score: number } =>
+        candidate.score !== null
+    )
+    .sort((left, right) => right.score - left.score);
+  return ranked[0]?.scope ?? "guide";
+}

@@ -220,8 +220,39 @@ export const HELP_REFERENCES: HelpGuide[] = [
     related: ["Generate a series in a variable", "Join", "Pair vector as column"],
   },
   {
+    id: "reference.column-list",
+    scopes: ["formulas", "guide"],
+    kind: "Reference",
+    category: "Wrangle",
+    title: "Choose several columns",
+    summary: "Name columns as a comma-separated list, or select them by their names.",
+    searchTerms: [
+      "multiple columns", "several columns", "column list", "column selector",
+      "except", "starts with", "ends with", "contains", "select columns",
+    ],
+    questions: [
+      "How do I choose more than one column?",
+      "How does except work?",
+      "Can I choose columns with similar names?",
+    ],
+    body: [
+      "Write exact column names in backticks, separated by commas. A selector may stand in for many names, and exact names and selectors can appear in the same list.",
+      "except(...) chooses every visible column except the names inside it. starts_with(...), ends_with(...), and contains(...) choose columns by header text. The list is resolved against the columns visible at that point in Wrangle when the chain is saved.",
+    ],
+    examples: [
+      { label: "Two exact columns", code: "`Jan`, `Feb`" },
+      { label: "Everything except identifiers", code: "except(`Region`, `Account ID`)" },
+      { label: "Headers beginning with Q", code: "starts_with(\"Q\")" },
+      { label: "Mix exact names and a selector", code: "`Actual`, starts_with(\"Forecast \")" },
+    ],
+    surfaces: [
+      "Unpivot", "Delete columns", "Rearrange columns", "Apply vector across columns",
+    ],
+    related: ["Unpivot", "Delete or rearrange columns", "Apply vector across columns"],
+  },
+  {
     id: "reference.pivot",
-    scopes: ["guide"],
+    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Pivot",
@@ -236,12 +267,18 @@ export const HELP_REFERENCES: HelpGuide[] = [
       { term: "Aggregates", description: "Sum, count, mean, minimum, maximum, first, or no aggregation." },
       { term: "Output", description: "One stable column for each discovered value in the names column." },
     ],
+    examples: [
+      {
+        label: "Turn Month values into columns",
+        code: "names=`Month`, values=`Amount`, aggregate=sum",
+      },
+    ],
     surfaces: ["Wrangle · Add transformation"],
     related: ["Unpivot", "Crosstab display", "Summarize"],
   },
   {
     id: "reference.unpivot",
-    scopes: ["guide"],
+    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Unpivot",
@@ -250,10 +287,20 @@ export const HELP_REFERENCES: HelpGuide[] = [
     questions: ["How do I turn month columns into rows?", "What is melt?"],
     body: [
       "Choose the columns to melt using exact names or selectors. Their former header names become values in the new names column, and their cells become the new values column.",
-      "Columns not selected remain as identifiers and repeat for each unpivoted value.",
+      "The names= and values= fields name two new output columns; they do not point to existing columns. Columns not selected remain as identifiers and repeat for each unpivoted value.",
+    ],
+    examples: [
+      {
+        label: "Two month columns",
+        code: "columns=`Jan`, `Feb`, names=`Month`, values=`Amount`",
+      },
+      {
+        label: "Every column except the identifier",
+        code: "columns=except(`Region`), names=`Month`, values=`Amount`",
+      },
     ],
     surfaces: ["Wrangle · Add transformation"],
-    related: ["Pivot", "Delete or rearrange columns", "Crosstab display"],
+    related: ["Choose several columns", "Pivot", "Crosstab display"],
   },
   {
     id: "reference.broadcast",

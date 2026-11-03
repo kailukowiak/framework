@@ -243,6 +243,20 @@ describe("shortcut text matching", () => {
 });
 
 describe("a query that names no command", () => {
+  it("hands any query to help without requiring its Reference tab first", () => {
+    const search = vi.fn();
+    const close = vi.fn();
+    render(
+      <QuickCommands commands={commands()} onSearchHelp={search} onClose={close} />
+    );
+    const field = screen.getByLabelText("Search commands");
+    fireEvent.change(field, { target: { value: "unpivot multiple columns" } });
+    expect(screen.getByText("Search help for “unpivot multiple columns”")).toBeTruthy();
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(search).toHaveBeenCalledWith("unpivot multiple columns");
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it("hands it to Find rather than answering it", () => {
     const search = vi.fn();
     const close = vi.fn();

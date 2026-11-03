@@ -281,15 +281,18 @@ export function normalizeShortcut(value: string): string {
 export function QuickCommands({
   open = true,
   commands,
+  onSearchHelp,
   onSearchDocument,
   onClose,
 }: {
   open?: boolean;
   commands: QuickCommand[];
   /**
-   * ⌘⇧P is verbs and ⌘F is things, so a query that names no verb is handed
-   * over rather than answered here: the last row opens Find on it.
+   * ⌘⇧P is the one search people can reach before they know where an
+   * answer lives. Its final rows therefore hand the same words to Reference
+   * and Find instead of making someone open either surface and type them again.
    */
+  onSearchHelp?: (query: string) => void;
   onSearchDocument?: (query: string) => void;
   onClose: () => void;
 }) {
@@ -313,16 +316,24 @@ export function QuickCommands({
       );
     });
     const trimmed = query.trim();
-    if (matches.length || !trimmed || !onSearchDocument) return matches;
-    return [
-      {
+    if (!trimmed) return matches;
+    const onward: QuickCommand[] = [];
+    if (onSearchHelp)
+      onward.push({
+        id: "search-help",
+        group: "Help",
+        label: `Search help for “${trimmed}”`,
+        run: () => onSearchHelp(trimmed),
+      });
+    if (onSearchDocument)
+      onward.push({
         id: "search-document",
         group: "Find",
         label: `Search document for “${trimmed}”`,
         run: () => onSearchDocument(trimmed),
-      },
-    ];
-  }, [commands, onSearchDocument, query]);
+      });
+    return [...matches, ...onward];
+  }, [commands, onSearchDocument, onSearchHelp, query]);
   const selected =
     results.find((command) => command.id === selectedId) ?? results[0] ?? null;
 

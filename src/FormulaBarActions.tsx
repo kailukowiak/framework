@@ -1,10 +1,12 @@
-import { ChevronDown, ChevronsUpDown } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, CircleHelp } from "lucide-react";
+import type { FormulaHelpControl } from "./lib/formulaBarPresentation";
 
 export function FormulaBarActions({
   canFormat,
   expanded,
   onFormat,
   onToggle,
+  help,
   formulaExpanded,
   onToggleFormula,
 }: {
@@ -14,6 +16,7 @@ export function FormulaBarActions({
   expanded: boolean;
   onFormat: () => void;
   onToggle: () => void;
+  help?: FormulaHelpControl;
 }) {
   return (
     <>
@@ -32,6 +35,19 @@ export function FormulaBarActions({
           onClick={onFormat}
         >
           Format
+        </button>
+      )}
+      {help && (
+        <button
+          type="button"
+          className="scratchwork-formula-help"
+          aria-label={help.open ? "Close formula help" : "Open formula help"}
+          aria-expanded={help.open}
+          title={help.open ? "Close formula help" : "Formula help"}
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={() => help.onToggle(help.query)}
+        >
+          <CircleHelp size={13} />
         </button>
       )}
       <button

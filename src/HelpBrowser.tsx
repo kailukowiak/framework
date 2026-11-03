@@ -14,6 +14,7 @@ import type { FormulaFunction } from "./lib/types";
 
 type HelpBrowserProps = {
   scope: HelpScope;
+  initialQuery?: string;
   formulaFunctions: FormulaFunction[];
   canInsert: boolean;
   onScopeChange: (scope: HelpScope) => void;
@@ -25,13 +26,14 @@ const MAX_RESULTS = 80;
 
 export function HelpBrowser({
   scope,
+  initialQuery = "",
   formulaFunctions,
   canInsert,
   onScopeChange,
   onInsert,
   onClose,
 }: HelpBrowserProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<{ key: string; copied: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +107,7 @@ export function HelpBrowser({
 
   const followRelated = (title: string) => {
     setQuery(title);
+    setSelectedId(entries.find((entry) => entry.title === title)?.id ?? null);
     inputRef.current?.focus();
   };
 

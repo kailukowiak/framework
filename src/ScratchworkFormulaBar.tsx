@@ -2,7 +2,6 @@ import { SelectedCellNotice } from "./SelectedCellNotice";
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { ActiveFormulaAnswer } from "./ActiveFormulaAnswer";
 import { useActiveFormulaEditor } from "./ActiveFormulaEditor";
-import type { ActiveFormulaEditor } from "./lib/activeFormulaEditor";
 import { FormulaBarActions } from "./FormulaBarActions";
 import { HighlightedFormulaTextarea } from "./FormulaReferenceText";
 import {
@@ -13,8 +12,9 @@ import {
 import { continueFormula } from "./lib/blockLines";
 import type { FormulaBarCell } from "./lib/formulaBarCell";
 import { formatFormulaChains } from "./lib/formulaFormatting";
+import { barModeClass, canFormatFormula, formulaBarEditingState, formulaHelpControl, formulaRows } from "./lib/formulaBarPresentation";
 import type { FormulaReference } from "./lib/formulaReferences";
-import { replaceScratchworkLine, scratchworkLineAt } from "./lib/scratchwork";
+import { replaceScratchworkLine } from "./lib/scratchwork";
 import { useMeasuredFormulaBar } from "./useMeasuredFormulaBar";
 
 export type ScratchworkFormulaFeedback = {
@@ -26,23 +26,6 @@ export type ScratchworkFormulaFeedback = {
 
 function documentSelection(lineStart: number, start: number, end: number) {
   return { start: lineStart + start, end: lineStart + end };
-}
-
-function formulaRows(draft: string, expanded: boolean) {
-  return expanded ? Math.min(5, Math.max(2, draft.split("\n").length)) : 1;
-}
-
-function canFormatFormula(formulaMode: boolean, draft: string, busy: boolean) {
-  return formulaMode && Boolean(draft.trim()) && !busy;
-}
-
-/**
- * The `session` class makes the bar read as a mode while the one logical
- * formula editor owns it, so the answer to "why did my click insert a
- * reference" is visible in the bar itself.
- */
-function barModeClass(active: ActiveFormulaEditor | null, expanded: boolean): string {
-  return `scratchwork-formula-bar${active ? " session" : ""}${expanded ? " formula-expanded" : ""}`;
 }
 
 async function formatDraft({
@@ -108,6 +91,8 @@ export function ScratchworkFormulaBar({
   onRequestReadOnlyCell,
   expanded,
   onToggle,
+  helpOpen = false,
+  onToggleHelp,
 }: {
   onCommit: (formula: string) => Promise<ScratchworkFormulaFeedback>;
   references: FormulaReference[];
@@ -118,6 +103,8 @@ export function ScratchworkFormulaBar({
   onRequestReadOnlyCell: (cell: FormulaBarCell) => void;
   expanded: boolean;
   onToggle: () => void;
+  helpOpen?: boolean;
+  onToggleHelp?: (query: string) => void;
 }) {
   const {
     active,
@@ -143,20 +130,8 @@ export function ScratchworkFormulaBar({
   const bar = useMeasuredFormulaBar();
   const input = useRef<HTMLTextAreaElement>(null);
 
-  const activeLine =
-    active?.kind === "scratchwork"
-      ? scratchworkLineAt(active.draft, active.selection.end)
-      : null;
-  const selectedCell = active ? null : cell;
-  const draft =
-    activeLine?.source ?? active?.draft ?? (selectedCell ? cellDraft : freshDraft);
-  const cursor = active
-    ? active.selection.end - (activeLine?.start ?? 0)
-    : selectedCell
-    ? cellDraft.length
-    : freshCursor;
-  const formulaMode = Boolean(active || !selectedCell);
-  const formulaReferences = active?.completion.references ?? references;
+  const { activeLine, selectedCell, draft, cursor, formulaMode, formulaReferences } =
+    formulaBarEditingState(active, cell, cellDraft, freshDraft, freshCursor, references);
   useFormulaModeFocusTransfer(formulaMode, input);
 
   useEffect(() => setFeedback(null), [active?.id]);
@@ -485,6 +460,7 @@ export function ScratchworkFormulaBar({
       <FormulaBarActions
         formulaExpanded={formulaExpanded} onToggleFormula={() => setFormulaExpanded((value) => !value)}
         canFormat={canFormatFormula(formulaMode, draft, busy)}
+        help={formulaHelpControl(formulaMode, active?.label, completion, helpOpen, onToggleHelp)}
         expanded={expanded}
         // Format persists through commit but is not a finishing gesture:
         // the person is tidying a formula they are still inside of.

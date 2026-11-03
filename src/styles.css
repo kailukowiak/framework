@@ -81,7 +81,7 @@ button:disabled { cursor: default; opacity: 0.35; }
 
 .app-shell { width: 100vw; height: 100vh; background: light-dark(#eeece5, #1c1d17); position: relative; }
 .eyebrow { display: block; color: light-dark(#83847d, #81827b); font: 500 var(--text-xs) / 1.2 "DM Mono", monospace; letter-spacing: 0.12em; }
-.scratchwork-formula-bar { position: fixed; z-index: 45; top: 0; right: 0; left: var(--rail-w); min-height: 32px; display: grid; grid-template-columns: auto minmax(120px, 1fr) minmax(0, auto) auto auto auto; grid-template-rows: auto; align-items: start; column-gap: 7px; padding: 2px 7px 2px 10px; border-bottom: 1px solid var(--line); background: light-dark(#f9f8f4, #212219); }
+.scratchwork-formula-bar { position: fixed; z-index: 45; top: 0; right: 0; left: var(--rail-w); min-height: 32px; display: grid; grid-template-columns: auto minmax(120px, 1fr) minmax(0, auto) auto auto auto auto; grid-template-rows: auto; align-items: start; column-gap: 7px; padding: 2px 7px 2px 10px; border-bottom: 1px solid var(--line); background: light-dark(#f9f8f4, #212219); }
 .scratchwork-formula-prefix { grid-column: 1; grid-row: 1; color: var(--accent); font: 650 var(--text-base) / 27px "DM Mono", monospace; }
 .scratchwork-formula-bar > .formula-textarea-layer { grid-column: 2; grid-row: 1; }
 .scratchwork-formula-bar textarea { min-width: 0; max-height: 135px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 500 var(--text-base) / 27px "DM Mono", monospace; resize: none; overflow: auto; white-space: pre; scrollbar-width: thin; }
@@ -99,7 +99,10 @@ button:disabled { cursor: default; opacity: 0.35; }
 .scratchwork-formula-parameter code { color: light-dark(#4d504a, #b9bbb5); font: 500 var(--text-sm) "DM Mono", monospace; }
 .scratchwork-formula-format { grid-column: 4; grid-row: 1; height: 27px; padding: 0 3px; background: transparent; color: light-dark(#666961, #a5a89e); font-size: var(--text-sm); }
 .scratchwork-formula-format:hover { color: var(--accent); }
-.scratchwork-formula-toggle { grid-column: 6; grid-row: 1; height: 27px; display: inline-flex; align-items: center; gap: 4px; padding: 0 3px 0 6px; background: transparent; color: light-dark(#666961, #a5a89e); font-size: var(--text-sm); }
+.scratchwork-formula-help { grid-column: 5; grid-row: 1; width: 24px; height: 27px; display: grid; place-items: center; padding: 0; background: transparent; color: light-dark(#666961, #a5a89e); }
+.scratchwork-formula-help:hover,
+.scratchwork-formula-help[aria-expanded="true"] { color: var(--accent); }
+.scratchwork-formula-toggle { grid-column: 7; grid-row: 1; height: 27px; display: inline-flex; align-items: center; gap: 4px; padding: 0 3px 0 6px; background: transparent; color: light-dark(#666961, #a5a89e); font-size: var(--text-sm); }
 .scratchwork-formula-toggle:hover { color: var(--accent); }
 .scratchwork-formula-toggle svg { transition: transform 0.15s ease; }
 .scratchwork-formula-toggle svg.expanded { transform: rotate(180deg); }
@@ -1852,7 +1855,7 @@ button.block-gutter-row.spanning { align-items: start; }
    the editor when the person asks for the larger surface. */
 .scratchwork-formula-bar:not(.formula-expanded) .formula-textarea-layer,
 .scratchwork-formula-bar:not(.formula-expanded) textarea { height: 27px; min-height: 27px; max-height: 27px; }
-.scratchwork-formula-expand { grid-column: 5; grid-row: 1; width: 24px; height: 27px; display: grid; place-items: center; padding: 0; background: transparent; color: var(--ink); }
+.scratchwork-formula-expand { grid-column: 6; grid-row: 1; width: 24px; height: 27px; display: grid; place-items: center; padding: 0; background: transparent; color: var(--ink); }
 .scratchwork-formula-bar.formula-expanded { grid-template-rows: auto auto; }
 .scratchwork-formula-bar.formula-expanded > .scratchwork-formula-answer,
 .scratchwork-formula-bar.formula-expanded > .scratchwork-formula-parameter { grid-column: 2 / -1; grid-row: 2; max-width: none; }

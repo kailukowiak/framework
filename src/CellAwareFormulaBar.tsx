@@ -27,6 +27,8 @@ export function CellAwareFormulaBar({
   onTransformColumn,
   onReadOnly,
   onToggle,
+  helpOpen,
+  onToggleHelp,
   onCellFormulaSaved,
 }: {
   context: GridContext | null;
@@ -52,6 +54,8 @@ export function CellAwareFormulaBar({
   ) => void;
   onReadOnly: (selection: Selection, reason: string) => void;
   onToggle: () => void;
+  helpOpen: boolean;
+  onToggleHelp: (query: string) => void;
   onCellFormulaSaved: () => void;
 }) {
   const cell = context && focus ? formulaBarCell(context, focus) : null;
@@ -141,6 +145,8 @@ export function CellAwareFormulaBar({
         }
         expanded={expanded}
         onToggle={onToggle}
+        helpOpen={helpOpen}
+        onToggleHelp={onToggleHelp}
       />
     </>
   );

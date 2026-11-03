@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+- Quick Commands can now hand any search directly to help, opening the Reference section that contains the best answer. The formula bar also has a contextual Help toggle that opens the current function or transformation without ending the edit, with clickable related areas such as selectors. Wrangle help now shows how comma-separated column lists and selectors such as `except(...)` work, and Pivot and Unpivot include complete examples that distinguish existing input columns from newly named output columns.
+
 ## 0.1.12
 
 - FrameWork opens again on macOS. Versions 0.1.10 and 0.1.11 quit the instant they were launched, with a crash report naming `libomp.dylib`, because the app asked macOS for a protection that only fully signed apps can use and macOS then refused the app's own XGBoost libraries. The protection is off until the app is signed with a Developer ID, which it is not yet.

@@ -11,6 +11,43 @@ afterEach(() => {
 });
 
 describe("HelpBrowser", () => {
+  it("opens on a query handed over by Quick Commands", () => {
+    render(
+      <HelpBrowser
+        scope="guide"
+        initialQuery="pivot"
+        formulaFunctions={[]}
+        canInsert={false}
+        onScopeChange={vi.fn()}
+        onInsert={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect((screen.getByLabelText("Search help") as HTMLInputElement).value).toBe("pivot");
+    expect(screen.getByRole("heading", { name: "Pivot" })).toBeTruthy();
+  });
+
+  it("follows a transformation's clickable sub-area links", async () => {
+    render(
+      <HelpBrowser
+        scope="formulas"
+        initialQuery="unpivot"
+        formulaFunctions={[]}
+        canInsert={false}
+        onScopeChange={vi.fn()}
+        onInsert={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /^Choose several columns$/ })
+    );
+    expect(screen.getByRole("heading", { name: "Choose several columns" })).toBeTruthy();
+  });
+
+
   it("finds an iterator through the variable-series guide", async () => {
     render(
       <HelpBrowser

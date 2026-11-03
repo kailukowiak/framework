@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormulaFunction } from "./types";
-import { helpEntries, searchHelpEntries } from "./helpSearch";
+import { helpEntries, helpScopeForQuery, searchHelpEntries } from "./helpSearch";
 
 const functions: FormulaFunction[] = [
   {
@@ -79,5 +79,20 @@ describe("help search", () => {
     expect(searchHelpEntries(entries, "pair vector as column")[0]?.id).toBe(
       "reference.zip-vector"
     );
+  });
+
+  it("explains reusable column-list syntax rather than only one transformation", () => {
+    const entries = helpEntries("formulas", functions);
+
+    expect(searchHelpEntries(entries, "how do I choose multiple columns")[0]?.id)
+      .toBe("reference.column-list");
+    expect(searchHelpEntries(entries, "except columns")[0]?.id)
+      .toBe("reference.column-list");
+  });
+
+  it("routes palette help queries to the section containing their answer", () => {
+    expect(helpScopeForQuery(functions, "pivot")).toBe("formulas");
+    expect(helpScopeForQuery(functions, "stack frame")).toBe("guide");
+    expect(helpScopeForQuery(functions, "sequence")).toBe("formulas");
   });
 });

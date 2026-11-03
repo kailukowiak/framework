@@ -128,6 +128,7 @@ import {
   stableColumnRange,
 } from "./lib/selectedColumnRange";
 import { formulaToken } from "./lib/formulaReferences";
+import { helpScopeForQuery } from "./lib/helpSearch";
 import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNavigation";
 import {
   applicationShortcut,
@@ -271,7 +272,7 @@ export default function App() {
   const [preferencesPage, setPreferencesPage] = useState<"settings" | "shortcuts">(
     "settings"
   );
-  const [helpScope, setHelpScope] = useState<"formulas" | "guide" | null>(null);
+  const [help, setHelp] = useState<{ scope: "formulas" | "guide"; query?: string } | null>(null);
   const [lastHelpScope, setLastHelpScope] = useState<"formulas" | "guide">("guide");
   const [quickCommandsOpen, setQuickCommandsOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
@@ -828,13 +829,13 @@ export default function App() {
       setFindOpen(true);
     },
     "quick-commands": () => {
-      setHelpScope(null);
+      setHelp(null);
       setFindOpen(false);
       setQuickCommandsOpen(true);
     },
     reference: () => {
       setQuickCommandsOpen(false);
-      setHelpScope(getFormulaEditor() ? "formulas" : lastHelpScope);
+      setHelp({ scope: getFormulaEditor() ? "formulas" : lastHelpScope });
     },
     "check-for-updates": () => updates.check(),
     undo: () => void navigateHistory("undo"),
@@ -1245,7 +1246,6 @@ export default function App() {
     onNotice: setNotice,
     onRecurrence: setRecurrence,
   });
-
   return (
     <DocumentWorkbench key={document.id} document={document} onOperation={run} position={() => insertPosition({ width: 560, height: 420 })}>
     <NumberDisplayContext.Provider value={useThousandsSeparators}>
@@ -1276,6 +1276,8 @@ export default function App() {
           }}
           expanded={scratchworkDrawerOpen}
           onToggle={() => void toggleScratchworkDrawer()}
+          helpOpen={Boolean(help)}
+          onToggleHelp={(query) => setHelp((current) => current ? null : { scope: "formulas", query })}
           onCellFormulaSaved={() => {
             setCellFormulaRequest(null);
             stepGridFocus("down");
@@ -1839,7 +1841,6 @@ export default function App() {
             }}
           />
         )}
-
         {preferencesOpen && preferencesPage === "settings" && (
           <PreferencesDialog
             interfaceScale={interfaceScale}
@@ -1864,7 +1865,6 @@ export default function App() {
         {preferencesOpen && preferencesPage === "shortcuts" && (
           <KeyboardShortcutsDialog onClose={() => setPreferencesOpen(false)} />
         )}
-
         {findOpen && (
           <FindPaletteHost
             document={document}
@@ -1875,7 +1875,6 @@ export default function App() {
             onClose={() => setFindOpen(false)}
           />
         )}
-
         <QuickCommands
           open={quickCommandsOpen}
           commands={quickCommandItems(
@@ -1893,26 +1892,28 @@ export default function App() {
             setFindQuery(query);
             setFindOpen(true);
           }}
+          onSearchHelp={(query) =>
+            setHelp({ scope: helpScopeForQuery(document.formulaFunctions, query), query })
+          }
           onClose={() => setQuickCommandsOpen(false)}
         />
-
-        {helpScope && (
+        {help && (
           <HelpBrowser
-            scope={helpScope}
+            scope={help.scope}
+            initialQuery={help.query}
             formulaFunctions={document.formulaFunctions}
             canInsert={Boolean(getFormulaEditor())}
             onScopeChange={(scope) => {
               setLastHelpScope(scope);
-              setHelpScope(scope);
+              setHelp({ scope, query: help.query });
             }}
             onInsert={(formula) => {
               replaceFormulaSelection(formula);
-              setHelpScope(null);
+              setHelp(null);
             }}
-            onClose={() => setHelpScope(null)}
+            onClose={() => setHelp(null)}
           />
         )}
-
         {updates.status.kind !== "idle" && (
           <UpdateDialog
             status={updates.status}
@@ -1922,7 +1923,6 @@ export default function App() {
             onDismiss={updates.dismiss}
           />
         )}
-
         {newDocumentOpen && (
           <NewDocumentDialog
             onClose={() => setNewDocumentOpen(false)}

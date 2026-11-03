@@ -11,6 +11,7 @@ import { canvasFormulaPointerHandler } from "./CanvasFormulaPicking";
 import { PipelineCommand } from "./PipelineCommand";
 import { ScratchworkFormulaBar } from "./ScratchworkFormulaBar";
 import type { FormulaBarCell } from "./lib/formulaBarCell";
+import type { FormulaReference } from "./lib/formulaReferences";
 import type { DocumentView } from "./lib/types";
 
 const selectedCell: FormulaBarCell = {
@@ -67,6 +68,53 @@ function CanvasHarness({ children }: { children: ReactNode }) {
 afterEach(cleanup);
 
 describe("ScratchworkFormulaBar", () => {
+  it("opens contextual help without ending the active formula session", async () => {
+    const openHelp = vi.fn();
+    const selector: FormulaReference = {
+      id: "selector.except",
+      label: "except",
+      token: "except(",
+      kind: "function",
+      detail: "Every column except those named",
+    };
+    render(
+      <ActiveFormulaEditorProvider>
+        <PipelineCommand
+          editorId="pipeline:unpivot"
+          label="Unpivot"
+          initialDraft=""
+          references={[selector]}
+          onChange={vi.fn()}
+          onCommit={vi.fn()}
+        />
+        <ScratchworkFormulaBar
+          onCommit={vi.fn(async () => ({ saved: true }))}
+          references={[]}
+          cell={null}
+          onCommitCell={vi.fn(async () => null)}
+          onEditCalculatedCell={vi.fn()}
+          onEditOverrideCell={vi.fn()}
+          onRequestReadOnlyCell={vi.fn()}
+          expanded={false}
+          onToggle={vi.fn()}
+          onToggleHelp={openHelp}
+        />
+      </ActiveFormulaEditorProvider>
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "…" }));
+    const editor = await screen.findByRole("textbox", { name: "Edit Unpivot" });
+    await userEvent.click(screen.getByRole("button", { name: "Open formula help" }));
+    expect(openHelp).toHaveBeenLastCalledWith("Unpivot");
+    expect(screen.getByRole("textbox", { name: "Edit Unpivot" })).toBe(editor);
+
+    fireEvent.change(editor, {
+      target: { value: "exc", selectionStart: 3, selectionEnd: 3 },
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Open formula help" }));
+    expect(openHelp).toHaveBeenLastCalledWith("except");
+  });
+
   it("keeps multiline drafts compact until explicitly expanded", () => {
     render(<ActiveFormulaEditorProvider>{bar(null)}</ActiveFormulaEditorProvider>);
     const input = screen.getByRole("textbox", { name: "Add formula to Scratchwork" }) as HTMLTextAreaElement;
