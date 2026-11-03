@@ -221,3 +221,36 @@ fn a_refresh_with_the_same_schema_reports_nothing() {
 
     fs::remove_dir_all(directory).unwrap();
 }
+
+/// A column created in FrameWork is intentionally absent from the source.
+/// Its `source_name: None` is the ownership marker, not a request to look up
+/// a same-named CSV field, so the ordinary blank base must not be diagnosed
+/// as a source schema failure.
+#[test]
+fn a_model_column_on_an_import_is_not_a_missing_source_field() {
+    let (mut store, frame_id, directory, _) = imported(
+        "schema-change-model-column",
+        "Region,Units\nNorth,3\nSouth,5\n",
+    );
+    store
+        .apply(Operation::AddColumn {
+            frame_id: frame_id.clone(),
+            name: "Reviewed".into(),
+            data_type: DataType::Boolean,
+            after_column_id: None,
+        })
+        .unwrap();
+
+    let reviewed_id = column_id(&store, "Orders", "Reviewed");
+    assert_eq!(
+        store.get_frame_page(&frame_id, 0, 10).unwrap().rows,
+        vec![vec!["North", "3", ""], vec!["South", "5", ""],]
+    );
+    assert!(
+        !store.view().computed_frames[&frame_id]
+            .column_errors
+            .contains_key(&reviewed_id)
+    );
+
+    fs::remove_dir_all(directory).unwrap();
+}

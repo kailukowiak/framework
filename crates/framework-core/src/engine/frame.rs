@@ -470,7 +470,12 @@ impl FrameObject {
             .iter()
             .filter(|column| column.formula.is_none())
             .filter_map(|column| {
-                let source_name = column.source_name.as_deref().unwrap_or(&column.name);
+                // `None` is not an old spelling of "read the field whose name
+                // matches the label". It is the ownership boundary: this
+                // column was added by the model and begins as typed nulls over
+                // an artifact-backed table. Only an explicit physical binding
+                // can go missing from the source.
+                let source_name = column.source_name.as_deref()?;
                 (!present.contains(source_name))
                     .then(|| (column.id.clone(), source_name.to_string()))
             })

@@ -4,8 +4,17 @@ import userEvent from "@testing-library/user-event";
 import { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FrameCard } from "./FrameCard";
-import { isTextEntryTarget, type GridFocus, type RenderedGrid } from "./FrameGrid";
+import {
+  gridBoundsFor,
+  resolveGridContext,
+  visualGridPosition,
+  isTextEntryTarget,
+  type GridFocus,
+  type RenderedGrid,
+} from "./FrameGrid";
 import { useGridKeyboardNavigation } from "./hooks/useGridKeyboardNavigation";
+import { movedGridFocus } from "./lib/gridFocusNavigation";
+import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNavigation";
 import type { OperationHandler } from "./lib/handlers";
 import type { DocumentView, FrameObject, Selection } from "./lib/types";
 import { clearMocks, fixtures, objectNamed, serveInvoke } from "./test/support";
@@ -85,14 +94,18 @@ function GridHarness({
 }: {
   documentView: DocumentView;
   onOperation: OperationHandler;
-  onEditCalculatedColumn?: (frame: FrameObject, column: unknown, rowIndex: number) => void;
+  onEditCalculatedColumn?: (
+    frame: FrameObject,
+    column: unknown,
+    rowIndex: number
+  ) => void;
 }) {
   const frame = documentView.objects.find(
     (object): object is FrameObject => object.kind === "frame"
   )!;
   const view = documentView.views.find((candidate) => candidate.objectId === frame.id)!;
   const computed = documentView.computedFrames[frame.id]!;
-  const [, setSelection] = useState<Selection | null>(null);
+  const [selection, setSelection] = useState<Selection | null>(null);
   const [gridFocus, setGridFocus] = useState<GridFocus | null>(null);
   const renderedRows = useRef(new Map<string, RenderedGrid>());
   const cellFormulaToken = useRef(0);
@@ -119,16 +132,33 @@ function GridHarness({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [gridFocus, handleNavigateKey]);
+  const stepGridFocus = (direction: GridDirection) => {
+    if (!gridFocus) return;
+    const context = resolveGridContext(documentView, gridFocus, renderedRows.current);
+    const position = context
+      ? visualGridPosition(context, gridFocus.rowId, gridFocus.columnId)
+      : null;
+    if (!context || !position) return;
+    const bounds = gridBoundsFor(context);
+    const next =
+      direction === "left" || direction === "right"
+        ? tabPosition(position, direction === "left", bounds)
+        : enterPosition(position, direction === "up", bounds);
+    const destination = movedGridFocus(context, gridFocus, next, false);
+    if (!destination) return;
+    setGridFocus(destination.focus);
+    setSelection(destination.selection);
+  };
   return (
     <FrameCard
       view={view}
       frame={frame}
       computed={computed}
-      selection={null}
+      selection={selection}
       gridFocus={gridFocus}
       onSelect={setSelection}
       onGridFocus={setGridFocus}
-      onGridStep={() => {}}
+      onGridStep={stepGridFocus}
       onRenderedRows={(frameId, grid) => {
         if (grid) renderedRows.current.set(frameId, grid);
         else renderedRows.current.delete(frameId);
@@ -196,6 +226,13 @@ describe("FrameCard editing gate", () => {
         columnId: region.id,
         raw: "North",
       })
+    );
+    const focused = document.querySelector<HTMLTableCellElement>("td.cell-focus");
+    expect(focused?.textContent).toBe("East");
+    expect(focused?.dataset.columnId).toBe(region.id);
+    expect(document.querySelector("input.cell-editor")).toBeNull();
+    expect(document.activeElement?.hasAttribute("data-framework-grid-clipboard")).toBe(
+      true
     );
   });
 

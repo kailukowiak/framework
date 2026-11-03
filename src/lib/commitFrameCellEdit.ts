@@ -1,6 +1,7 @@
 import type { GridDirection } from "./gridNavigation";
 import type { OperationHandler } from "./handlers";
 import type { Column, FrameObject, Row } from "./types";
+import { focusGridClipboardTarget } from "./gridClipboardTarget";
 import { splitDraftRow, typedColumnFormula } from "./typedColumnFormula";
 
 /** Route one grid edit to its actual storage or declaration surface. */
@@ -60,8 +61,13 @@ export function commitFrameCellEdit({
       });
     }
   }
-  if (move) onGridStep(move);
-  else onSettle(row, column);
+  if (move) {
+    // Return and Tab unmount the input that was WKWebView's first responder.
+    // Re-arm the grid before moving its logical focus so the next keystroke
+    // belongs to the selected cell rather than a disappearing editor.
+    focusGridClipboardTarget();
+    onGridStep(move);
+  } else onSettle(row, column);
 }
 
 /**

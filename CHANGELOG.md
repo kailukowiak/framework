@@ -12,6 +12,7 @@ tagged and opens a fresh `## Unreleased` above it.
 ## Unreleased
 
 - Quick Commands can now hand any search directly to help, opening the Reference section that contains the best answer. The formula bar also has a contextual Help toggle that opens the current function or transformation without ending the edit, with clickable related areas such as selectors. Wrangle help now shows how comma-separated column lists and selectors such as `except(...)` work, and Pivot and Unpivot include complete examples that distinguish existing input columns from newly named output columns.
+- Pressing Return after typing a cell now selects the cell below, so a column can be entered straight down without reaching for the mouse. A column added in FrameWork beside CSV-backed data is also kept as the workbook's own column instead of being warned about as a missing CSV field.
 
 ## 0.1.12
 
