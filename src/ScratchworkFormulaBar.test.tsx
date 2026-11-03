@@ -12,6 +12,7 @@ import { PipelineCommand } from "./PipelineCommand";
 import { ScratchworkFormulaBar } from "./ScratchworkFormulaBar";
 import type { FormulaBarCell } from "./lib/formulaBarCell";
 import type { FormulaReference } from "./lib/formulaReferences";
+import { HelpPanelContext, type HelpPanel } from "./lib/helpPanel";
 import type { DocumentView } from "./lib/types";
 
 const selectedCell: FormulaBarCell = {
@@ -24,6 +25,17 @@ const selectedCell: FormulaBarCell = {
   columnId: "amount",
   rowIndex: 0,
 };
+
+/** A panel that records what was asked of it. Opening help is App's job. */
+function helpPanelDouble(): HelpPanel {
+  return {
+    request: null,
+    open: vi.fn(),
+    toggle: vi.fn(),
+    close: vi.fn(),
+    formulaTarget: { current: undefined },
+  };
+}
 
 function bar(cell: FormulaBarCell | null) {
   return (
@@ -69,7 +81,7 @@ afterEach(cleanup);
 
 describe("ScratchworkFormulaBar", () => {
   it("opens contextual help without ending the active formula session", async () => {
-    const openHelp = vi.fn();
+    const help = helpPanelDouble();
     const selector: FormulaReference = {
       id: "selector.except",
       label: "except",
@@ -78,41 +90,52 @@ describe("ScratchworkFormulaBar", () => {
       detail: "Every column except those named",
     };
     render(
-      <ActiveFormulaEditorProvider>
-        <PipelineCommand
-          editorId="pipeline:unpivot"
-          label="Unpivot"
-          initialDraft=""
-          references={[selector]}
-          onChange={vi.fn()}
-          onCommit={vi.fn()}
-        />
-        <ScratchworkFormulaBar
-          onCommit={vi.fn(async () => ({ saved: true }))}
-          references={[]}
-          cell={null}
-          onCommitCell={vi.fn(async () => null)}
-          onEditCalculatedCell={vi.fn()}
-          onEditOverrideCell={vi.fn()}
-          onRequestReadOnlyCell={vi.fn()}
-          expanded={false}
-          onToggle={vi.fn()}
-          onToggleHelp={openHelp}
-        />
-      </ActiveFormulaEditorProvider>
+      <HelpPanelContext.Provider value={help}>
+        <ActiveFormulaEditorProvider>
+          <PipelineCommand
+            editorId="pipeline:unpivot"
+            label="Unpivot"
+            initialDraft=""
+            references={[selector]}
+            onChange={vi.fn()}
+            onCommit={vi.fn()}
+          />
+          <ScratchworkFormulaBar
+            onCommit={vi.fn(async () => ({ saved: true }))}
+            references={[]}
+            cell={null}
+            onCommitCell={vi.fn(async () => null)}
+            onEditCalculatedCell={vi.fn()}
+            onEditOverrideCell={vi.fn()}
+            onRequestReadOnlyCell={vi.fn()}
+            expanded={false}
+            onToggle={vi.fn()}
+          />
+        </ActiveFormulaEditorProvider>
+      </HelpPanelContext.Provider>
     );
 
     await userEvent.click(screen.getByRole("button", { name: "…" }));
     const editor = await screen.findByRole("textbox", { name: "Edit Unpivot" });
     await userEvent.click(screen.getByRole("button", { name: "Open formula help" }));
-    expect(openHelp).toHaveBeenLastCalledWith("Unpivot");
+    expect(help.toggle).toHaveBeenLastCalledWith({ query: "Unpivot", keepFocus: true });
     expect(screen.getByRole("textbox", { name: "Edit Unpivot" })).toBe(editor);
 
     fireEvent.change(editor, {
       target: { value: "exc", selectionStart: 3, selectionEnd: 3 },
     });
     await userEvent.click(screen.getByRole("button", { name: "Open formula help" }));
-    expect(openHelp).toHaveBeenLastCalledWith("except");
+    expect(help.toggle).toHaveBeenLastCalledWith({
+      query: "except",
+      entryId: "selector.except",
+      keepFocus: true,
+    });
+    // ⌘K arrives through the native menu, which cannot see the cursor; the
+    // bar keeps its answer where the menu action reads it.
+    expect(help.formulaTarget.current).toEqual({
+      query: "except",
+      entryId: "selector.except",
+    });
   });
 
   it("keeps multiline drafts compact until explicitly expanded", () => {

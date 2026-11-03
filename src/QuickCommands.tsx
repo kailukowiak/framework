@@ -1,7 +1,3 @@
-import { Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import "./QuickCommands.css";
-
 /**
  * Where a row came from. Only `"menu"` rows are the menu's own commands, and
  * only those are held against `menuCommands.json`: a row about the current
@@ -274,150 +270,22 @@ export function normalizeShortcut(value: string): string {
 }
 
 /**
- * A keyboard-sized index over actions the application already owns. It does
- * not explain commands or duplicate their controls: a row names one action,
- * its existing shortcut when it has one, and runs it.
+ * The commands a query names: by label, group or keyword, or by a shortcut
+ * typed out as `cmd 3`. Disabled commands are left out rather than shown
+ * greyed, because a palette row is a promise that Enter does something.
  */
-export function QuickCommands({
-  open = true,
-  commands,
-  onSearchHelp,
-  onSearchDocument,
-  onClose,
-}: {
-  open?: boolean;
-  commands: QuickCommand[];
-  /**
-   * ⌘⇧P is the one search people can reach before they know where an
-   * answer lives. Its final rows therefore hand the same words to Reference
-   * and Find instead of making someone open either surface and type them again.
-   */
-  onSearchHelp?: (query: string) => void;
-  onSearchDocument?: (query: string) => void;
-  onClose: () => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const results = useMemo(() => {
-    const needle = normalize(query);
-    const keys = normalizeShortcut(query);
-    const matches = commands.filter((command) => {
-      if (command.disabled) return false;
-      if (!needle) return true;
-      if (
-        normalize(`${command.label} ${command.group} ${command.keywords ?? ""}`).includes(
-          needle
-        )
-      )
-        return true;
-      return Boolean(
-        keys && command.shortcut && normalizeShortcut(command.shortcut).includes(keys)
-      );
-    });
-    const trimmed = query.trim();
-    if (!trimmed) return matches;
-    const onward: QuickCommand[] = [];
-    if (onSearchHelp)
-      onward.push({
-        id: "search-help",
-        group: "Help",
-        label: `Search help for “${trimmed}”`,
-        run: () => onSearchHelp(trimmed),
-      });
-    if (onSearchDocument)
-      onward.push({
-        id: "search-document",
-        group: "Find",
-        label: `Search document for “${trimmed}”`,
-        run: () => onSearchDocument(trimmed),
-      });
-    return [...matches, ...onward];
-  }, [commands, onSearchDocument, onSearchHelp, query]);
-  const selected =
-    results.find((command) => command.id === selectedId) ?? results[0] ?? null;
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
-  useEffect(() => {
-    if (selected?.id !== selectedId) setSelectedId(selected?.id ?? null);
-  }, [selected, selectedId]);
-
-  const move = (offset: number) => {
-    if (!results.length) return;
-    const current = Math.max(
-      0,
-      results.findIndex((command) => command.id === selected?.id)
+export function matchingCommands(commands: QuickCommand[], query: string): QuickCommand[] {
+  const needle = normalize(query);
+  const keys = normalizeShortcut(query);
+  return commands.filter((command) => {
+    if (command.disabled) return false;
+    if (!needle) return true;
+    if (
+      normalize(`${command.label} ${command.group} ${command.keywords ?? ""}`).includes(needle)
+    )
+      return true;
+    return Boolean(
+      keys && command.shortcut && normalizeShortcut(command.shortcut).includes(keys)
     );
-    const next = Math.min(results.length - 1, Math.max(0, current + offset));
-    setSelectedId(results[next].id);
-    document
-      .getElementById(`quick-command-${results[next].id}`)
-      ?.scrollIntoView?.({ block: "nearest" });
-  };
-
-  const run = (command: QuickCommand) => {
-    onClose();
-    command.run();
-  };
-
-  if (!open) return null;
-
-  return (
-    <>
-      {/* A press anywhere else is a decision to do something else; the
-          palette used to stay up over it and the click landed underneath. */}
-      <div className="quick-commands-backdrop" onPointerDown={onClose} />
-    <section
-      className="quick-commands"
-      role="dialog"
-      aria-modal="false"
-      aria-label="Quick Commands"
-    >
-      <label className="quick-commands-search">
-        <Search size={15} aria-hidden="true" />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              onClose();
-            } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-              event.preventDefault();
-              move(event.key === "ArrowDown" ? 1 : -1);
-            } else if (event.key === "Enter" && selected) {
-              event.preventDefault();
-              run(selected);
-            }
-          }}
-          placeholder="Type a command"
-          aria-label="Search commands"
-          spellCheck={false}
-        />
-        <kbd>⇧⌘P</kbd>
-      </label>
-      <div className="quick-commands-results" role="listbox" aria-label="Commands">
-        {results.map((command) => (
-          <button
-            id={`quick-command-${command.id}`}
-            key={command.id}
-            role="option"
-            aria-selected={command.id === selected?.id}
-            className={command.id === selected?.id ? "selected" : ""}
-            onClick={() => run(command)}
-            onMouseEnter={() => setSelectedId(command.id)}
-          >
-            <small title={command.group}>{command.group}</small>
-            <span>{command.label}</span>
-            {command.shortcut && <kbd>{command.shortcut}</kbd>}
-          </button>
-        ))}
-        {!results.length && <p>No commands found</p>}
-      </div>
-    </section>
-    </>
-  );
+  });
 }

@@ -11,7 +11,6 @@ import type { HelpGuide } from "./helpContent";
 export const HELP_REFERENCES: HelpGuide[] = [
   {
     id: "reference.wrangle",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Wrangle transformation chain",
@@ -35,7 +34,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.join",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Join",
@@ -66,7 +64,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.filter",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Filter rows",
@@ -86,7 +83,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.with-columns",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Add or replace columns",
@@ -109,7 +105,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.recurrence",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Calculate down rows",
@@ -131,7 +126,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.columns",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Delete or rearrange columns",
@@ -147,7 +141,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.summarize",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Summarize",
@@ -170,7 +163,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.sort",
-    scopes: ["guide", "formulas"],
     kind: "Reference",
     category: "Wrangle",
     title: "Sort",
@@ -186,7 +178,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.union",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Stack frame",
@@ -202,7 +193,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.expand",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Expand frame",
@@ -221,7 +211,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.column-list",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Choose several columns",
@@ -252,7 +241,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.pivot",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Pivot",
@@ -278,7 +266,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.unpivot",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Unpivot",
@@ -304,7 +291,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.broadcast",
-    scopes: ["guide", "formulas"],
     kind: "Reference",
     category: "Wrangle",
     title: "Apply vector across columns",
@@ -323,7 +309,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.zip-vector",
-    scopes: ["guide", "formulas"],
     kind: "Reference",
     category: "Wrangle",
     title: "Pair vector as column",
@@ -339,7 +324,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.comment-step",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Wrangle",
     title: "Comment step",
@@ -354,7 +338,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.format",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Format",
     title: "Direct formatting",
@@ -378,7 +361,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.number-format",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Format",
     title: "Number formats",
@@ -405,7 +387,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.conditional-format",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Format",
     title: "Conditional formatting rules",
@@ -434,7 +415,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.format-precedence",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Format",
     title: "Formatting scope and precedence",
@@ -453,7 +433,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.crosstab-display",
-    scopes: ["guide"],
     kind: "Reference",
     category: "Display",
     title: "Crosstab display",
@@ -472,7 +451,6 @@ export const HELP_REFERENCES: HelpGuide[] = [
   },
   {
     id: "reference.profile-summary",
-    scopes: ["formulas", "guide"],
     kind: "Reference",
     category: "Display",
     title: "Profile and summary rows",

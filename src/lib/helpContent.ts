@@ -1,5 +1,3 @@
-export type HelpScope = "formulas" | "guide";
-
 export type HelpExample = {
   label: string;
   code: string;
@@ -12,7 +10,6 @@ export type HelpFact = {
 
 export type HelpGuide = {
   id: string;
-  scopes: HelpScope[];
   kind: "Guide" | "Rule" | "Reference";
   category?: string;
   title: string;
@@ -39,7 +36,6 @@ export type HelpGuide = {
 export const HELP_GUIDES: HelpGuide[] = [
   {
     id: "formula.generate-series-variable",
-    scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Generate a series in a variable",
     summary: "Make one live variable hold a generated vector of numbers or dates.",
@@ -75,7 +71,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "formula.collection-vocabulary",
-    scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Lists, arrays, vectors, and series",
     summary: "Choose the collection shape you mean without having to know Polars terminology first.",
@@ -103,7 +98,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "formula.fill-frame-sequence",
-    scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Fill a frame column in order",
     summary: "Generate one value per row only after the row order has been declared.",
@@ -133,7 +127,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "formula.conditional-aggregate",
-    scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Conditional totals, counts, and averages",
     summary: "Express SUMIF-style work by filtering a column and then aggregating it.",
@@ -161,7 +154,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "formula.previous-and-running",
-    scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Previous rows and running calculations",
     summary: "Use shift or cumulative methods when possible; use Calculate down rows for a true recurrence.",
@@ -191,7 +183,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "formula.lookup",
-    scopes: ["formulas", "guide"],
     kind: "Guide",
     title: "Look up related data",
     summary: "Use a keyed Join instead of a positional lookup formula.",
@@ -214,7 +205,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.work-belongs",
-    scopes: ["guide"],
     kind: "Rule",
     title: "Put work where its scope belongs",
     summary: "Use a Variable for one reusable assumption, Scratchwork for one-off work, and Wrangle for every-row transformations.",
@@ -231,7 +221,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.live",
-    scopes: ["guide"],
     kind: "Rule",
     title: "Live means current, not unsafe",
     summary: "Semantic formulas work on live and derived data and recompute when their inputs change.",
@@ -248,7 +237,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.shapes",
-    scopes: ["guide", "formulas"],
     kind: "Rule",
     title: "Shapes do not imply relationships",
     summary: "A scalar, vector, frame column, and frame are distinct shapes; equal lengths do not make two collections related.",
@@ -265,7 +253,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "guide.calculation-matrix",
-    scopes: ["guide", "formulas"],
     kind: "Guide",
     title: "Build a Calculation Matrix",
     summary: "Use row and column vectors plus one formula for a visible nested calculation.",
@@ -300,7 +287,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.order",
-    scopes: ["guide", "formulas"],
     kind: "Rule",
     title: "Row order is part of the calculation",
     summary: "Shift, cumulative, sequence-fill, and recurrence formulas need a Sort before them in Wrangle.",
@@ -317,7 +303,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.ownership",
-    scopes: ["guide"],
     kind: "Rule",
     title: "Ownership controls literal editing",
     summary: "Document-owned frames accept typed cell edits; imported, artifact-backed, and derived rows do not.",
@@ -334,7 +319,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.calculated-column",
-    scopes: ["guide"],
     kind: "Rule",
     title: "Calculated columns have one declaration",
     summary: "Create and edit every-row formulas in the frame's Wrangle chain.",
@@ -351,7 +335,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.references",
-    scopes: ["guide", "formulas"],
     kind: "Rule",
     title: "Formula references use names",
     summary: "Click data while editing or write exact names in backticks; stable identity survives renaming.",
@@ -373,7 +356,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.cells",
-    scopes: ["guide"],
     kind: "Rule",
     title: "Specific cells are the positional exception",
     summary: "Semantic column formulas work broadly; a clicked individual cell requires stable document-owned row identity.",
@@ -390,7 +372,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.nulls",
-    scopes: ["guide", "formulas"],
     kind: "Rule",
     title: "Null is a missing value, not a datatype",
     summary: "Every column type may contain null; malformed non-empty input is an error instead.",
@@ -410,7 +391,6 @@ export const HELP_GUIDES: HelpGuide[] = [
   },
   {
     id: "rule.accounting-type",
-    scopes: ["guide", "formulas"],
     kind: "Rule",
     title: "Money is a column type, not a format",
     summary: "An Accounting column holds exact amounts at the decimal places it declares.",

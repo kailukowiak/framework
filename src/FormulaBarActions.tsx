@@ -1,5 +1,4 @@
 import { ChevronDown, ChevronsUpDown, CircleHelp } from "lucide-react";
-import type { FormulaHelpControl } from "./lib/formulaBarPresentation";
 
 export function FormulaBarActions({
   canFormat,
@@ -16,7 +15,7 @@ export function FormulaBarActions({
   expanded: boolean;
   onFormat: () => void;
   onToggle: () => void;
-  help?: FormulaHelpControl;
+  help?: { open: boolean; onToggle: () => void };
 }) {
   return (
     <>
@@ -45,7 +44,7 @@ export function FormulaBarActions({
           aria-expanded={help.open}
           title={help.open ? "Close formula help" : "Formula help"}
           onPointerDown={(event) => event.preventDefault()}
-          onClick={() => help.onToggle(help.query)}
+          onClick={help.onToggle}
         >
           <CircleHelp size={13} />
         </button>

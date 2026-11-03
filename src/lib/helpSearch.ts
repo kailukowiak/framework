@@ -1,5 +1,5 @@
 import type { FormulaFunction } from "./types";
-import { HELP_GUIDES, type HelpGuide, type HelpScope } from "./helpContent";
+import { HELP_GUIDES, type HelpGuide } from "./helpContent";
 import { HELP_REFERENCES } from "./helpReferences";
 
 export type FormulaHelpEntry = {
@@ -94,6 +94,16 @@ function editDistanceWithin(left: string, right: string, limit = 2): boolean {
   return row[right.length] <= limit;
 }
 
+/**
+ * A worked call for the functions whose signature alone does not show the
+ * shape people need. The completion menu prints it under the description, so
+ * it is only worth returning when it says more than the signature already on
+ * that line.
+ */
+export function functionExample(functionId: string): string | undefined {
+  return FUNCTION_EXAMPLES[functionId];
+}
+
 function functionCopyText(fn: FormulaFunction): string {
   const curated = FUNCTION_EXAMPLES[fn.id];
   if (curated) return curated;
@@ -114,20 +124,21 @@ function functionSurfaces(fn: FormulaFunction): string[] {
   return ["Formula editors"];
 }
 
-export function helpEntries(
-  scope: HelpScope,
-  formulaFunctions: FormulaFunction[]
-): HelpEntry[] {
-  const guides: GuideHelpEntry[] = [...HELP_GUIDES, ...HELP_REFERENCES].filter((guide) =>
-    guide.scopes.includes(scope)
-  ).map((guide) => ({
+/**
+ * Every answer help has, in one list. There used to be a Formulas list and a
+ * How FrameWork works list, and a search on the wrong one missed the answer
+ * the other held — "pivot" typed under Formulas never reached the Pivot
+ * reference. Nobody knows which shelf an answer is on before they find it,
+ * so there is one shelf, and each row says what kind of answer it is.
+ */
+export function helpEntries(formulaFunctions: FormulaFunction[]): HelpEntry[] {
+  const guides: GuideHelpEntry[] = [...HELP_GUIDES, ...HELP_REFERENCES].map((guide) => ({
     kind: guide.kind,
     id: guide.id,
     title: guide.title,
     summary: guide.summary,
     guide,
   }));
-  if (scope === "guide") return guides;
   return [
     ...guides,
     ...formulaFunctions.map((fn): FormulaHelpEntry => ({
@@ -165,7 +176,29 @@ function entryFields(entry: HelpEntry): Array<[string, number]> {
   ];
 }
 
-function scoreEntry(entry: HelpEntry, query: string): number | null {
+/**
+ * What one query word earns against one field: the field's full weight for
+ * the word or a prefix of it, less than half for a near-miss spelling, and
+ * nothing — null — when it is not there at all.
+ */
+function wordScore(
+  token: string,
+  fieldWords: string[],
+  weight: number,
+  typoTolerant: boolean
+): number | null {
+  if (fieldWords.some((candidate) => candidate === token || candidate.startsWith(token)))
+    return weight;
+  if (
+    typoTolerant &&
+    token.length >= 4 &&
+    fieldWords.some((candidate) => candidate.length >= 4 && editDistanceWithin(token, candidate))
+  )
+    return Math.round(weight * 0.45);
+  return null;
+}
+
+function scoreEntry(entry: HelpEntry, query: string, typoTolerant: boolean): number | null {
   const normalizedQuery = normalize(query);
   const original = words(query);
   const expanded = expandedWords(query);
@@ -189,16 +222,10 @@ function scoreEntry(entry: HelpEntry, query: string): number | null {
     else if (normalizedField.includes(normalizedQuery)) score += weight;
 
     for (const token of original) {
-      if (fieldWords.some((candidate) => candidate === token || candidate.startsWith(token))) {
-        score += weight;
-        matchedOriginal += 1;
-      } else if (
-        token.length >= 4 &&
-        fieldWords.some((candidate) => candidate.length >= 4 && editDistanceWithin(token, candidate))
-      ) {
-        score += Math.round(weight * 0.45);
-        matchedOriginal += 1;
-      }
+      const earned = wordScore(token, fieldWords, weight, typoTolerant);
+      if (earned === null) continue;
+      score += earned;
+      matchedOriginal += 1;
     }
     for (const token of expanded) {
       if (original.includes(token)) continue;
@@ -211,9 +238,20 @@ function scoreEntry(entry: HelpEntry, query: string): number | null {
   return score + Math.round(coverage * 80) + (entry.kind === "Function" ? 0 : 12);
 }
 
-export function searchHelpEntries(entries: HelpEntry[], query: string): HelpEntry[] {
+/**
+ * Help entries for a query, best first. Inside help a near-miss is worth
+ * listing, so a misspelt word still finds its answer. Where help shares a list
+ * with other kinds of answer — the command palette — `typoTolerant: false`
+ * keeps "north" from turning up Sort and Row order beside the frame that is
+ * actually called North.
+ */
+export function searchHelpEntries(
+  entries: HelpEntry[],
+  query: string,
+  { typoTolerant = true }: { typoTolerant?: boolean } = {}
+): HelpEntry[] {
   return entries
-    .map((entry) => ({ entry, score: scoreEntry(entry, query) }))
+    .map((entry) => ({ entry, score: scoreEntry(entry, query, typoTolerant) }))
     .filter((candidate): candidate is { entry: HelpEntry; score: number } => candidate.score !== null)
     .sort(
       (left, right) =>
@@ -221,40 +259,4 @@ export function searchHelpEntries(entries: HelpEntry[], query: string): HelpEntr
         left.entry.title.localeCompare(right.entry.title)
     )
     .map(({ entry }) => entry);
-}
-
-/**
- * Pick the Reference section that owns the best answer to a query handed over
- * by Quick Commands. The palette is intentionally ignorant of the two tabs:
- * requiring somebody to choose one before searching is the discoverability
- * failure this bridge exists to remove.
- */
-export function helpScopeForQuery(
-  formulaFunctions: FormulaFunction[],
-  query: string
-): HelpScope {
-  const candidates = [
-    ...helpEntries("formulas", formulaFunctions).map((entry) => ({
-      entry,
-      scope: "formulas" as const,
-    })),
-    ...helpEntries("guide", formulaFunctions).map((entry) => ({
-      entry,
-      scope: "guide" as const,
-    })),
-  ];
-  const seen = new Set<string>();
-  const ranked = candidates
-    .filter(({ entry }) => {
-      if (seen.has(entry.id)) return false;
-      seen.add(entry.id);
-      return true;
-    })
-    .map((candidate) => ({ ...candidate, score: scoreEntry(candidate.entry, query) }))
-    .filter(
-      (candidate): candidate is typeof candidate & { score: number } =>
-        candidate.score !== null
-    )
-    .sort((left, right) => right.score - left.score);
-  return ranked[0]?.scope ?? "guide";
 }

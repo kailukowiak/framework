@@ -9,3 +9,9 @@
 .quick-commands-results small { max-width: 132px; overflow: hidden; color: var(--muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .quick-commands-results span { min-width: 0; overflow: hidden; color: var(--ink); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
 .quick-commands-results > p { margin: 0; padding: 7px 11px; color: var(--muted); font-size: var(--text-sm); }
+/* A match's context or a help entry's kind, where a command shows its key. */
+.quick-commands-results em { max-width: 180px; overflow: hidden; color: var(--muted); font: 400 var(--text-xs) "DM Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
+/* Commands, document matches and help share one list; a rule, not a heading,
+   is all it takes to see where one kind of answer ends. */
+.quick-commands-results > button.section-start { margin-top: 3px; box-shadow: inset 0 1px 0 var(--line); }
+.quick-commands-status { color: var(--muted); font-size: var(--text-xs); }

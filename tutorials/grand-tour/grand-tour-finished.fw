@@ -3,17 +3,17 @@
   "formatVersion": 1,
   "tutorialVersion": 2,
   "document": {
-    "id": "49e64147-b4b5-4da2-90aa-f18cbf243827",
+    "id": "63fb8c3e-c1a7-4963-ac51-e8d81042ebc8",
     "name": "The FrameWork tour",
     "revision": 44,
     "objects": [
       {
         "kind": "frame",
-        "id": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
+        "id": "8bea1556-259f-4f65-85c4-00ec30a27daa",
         "name": "Monthly sales",
         "columns": [
           {
-            "id": "month~adkeqw",
+            "id": "month~5taj54",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -22,7 +22,7 @@
             "formula": null
           },
           {
-            "id": "region~t4e6y7",
+            "id": "region~8deveq",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -31,7 +31,7 @@
             "formula": null
           },
           {
-            "id": "revenue~77cqrg",
+            "id": "revenue~q2yayg",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -48,7 +48,7 @@
             "formula": null
           },
           {
-            "id": "cost~09hapz",
+            "id": "cost~7dtph2",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -65,7 +65,7 @@
             "formula": null
           },
           {
-            "id": "profit~ffajsm",
+            "id": "profit~wbx9tc",
             "name": "Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -82,7 +82,7 @@
             "formula": null
           },
           {
-            "id": "forecast~2pk99r",
+            "id": "forecast~cvcq29",
             "name": "Forecast",
             "sourceName": null,
             "dataType": "number",
@@ -101,128 +101,104 @@
         ],
         "rows": [
           {
-            "id": "0755c00b-f5df-4d7a-81b5-588e4cbeef53",
+            "id": "b40f91f1-5e3a-4a1a-901e-e53a068ae5b1",
             "cells": {
-              "cost~09hapz": {
-                "raw": "91000",
-                "overrideFormula": null
+              "cost~7dtph2": {
+                "raw": "91000"
               },
-              "month~adkeqw": {
-                "raw": "2026-04",
-                "overrideFormula": null
+              "month~5taj54": {
+                "raw": "2026-04"
               },
-              "region~t4e6y7": {
-                "raw": "West",
-                "overrideFormula": null
+              "region~8deveq": {
+                "raw": "West"
               },
-              "revenue~77cqrg": {
-                "raw": "142000",
-                "overrideFormula": null
+              "revenue~q2yayg": {
+                "raw": "142000"
               }
             }
           },
           {
-            "id": "969300f6-4cbb-4aaf-85e1-68d91fb26fe5",
+            "id": "ea01a5fb-1e16-4b2a-b091-da6c9c377e2a",
             "cells": {
-              "cost~09hapz": {
-                "raw": "76000",
-                "overrideFormula": null
+              "cost~7dtph2": {
+                "raw": "76000"
               },
-              "month~adkeqw": {
-                "raw": "2026-01",
-                "overrideFormula": null
+              "month~5taj54": {
+                "raw": "2026-01"
               },
-              "region~t4e6y7": {
-                "raw": "East",
-                "overrideFormula": null
+              "region~8deveq": {
+                "raw": "East"
               },
-              "revenue~77cqrg": {
-                "raw": "118000",
-                "overrideFormula": null
+              "revenue~q2yayg": {
+                "raw": "118000"
               }
             }
           },
           {
-            "id": "4ee9fdff-eb65-4c07-8b5b-80e48d5c96b7",
+            "id": "b6f178ac-1627-45bc-8b35-cde68d9f2e04",
             "cells": {
-              "cost~09hapz": {
-                "raw": "104000",
-                "overrideFormula": null
+              "cost~7dtph2": {
+                "raw": "104000"
               },
-              "month~adkeqw": {
-                "raw": "2026-06",
-                "overrideFormula": null
+              "month~5taj54": {
+                "raw": "2026-06"
               },
-              "region~t4e6y7": {
-                "raw": "East",
-                "overrideFormula": null
+              "region~8deveq": {
+                "raw": "East"
               },
-              "revenue~77cqrg": {
-                "raw": "168000",
-                "overrideFormula": null
+              "revenue~q2yayg": {
+                "raw": "168000"
               }
             }
           },
           {
-            "id": "aacce973-c0c5-408d-b2c9-c68bc3ab0cf3",
+            "id": "11c27a37-12db-48ff-894b-96c6b45c6234",
             "cells": {
-              "cost~09hapz": {
-                "raw": "85000",
-                "overrideFormula": null
+              "cost~7dtph2": {
+                "raw": "85000"
               },
-              "month~adkeqw": {
-                "raw": "2026-03",
-                "overrideFormula": null
+              "month~5taj54": {
+                "raw": "2026-03"
               },
-              "region~t4e6y7": {
-                "raw": "East",
-                "overrideFormula": null
+              "region~8deveq": {
+                "raw": "East"
               },
-              "revenue~77cqrg": {
-                "raw": "136000",
-                "overrideFormula": null
+              "revenue~q2yayg": {
+                "raw": "136000"
               }
             }
           },
           {
-            "id": "c1680d2b-a55f-46a9-8523-8bccc7838087",
+            "id": "1d2016d0-daf4-4505-833a-5ea0021d322f",
             "cells": {
-              "cost~09hapz": {
-                "raw": "79000",
-                "overrideFormula": null
+              "cost~7dtph2": {
+                "raw": "79000"
               },
-              "month~adkeqw": {
-                "raw": "2026-02",
-                "overrideFormula": null
+              "month~5taj54": {
+                "raw": "2026-02"
               },
-              "region~t4e6y7": {
-                "raw": "West",
-                "overrideFormula": null
+              "region~8deveq": {
+                "raw": "West"
               },
-              "revenue~77cqrg": {
-                "raw": "124000",
-                "overrideFormula": null
+              "revenue~q2yayg": {
+                "raw": "124000"
               }
             }
           },
           {
-            "id": "5639805c-7f2c-4817-a752-5175775a8bf6",
+            "id": "65f34905-8d6e-497c-989a-6ab1307f42da",
             "cells": {
-              "cost~09hapz": {
-                "raw": "96000",
-                "overrideFormula": null
+              "cost~7dtph2": {
+                "raw": "96000"
               },
-              "month~adkeqw": {
-                "raw": "2026-05",
-                "overrideFormula": null
+              "month~5taj54": {
+                "raw": "2026-05"
               },
-              "region~t4e6y7": {
-                "raw": "East",
-                "overrideFormula": null
+              "region~8deveq": {
+                "raw": "East"
               },
-              "revenue~77cqrg": {
-                "raw": "151000",
-                "overrideFormula": null
+              "revenue~q2yayg": {
+                "raw": "151000"
               }
             }
           }
@@ -232,17 +208,17 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "profit~ffajsm",
+                "outputColumnId": "profit~wbx9tc",
                 "expression": {
                   "kind": "binary",
                   "operator": "subtract",
                   "left": {
                     "kind": "column",
-                    "column_id": "revenue~77cqrg"
+                    "column_id": "revenue~q2yayg"
                   },
                   "right": {
                     "kind": "column",
-                    "column_id": "cost~09hapz"
+                    "column_id": "cost~7dtph2"
                   }
                 }
               }
@@ -252,7 +228,7 @@
             "kind": "sort",
             "keys": [
               {
-                "columnId": "month~adkeqw",
+                "columnId": "month~5taj54",
                 "descending": false
               }
             ]
@@ -261,7 +237,7 @@
             "kind": "withColumns",
             "columns": [
               {
-                "outputColumnId": "forecast~2pk99r",
+                "outputColumnId": "forecast~cvcq29",
                 "expression": {
                   "kind": "method",
                   "input": {
@@ -269,11 +245,11 @@
                     "operator": "multiply",
                     "left": {
                       "kind": "column",
-                      "column_id": "revenue~77cqrg"
+                      "column_id": "revenue~q2yayg"
                     },
                     "right": {
                       "kind": "value",
-                      "object_id": "48ad929c-0e9e-4950-a7cb-16cf12ad6ae1"
+                      "object_id": "89383165-a021-4977-8552-29fa58760786"
                     }
                   },
                   "path": [
@@ -288,7 +264,7 @@
         ],
         "baseColumns": [
           {
-            "id": "month~adkeqw",
+            "id": "month~5taj54",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -297,7 +273,7 @@
             "formula": null
           },
           {
-            "id": "region~t4e6y7",
+            "id": "region~8deveq",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -306,7 +282,7 @@
             "formula": null
           },
           {
-            "id": "revenue~77cqrg",
+            "id": "revenue~q2yayg",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -315,7 +291,7 @@
             "formula": null
           },
           {
-            "id": "cost~09hapz",
+            "id": "cost~7dtph2",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -334,11 +310,11 @@
       },
       {
         "kind": "frame",
-        "id": "98d51a6d-16a4-4315-8f8e-9e1e9262f86a",
+        "id": "fe4ce7ea-3661-41cc-b0af-6c0fdc27b01f",
         "name": "Budget",
         "columns": [
           {
-            "id": "month~814k9v",
+            "id": "month~6vbdza",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -347,7 +323,7 @@
             "formula": null
           },
           {
-            "id": "budget~b0b9bd",
+            "id": "budget~0bfawg",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -358,80 +334,68 @@
         ],
         "rows": [
           {
-            "id": "f9aa2ce5-2209-4104-a1c7-d54c0694de48",
+            "id": "98f51f34-bb33-4651-b392-de241bfdfcf4",
             "cells": {
-              "budget~b0b9bd": {
-                "raw": "120000",
-                "overrideFormula": null
+              "budget~0bfawg": {
+                "raw": "120000"
               },
-              "month~814k9v": {
-                "raw": "2026-01",
-                "overrideFormula": null
+              "month~6vbdza": {
+                "raw": "2026-01"
               }
             }
           },
           {
-            "id": "26dce2c9-1830-41fd-a117-fb0dd5578007",
+            "id": "45843c3f-f7c3-47e6-a888-da293d173c8c",
             "cells": {
-              "budget~b0b9bd": {
-                "raw": "120000",
-                "overrideFormula": null
+              "budget~0bfawg": {
+                "raw": "120000"
               },
-              "month~814k9v": {
-                "raw": "2026-02",
-                "overrideFormula": null
+              "month~6vbdza": {
+                "raw": "2026-02"
               }
             }
           },
           {
-            "id": "8d1472a8-053c-4a8e-b079-95bb2d9b1d44",
+            "id": "a92ee2f5-81ca-4368-8de0-7cc5fb364efd",
             "cells": {
-              "budget~b0b9bd": {
-                "raw": "130000",
-                "overrideFormula": null
+              "budget~0bfawg": {
+                "raw": "130000"
               },
-              "month~814k9v": {
-                "raw": "2026-03",
-                "overrideFormula": null
+              "month~6vbdza": {
+                "raw": "2026-03"
               }
             }
           },
           {
-            "id": "2d8351c5-b768-4e36-af33-3162bd26f0b0",
+            "id": "c1b91cf1-64bf-442b-8b78-29325a408668",
             "cells": {
-              "budget~b0b9bd": {
-                "raw": "138000",
-                "overrideFormula": null
+              "budget~0bfawg": {
+                "raw": "138000"
               },
-              "month~814k9v": {
-                "raw": "2026-04",
-                "overrideFormula": null
+              "month~6vbdza": {
+                "raw": "2026-04"
               }
             }
           },
           {
-            "id": "c41b5601-22ca-4614-b0f2-80bb2bb4c073",
+            "id": "0de99fad-e37b-4540-a309-5cec8465c8fa",
             "cells": {
-              "budget~b0b9bd": {
-                "raw": "150000",
-                "overrideFormula": null
+              "budget~0bfawg": {
+                "raw": "150000"
               },
-              "month~814k9v": {
-                "raw": "2026-05",
-                "overrideFormula": null
+              "month~6vbdza": {
+                "raw": "2026-05"
               }
             }
           },
           {
-            "id": "60dfc18c-654b-4151-9995-132b75a94af5",
+            "id": "2d7178c7-18b9-4fa9-8fc9-51b6970ba8ed",
             "cells": {
-              "budget~b0b9bd": {
-                "raw": "160000",
-                "overrideFormula": null
+              "budget~0bfawg": {
+                "raw": "160000"
               },
-              "month~814k9v": {
-                "raw": "2026-06",
-                "overrideFormula": null
+              "month~6vbdza": {
+                "raw": "2026-06"
               }
             }
           }
@@ -443,9 +407,9 @@
         "materialization": null,
         "uniqueKeys": [
           {
-            "id": "3f8f93b2-0821-4127-b962-a701811175f2",
+            "id": "6e5f849f-1466-4cd0-987d-7977df58a478",
             "columnIds": [
-              "month~814k9v"
+              "month~6vbdza"
             ]
           }
         ],
@@ -453,38 +417,38 @@
       },
       {
         "kind": "text",
-        "id": "d493454f-12c8-4db4-ba50-f81a2d594545",
+        "id": "84abe5bc-237c-45e8-9aaf-b4dc2ed0aff7",
         "name": "Tutorial walkthrough",
         "text": "",
         "segments": [
           {
             "kind": "literal",
-            "text": "# The FrameWork tour\n\nStart here. This is one pass over the things FrameWork does that a spreadsheet\ndoes not, using six rows of monthly sales that the rest of the tutorials use\ntoo. In about 25 minutes you will paste a typed table, write one formula for a\nwhole column, declare an order, keep a scratchpad in its own window, join a\nbudget by dragging a header, summarize a branch, run the same model under three\nsets of assumptions, and chart the result.\n\nIt is a tour, not a reference. Each section shows one idea and moves on; the\nlesson that teaches it properly is named at the end of the section. Nothing\nhere is a preview or a demo mode—every gesture is the real one, and the\nworkbook you finish with is a real model.\n\nThis guide is rendered as the **Tutorial walkthrough** markdown card in both\nthe Start workbook and the Answer key.\n\n## Files\n\n- [`grand-tour-start.fw`](grand-tour-start.fw) — an empty `Monthly sales`\n  table and a `Budget` table.\n- [`grand-tour-finished.fw`](grand-tour-finished.fw) — the answer key.\n\n## Before you begin\n\nAllow about 25 minutes. No prior FrameWork experience is assumed, and no\nearlier lesson is required.\n\nIn the app, open **Library** in the left rail (the Data Library), choose\n**Create tutorials** if the tutorial workbooks are not present, and open\n**The FrameWork tour — Answer key** for a minute before opening the Start\nworkbook. Make every change in the Start workbook. Repository contributors can\ninstead open the two linked `.fw` files with **File → Open**.\n\nWork the sections in order. Later sections read the columns and tables the\nearlier ones create, so a checkpoint that disagrees is worth fixing before\ncontinuing rather than after.\n\nThe lessons are also manual smoke tests. If a named control is missing or a\ncheckpoint differs, record it with the template at the end rather than working\naround it.\n\n## 0. See the destination\n\nOpen the finished workbook. On the canvas you should find a `Monthly sales`\ntable with Profit and Forecast columns, a `Sales vs budget` table that carries\na Variance column and a chart on its tab strip, a `By region` summary, an\n`Assumptions` group holding one `Growth` value, and a `Scratchwork` block with\nthree live answers.\n\nIn the bottom-right corner of the canvas there is a **Scenario** menu reading\n`Base`. Choose `Upside`, then `Downside`, and watch the Forecast column and the\n`Forecast total` answer move together. Put it back to `Base`.\n\nThat is the whole tour in one gesture: nothing was copied to make those three\nanswers, and nothing has to be put back by hand.\n\nNow open the Start workbook.\n\n## 1. Paste a table\n\nSelect the first cell of the empty `Monthly sales` table and paste this whole\ntab-separated block:\n\n```text\nMonth\tRegion\tRevenue\tCost\n2026-04\tWest\t142000\t91000\n2026-01\tEast\t118000\t76000\n2026-06\tEast\t168000\t104000\n2026-03\tEast\t136000\t85000\n2026-02\tWest\t124000\t79000\n2026-05\tEast\t151000\t96000\n```\n\nCheckpoint: the table has four named columns and six rows. Revenue and Cost\narrive as numbers, not as text that looks like numbers.\n\nThere was no *convert to table* step, because a table is the only thing a\nFrameWork frame can be. Its columns have names and types from the moment they\nexist, which is what lets every later section refer to `Revenue` instead of to\na rectangle of cells. Pasting onto empty canvas, with nothing selected, makes a\nwhole new table the same way.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 2. Find anything, run anything\n\nThree keys are worth learning before anything else.\n\n1. Press **⌘F** and type `142000`. The Find palette searches the whole\n   workbook—card names, column names, formulas, Scratchwork lines, and the\n   values in your tables. Choose the result and FrameWork brings that card\n   forward and selects the cell.\n2. Press **⌘⇧P**. Quick Commands is a searchable list of everything FrameWork\n   can do to this document, canvas and view, each with its shortcut. Type\n   `scratch` and read the two entries there without running them; press\n   **Escape**.\n3. Press **⌘K**. The Reference covers every formula function and the rules\n   behind Variables, Scratchwork, Wrangle, ownership and row order. While a\n   formula editor is active it opens on formulas automatically. Press\n   **Escape**.\n\nCheckpoint: ⌘F selected the April Revenue cell, and both palettes closed on\nEscape leaving the workbook untouched.\n\nYou are never more than one key from the name of the thing you are looking for,\nwhich matters more here than in a spreadsheet: FrameWork's controls are\nattached to objects rather than spread across a ribbon.\n\n## 3. One formula, one column\n\nRight-click the `Cost` header and choose **Add calculated column**. The\nformula bar opens with `` `Column 1` = None.cast(\"number\") `` selected end to\nend, so typing replaces the whole template rather than editing around it.\nBackticks on the name are optional. Type the whole line:\n\n```text\nProfit = `Revenue` - `Cost`\n```\n\nCommit with **Return**.\n\nCheckpoint: all six rows show a profit, and the values in chronological order\nare `42000`, `45000`, `51000`, `51000`, `55000`, and `64000`.\n\nThere is nothing to fill down, and no last row to remember to extend. The\nformula belongs to the column, so a row added tomorrow is already calculated.\nThat is also why the fill square at the corner of a selected column does not\ncopy cells here: drag it down and FrameWork opens the column's formula\ninstead, because writing the rule once is what filling a range was always\ntrying to approximate.\n\nSelect `Revenue`, `Cost` and `Profit` together—click the `Revenue` header,\nthen shift-click `Profit`—and use **Number format** on the **Format** tab to\nmake them Accounting, USD, no decimals. One change lands on all three columns.\nFormatting changes how the numbers read, never what they are.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 4. Declare the order\n\nClick the ascending sort control in the `Month` header.\n\nCheckpoint: rows run from `2026-01` to `2026-06`. Open **Wrangle** and find\n**Sort** as the last step in the transformation chain.\n\nThis is the difference worth carrying out of the tour: the sort is not a way of\nlooking at the table, it is part of what the table *is*. Every table derived\nfrom this one inherits it, and a row-relative calculation such as\n`` `Revenue`.shift(1) `` is only accepted once an order has been declared—\notherwise \"the previous row\" would mean whichever row happened to arrive first.\n\n*Taught properly in: [Month-over-month formulas by pointing](../formula-clicks/README.md).*\n\n## 5. Scratchwork, and Scratchwork in its own window\n\nPress **⌘J** anywhere. A `Scratchwork` block appears on the canvas with the\ncursor on its first line. This is where one-off arithmetic goes—the back of the\nenvelope, kept in the document.\n\nType the name and the equals sign:\n\n```text\nTotal revenue = \n```\n\nNow, without leaving the line, click the `Revenue` column header in\n`Monthly sales`. The reference is written for you. Add `.sum()` so the line\nreads:\n\n```text\nTotal revenue = `Monthly sales`.`Revenue`.sum()\n```\n\nCheckpoint: the gutter beside the line shows `839000`.\n\nNow choose **Window → Scratchwork Window**. The same block opens as an ordinary\nwindow of its own, on the same text, the same undo history and the same live\nanswers. Put it beside the canvas, click a column in the main window, and the\nreference still lands in the Scratchwork line you are editing. **⌘J** raises\nthe window when it is already open.\n\nCheckpoint: editing the line in either place changes it in both, and closing\nthe Scratchwork window leaves the block on the canvas with the line intact.\n\nThe answers are queries, not captured cells. Change a Revenue value in the\ntable and the total follows it; undo and it comes back.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 6. Bring the budget over by dragging a header\n\n`Budget` holds one budgeted revenue per month. Rather than writing a lookup,\nmatch the two tables on their key.\n\n1. In `Budget`, click the **Budget** header to select that column.\n2. Drag it onto the **Month** header in `Monthly sales`.\n\nThe compact prompt should read as an equation:\n\n```text\nMatch Monthly sales.Month to Budget.Month\n```\n\nWait for the diagnostics, which are computed over the full dataset rather than\nthe rows on screen. They should report 6 matched, 0 missing, 0 duplicate keys.\nClick **Mark Month as unique**, then **Bring columns over**. Rename the result\n`Sales vs budget`.\n\nIn **Wrangle** on `Sales vs budget`, add a calculated column:\n\n```text\nVariance = `Revenue` - `Budget`\n```\n\nFormat it as USD Accounting.\n\nCheckpoint: `Sales vs budget` has six rows, January shows a Variance of\n`-2000`, and June shows `8000`. Open Wrangle and read the first step: the key\nrelationship is a visible step, not a dialog that has disappeared.\n\nFrameWork refuses to build the join until the lookup side declares its key\nunique, because a duplicate key is how a lookup silently multiplies rows. If\nthe table has grown wider than the window, right-click a header and choose\n**Pin columns through here** to freeze everything up to it while the rest\nscrolls.\n\nAdd a second Scratchwork line:\n\n```text\nTotal variance = `Sales vs budget`.`Variance`.sum()\n```\n\nCheckpoint: the answer is `21000`.\n\n*Taught properly in: [Month-end close](../month-end-close/README.md) and\n[Vectors, dates, and visual joins](../vectors-and-joins/README.md).*\n\n## 7. Branch a tab and summarize\n\nUse the **+** beside the `Sales vs budget` table tabs and choose **Table view**.\nRename the new tab `By region`. In **Wrangle**, add **Summarize**:\n\n- Group by: Region\n- Total Revenue: `` `Revenue`.sum() ``\n- Total Budget: `` `Budget`.sum() ``\n- Total Variance: `` `Variance`.sum() ``\n\nCheckpoint:\n\n| Region | Total Revenue | Total Budget | Total Variance |\n|---|---:|---:|---:|\n| East | 573000 | 560000 | 13000 |\n| West | 266000 | 258000 | 8000 |\n\nSwitching back to the `Sales vs budget` tab still shows all six rows. A branch\nis a separate table with its own visible chain reading the same source—not a\ncopy of the rows, and not a hidden filter that can disagree with what is\ndownstream of it. The summary reconciles to the whole table because it is\nreading the whole table.\n\n*Taught properly in: [Month-end close](../month-end-close/README.md).*\n\n## 8. Ask \"what if\" without copying the model\n\nClick **Container** in the left rail and rename the new group `Assumptions`.\nInside it, click **+ Value**, rename the value `Growth`, and give it:\n\n```text\n1.08\n```\n\nBack on `Monthly sales`, add a calculated column and format it as USD\nAccounting like the others. Type the whole line, replacing the selected\ntemplate:\n\n```text\nForecast = (`Revenue` * `Growth`).round()\n```\n\nA column formula is an ordinary expression, so rounding to the dollar is a\nmethod on the arithmetic rather than a wrapper function around the whole thing.\n\nCheckpoint: the January Forecast is `127440`, and adding a third Scratchwork\nline\n\n```text\nForecast total = `Monthly sales`.`Forecast`.sum()\n```\n\nanswers `906120.00`.\n\nSelect the `Growth` value; its inspector shows a **Scenarios** grid below the\nvalue. Type `Upside` into the **New scenario** row and press **Return**, give\nit the value `1.15`, then add `Downside` with `0.95`.\n\nUse the **Scenario** menu in the bottom-right corner of the canvas to switch\nbetween them. It appears only once a document has a scenario to switch to.\n\nCheckpoint: `Forecast total` reads `906120.00` on Base, `964850.00` on Upside,\nand `797050.00` on Downside. Leave it on **Base** before continuing.\n\nNothing was duplicated to get three answers. A scenario is a small set of\ndisagreements about named assumptions, and every column, result and Scratchwork\nline that reads one moves when you switch. A blank cell in the Scenarios grid\nmeans \"same as the base\", so a scenario stays as short as what actually differs.\n\n## 9. Chart the table beside the table\n\nSelect `Sales vs budget`, use the **+** beside its table tabs, and choose\n**Plot**. In the plot inspector choose:\n\n- chart type: Bar;\n- X: Month;\n- Y: Revenue;\n- Color: Region.\n\nRename it `Revenue by month`.\n\nCheckpoint: six bars, split between East and West, sharing a card with the\ntable they describe. Change a Revenue value upstream and the bar moves. The\nbars run in the table's declared order, January on the left through June on\nthe right, rather than a fresh sort of their own.\n\nThe plot reads the table by identity, and it reads all of it—not the first\nthousand rows, and not a copied range that has to be re-pointed when the data\ngrows.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## Finish line\n\nYour workbook should now agree with `grand-tour-finished.fw`:\n\n- 6 rows in `Monthly sales`, sorted January to June, with Profit and Forecast;\n- `Sales vs budget` with six rows and a Variance column;\n- `By region` with two rows reconciling to `21000` of variance;\n- `Growth` at `1.08`, with an Upside and a Downside;\n- Scratchwork answering `839000`, `21000`, and `906120.00` on Base;\n- a `Revenue by month` chart on the analysis tab strip.\n\nTwo last things worth knowing:\n\n- Undo travels with the model. Undo the join and the Variance column, the\n  summary and the chart go with it; redo brings them all back. Try it.\n- Open the **Project** panel in the left rail and choose **Export to Excel…**.\n  The workbook that comes out holds the results as values, and the checkbox\n  **Include a sheet explaining how each column was computed** adds one tab\n  saying which of them were formulas and what they read. People who need a\n  spreadsheet get a spreadsheet; you keep the model.\n\n## Where to go next\n\nThe tour showed each of these once. In order, the lessons that teach them:\n\n1. [Your first FrameWork workbook](../first-workbook/README.md) — the same\n   ground at walking pace, plus formatting, a live markdown narrative, and\n   plots. About 15 minutes.\n2. [Importing an Excel workbook](../excel-import/README.md) — bringing real\n   `.xlsx` sheets in. About 10 minutes.\n3. [Month-over-month formulas by pointing](../formula-clicks/README.md) —\n   `.shift(1)`, click-to-build, table-first autocomplete. About 15 minutes.\n4. [Excel concepts in FrameWork](../excel-to-framework/README.md) — a\n   translation table for the habits that do not carry over.\n5. [Month-end close](../month-end-close/README.md) — the full package: joins,\n   summaries, pivots, exceptions, control totals. About 30–45 minutes.\n6. [Vectors, dates, and visual joins](../vectors-and-joins/README.md) —\n   vectors, row-count-aware date series, and the Calculation Matrix. About 20\n   minutes.\n\n## Smoke-test notes\n\nThis lesson is the broadest manual smoke test in the set: it crosses paste,\nfind, calculated columns, declared order, Scratchwork and its window, joins,\nbranches, summaries, values, scenarios, plots and export. Capture the first\nbroken checkpoint with the template in the parent tutorial README, and say\nwhether the control could be found without the guide.\n\n## Rebuilding the files\n\nBoth workbooks are generated through `Store::apply(Operation::...)`, the same\nvalidation, history and persistence boundary the desktop and MCP use:\n\n```bash\ncargo run -p framework-core --example generate_tutorial_workbooks -- grand-tour\n```\n\nThe generator reloads the answer key and proves the joined variance, the\nregional summary, the three Scratchwork answers, and the forecast under each\nscenario.\n"
+            "text": "# The FrameWork tour\n\nStart here. This is one pass over the things FrameWork does that a spreadsheet\ndoes not, using six rows of monthly sales that the rest of the tutorials use\ntoo. In about 25 minutes you will paste a typed table, write one formula for a\nwhole column, declare an order, keep a scratchpad in its own window, join a\nbudget by dragging a header, summarize a branch, run the same model under three\nsets of assumptions, and chart the result.\n\nIt is a tour, not a reference. Each section shows one idea and moves on; the\nlesson that teaches it properly is named at the end of the section. Nothing\nhere is a preview or a demo mode—every gesture is the real one, and the\nworkbook you finish with is a real model.\n\nThis guide is rendered as the **Tutorial walkthrough** markdown card in both\nthe Start workbook and the Answer key.\n\n## Files\n\n- [`grand-tour-start.fw`](grand-tour-start.fw) — an empty `Monthly sales`\n  table and a `Budget` table.\n- [`grand-tour-finished.fw`](grand-tour-finished.fw) — the answer key.\n\n## Before you begin\n\nAllow about 25 minutes. No prior FrameWork experience is assumed, and no\nearlier lesson is required.\n\nIn the app, open **Library** in the left rail (the Data Library), choose\n**Create tutorials** if the tutorial workbooks are not present, and open\n**The FrameWork tour — Answer key** for a minute before opening the Start\nworkbook. Make every change in the Start workbook. Repository contributors can\ninstead open the two linked `.fw` files with **File → Open**.\n\nWork the sections in order. Later sections read the columns and tables the\nearlier ones create, so a checkpoint that disagrees is worth fixing before\ncontinuing rather than after.\n\nThe lessons are also manual smoke tests. If a named control is missing or a\ncheckpoint differs, record it with the template at the end rather than working\naround it.\n\n## 0. See the destination\n\nOpen the finished workbook. On the canvas you should find a `Monthly sales`\ntable with Profit and Forecast columns, a `Sales vs budget` table that carries\na Variance column and a chart on its tab strip, a `By region` summary, an\n`Assumptions` group holding one `Growth` value, and a `Scratchwork` block with\nthree live answers.\n\nIn the bottom-right corner of the canvas there is a **Scenario** menu reading\n`Base`. Choose `Upside`, then `Downside`, and watch the Forecast column and the\n`Forecast total` answer move together. Put it back to `Base`.\n\nThat is the whole tour in one gesture: nothing was copied to make those three\nanswers, and nothing has to be put back by hand.\n\nNow open the Start workbook.\n\n## 1. Paste a table\n\nSelect the first cell of the empty `Monthly sales` table and paste this whole\ntab-separated block:\n\n```text\nMonth\tRegion\tRevenue\tCost\n2026-04\tWest\t142000\t91000\n2026-01\tEast\t118000\t76000\n2026-06\tEast\t168000\t104000\n2026-03\tEast\t136000\t85000\n2026-02\tWest\t124000\t79000\n2026-05\tEast\t151000\t96000\n```\n\nCheckpoint: the table has four named columns and six rows. Revenue and Cost\narrive as numbers, not as text that looks like numbers.\n\nThere was no *convert to table* step, because a table is the only thing a\nFrameWork frame can be. Its columns have names and types from the moment they\nexist, which is what lets every later section refer to `Revenue` instead of to\na rectangle of cells. Pasting onto empty canvas, with nothing selected, makes a\nwhole new table the same way.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 2. Find anything, run anything\n\nThree keys are worth learning before anything else.\n\n1. Press **⌘F** and type `142000`. The Find palette searches the whole\n   workbook—card names, column names, formulas, Scratchwork lines, and the\n   values in your tables. Choose the result and FrameWork brings that card\n   forward and selects the cell.\n2. Press **⌘⇧P**. Quick Commands is the one search box: everything FrameWork\n   can do to this document, canvas and view, each with its shortcut, then the\n   matches in the workbook, then answers from the Reference. Type `scratch`\n   and read the two commands there without running them; then type `pivot`\n   and see the Reference answer listed under them. Press **Escape**.\n3. Press **⌘K**. The Reference opens docked at the right edge, beside the\n   canvas rather than over it. It covers every formula function and the rules\n   behind Variables, Scratchwork, Wrangle, ownership and row order, in one\n   search. While a formula is being written it opens on the function the\n   cursor is inside. Press **Escape**.\n\nCheckpoint: ⌘F selected the April Revenue cell, and the palette and the\nReference both closed on Escape leaving the workbook untouched.\n\nYou are never more than one key from the name of the thing you are looking for,\nwhich matters more here than in a spreadsheet: FrameWork's controls are\nattached to objects rather than spread across a ribbon.\n\n## 3. One formula, one column\n\nRight-click the `Cost` header and choose **Add calculated column**. The\nformula bar opens with `` `Column 1` = None.cast(\"number\") `` selected end to\nend, so typing replaces the whole template rather than editing around it.\nBackticks on the name are optional. Type the whole line:\n\n```text\nProfit = `Revenue` - `Cost`\n```\n\nCommit with **Return**.\n\nCheckpoint: all six rows show a profit, and the values in chronological order\nare `42000`, `45000`, `51000`, `51000`, `55000`, and `64000`.\n\nThere is nothing to fill down, and no last row to remember to extend. The\nformula belongs to the column, so a row added tomorrow is already calculated.\nThat is also why the fill square at the corner of a selected column does not\ncopy cells here: drag it down and FrameWork opens the column's formula\ninstead, because writing the rule once is what filling a range was always\ntrying to approximate.\n\nSelect `Revenue`, `Cost` and `Profit` together—click the `Revenue` header,\nthen shift-click `Profit`—and use **Number format** on the **Format** tab to\nmake them Accounting, USD, no decimals. One change lands on all three columns.\nFormatting changes how the numbers read, never what they are.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 4. Declare the order\n\nClick the ascending sort control in the `Month` header.\n\nCheckpoint: rows run from `2026-01` to `2026-06`. Open **Wrangle** and find\n**Sort** as the last step in the transformation chain.\n\nThis is the difference worth carrying out of the tour: the sort is not a way of\nlooking at the table, it is part of what the table *is*. Every table derived\nfrom this one inherits it, and a row-relative calculation such as\n`` `Revenue`.shift(1) `` is only accepted once an order has been declared—\notherwise \"the previous row\" would mean whichever row happened to arrive first.\n\n*Taught properly in: [Month-over-month formulas by pointing](../formula-clicks/README.md).*\n\n## 5. Scratchwork, and Scratchwork in its own window\n\nPress **⌘J** anywhere. A `Scratchwork` block appears on the canvas with the\ncursor on its first line. This is where one-off arithmetic goes—the back of the\nenvelope, kept in the document.\n\nType the name and the equals sign:\n\n```text\nTotal revenue = \n```\n\nNow, without leaving the line, click the `Revenue` column header in\n`Monthly sales`. The reference is written for you. Add `.sum()` so the line\nreads:\n\n```text\nTotal revenue = `Monthly sales`.`Revenue`.sum()\n```\n\nCheckpoint: the gutter beside the line shows `839000`.\n\nNow choose **Window → Scratchwork Window**. The same block opens as an ordinary\nwindow of its own, on the same text, the same undo history and the same live\nanswers. Put it beside the canvas, click a column in the main window, and the\nreference still lands in the Scratchwork line you are editing. **⌘J** raises\nthe window when it is already open.\n\nCheckpoint: editing the line in either place changes it in both, and closing\nthe Scratchwork window leaves the block on the canvas with the line intact.\n\nThe answers are queries, not captured cells. Change a Revenue value in the\ntable and the total follows it; undo and it comes back.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## 6. Bring the budget over by dragging a header\n\n`Budget` holds one budgeted revenue per month. Rather than writing a lookup,\nmatch the two tables on their key.\n\n1. In `Budget`, click the **Budget** header to select that column.\n2. Drag it onto the **Month** header in `Monthly sales`.\n\nThe compact prompt should read as an equation:\n\n```text\nMatch Monthly sales.Month to Budget.Month\n```\n\nWait for the diagnostics, which are computed over the full dataset rather than\nthe rows on screen. They should report 6 matched, 0 missing, 0 duplicate keys.\nClick **Mark Month as unique**, then **Bring columns over**. Rename the result\n`Sales vs budget`.\n\nIn **Wrangle** on `Sales vs budget`, add a calculated column:\n\n```text\nVariance = `Revenue` - `Budget`\n```\n\nFormat it as USD Accounting.\n\nCheckpoint: `Sales vs budget` has six rows, January shows a Variance of\n`-2000`, and June shows `8000`. Open Wrangle and read the first step: the key\nrelationship is a visible step, not a dialog that has disappeared.\n\nFrameWork refuses to build the join until the lookup side declares its key\nunique, because a duplicate key is how a lookup silently multiplies rows. If\nthe table has grown wider than the window, right-click a header and choose\n**Pin columns through here** to freeze everything up to it while the rest\nscrolls.\n\nAdd a second Scratchwork line:\n\n```text\nTotal variance = `Sales vs budget`.`Variance`.sum()\n```\n\nCheckpoint: the answer is `21000`.\n\n*Taught properly in: [Month-end close](../month-end-close/README.md) and\n[Vectors, dates, and visual joins](../vectors-and-joins/README.md).*\n\n## 7. Branch a tab and summarize\n\nUse the **+** beside the `Sales vs budget` table tabs and choose **Table view**.\nRename the new tab `By region`. In **Wrangle**, add **Summarize**:\n\n- Group by: Region\n- Total Revenue: `` `Revenue`.sum() ``\n- Total Budget: `` `Budget`.sum() ``\n- Total Variance: `` `Variance`.sum() ``\n\nCheckpoint:\n\n| Region | Total Revenue | Total Budget | Total Variance |\n|---|---:|---:|---:|\n| East | 573000 | 560000 | 13000 |\n| West | 266000 | 258000 | 8000 |\n\nSwitching back to the `Sales vs budget` tab still shows all six rows. A branch\nis a separate table with its own visible chain reading the same source—not a\ncopy of the rows, and not a hidden filter that can disagree with what is\ndownstream of it. The summary reconciles to the whole table because it is\nreading the whole table.\n\n*Taught properly in: [Month-end close](../month-end-close/README.md).*\n\n## 8. Ask \"what if\" without copying the model\n\nClick **Container** in the left rail and rename the new group `Assumptions`.\nInside it, click **+ Value**, rename the value `Growth`, and give it:\n\n```text\n1.08\n```\n\nBack on `Monthly sales`, add a calculated column and format it as USD\nAccounting like the others. Type the whole line, replacing the selected\ntemplate:\n\n```text\nForecast = (`Revenue` * `Growth`).round()\n```\n\nA column formula is an ordinary expression, so rounding to the dollar is a\nmethod on the arithmetic rather than a wrapper function around the whole thing.\n\nCheckpoint: the January Forecast is `127440`, and adding a third Scratchwork\nline\n\n```text\nForecast total = `Monthly sales`.`Forecast`.sum()\n```\n\nanswers `906120.00`.\n\nSelect the `Growth` value; its inspector shows a **Scenarios** grid below the\nvalue. Type `Upside` into the **New scenario** row and press **Return**, give\nit the value `1.15`, then add `Downside` with `0.95`.\n\nUse the **Scenario** menu in the bottom-right corner of the canvas to switch\nbetween them. It appears only once a document has a scenario to switch to.\n\nCheckpoint: `Forecast total` reads `906120.00` on Base, `964850.00` on Upside,\nand `797050.00` on Downside. Leave it on **Base** before continuing.\n\nNothing was duplicated to get three answers. A scenario is a small set of\ndisagreements about named assumptions, and every column, result and Scratchwork\nline that reads one moves when you switch. A blank cell in the Scenarios grid\nmeans \"same as the base\", so a scenario stays as short as what actually differs.\n\n## 9. Chart the table beside the table\n\nSelect `Sales vs budget`, use the **+** beside its table tabs, and choose\n**Plot**. In the plot inspector choose:\n\n- chart type: Bar;\n- X: Month;\n- Y: Revenue;\n- Color: Region.\n\nRename it `Revenue by month`.\n\nCheckpoint: six bars, split between East and West, sharing a card with the\ntable they describe. Change a Revenue value upstream and the bar moves. The\nbars run in the table's declared order, January on the left through June on\nthe right, rather than a fresh sort of their own.\n\nThe plot reads the table by identity, and it reads all of it—not the first\nthousand rows, and not a copied range that has to be re-pointed when the data\ngrows.\n\n*Taught properly in: [Your first FrameWork workbook](../first-workbook/README.md).*\n\n## Finish line\n\nYour workbook should now agree with `grand-tour-finished.fw`:\n\n- 6 rows in `Monthly sales`, sorted January to June, with Profit and Forecast;\n- `Sales vs budget` with six rows and a Variance column;\n- `By region` with two rows reconciling to `21000` of variance;\n- `Growth` at `1.08`, with an Upside and a Downside;\n- Scratchwork answering `839000`, `21000`, and `906120.00` on Base;\n- a `Revenue by month` chart on the analysis tab strip.\n\nTwo last things worth knowing:\n\n- Undo travels with the model. Undo the join and the Variance column, the\n  summary and the chart go with it; redo brings them all back. Try it.\n- Open the **Project** panel in the left rail and choose **Export to Excel…**.\n  The workbook that comes out holds the results as values, and the checkbox\n  **Include a sheet explaining how each column was computed** adds one tab\n  saying which of them were formulas and what they read. People who need a\n  spreadsheet get a spreadsheet; you keep the model.\n\n## Where to go next\n\nThe tour showed each of these once. In order, the lessons that teach them:\n\n1. [Your first FrameWork workbook](../first-workbook/README.md) — the same\n   ground at walking pace, plus formatting, a live markdown narrative, and\n   plots. About 15 minutes.\n2. [Importing an Excel workbook](../excel-import/README.md) — bringing real\n   `.xlsx` sheets in. About 10 minutes.\n3. [Month-over-month formulas by pointing](../formula-clicks/README.md) —\n   `.shift(1)`, click-to-build, table-first autocomplete. About 15 minutes.\n4. [Excel concepts in FrameWork](../excel-to-framework/README.md) — a\n   translation table for the habits that do not carry over.\n5. [Month-end close](../month-end-close/README.md) — the full package: joins,\n   summaries, pivots, exceptions, control totals. About 30–45 minutes.\n6. [Vectors, dates, and visual joins](../vectors-and-joins/README.md) —\n   vectors, row-count-aware date series, and the Calculation Matrix. About 20\n   minutes.\n\n## Smoke-test notes\n\nThis lesson is the broadest manual smoke test in the set: it crosses paste,\nfind, calculated columns, declared order, Scratchwork and its window, joins,\nbranches, summaries, values, scenarios, plots and export. Capture the first\nbroken checkpoint with the template in the parent tutorial README, and say\nwhether the control could be found without the guide.\n\n## Rebuilding the files\n\nBoth workbooks are generated through `Store::apply(Operation::...)`, the same\nvalidation, history and persistence boundary the desktop and MCP use:\n\n```bash\ncargo run -p framework-core --example generate_tutorial_workbooks -- grand-tour\n```\n\nThe generator reloads the answer key and proves the joined variance, the\nregional summary, the three Scratchwork answers, and the forecast under each\nscenario.\n"
           }
         ]
       },
       {
         "kind": "container",
-        "id": "a0198ba2-fb74-4d64-a78d-2a23814a30ea",
+        "id": "b9487bbc-506b-4504-9a41-7e06b7dc38c8",
         "name": "Assumptions",
         "memberIds": [
-          "48ad929c-0e9e-4950-a7cb-16cf12ad6ae1"
+          "89383165-a021-4977-8552-29fa58760786"
         ]
       },
       {
         "kind": "value",
-        "id": "48ad929c-0e9e-4950-a7cb-16cf12ad6ae1",
+        "id": "89383165-a021-4977-8552-29fa58760786",
         "name": "Growth",
         "raw": "1.08",
         "dataType": "number"
       },
       {
         "kind": "frame",
-        "id": "af069c46-b83f-4eef-a936-5f52a8abd985",
+        "id": "437b3820-89b1-40e4-b08f-de46c2243a18",
         "name": "Sales vs budget",
         "columns": [
           {
-            "id": "month~h09h7m",
+            "id": "month~j7gbxs",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -493,7 +457,7 @@
             "formula": null
           },
           {
-            "id": "region~f4rbps",
+            "id": "region~pd1bwx",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -502,7 +466,7 @@
             "formula": null
           },
           {
-            "id": "revenue~99zq7c",
+            "id": "revenue~y873rt",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -519,7 +483,7 @@
             "formula": null
           },
           {
-            "id": "cost~6c7mbh",
+            "id": "cost~m1bgbm",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -536,7 +500,7 @@
             "formula": null
           },
           {
-            "id": "profit~yp1fcg",
+            "id": "profit~t05k0m",
             "name": "Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -553,7 +517,7 @@
             "formula": null
           },
           {
-            "id": "budget~wg0hxt",
+            "id": "budget~pkntb1",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -570,7 +534,7 @@
             "formula": null
           },
           {
-            "id": "variance~bzgk20",
+            "id": "variance~cnfrny",
             "name": "Variance",
             "sourceName": null,
             "dataType": "integer",
@@ -590,7 +554,7 @@
         "rows": [],
         "baseColumns": [
           {
-            "id": "month~h09h7m",
+            "id": "month~j7gbxs",
             "name": "Month",
             "sourceName": null,
             "dataType": "string",
@@ -599,7 +563,7 @@
             "formula": null
           },
           {
-            "id": "region~f4rbps",
+            "id": "region~pd1bwx",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -608,7 +572,7 @@
             "formula": null
           },
           {
-            "id": "revenue~99zq7c",
+            "id": "revenue~y873rt",
             "name": "Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -625,7 +589,7 @@
             "formula": null
           },
           {
-            "id": "cost~6c7mbh",
+            "id": "cost~m1bgbm",
             "name": "Cost",
             "sourceName": null,
             "dataType": "integer",
@@ -642,7 +606,7 @@
             "formula": null
           },
           {
-            "id": "profit~yp1fcg",
+            "id": "profit~t05k0m",
             "name": "Profit",
             "sourceName": null,
             "dataType": "integer",
@@ -659,7 +623,7 @@
             "formula": null
           },
           {
-            "id": "budget~wg0hxt",
+            "id": "budget~pkntb1",
             "name": "Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -672,46 +636,46 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
+          "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
           "join": {
-            "lookupFrameId": "98d51a6d-16a4-4315-8f8e-9e1e9262f86a",
+            "lookupFrameId": "fe4ce7ea-3661-41cc-b0af-6c0fdc27b01f",
             "primaryKeyColumnIds": [
-              "month~adkeqw"
+              "month~5taj54"
             ],
             "lookupKeyColumnIds": [
-              "month~814k9v"
+              "month~6vbdza"
             ],
             "joinType": "left",
             "outputs": [
               {
-                "outputColumnId": "month~h09h7m",
-                "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                "sourceColumnId": "month~adkeqw"
+                "outputColumnId": "month~j7gbxs",
+                "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                "sourceColumnId": "month~5taj54"
               },
               {
-                "outputColumnId": "region~f4rbps",
-                "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                "sourceColumnId": "region~t4e6y7"
+                "outputColumnId": "region~pd1bwx",
+                "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                "sourceColumnId": "region~8deveq"
               },
               {
-                "outputColumnId": "revenue~99zq7c",
-                "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                "sourceColumnId": "revenue~77cqrg"
+                "outputColumnId": "revenue~y873rt",
+                "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                "sourceColumnId": "revenue~q2yayg"
               },
               {
-                "outputColumnId": "cost~6c7mbh",
-                "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                "sourceColumnId": "cost~09hapz"
+                "outputColumnId": "cost~m1bgbm",
+                "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                "sourceColumnId": "cost~7dtph2"
               },
               {
-                "outputColumnId": "profit~yp1fcg",
-                "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                "sourceColumnId": "profit~ffajsm"
+                "outputColumnId": "profit~t05k0m",
+                "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                "sourceColumnId": "profit~wbx9tc"
               },
               {
-                "outputColumnId": "budget~wg0hxt",
-                "sourceFrameId": "98d51a6d-16a4-4315-8f8e-9e1e9262f86a",
-                "sourceColumnId": "budget~b0b9bd"
+                "outputColumnId": "budget~pkntb1",
+                "sourceFrameId": "fe4ce7ea-3661-41cc-b0af-6c0fdc27b01f",
+                "sourceColumnId": "budget~0bfawg"
               }
             ]
           },
@@ -719,44 +683,44 @@
             {
               "kind": "join",
               "join": {
-                "lookupFrameId": "98d51a6d-16a4-4315-8f8e-9e1e9262f86a",
+                "lookupFrameId": "fe4ce7ea-3661-41cc-b0af-6c0fdc27b01f",
                 "primaryKeyColumnIds": [
-                  "month~adkeqw"
+                  "month~5taj54"
                 ],
                 "lookupKeyColumnIds": [
-                  "month~814k9v"
+                  "month~6vbdza"
                 ],
                 "joinType": "left",
                 "outputs": [
                   {
-                    "outputColumnId": "month~h09h7m",
-                    "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                    "sourceColumnId": "month~adkeqw"
+                    "outputColumnId": "month~j7gbxs",
+                    "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                    "sourceColumnId": "month~5taj54"
                   },
                   {
-                    "outputColumnId": "region~f4rbps",
-                    "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                    "sourceColumnId": "region~t4e6y7"
+                    "outputColumnId": "region~pd1bwx",
+                    "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                    "sourceColumnId": "region~8deveq"
                   },
                   {
-                    "outputColumnId": "revenue~99zq7c",
-                    "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                    "sourceColumnId": "revenue~77cqrg"
+                    "outputColumnId": "revenue~y873rt",
+                    "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                    "sourceColumnId": "revenue~q2yayg"
                   },
                   {
-                    "outputColumnId": "cost~6c7mbh",
-                    "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                    "sourceColumnId": "cost~09hapz"
+                    "outputColumnId": "cost~m1bgbm",
+                    "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                    "sourceColumnId": "cost~7dtph2"
                   },
                   {
-                    "outputColumnId": "profit~yp1fcg",
-                    "sourceFrameId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                    "sourceColumnId": "profit~ffajsm"
+                    "outputColumnId": "profit~t05k0m",
+                    "sourceFrameId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                    "sourceColumnId": "profit~wbx9tc"
                   },
                   {
-                    "outputColumnId": "budget~wg0hxt",
-                    "sourceFrameId": "98d51a6d-16a4-4315-8f8e-9e1e9262f86a",
-                    "sourceColumnId": "budget~b0b9bd"
+                    "outputColumnId": "budget~pkntb1",
+                    "sourceFrameId": "fe4ce7ea-3661-41cc-b0af-6c0fdc27b01f",
+                    "sourceColumnId": "budget~0bfawg"
                   }
                 ]
               }
@@ -765,17 +729,17 @@
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "variance~bzgk20",
+                  "outputColumnId": "variance~cnfrny",
                   "expression": {
                     "kind": "binary",
                     "operator": "subtract",
                     "left": {
                       "kind": "column",
-                      "column_id": "revenue~99zq7c"
+                      "column_id": "revenue~y873rt"
                     },
                     "right": {
                       "kind": "column",
-                      "column_id": "budget~wg0hxt"
+                      "column_id": "budget~pkntb1"
                     }
                   }
                 }
@@ -789,11 +753,11 @@
       },
       {
         "kind": "frame",
-        "id": "8675622b-df2c-4bcf-91df-5a77a28b4782",
+        "id": "54b117e1-d1ad-481a-805a-089401de9c13",
         "name": "By region",
         "columns": [
           {
-            "id": "region~awggk4",
+            "id": "region~18b26q",
             "name": "Region",
             "sourceName": null,
             "dataType": "string",
@@ -802,7 +766,7 @@
             "formula": null
           },
           {
-            "id": "total_revenue~7nvt54",
+            "id": "total_revenue~bzx3zx",
             "name": "Total Revenue",
             "sourceName": null,
             "dataType": "integer",
@@ -811,7 +775,7 @@
             "formula": null
           },
           {
-            "id": "total_budget~cd1x8b",
+            "id": "total_budget~8cembr",
             "name": "Total Budget",
             "sourceName": null,
             "dataType": "integer",
@@ -820,7 +784,7 @@
             "formula": null
           },
           {
-            "id": "total_variance~vqk56s",
+            "id": "total_variance~s4t5sk",
             "name": "Total Variance",
             "sourceName": null,
             "dataType": "integer",
@@ -834,59 +798,59 @@
         "artifact": null,
         "connector": null,
         "derivation": {
-          "sourceFrameId": "af069c46-b83f-4eef-a936-5f52a8abd985",
+          "sourceFrameId": "437b3820-89b1-40e4-b08f-de46c2243a18",
           "join": null,
           "steps": [
             {
               "kind": "withColumns",
               "columns": [
                 {
-                  "outputColumnId": "month~4zctr9",
+                  "outputColumnId": "month~6naac4",
                   "expression": {
                     "kind": "column",
-                    "column_id": "month~h09h7m"
+                    "column_id": "month~j7gbxs"
                   }
                 },
                 {
-                  "outputColumnId": "region~q5e6tc",
+                  "outputColumnId": "region~narq7z",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~f4rbps"
+                    "column_id": "region~pd1bwx"
                   }
                 },
                 {
-                  "outputColumnId": "revenue~wfgt9b",
+                  "outputColumnId": "revenue~4wdacv",
                   "expression": {
                     "kind": "column",
-                    "column_id": "revenue~99zq7c"
+                    "column_id": "revenue~y873rt"
                   }
                 },
                 {
-                  "outputColumnId": "cost~nxx3p4",
+                  "outputColumnId": "cost~chahzz",
                   "expression": {
                     "kind": "column",
-                    "column_id": "cost~6c7mbh"
+                    "column_id": "cost~m1bgbm"
                   }
                 },
                 {
-                  "outputColumnId": "profit~8fvbym",
+                  "outputColumnId": "profit~5twf1c",
                   "expression": {
                     "kind": "column",
-                    "column_id": "profit~yp1fcg"
+                    "column_id": "profit~t05k0m"
                   }
                 },
                 {
-                  "outputColumnId": "budget~4t39y1",
+                  "outputColumnId": "budget~t4g6pg",
                   "expression": {
                     "kind": "column",
-                    "column_id": "budget~wg0hxt"
+                    "column_id": "budget~pkntb1"
                   }
                 },
                 {
-                  "outputColumnId": "variance~fevpft",
+                  "outputColumnId": "variance~rtt9dk",
                   "expression": {
                     "kind": "column",
-                    "column_id": "variance~bzgk20"
+                    "column_id": "variance~cnfrny"
                   }
                 }
               ]
@@ -894,34 +858,34 @@
             {
               "kind": "select",
               "columnIds": [
-                "month~4zctr9",
-                "region~q5e6tc",
-                "revenue~wfgt9b",
-                "cost~nxx3p4",
-                "profit~8fvbym",
-                "budget~4t39y1",
-                "variance~fevpft"
+                "month~6naac4",
+                "region~narq7z",
+                "revenue~4wdacv",
+                "cost~chahzz",
+                "profit~5twf1c",
+                "budget~t4g6pg",
+                "variance~rtt9dk"
               ]
             },
             {
               "kind": "summarize",
               "groupKeys": [
                 {
-                  "outputColumnId": "region~awggk4",
+                  "outputColumnId": "region~18b26q",
                   "expression": {
                     "kind": "column",
-                    "column_id": "region~q5e6tc"
+                    "column_id": "region~narq7z"
                   }
                 }
               ],
               "aggregates": [
                 {
-                  "outputColumnId": "total_revenue~7nvt54",
+                  "outputColumnId": "total_revenue~bzx3zx",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "revenue~wfgt9b"
+                      "column_id": "revenue~4wdacv"
                     },
                     "path": [
                       "sum"
@@ -931,12 +895,12 @@
                   }
                 },
                 {
-                  "outputColumnId": "total_budget~cd1x8b",
+                  "outputColumnId": "total_budget~8cembr",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "budget~4t39y1"
+                      "column_id": "budget~t4g6pg"
                     },
                     "path": [
                       "sum"
@@ -946,12 +910,12 @@
                   }
                 },
                 {
-                  "outputColumnId": "total_variance~vqk56s",
+                  "outputColumnId": "total_variance~s4t5sk",
                   "expression": {
                     "kind": "method",
                     "input": {
                       "kind": "column",
-                      "column_id": "variance~fevpft"
+                      "column_id": "variance~rtt9dk"
                     },
                     "path": [
                       "sum"
@@ -971,11 +935,11 @@
       },
       {
         "kind": "block",
-        "id": "216abd66-81e2-4c8f-ab25-22c126b585e9",
+        "id": "9e3e29ab-9532-4e1b-bdaa-ffbb2b8c4957",
         "name": "Scratchwork",
         "lines": [
           {
-            "id": "307723cd-9411-4055-b6b2-e43013701e35",
+            "id": "3ee566b8-db0a-4d5d-949a-13e067019038",
             "name": "Total revenue",
             "named": true,
             "nameQuoted": false,
@@ -985,8 +949,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                  "column_id": "revenue~77cqrg"
+                  "frame_id": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                  "column_id": "revenue~q2yayg"
                 },
                 "path": [
                   "sum"
@@ -998,7 +962,7 @@
             "error": null
           },
           {
-            "id": "f2c25c68-c1ee-4880-a9ed-90398d838262",
+            "id": "35f17aed-a39d-4d68-8ef0-c139279d257b",
             "name": "Total variance",
             "named": true,
             "nameQuoted": false,
@@ -1008,8 +972,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "af069c46-b83f-4eef-a936-5f52a8abd985",
-                  "column_id": "variance~bzgk20"
+                  "frame_id": "437b3820-89b1-40e4-b08f-de46c2243a18",
+                  "column_id": "variance~cnfrny"
                 },
                 "path": [
                   "sum"
@@ -1021,7 +985,7 @@
             "error": null
           },
           {
-            "id": "648ad207-317e-4b17-be8d-dc46b5beb645",
+            "id": "e5002465-4cfd-4d20-b71b-30c127c48e83",
             "name": "Forecast total",
             "named": true,
             "nameQuoted": false,
@@ -1031,8 +995,8 @@
                 "kind": "method",
                 "input": {
                   "kind": "foreignColumn",
-                  "frame_id": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
-                  "column_id": "forecast~2pk99r"
+                  "frame_id": "8bea1556-259f-4f65-85c4-00ec30a27daa",
+                  "column_id": "forecast~cvcq29"
                 },
                 "path": [
                   "sum"
@@ -1047,9 +1011,9 @@
       },
       {
         "kind": "plot",
-        "id": "f5f72ca2-1a4c-479a-b48e-8d963188149d",
+        "id": "dc22744a-5ae2-434f-9517-984bcff4a96d",
         "name": "Revenue by month",
-        "sourceFrameId": "af069c46-b83f-4eef-a936-5f52a8abd985",
+        "sourceFrameId": "437b3820-89b1-40e4-b08f-de46c2243a18",
         "spec": {
           "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
           "mark": {
@@ -1058,18 +1022,18 @@
           },
           "encoding": {
             "x": {
-              "field": "month~h09h7m",
+              "field": "month~j7gbxs",
               "type": "nominal",
               "title": "Month",
               "sort": null
             },
             "y": {
-              "field": "revenue~99zq7c",
+              "field": "revenue~y873rt",
               "type": "quantitative",
               "title": "Revenue"
             },
             "color": {
-              "field": "region~f4rbps",
+              "field": "region~pd1bwx",
               "type": "nominal",
               "title": "Region"
             }
@@ -1080,8 +1044,8 @@
     ],
     "views": [
       {
-        "id": "c438f47b-cdf8-4c75-bcd3-85fc66764134",
-        "objectId": "62950a9a-beae-4f86-9109-7f71ee8ad87b",
+        "id": "4b66cafa-4b1c-447c-9849-071d26b05877",
+        "objectId": "8bea1556-259f-4f65-85c4-00ec30a27daa",
         "x": 720.0,
         "y": 70.0,
         "width": 1080.0,
@@ -1089,8 +1053,8 @@
         "collapsed": false
       },
       {
-        "id": "533d1451-d1f7-4e6a-afc1-00fb29fbc796",
-        "objectId": "98d51a6d-16a4-4315-8f8e-9e1e9262f86a",
+        "id": "6640a526-8b65-4944-a7ad-b1b97e5e0b09",
+        "objectId": "fe4ce7ea-3661-41cc-b0af-6c0fdc27b01f",
         "x": 1840.0,
         "y": 70.0,
         "width": 380.0,
@@ -1098,8 +1062,8 @@
         "collapsed": false
       },
       {
-        "id": "2ae718dd-872a-4079-9a45-1ee826d06900",
-        "objectId": "d493454f-12c8-4db4-ba50-f81a2d594545",
+        "id": "f59bdd7c-e1bb-42dc-8f01-f9c9d9569b4b",
+        "objectId": "84abe5bc-237c-45e8-9aaf-b4dc2ed0aff7",
         "x": 70.0,
         "y": 70.0,
         "width": 580.0,
@@ -1107,8 +1071,8 @@
         "collapsed": false
       },
       {
-        "id": "e690196a-c73b-43b2-8d0e-f1cfdad8d00e",
-        "objectId": "a0198ba2-fb74-4d64-a78d-2a23814a30ea",
+        "id": "81f5eadb-7843-43c0-b8fb-3986a21c42a6",
+        "objectId": "b9487bbc-506b-4504-9a41-7e06b7dc38c8",
         "x": 1840.0,
         "y": 440.0,
         "width": 260.0,
@@ -1116,8 +1080,8 @@
         "collapsed": false
       },
       {
-        "id": "72e593f7-2899-48eb-8d37-a8439645118e",
-        "objectId": "48ad929c-0e9e-4950-a7cb-16cf12ad6ae1",
+        "id": "e4f1e8ee-865b-4dd6-b1ec-45ea74700a59",
+        "objectId": "89383165-a021-4977-8552-29fa58760786",
         "x": 0.0,
         "y": 0.0,
         "width": 220.0,
@@ -1125,22 +1089,22 @@
         "collapsed": false
       },
       {
-        "id": "0c7962db-04fd-4126-8ba3-05b198ba0ff5",
-        "objectId": "af069c46-b83f-4eef-a936-5f52a8abd985",
+        "id": "6de0fffe-366f-4e41-928b-3c920cc2afc8",
+        "objectId": "437b3820-89b1-40e4-b08f-de46c2243a18",
         "x": 720.0,
         "y": 490.0,
         "width": 1080.0,
         "height": 430.0,
         "collapsed": false,
         "tabObjectIds": [
-          "af069c46-b83f-4eef-a936-5f52a8abd985",
-          "8675622b-df2c-4bcf-91df-5a77a28b4782",
-          "f5f72ca2-1a4c-479a-b48e-8d963188149d"
+          "437b3820-89b1-40e4-b08f-de46c2243a18",
+          "54b117e1-d1ad-481a-805a-089401de9c13",
+          "dc22744a-5ae2-434f-9517-984bcff4a96d"
         ]
       },
       {
-        "id": "4db17f53-31a5-47cc-b7a9-3d8eace9d42a",
-        "objectId": "216abd66-81e2-4c8f-ab25-22c126b585e9",
+        "id": "1ec6d6a6-cc3c-4073-8c37-697f169fa4ae",
+        "objectId": "9e3e29ab-9532-4e1b-bdaa-ffbb2b8c4957",
         "x": 720.0,
         "y": 960.0,
         "width": 620.0,
@@ -1151,21 +1115,23 @@
     "frozenValues": {},
     "scenarios": [
       {
-        "id": "0ef7f16a-01d1-4469-9682-17857b90a348",
+        "id": "2c6534fe-ddf2-4b90-8344-c0379c9d2bb5",
         "name": "Upside",
         "values": {
-          "48ad929c-0e9e-4950-a7cb-16cf12ad6ae1": "1.15"
+          "89383165-a021-4977-8552-29fa58760786": "1.15"
         }
       },
       {
-        "id": "e21f7a9f-3c81-4713-adae-3c29c28e16b2",
+        "id": "ba19a0e0-ce01-4a45-8c61-0facef89a8dc",
         "name": "Downside",
         "values": {
-          "48ad929c-0e9e-4950-a7cb-16cf12ad6ae1": "0.95"
+          "89383165-a021-4977-8552-29fa58760786": "0.95"
         }
       }
     ],
-    "activeScenario": null
+    "activeScenario": null,
+    "calendars": [],
+    "defaultCalendarId": null
   },
   "versionVector": {}
 }

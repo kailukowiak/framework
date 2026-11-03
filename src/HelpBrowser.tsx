@@ -1,8 +1,8 @@
 import { Check, Copy, Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import "./HelpBrowser.css";
 import { writeClipboardText } from "./lib/clipboard";
-import type { HelpScope } from "./lib/helpContent";
+import type { HelpRequest } from "./lib/helpPanel";
 import {
   helpEntries,
   searchHelpEntries,
@@ -13,75 +13,64 @@ import {
 import type { FormulaFunction } from "./lib/types";
 
 type HelpBrowserProps = {
-  scope: HelpScope;
-  initialQuery?: string;
+  request: HelpRequest;
   formulaFunctions: FormulaFunction[];
   canInsert: boolean;
-  onScopeChange: (scope: HelpScope) => void;
+  /**
+   * How much of the right edge already belongs to the inspector. Help docks
+   * beside it rather than over it, because the Wrangle editor someone is
+   * asking about lives there.
+   */
+  rightInset?: string;
   onInsert: (formula: string) => void;
   onClose: () => void;
 };
 
 const MAX_RESULTS = 80;
 
+type CopyState = { key: string; copied: boolean } | null;
+
+/**
+ * Help docked at the right edge, not floated over the canvas. Most help is
+ * asked for halfway through a formula, and a formula is written by clicking
+ * the frames it reads: a panel over the canvas hid the very columns the
+ * person was about to point at. Docked, the canvas stays where it was and
+ * clickable, Insert can leave the panel open, and help stays beside the work
+ * until it is dismissed.
+ */
 export function HelpBrowser({
-  scope,
-  initialQuery = "",
+  request,
   formulaFunctions,
   canInsert,
-  onScopeChange,
+  rightInset = "0px",
   onInsert,
   onClose,
 }: HelpBrowserProps) {
-  const [query, setQuery] = useState(initialQuery);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [copyState, setCopyState] = useState<{ key: string; copied: boolean } | null>(null);
+  const [query, setQuery] = useState(request.query);
+  const [selectedId, setSelectedId] = useState<string | null>(request.entryId ?? null);
+  const [copyState, setCopyState] = useState<CopyState>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const panelRef = useRef<HTMLElement>(null);
   const resetCopy = useRef<number | null>(null);
-  const entries = useMemo(
-    () => helpEntries(scope, formulaFunctions),
-    [formulaFunctions, scope]
-  );
+  const entries = useMemo(() => helpEntries(formulaFunctions), [formulaFunctions]);
   const results = useMemo(
     () => searchHelpEntries(entries, query).slice(0, MAX_RESULTS),
     [entries, query]
   );
+  // An entry opened by id — the function under the cursor, a Related link —
+  // stays open even when the search no longer lists it, so following a link
+  // never throws away the list the person was reading.
   const selected =
-    results.find((entry) => entry.id === selectedId) ?? results[0] ?? null;
+    entries.find((entry) => entry.id === selectedId) ?? results[0] ?? null;
 
+  // Every request retargets the panel, including one that arrives while it
+  // is already open: ⌘K inside a different function opens that function.
   useEffect(() => {
+    setQuery(request.query);
+    setSelectedId(request.entryId ?? null);
+    if (request.keepFocus) return;
     inputRef.current?.focus();
     inputRef.current?.select();
-  }, [scope]);
-
-  useEffect(() => {
-    if (selected && selected.id !== selectedId) setSelectedId(selected.id);
-  }, [selected, selectedId]);
-
-  // Escape is handled twice on purpose, and the panel's own handler is the one
-  // that matters. A keydown raised inside the panel did not reach the window
-  // listener below in the packaged app — Escape from the search field closed
-  // nothing, while Quick Commands, which handles Escape on its own surface,
-  // closed as expected. So the panel closes itself from any key it can see,
-  // and the window listener stays for the case it never sees: focus somewhere
-  // else on the canvas while the panel is open.
-  const closeOnEscape = (event: { key: string; preventDefault: () => void }) => {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    onClose();
-  };
-
-  useEffect(() => {
-    const closeFromWindow = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      const target = event.target;
-      if (target instanceof Node && panelRef.current?.contains(target)) return;
-      onClose();
-    };
-    window.addEventListener("keydown", closeFromWindow);
-    return () => window.removeEventListener("keydown", closeFromWindow);
-  }, [onClose]);
+  }, [request.serial, request.query, request.entryId, request.keepFocus]);
 
   useEffect(
     () => () => {
@@ -92,8 +81,9 @@ export function HelpBrowser({
 
   const selectByOffset = (offset: number) => {
     if (!results.length) return;
-    const current = Math.max(0, results.findIndex((entry) => entry.id === selected?.id));
-    const next = Math.min(results.length - 1, Math.max(0, current + offset));
+    const current = results.findIndex((entry) => entry.id === selected?.id);
+    const next =
+      current < 0 ? 0 : Math.min(results.length - 1, Math.max(0, current + offset));
     setSelectedId(results[next].id);
     document.getElementById(`help-result-${results[next].id}`)?.scrollIntoView({ block: "nearest" });
   };
@@ -106,141 +96,92 @@ export function HelpBrowser({
   };
 
   const followRelated = (title: string) => {
-    setQuery(title);
-    setSelectedId(entries.find((entry) => entry.title === title)?.id ?? null);
-    inputRef.current?.focus();
+    const entry = entries.find((candidate) => candidate.title === title);
+    if (entry) setSelectedId(entry.id);
+    else setQuery(title);
   };
 
+  // Escape is handled on the panel itself. A keydown raised inside it did not
+  // reach a window listener in the packaged app, and a docked panel should
+  // not answer an Escape pressed somewhere else anyway: on the canvas that key
+  // already means "stop editing this cell".
   return (
-    <section
-      ref={panelRef}
+    <aside
       className="help-browser"
-      role="dialog"
-      aria-modal="false"
+      style={{ "--help-right": rightInset } as CSSProperties}
       aria-label="FrameWork Reference"
-      onKeyDown={closeOnEscape}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        onClose();
+      }}
     >
-      <HelpSearchHeader
-        scope={scope}
-        query={query}
-        inputRef={inputRef}
-        onScopeChange={onScopeChange}
-        onQueryChange={setQuery}
-        onMove={selectByOffset}
-        onClose={onClose}
-      />
-
-      <div className="help-browser-body">
-        <div className="help-results" role="listbox" aria-label="Help results">
-          {results.length ? (
-            results.map((entry) => (
-              <HelpResult
-                key={entry.id}
-                entry={entry}
-                selected={entry.id === selected?.id}
-                onSelect={() => setSelectedId(entry.id)}
-              />
-            ))
-          ) : (
-            <p className="help-empty">
-              No answer yet. Try the job you want to do, an Excel name, or words such as
-              “vector”, “live”, or “previous row”.
-            </p>
-          )}
-        </div>
-        <article className="help-detail" aria-live="polite">
-          {selected?.kind === "Function" && (
-            <FunctionDetail
-              entry={selected}
-              canInsert={canInsert}
-              copyState={copyState}
-              onCopy={copy}
-              onInsert={onInsert}
-            />
-          )}
-          {selected && selected.kind !== "Function" && (
-            <GuideDetail
-              entry={selected}
-              canInsert={canInsert}
-              copyState={copyState}
-              onCopy={copy}
-              onInsert={onInsert}
-              onRelated={followRelated}
-            />
-          )}
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function HelpSearchHeader({
-  scope,
-  query,
-  inputRef,
-  onScopeChange,
-  onQueryChange,
-  onMove,
-  onClose,
-}: {
-  scope: HelpScope;
-  query: string;
-  inputRef: RefObject<HTMLInputElement | null>;
-  onScopeChange: (scope: HelpScope) => void;
-  onQueryChange: (query: string) => void;
-  onMove: (offset: number) => void;
-  onClose: () => void;
-}) {
-  return (
-    <>
-      <header className="help-browser-header">
-        <nav aria-label="Help sections">
-          <button
-            className={scope === "formulas" ? "active" : ""}
-            aria-pressed={scope === "formulas"}
-            onClick={() => onScopeChange("formulas")}
-          >
-            Formulas
-          </button>
-          <button
-            className={scope === "guide" ? "active" : ""}
-            aria-pressed={scope === "guide"}
-            onClick={() => onScopeChange("guide")}
-          >
-            How FrameWork works
-          </button>
-        </nav>
-        <button className="icon-button" aria-label="Close help" onClick={onClose}>
-          <X size={18} />
-        </button>
-      </header>
       <label className="help-search">
-        <Search size={16} aria-hidden="true" />
+        <Search size={13} aria-hidden="true" />
         <input
           ref={inputRef}
           value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setSelectedId(null);
+          }}
           onKeyDown={(event) => {
             if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
             event.preventDefault();
-            onMove(event.key === "ArrowDown" ? 1 : -1);
+            selectByOffset(event.key === "ArrowDown" ? 1 : -1);
           }}
-          placeholder={
-            scope === "formulas"
-              ? "Search formulas, jobs, or Excel names…"
-              : "Ask how something works…"
-          }
-          aria-label={scope === "formulas" ? "Search formulas" : "Search help"}
+          placeholder="sum, vlookup, previous row, pivot…"
+          aria-label="Search help"
           spellCheck={false}
         />
-        {query && (
-          <button aria-label="Clear help search" onClick={() => onQueryChange("")}>
-            <X size={14} />
-          </button>
-        )}
+        <button type="button" aria-label="Close help" onClick={onClose}>
+          <X size={13} />
+        </button>
       </label>
-    </>
+      <div className="help-results" role="listbox" aria-label="Help results">
+        {results.map((entry) => (
+          <HelpResult
+            key={entry.id}
+            entry={entry}
+            selected={entry.id === selected?.id}
+            onSelect={() => setSelectedId(entry.id)}
+          />
+        ))}
+        {!results.length && (
+          <p className="help-empty">
+            No answer. Try the job, an Excel name, or words like “previous row”.
+          </p>
+        )}
+      </div>
+      <article className="help-detail" aria-live="polite">
+        {selected?.kind === "Function" && (
+          <FunctionDetail
+            entry={selected}
+            canInsert={canInsert}
+            copyState={copyState}
+            onCopy={copy}
+            onInsert={onInsert}
+          />
+        )}
+        {selected && selected.kind !== "Function" && (
+          <GuideDetail
+            entry={selected}
+            canInsert={canInsert}
+            copyState={copyState}
+            onCopy={copy}
+            onInsert={onInsert}
+            onRelated={followRelated}
+          />
+        )}
+      </article>
+    </aside>
   );
+}
+
+function entryKind(entry: HelpEntry): string {
+  return entry.kind === "Function"
+    ? entry.function.category
+    : entry.guide.category ?? entry.kind;
 }
 
 function HelpResult({
@@ -252,10 +193,6 @@ function HelpResult({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const label =
-    entry.kind === "Function"
-      ? entry.function.category
-      : entry.guide.category ?? entry.kind;
   return (
     <button
       id={`help-result-${entry.id}`}
@@ -263,12 +200,48 @@ function HelpResult({
       role="option"
       aria-selected={selected}
       className={selected ? "selected" : ""}
+      title={entry.summary}
       onClick={onSelect}
     >
-      <span>{label}</span>
-      <strong>{entry.title}</strong>
-      <small>{entry.summary}</small>
+      <strong className={entry.kind === "Function" ? "help-code" : ""}>{entry.title}</strong>
+      <small>{entryKind(entry)}</small>
     </button>
+  );
+}
+
+/** A copyable formula, with Insert when a formula cursor can take it. */
+function HelpExample({
+  label,
+  code,
+  copyKey,
+  canInsert,
+  copyState,
+  onCopy,
+  onInsert,
+}: {
+  label?: string;
+  code: string;
+  copyKey: string;
+  canInsert: boolean;
+  copyState: CopyState;
+  onCopy: (key: string, text: string) => void;
+  onInsert: (formula: string) => void;
+}) {
+  const copied = copyState?.key === copyKey ? copyState : null;
+  return (
+    <div className="help-example">
+      {label && <span>{label}</span>}
+      <code>{code}</code>
+      <button type="button" onClick={() => onCopy(copyKey, code)}>
+        {copied?.copied ? <Check size={12} /> : <Copy size={12} />}
+        {copied ? (copied.copied ? "Copied" : "Copy failed") : "Copy"}
+      </button>
+      {canInsert && (
+        <button type="button" onClick={() => onInsert(code)}>
+          Insert
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -281,32 +254,24 @@ function FunctionDetail({
 }: {
   entry: FormulaHelpEntry;
   canInsert: boolean;
-  copyState: { key: string; copied: boolean } | null;
+  copyState: CopyState;
   onCopy: (key: string, text: string) => void;
   onInsert: (formula: string) => void;
 }) {
   const fn = entry.function;
-  const key = `function:${entry.id}`;
   return (
     <>
       <span className="eyebrow">{fn.category}</span>
       <h2><code>{fn.signature}</code></h2>
       <p className="help-summary">{fn.description}</p>
-      <div className="help-function-example">
-        <code>{entry.copyText}</code>
-        <CopyButton
-          state={copyState}
-          copyKey={key}
-          onClick={() => onCopy(key, entry.copyText)}
-        />
-      </div>
-      <div className="help-detail-actions">
-        {canInsert && (
-          <button className="primary-action" onClick={() => onInsert(entry.copyText)}>
-            Insert at formula cursor
-          </button>
-        )}
-      </div>
+      <HelpExample
+        code={entry.copyText}
+        copyKey={`function:${entry.id}`}
+        canInsert={canInsert}
+        copyState={copyState}
+        onCopy={onCopy}
+        onInsert={onInsert}
+      />
       <dl className="help-facts">
         <div><dt>Returns</dt><dd>{fn.returnType}</dd></div>
         <div><dt>Nulls</dt><dd>{fn.nullBehavior}</dd></div>
@@ -344,7 +309,7 @@ function GuideDetail({
 }: {
   entry: GuideHelpEntry;
   canInsert: boolean;
-  copyState: { key: string; copied: boolean } | null;
+  copyState: CopyState;
   onCopy: (key: string, text: string) => void;
   onInsert: (formula: string) => void;
   onRelated: (title: string) => void;
@@ -380,47 +345,28 @@ function GuideDetail({
       {guide.examples && (
         <section className="help-examples">
           <h3>Examples</h3>
-          {guide.examples.map((example, index) => {
-            const key = `${guide.id}:${index}`;
-            return (
-              <div key={example.code}>
-                <span>{example.label}</span>
-                <code>{example.code}</code>
-                <CopyButton state={copyState} copyKey={key} onClick={() => onCopy(key, example.code)} />
-                {canInsert && (
-                  <button onClick={() => onInsert(example.code)}>Insert</button>
-                )}
-              </div>
-            );
-          })}
+          {guide.examples.map((example, index) => (
+            <HelpExample
+              key={example.code}
+              label={example.label}
+              code={example.code}
+              copyKey={`${guide.id}:${index}`}
+              canInsert={canInsert}
+              copyState={copyState}
+              onCopy={onCopy}
+              onInsert={onInsert}
+            />
+          ))}
         </section>
       )}
       {guide.related && (
         <section className="help-related">
           <h3>Related</h3>
           {guide.related.map((title) => (
-            <button key={title} onClick={() => onRelated(title)}>{title}</button>
+            <button type="button" key={title} onClick={() => onRelated(title)}>{title}</button>
           ))}
         </section>
       )}
     </>
-  );
-}
-
-function CopyButton({
-  state,
-  copyKey,
-  onClick,
-}: {
-  state: { key: string; copied: boolean } | null;
-  copyKey: string;
-  onClick: () => void;
-}) {
-  const current = state?.key === copyKey ? state : null;
-  return (
-    <button className="secondary-action help-copy" onClick={onClick}>
-      {current?.copied ? <Check size={14} /> : <Copy size={14} />}
-      {current ? (current.copied ? "Copied" : "Copy failed") : "Copy"}
-    </button>
   );
 }

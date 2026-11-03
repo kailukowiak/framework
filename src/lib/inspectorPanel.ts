@@ -60,3 +60,13 @@ export function inspectorAvailable(
 ): boolean {
   return Boolean(selected && selection && selected.kind !== "block");
 }
+
+/**
+ * How much of the right edge the inspector holds, as a CSS length, for a
+ * panel that docks beside it. Help sits to the inspector's left rather than
+ * over it, because the Wrangle editor a question is usually about is in the
+ * inspector.
+ */
+export function rightDockInset(shown: boolean, collapsed: boolean): string {
+  return shown ? "var(--inspector-w)" : collapsed ? "var(--inspector-collapsed-w)" : "0px";
+}

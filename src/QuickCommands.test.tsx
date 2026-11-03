@@ -1,9 +1,6 @@
-// @vitest-environment jsdom
-
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
-  QuickCommands,
+  matchingCommands,
   normalizeShortcut,
   quickCommandItems,
   selectionCommands,
@@ -24,9 +21,17 @@ const commands = (run = vi.fn()): QuickCommand[] => [
   },
 ];
 
-afterEach(cleanup);
-
 describe("QuickCommands", () => {
+  it("matches by label, group, keyword or a shortcut typed out, never a disabled command", () => {
+    const rows = commands();
+    expect(matchingCommands(rows, "open").map((command) => command.id)).toEqual([
+      "open",
+      "scratchwork",
+    ]);
+    expect(matchingCommands(rows, "cmd o").map((command) => command.id)).toEqual(["open"]);
+    expect(matchingCommands(rows, "unavailable")).toEqual([]);
+  });
+
   it("indexes the workbook Scratchwork window action", () => {
     const run = vi.fn();
     const items = quickCommandItems(
@@ -37,40 +42,6 @@ describe("QuickCommands", () => {
     expect(item?.label).toBe("Open Scratchwork Window");
     item?.run();
     expect(run).toHaveBeenCalledOnce();
-  });
-
-  it("filters commands and runs the selected action from the keyboard", () => {
-    const run = vi.fn();
-    const close = vi.fn();
-    render(<QuickCommands commands={commands(run)} onClose={close} />);
-
-    const search = screen.getByLabelText("Search commands");
-    fireEvent.change(search, { target: { value: "open" } });
-    expect(screen.getByText("Open…")).toBeTruthy();
-    expect(screen.queryByText("Unavailable action")).toBeNull();
-
-    fireEvent.keyDown(search, { key: "Enter" });
-    expect(close).toHaveBeenCalledOnce();
-    expect(run).toHaveBeenCalledOnce();
-  });
-
-  it("closes when the press lands outside it", () => {
-    const close = vi.fn();
-    const { container } = render(<QuickCommands commands={commands()} onClose={close} />);
-    fireEvent.pointerDown(container.querySelector(".quick-commands-backdrop")!);
-    expect(close).toHaveBeenCalledOnce();
-  });
-
-  it("moves through the visible commands and closes with Escape", () => {
-    const close = vi.fn();
-    render(<QuickCommands commands={commands()} onClose={close} />);
-    const search = screen.getByLabelText("Search commands");
-
-    fireEvent.keyDown(search, { key: "ArrowDown" });
-    expect(screen.getByText("Open Scratchwork").closest("button")?.getAttribute("aria-selected"))
-      .toBe("true");
-    fireEvent.keyDown(search, { key: "Escape" });
-    expect(close).toHaveBeenCalledOnce();
   });
 });
 
@@ -197,12 +168,7 @@ describe("recent documents", () => {
   it("finds a recent document by its path as well as its name", () => {
     const openRecent = vi.fn();
     const items = quickCommandItems({}, { ...baseState, recents }, { openRecent });
-    render(<QuickCommands commands={items} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Search commands"), {
-      target: { value: "model-3.fw" },
-    });
-    expect(screen.getByText("Model 3")).toBeTruthy();
-    expect(screen.queryByText("Model 4")).toBeNull();
+    expect(labels(matchingCommands(items, "model-3.fw"))).toEqual(["Model 3"]);
   });
 });
 
@@ -223,63 +189,10 @@ describe("shortcut text matching", () => {
   });
 
   it.each(["⌘3", "cmd 3", "command+3"])("matches %s on the shortcut", (query) => {
-    render(<QuickCommands commands={shortcuts} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Search commands"), {
-      target: { value: query },
-    });
-    expect(screen.getByText("Show Wrangle Inspector")).toBeTruthy();
-    expect(screen.queryByText("Save As…")).toBeNull();
-    cleanup();
+    expect(labels(matchingCommands(shortcuts, query))).toEqual(["Show Wrangle Inspector"]);
   });
 
   it("matches a two-modifier shortcut typed as words", () => {
-    render(<QuickCommands commands={shortcuts} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Search commands"), {
-      target: { value: "shift cmd s" },
-    });
-    expect(screen.getByText("Save As…")).toBeTruthy();
-    expect(screen.queryByText("Add Formula Block")).toBeNull();
-  });
-});
-
-describe("a query that names no command", () => {
-  it("hands any query to help without requiring its Reference tab first", () => {
-    const search = vi.fn();
-    const close = vi.fn();
-    render(
-      <QuickCommands commands={commands()} onSearchHelp={search} onClose={close} />
-    );
-    const field = screen.getByLabelText("Search commands");
-    fireEvent.change(field, { target: { value: "unpivot multiple columns" } });
-    expect(screen.getByText("Search help for “unpivot multiple columns”")).toBeTruthy();
-    fireEvent.keyDown(field, { key: "Enter" });
-    expect(search).toHaveBeenCalledWith("unpivot multiple columns");
-    expect(close).toHaveBeenCalledOnce();
-  });
-
-  it("hands it to Find rather than answering it", () => {
-    const search = vi.fn();
-    const close = vi.fn();
-    render(
-      <QuickCommands
-        commands={commands()}
-        onSearchDocument={search}
-        onClose={close}
-      />
-    );
-    const field = screen.getByLabelText("Search commands");
-    fireEvent.change(field, { target: { value: "Acme Corp" } });
-    expect(screen.getByText("Search document for “Acme Corp”")).toBeTruthy();
-    fireEvent.keyDown(field, { key: "Enter" });
-    expect(search).toHaveBeenCalledWith("Acme Corp");
-    expect(close).toHaveBeenCalledOnce();
-  });
-
-  it("says nothing was found when Find is not on offer", () => {
-    render(<QuickCommands commands={commands()} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Search commands"), {
-      target: { value: "Acme Corp" },
-    });
-    expect(screen.getByText("No commands found")).toBeTruthy();
+    expect(labels(matchingCommands(shortcuts, "shift cmd s"))).toEqual(["Save As…"]);
   });
 });

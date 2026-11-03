@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormulaFunction } from "./types";
-import { helpEntries, helpScopeForQuery, searchHelpEntries } from "./helpSearch";
+import { functionExample, helpEntries, searchHelpEntries } from "./helpSearch";
 
 const functions: FormulaFunction[] = [
   {
@@ -34,7 +34,7 @@ const functions: FormulaFunction[] = [
 describe("help search", () => {
   it("answers an intent question with the guide before raw functions", () => {
     const results = searchHelpEntries(
-      helpEntries("formulas", functions),
+      helpEntries(functions),
       "iterator in a variable"
     );
 
@@ -43,14 +43,14 @@ describe("help search", () => {
   });
 
   it("teaches the collection distinction when people search array or list", () => {
-    const results = searchHelpEntries(helpEntries("formulas", functions), "array");
+    const results = searchHelpEntries(helpEntries(functions), "array");
 
     expect(results[0]?.id).toBe("formula.collection-vocabulary");
     expect(results.some((entry) => entry.id === "root.sequence")).toBe(true);
   });
 
   it("keeps the two meanings of range discoverable", () => {
-    const results = searchHelpEntries(helpEntries("formulas", functions), "range");
+    const results = searchHelpEntries(helpEntries(functions), "range");
     const ids = results.map((entry) => entry.id);
 
     expect(ids).toContain("root.sequence");
@@ -58,9 +58,9 @@ describe("help search", () => {
   });
 
   it("returns exact application references alongside task-shaped guides", () => {
-    const join = searchHelpEntries(helpEntries("guide", functions), "join");
+    const join = searchHelpEntries(helpEntries(functions), "join");
     const formatting = searchHelpEntries(
-      helpEntries("guide", functions),
+      helpEntries(functions),
       "conditional formatting"
     );
 
@@ -70,7 +70,7 @@ describe("help search", () => {
   });
 
   it("surfaces every Wrangle transformation as searchable reference material", () => {
-    const entries = helpEntries("guide", functions);
+    const entries = helpEntries(functions);
 
     expect(searchHelpEntries(entries, "pivot")[0]?.id).toBe("reference.pivot");
     expect(searchHelpEntries(entries, "stack frame")[0]?.id).toBe(
@@ -82,7 +82,7 @@ describe("help search", () => {
   });
 
   it("explains reusable column-list syntax rather than only one transformation", () => {
-    const entries = helpEntries("formulas", functions);
+    const entries = helpEntries(functions);
 
     expect(searchHelpEntries(entries, "how do I choose multiple columns")[0]?.id)
       .toBe("reference.column-list");
@@ -90,9 +90,27 @@ describe("help search", () => {
       .toBe("reference.column-list");
   });
 
-  it("routes palette help queries to the section containing their answer", () => {
-    expect(helpScopeForQuery(functions, "pivot")).toBe("formulas");
-    expect(helpScopeForQuery(functions, "stack frame")).toBe("guide");
-    expect(helpScopeForQuery(functions, "sequence")).toBe("formulas");
+  it("searches functions and how-to answers as one list", () => {
+    const entries = helpEntries(functions);
+
+    // "stack frame" used to find nothing when searched under Formulas, and
+    // "sequence" missed the function under How FrameWork works.
+    expect(searchHelpEntries(entries, "pivot")[0]?.id).toBe("reference.pivot");
+    expect(searchHelpEntries(entries, "stack frame")[0]?.id).toBe("reference.union");
+    expect(searchHelpEntries(entries, "sequence").map((entry) => entry.id)).toContain(
+      "root.sequence"
+    );
+    expect(new Set(entries.map((entry) => entry.id)).size).toBe(entries.length);
+  });
+
+  it("tolerates a typo inside help but not where help shares a list", () => {
+    const entries = helpEntries(functions);
+    expect(searchHelpEntries(entries, "sequnce").map((entry) => entry.id)).toContain("root.sequence");
+    expect(searchHelpEntries(entries, "sequnce", { typoTolerant: false })).toEqual([]);
+  });
+
+  it("offers a worked call only where the signature does not already show it", () => {
+    expect(functionExample("expr.filter")).toBe("`Amount`.filter(`Region` == \"West\").sum()");
+    expect(functionExample("expr.sum")).toBeUndefined();
   });
 });

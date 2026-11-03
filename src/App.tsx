@@ -15,10 +15,9 @@ import {
 import { ReferenceHighlights } from "./ReferenceHighlights";
 import { PreferencesDialog } from "./PreferencesDialog";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
-import { FindPaletteHost } from "./FindPalette";
+import { CommandPalette, type PaletteMode } from "./CommandPalette";
 import { HelpBrowser } from "./HelpBrowser";
 import {
-  QuickCommands,
   quickCommandItems,
   type SelectionActions,
   type SelectionTarget,
@@ -60,6 +59,7 @@ import {
   inspectorAvailable,
   inspectorPanelReducer,
   inspectorShown,
+  rightDockInset,
 } from "./lib/inspectorPanel";
 import {
   focusGridClipboardTarget,
@@ -128,7 +128,8 @@ import {
   stableColumnRange,
 } from "./lib/selectedColumnRange";
 import { formulaToken } from "./lib/formulaReferences";
-import { helpScopeForQuery } from "./lib/helpSearch";
+import { jumpToFindHit } from "./lib/findJump";
+import { HelpPanelContext, useHelpPanel } from "./lib/helpPanel";
 import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNavigation";
 import {
   applicationShortcut,
@@ -272,12 +273,9 @@ export default function App() {
   const [preferencesPage, setPreferencesPage] = useState<"settings" | "shortcuts">(
     "settings"
   );
-  const [help, setHelp] = useState<{ scope: "formulas" | "guide"; query?: string } | null>(null);
-  const [lastHelpScope, setLastHelpScope] = useState<"formulas" | "guide">("guide");
-  const [quickCommandsOpen, setQuickCommandsOpen] = useState(false);
-  const [findOpen, setFindOpen] = useState(false);
-  /** What Find opens on, when something handed it a query. */
-  const [findQuery, setFindQuery] = useState("");
+  const help = useHelpPanel();
+  /** ⇧⌘P opens it on everything, ⌘F on the document alone. */
+  const [palette, setPalette] = useState<PaletteMode | null>(null);
   /** The device's recents, read when the palette first needs to list them. */
   const [recents, setRecents] = useState<RecentDocument[]>([]);
   const [sequenceFill, setSequenceFill] = useState<SequenceFillState | null>(null);
@@ -824,18 +822,11 @@ export default function App() {
       setPreferencesPage("shortcuts");
       setPreferencesOpen(true);
     },
-    find: () => {
-      setFindQuery("");
-      setFindOpen(true);
-    },
-    "quick-commands": () => {
-      setHelp(null);
-      setFindOpen(false);
-      setQuickCommandsOpen(true);
-    },
+    find: () => setPalette("document"),
+    "quick-commands": () => setPalette("commands"),
     reference: () => {
-      setQuickCommandsOpen(false);
-      setHelp({ scope: getFormulaEditor() ? "formulas" : lastHelpScope });
+      setPalette(null);
+      help.open(getFormulaEditor() ? help.formulaTarget.current : undefined);
     },
     "check-for-updates": () => updates.check(),
     undo: () => void navigateHistory("undo"),
@@ -932,7 +923,7 @@ export default function App() {
   // The recents are a device-level list, read when the palette opens rather
   // than kept in step with a document nothing here is waiting on.
   useEffect(() => {
-    if (!quickCommandsOpen) return;
+    if (!palette) return;
     let disposed = false;
     void listRecentDocuments()
       .then((items) => {
@@ -942,7 +933,7 @@ export default function App() {
     return () => {
       disposed = true;
     };
-  }, [quickCommandsOpen]);
+  }, [palette]);
 
   const menuHandlersRef = useRef(menuHandlers);
   menuHandlersRef.current = menuHandlers;
@@ -1249,6 +1240,7 @@ export default function App() {
   return (
     <DocumentWorkbench key={document.id} document={document} onOperation={run} position={() => insertPosition({ width: 560, height: 420 })}>
     <NumberDisplayContext.Provider value={useThousandsSeparators}>
+    <HelpPanelContext.Provider value={help}>
       <div
         className={`app-shell${formulaEditorActive ? " formula-pick-active" : ""}`}
         onContextMenu={openContextMenu}
@@ -1276,8 +1268,6 @@ export default function App() {
           }}
           expanded={scratchworkDrawerOpen}
           onToggle={() => void toggleScratchworkDrawer()}
-          helpOpen={Boolean(help)}
-          onToggleHelp={(query) => setHelp((current) => current ? null : { scope: "formulas", query })}
           onCellFormulaSaved={() => {
             setCellFormulaRequest(null);
             stepGridFocus("down");
@@ -1632,6 +1622,7 @@ export default function App() {
           the window to hold two things that are usually not there is the
           trade this corner exists to avoid. */}
         <CanvasStatus
+          withHelp={Boolean(help.request)}
           withInspector={showInspector}
           withCollapsedInspector={showCollapsedInspector}
           document={document}
@@ -1865,53 +1856,35 @@ export default function App() {
         {preferencesOpen && preferencesPage === "shortcuts" && (
           <KeyboardShortcutsDialog onClose={() => setPreferencesOpen(false)} />
         )}
-        {findOpen && (
-          <FindPaletteHost
+        {palette && (
+          <CommandPalette
+            key={palette}
+            initialMode={palette}
             document={document}
-            initialQuery={findQuery}
-            jumpToObject={jumpToObject}
-            setSelection={setSelection}
-            setGridFocus={setGridFocus}
-            onClose={() => setFindOpen(false)}
+            commands={quickCommandItems(
+              menuHandlers,
+              {
+                canUndo: document.canUndo,
+                canRedo: document.canRedo,
+                hasSelectedView: Boolean(selectedCommandView),
+                selection: quickCommandSelection(document, selection),
+                recents: recents.map(({ path, title }) => ({ path, title })),
+              },
+              { selection: selectionActions, openRecent: openRecentDocument }
+            )}
+            onJump={(hit) => jumpToFindHit(hit, { jumpToObject, setSelection, setGridFocus })}
+            onOpenHelp={help.open}
+            onClose={() => setPalette(null)}
           />
         )}
-        <QuickCommands
-          open={quickCommandsOpen}
-          commands={quickCommandItems(
-            menuHandlers,
-            {
-              canUndo: document.canUndo,
-              canRedo: document.canRedo,
-              hasSelectedView: Boolean(selectedCommandView),
-              selection: quickCommandSelection(document, selection),
-              recents: recents.map(({ path, title }) => ({ path, title })),
-            },
-            { selection: selectionActions, openRecent: openRecentDocument }
-          )}
-          onSearchDocument={(query) => {
-            setFindQuery(query);
-            setFindOpen(true);
-          }}
-          onSearchHelp={(query) =>
-            setHelp({ scope: helpScopeForQuery(document.formulaFunctions, query), query })
-          }
-          onClose={() => setQuickCommandsOpen(false)}
-        />
-        {help && (
+        {help.request && (
           <HelpBrowser
-            scope={help.scope}
-            initialQuery={help.query}
+            request={help.request}
             formulaFunctions={document.formulaFunctions}
             canInsert={Boolean(getFormulaEditor())}
-            onScopeChange={(scope) => {
-              setLastHelpScope(scope);
-              setHelp({ scope, query: help.query });
-            }}
-            onInsert={(formula) => {
-              replaceFormulaSelection(formula);
-              setHelp(null);
-            }}
-            onClose={() => setHelp(null)}
+            rightInset={rightDockInset(showInspector, showCollapsedInspector)}
+            onInsert={replaceFormulaSelection}
+            onClose={help.close}
           />
         )}
         {updates.status.kind !== "idle" && (
@@ -2100,6 +2073,7 @@ export default function App() {
           />
         )}
       </div>
+    </HelpPanelContext.Provider>
     </NumberDisplayContext.Provider>
     </DocumentWorkbench>
   );

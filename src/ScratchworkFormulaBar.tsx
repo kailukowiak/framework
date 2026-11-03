@@ -12,7 +12,7 @@ import {
 import { continueFormula } from "./lib/blockLines";
 import type { FormulaBarCell } from "./lib/formulaBarCell";
 import { formatFormulaChains } from "./lib/formulaFormatting";
-import { barModeClass, canFormatFormula, formulaBarEditingState, formulaHelpControl, formulaRows } from "./lib/formulaBarPresentation";
+import { barModeClass, canFormatFormula, formulaBarEditingState, formulaHelpTarget, formulaRows, useFormulaBarHelp } from "./lib/formulaBarPresentation";
 import type { FormulaReference } from "./lib/formulaReferences";
 import { replaceScratchworkLine } from "./lib/scratchwork";
 import { useMeasuredFormulaBar } from "./useMeasuredFormulaBar";
@@ -91,8 +91,6 @@ export function ScratchworkFormulaBar({
   onRequestReadOnlyCell,
   expanded,
   onToggle,
-  helpOpen = false,
-  onToggleHelp,
 }: {
   onCommit: (formula: string) => Promise<ScratchworkFormulaFeedback>;
   references: FormulaReference[];
@@ -103,8 +101,6 @@ export function ScratchworkFormulaBar({
   onRequestReadOnlyCell: (cell: FormulaBarCell) => void;
   expanded: boolean;
   onToggle: () => void;
-  helpOpen?: boolean;
-  onToggleHelp?: (query: string) => void;
 }) {
   const {
     active,
@@ -186,6 +182,9 @@ export function ScratchworkFormulaBar({
       });
     },
   });
+  const help = useFormulaBarHelp(
+    formulaHelpTarget(formulaMode, active?.label, completion, { draft, cursor, references: formulaReferences })
+  );
 
   // A column picked from the canvas updates the logical cursor without
   // moving DOM focus away from this bar. Carry that cursor into the input
@@ -460,7 +459,7 @@ export function ScratchworkFormulaBar({
       <FormulaBarActions
         formulaExpanded={formulaExpanded} onToggleFormula={() => setFormulaExpanded((value) => !value)}
         canFormat={canFormatFormula(formulaMode, draft, busy)}
-        help={formulaHelpControl(formulaMode, active?.label, completion, helpOpen, onToggleHelp)}
+        help={help}
         expanded={expanded}
         // Format persists through commit but is not a finishing gesture:
         // the person is tidying a formula they are still inside of.

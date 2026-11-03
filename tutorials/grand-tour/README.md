@@ -91,17 +91,19 @@ Three keys are worth learning before anything else.
    workbook—card names, column names, formulas, Scratchwork lines, and the
    values in your tables. Choose the result and FrameWork brings that card
    forward and selects the cell.
-2. Press **⌘⇧P**. Quick Commands is a searchable list of everything FrameWork
-   can do to this document, canvas and view, each with its shortcut. Type
-   `scratch` and read the two entries there without running them; press
-   **Escape**.
-3. Press **⌘K**. The Reference covers every formula function and the rules
-   behind Variables, Scratchwork, Wrangle, ownership and row order. While a
-   formula editor is active it opens on formulas automatically. Press
-   **Escape**.
+2. Press **⌘⇧P**. Quick Commands is the one search box: everything FrameWork
+   can do to this document, canvas and view, each with its shortcut, then the
+   matches in the workbook, then answers from the Reference. Type `scratch`
+   and read the two commands there without running them; then type `pivot`
+   and see the Reference answer listed under them. Press **Escape**.
+3. Press **⌘K**. The Reference opens docked at the right edge, beside the
+   canvas rather than over it. It covers every formula function and the rules
+   behind Variables, Scratchwork, Wrangle, ownership and row order, in one
+   search. While a formula is being written it opens on the function the
+   cursor is inside. Press **Escape**.
 
-Checkpoint: ⌘F selected the April Revenue cell, and both palettes closed on
-Escape leaving the workbook untouched.
+Checkpoint: ⌘F selected the April Revenue cell, and the palette and the
+Reference both closed on Escape leaving the workbook untouched.
 
 You are never more than one key from the name of the thing you are looking for,
 which matters more here than in a spreadsheet: FrameWork's controls are

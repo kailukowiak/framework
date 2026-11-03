@@ -9,6 +9,7 @@ import type { DocumentView } from "./lib/types";
 
 /** Readouts and exceptional actions that belong in the canvas corner. */
 export function CanvasStatus({
+  withHelp = false,
   withInspector,
   withCollapsedInspector,
   document,
@@ -23,6 +24,8 @@ export function CanvasStatus({
   onRefresh,
   onZoom,
 }: {
+  /** Help docks at the right edge too, beside the inspector. */
+  withHelp?: boolean;
   withInspector: boolean;
   withCollapsedInspector: boolean;
   /** Only for the scenario switcher, which is a statement about the whole
@@ -47,7 +50,7 @@ export function CanvasStatus({
     <div
       className={`canvas-status ${withInspector ? "with-inspector" : ""} ${
         withCollapsedInspector ? "with-inspector-collapsed" : ""
-      }`}
+      }${withHelp ? " with-help" : ""}`}
     >
       <SelectionStatisticsStatus
         context={context}
