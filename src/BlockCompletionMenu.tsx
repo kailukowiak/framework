@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import { FloatingMenu } from "./FloatingMenu";
+import { FunctionHelp } from "./FunctionHelp";
 import type { FormulaReference } from "./lib/formulaReferences";
 
 export function BlockCompletionMenu({
@@ -26,12 +27,15 @@ export function BlockCompletionMenu({
               onClick={() => onTake(suggestion)}
             >
               <span>{suggestion.label}</span>
-              <small>{suggestion.detail}</small>
+              {/* The highlighted function's description is spelled out
+                  below the list, so a row carries only its signature. */}
+              <small>{suggestion.signature ?? suggestion.detail}</small>
             </button>
           </li>
         ))}
         <li className="block-suggestions-hint">Tab</li>
       </ul>
+      <FunctionHelp reference={suggestions[activeIndex] ?? suggestions[0]} />
     </FloatingMenu>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { FloatingMenu } from "./FloatingMenu";
+import { FunctionHelp } from "./FunctionHelp";
 import { acceptCompletionOnce } from "./lib/completionAcceptance";
 import { completeFormula } from "./lib/api";
 import {
@@ -429,35 +430,4 @@ export function FormulaCompletionMenu({
       </FloatingMenu>
     );
   return null;
-}
-
-function FunctionHelp({
-  reference,
-  parameter,
-  parameterLabel,
-}: {
-  reference?: FormulaReference;
-  parameter?: NonNullable<FormulaReference["arguments"]>[number];
-  parameterLabel?: string | null;
-}) {
-  if (!reference?.signature || !reference.description) return null;
-  return (
-    <div className="formula-function-help">
-      <code>{reference.signature}</code>
-      {parameter ? (
-        <span>
-          <strong>{parameterLabel ?? parameter.name}</strong>
-          {parameter.required ? " · " : " · optional · "}
-          {parameter.description}
-          {parameter.example && (
-            <>
-              {" "}Try <code>{parameter.example}</code>.
-            </>
-          )}
-        </span>
-      ) : (
-        <span>{reference.description}</span>
-      )}
-    </div>
-  );
 }
