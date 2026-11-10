@@ -8,26 +8,50 @@ use std::path::Path;
 use ts_rs::TS;
 use uuid::Uuid;
 
-/// How many edits undo reaches back through.
+/// How many edits undo reaches back through, bounded by what each costs to
+/// keep rather than by one flat count.
 ///
-/// Bounded rather than endless, now that an edit can be a write to a data
-/// file. Every step still reachable by undo is a version of that file the
-/// document has to be able to reproduce, so depth is not free the way it is
-/// when history is only a list of small document changes — and an undo
-/// stack long enough to reach an edit from an hour ago is one nobody trusts
-/// enough to use anyway.
-const UNDO_DEPTH: usize = 10;
+/// Most edits are cheap to keep. Typing a cell, formatting a range, moving
+/// a card, writing a formula: each entry is a few operations against the
+/// document, and an inverse touches only what its own edit touched (see
+/// `operation/invert.rs` for why a restore carries one frame at most). A
+/// hundred of those is a hundred small values in memory, and a hundred is
+/// what a session of ordinary editing needs — ten was gone after typing one
+/// row.
+///
+/// Some edits are not cheap, because an edit can change which data file the
+/// document reads: a refresh, an adoption, folding patches, caching or
+/// freezing, an import, or deleting a frame that read a file. An undo entry
+/// for one of those names the file version on the other side of it, and
+/// every step still reachable by undo is a version the document has to be
+/// able to reproduce — so the artifact sweep keeps it on disk, and a run of
+/// refreshes of a large extract is a run of large files kept for history.
+/// Depth is not free there, and those entries keep the old bound of ten:
+/// an undo stack long enough to step back through an hour of refreshes is
+/// one nobody trusts enough to use anyway. (A cell written straight into a
+/// parquet the document owns, `SetArtifactCell`, rewrites the file on every
+/// step through it, and counts as expensive for that reason.)
+///
+/// Both bounds evict oldest first and only from the bottom, so what undo
+/// reaches is always one unbroken run back from now: an expensive entry
+/// that has to go takes every cheaper entry older than it with it, because
+/// undoing an edit while skipping one beneath it would apply an inverse to a
+/// state it was never computed against.
+const UNDO_DEPTH: usize = 100;
+const EXPENSIVE_UNDO_DEPTH: usize = 10;
 
 /// One undoable edit, kept as operations rather than as a document.
 ///
 /// `inverse` puts the document back and is computed against the state
 /// before `forward` applied; `forward` is what re-applies it, which is all
 /// redo needs because undo has by then restored the state it was resolved
-/// against.
+/// against. `expensive` is decided once, when the edit is made, and travels
+/// with the entry between the stacks — see [`UNDO_DEPTH`].
 #[derive(Debug, Clone)]
 pub(crate) struct HistoryEntry {
     forward: Vec<ReplicatedOperation>,
     inverse: Vec<ReplicatedOperation>,
+    expensive: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -663,6 +687,28 @@ impl Store {
             .frame_formula_values(frame_id, formula, limit.clamp(1, 200))
     }
 
+    /// The distinct values of one column with their row counts, over the
+    /// rows `steps` leaves -- what the column-header value checklist lists.
+    ///
+    /// `steps` replaces the saved chain for this read, the way a step sample
+    /// takes a draft; the picker passes the chain without its own trailing
+    /// predicate so an unchecked value stays on offer. The frame's display
+    /// filter and sort are not applied. `limit` is clamped to 200. `query`
+    /// narrows to values whose text contains it, ignoring case, before the
+    /// limit; `total` reports the full distinct count, or the matching one
+    /// under a query.
+    pub fn distinct_values(
+        &self,
+        frame_id: &str,
+        column_id: &str,
+        steps: Vec<FrameStepInput>,
+        limit: usize,
+        query: Option<&str>,
+    ) -> Result<DistinctValues, CoreError> {
+        self.document
+            .distinct_values(frame_id, column_id, steps, limit.clamp(1, 200), query)
+    }
+
     /// The first `limit` rows as they stand after one step of a draft chain.
     ///
     /// This one runs the query, unlike the schema preview beside it — the
@@ -856,15 +902,7 @@ impl Store {
         &self,
         operation: Operation,
     ) -> Result<ReplicatedOperation, CoreError> {
-        if self.safe_mode
-            && matches!(
-                operation,
-                Operation::FitModel { .. }
-                    | Operation::ImportModel { .. }
-                    | Operation::ImportOnnxModel { .. }
-                    | Operation::AddStatisticalAnalysis { .. }
-            )
-        {
+        if self.safe_mode && needs_evaluation(&operation) {
             return Err(CoreError::InvalidOperation(
                 "Enable evaluation before fitting or importing a model".into(),
             ));
@@ -884,29 +922,35 @@ impl Store {
         operation: ReplicatedOperation,
         record_undo: bool,
     ) -> Result<DocumentView, CoreError> {
-        // Read the inverse first: it describes the state this is about to
-        // overwrite, so there is exactly one moment it can be taken.
-        let inverse = if record_undo {
-            self.document.invert(&operation)?
-        } else {
-            Vec::new()
-        };
         let before = self.document.clone();
-        if let Err(error) = self.document.apply_replicated(operation.clone()) {
-            self.document = before;
-            return Err(error);
-        }
+        // Each inverse is read just before its own part applies: it
+        // describes the state that part is about to overwrite, so there is
+        // exactly one moment it can be taken — and for a batch that moment
+        // comes after the parts before it.
+        let applied = if record_undo {
+            self.document.apply_and_invert(operation.clone())
+        } else {
+            self.document
+                .apply_replicated(operation.clone())
+                .map(|()| Vec::new())
+        };
+        let inverse = match applied {
+            Ok(inverse) => inverse,
+            Err(error) => {
+                self.document = before;
+                return Err(error);
+            }
+        };
         self.document.revision += 1;
         if record_undo {
+            let expensive =
+                changes_data_files(&before, &self.document) || rewrites_a_data_file(&operation);
             self.undo.push(HistoryEntry {
                 forward: vec![operation],
                 inverse,
+                expensive,
             });
-            // Oldest first out. Draining rather than truncating keeps the
-            // most recent edits, which are the ones anybody wants back.
-            if self.undo.len() > UNDO_DEPTH {
-                self.undo.drain(..self.undo.len() - UNDO_DEPTH);
-            }
+            self.trim_undo();
         }
         // A remote edit no longer clears the undo stack — that was forced by
         // snapshot history, where restoring one could erase the remote edit
@@ -915,6 +959,23 @@ impl Store {
         // redo would have replayed onto.
         self.redo.clear();
         Ok(self.view())
+    }
+
+    /// Drops the oldest entries until both bounds in [`UNDO_DEPTH`] hold.
+    ///
+    /// Only ever from the bottom: draining a prefix keeps the most recent
+    /// edits, which are the ones anybody wants back, and keeps what remains
+    /// contiguous.
+    fn trim_undo(&mut self) {
+        let mut expensive = self.undo.iter().filter(|entry| entry.expensive).count();
+        let mut evicted = 0;
+        while self.undo.len() - evicted > UNDO_DEPTH || expensive > EXPENSIVE_UNDO_DEPTH {
+            if self.undo[evicted].expensive {
+                expensive -= 1;
+            }
+            evicted += 1;
+        }
+        self.undo.drain(..evicted);
     }
 
     /// Applies operations that are themselves history, so they record none.
@@ -1040,6 +1101,51 @@ pub struct ArtifactSweep {
     pub files: usize,
     #[ts(as = "u32")]
     pub bytes: u64,
+}
+
+/// Whether an edit changed which data files the document reads — which is
+/// exactly when its undo entry names a file version the document no longer
+/// does, and so keeps that file from the sweep.
+///
+/// Compared over the document rather than recognised by operation, for the
+/// reason [`collect_strings`] gives: the operations that can move a file
+/// reference are many and some carry whole frames, and a list of them that
+/// missed one would let a run of those entries grow without bound. Asking
+/// the document what it reads, before and after, cannot miss one.
+fn changes_data_files(before: &Document, after: &Document) -> bool {
+    fn read(document: &Document) -> Vec<&str> {
+        let mut ids: Vec<&str> = document
+            .artifacts()
+            .map(|artifact| artifact.id.as_str())
+            .collect();
+        ids.sort_unstable();
+        ids.dedup();
+        ids
+    }
+    read(before) != read(after)
+}
+
+/// The one edit that costs a file write on every step through it without
+/// changing which file is read by name: a cell written into an owned
+/// parquet, whose undo writes the parquet again.
+fn rewrites_a_data_file(operation: &ReplicatedOperation) -> bool {
+    match operation {
+        ReplicatedOperation::SetArtifactCell { .. } => true,
+        ReplicatedOperation::Batch { operations } => operations.iter().any(rewrites_a_data_file),
+        _ => false,
+    }
+}
+
+/// Whether an operation, or any part of a batch, needs evaluation enabled.
+fn needs_evaluation(operation: &Operation) -> bool {
+    match operation {
+        Operation::FitModel { .. }
+        | Operation::ImportModel { .. }
+        | Operation::ImportOnnxModel { .. }
+        | Operation::AddStatisticalAnalysis { .. } => true,
+        Operation::Batch { operations } => operations.iter().any(needs_evaluation),
+        _ => false,
+    }
 }
 
 /// The artifact id a data file is named for, or `None` for anything that is

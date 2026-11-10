@@ -34,6 +34,14 @@ describe("reconcileSelection", () => {
     });
   });
 
+  // Identity, not just equality: a new-but-equal object re-fires every
+  // effect keyed on the selection after each operation, which is how a cell
+  // pressed just after an edit lost its grid focus.
+  it("hands back the same object when the whole selection survives", () => {
+    const selection = { objectId: "frame", columnId: "amount", rowId: "row-1" };
+    expect(reconcileSelection(view(frame(), { "row-1": {} }), selection)).toBe(selection);
+  });
+
   it("falls back to the frame when a selected column was deleted", () => {
     expect(
       reconcileSelection(view(frame()), {

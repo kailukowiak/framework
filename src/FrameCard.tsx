@@ -1,6 +1,7 @@
 import { frameFilters, frameTransformationLabels } from "./lib/frameTransformationLabels";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FrameCardProps } from "./FrameCardProps";
+import { useGhostColumn } from "./hooks/useGhostColumn";
 import { commitFrameCellEdit, commitDraftRowEdit } from "./lib/commitFrameCellEdit";
 import {
   FieldsAsRowsFrameCard,
@@ -24,7 +25,6 @@ import {
   rowsFromFramePage,
   styleMatchesFromFramePage,
   frameOrientation,
-  type FrameStyleMatches,
   type GridFocusMode,
 } from "./FrameGrid";
 import { getFramePage, type FramePage } from "./lib/api";
@@ -42,28 +42,17 @@ import {
   PagedRowCache,
   directionBetween,
   isStaleRequest,
-  pageIndexForRow,
   pageRowOffset,
   pagedGenerationSignature,
   planPageFetch,
 } from "./lib/pagedWindow";
+import { gridRowHeight } from "./lib/columnLayout";
+import { pagedVisibleWindow, type PagedRows } from "./lib/pagedVisibleWindow";
 import { calculateVirtualRowRange } from "./lib/frameVirtualization";
 import { frameEditRefusalStatus } from "./FrameEditRefusalStatus";
 
-/**
- * One cached page: the values as they came back, and what the rules made of
- * each of those rows. Cached together because they are one read — a page
- * whose styles were fetched separately would draw the old colors on the new
- * rows for as long as the second request was in flight.
- */
-type PagedRows = {
-  values: string[][];
-  rowIds: string[];
-  styleMatches: FrameStyleMatch[][];
-};
 import type {
   Column,
-  FrameStyleMatch,
   Row,
 } from "./lib/types";
 
@@ -106,6 +95,11 @@ export function FrameCard({
   // values, and that is a different write than this one.
   const canAddRows = computed.editing.rows;
   const canAddColumns = !isReadOnly && !isFileBacked;
+  const commitGhostColumn = useGhostColumn({
+    frame,
+    enabled: Boolean(computed.editing.columns),
+    onOperation,
+  });
   // Fields-as-rows scrolls records horizontally through its own windowing
   // (see FieldsAsRowsFrameCard) rather than through the row virtualizer, so
   // it keeps the simpler single-page fetch below; only records-as-rows gets
@@ -273,10 +267,18 @@ export function FrameCard({
   const virtualRowCount =
     isFileBacked && !isTransposed ? totalRows : regularRows.length;
 
+  // Wrapping a column makes every row of the frame taller by one known
+  // amount; see `WRAPPED_ROW_HEIGHT` for why rows never size themselves.
+  const rowHeight = gridRowHeight(frame);
   const virtualRange = useMemo(
     () =>
-      calculateVirtualRowRange(virtualRowCount, scrollState.top, scrollState.height),
-    [virtualRowCount, scrollState.height, scrollState.top]
+      calculateVirtualRowRange(
+        virtualRowCount,
+        scrollState.top,
+        scrollState.height,
+        rowHeight
+      ),
+    [virtualRowCount, scrollState.height, scrollState.top, rowHeight]
   );
 
   // Fetch whatever the settled virtual range needs, plus one page of
@@ -354,47 +356,17 @@ export function FrameCard({
     virtualRange.start,
   ]);
 
-  // The rendered window for the records-as-rows paged path: exactly the
-  // rows the (debounced) virtual range needs, built from whatever the
-  // cache currently has under the live generation. Missing rows render as
-  // fixed-height placeholders (empty cells, flagged via placeholderOffsets)
-  // so scroll geometry never jumps while their page is in flight.
-  const pagedVisibleWindow = useMemo(() => {
+  // The rendered window for the records-as-rows paged path, rebuilt from the
+  // cache whenever the range moves or pages land (see `pagedVisibleWindow`).
+  const pagedVisibleRows = useMemo(() => {
     if (!isFileBacked || isTransposed) return null;
-    const generation = pagedGenerationRef.current.signature;
-    const rows: Row[] = [];
-    const placeholderOffsets = new Set<number>();
-    const styleMatches: FrameStyleMatches = {};
-    for (
-      let rowIndex = virtualRange.start;
-      rowIndex < virtualRange.end;
-      rowIndex += 1
-    ) {
-      const pageIndex = pageIndexForRow(rowIndex);
-      const cachedPage = pagedCacheRef.current.get(frame.id, pageIndex, generation);
-      const offsetInPage = rowIndex - pageRowOffset(pageIndex);
-      const raw = cachedPage?.values[offsetInPage];
-      if (!raw) placeholderOffsets.add(rowIndex - virtualRange.start);
-      // Literal frames keep stable stored row ids through a row-preserving
-      // Wrangle chain. Imported and derived pages have no such id and keep
-      // the positional spelling they have always used.
-      const id = cachedPage?.rowIds[offsetInPage] ?? `source:${frame.id}:${rowIndex}`;
-      // The rules were run over the page these values came from, so the
-      // answers arrive with them rather than being recomputed here -- a
-      // formula is the core's to evaluate, on this path as on every other.
-      const matched = cachedPage?.styleMatches[offsetInPage];
-      if (matched?.length) styleMatches[id] = matched;
-      rows.push({
-        id,
-        cells: Object.fromEntries(
-          frame.columns.map((column, columnIndex) => [
-            column.id,
-            { raw: raw?.[columnIndex] ?? "", overrideFormula: null },
-          ])
-        ),
-      });
-    }
-    return { rows, placeholderOffsets, styleMatches };
+    return pagedVisibleWindow(
+      pagedCacheRef.current,
+      frame,
+      pagedGenerationRef.current.signature,
+      virtualRange.start,
+      virtualRange.end
+    );
     // pagedCacheTick is the signal that new pages landed; the cache itself
     // lives in a ref so it isn't a dependency React can compare.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -411,9 +383,9 @@ export function FrameCard({
 
   const displayedRows = useMemo(() => {
     if (isFileBacked && isTransposed) return page ? rowsFromFramePage(frame, page) : [];
-    if (isFileBacked) return pagedVisibleWindow?.rows ?? [];
+    if (isFileBacked) return pagedVisibleRows?.rows ?? [];
     return regularRows;
-  }, [isFileBacked, isTransposed, page, pagedVisibleWindow, regularRows, frame]);
+  }, [isFileBacked, isTransposed, page, pagedVisibleRows, regularRows, frame]);
   // What the conditional-formatting rules made of those rows, keyed the same
   // way they are. Three row paths, one shape: the frame that holds its own
   // rows has its answers on the view, and both paged paths carry theirs on
@@ -421,7 +393,7 @@ export function FrameCard({
   const styleMatches = useMemo(() => {
     if (isFileBacked && isTransposed)
       return page ? styleMatchesFromFramePage(frame, page) : {};
-    if (isFileBacked) return pagedVisibleWindow?.styleMatches ?? {};
+    if (isFileBacked) return pagedVisibleRows?.styleMatches ?? {};
     return computed.styleMatches ?? {};
   }, [
     computed.styleMatches,
@@ -429,7 +401,7 @@ export function FrameCard({
     isFileBacked,
     isTransposed,
     page,
-    pagedVisibleWindow,
+    pagedVisibleRows,
   ]);
   // What this card has on screen, for the window-level keyboard and
   // clipboard handlers. An imported frame keeps no rows in the document, so
@@ -591,7 +563,8 @@ export function FrameCard({
         target.rowIndex,
         target.rowCount,
         element.scrollTop,
-        element.clientHeight
+        element.clientHeight,
+        rowHeight
       );
       if (nextTop !== null) element.scrollTop = nextTop;
     }
@@ -784,8 +757,9 @@ export function FrameCard({
       isReadOnly={isReadOnly}
       canAddRows={canAddRows}
       canAddColumns={canAddColumns}
+      commitGhostColumn={commitGhostColumn}
       pagedLoading={pagedLoading}
-      placeholderOffsets={pagedVisibleWindow?.placeholderOffsets ?? new Set()}
+      placeholderOffsets={pagedVisibleRows?.placeholderOffsets ?? new Set()}
       pagedStatus={pagedStatus}
       draftRow={draftRow}
       setDraftRow={setDraftRow}

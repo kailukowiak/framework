@@ -57,6 +57,9 @@ const selectionActions = (): SelectionActions => ({
   clearColumnSort: vi.fn(),
   pinColumns: vi.fn(),
   removeColumn: vi.fn(),
+  insertColumn: vi.fn(),
+  insertRow: vi.fn(),
+  deleteRows: vi.fn(),
 });
 
 const orders: SelectionTarget = {
@@ -70,7 +73,7 @@ const orders: SelectionTarget = {
     name: "Amount",
     descending: false,
     pinThrough: 2,
-    ownsRows: true,
+    editsColumns: true,
   },
 };
 
@@ -88,6 +91,8 @@ describe("selection commands", () => {
       "Sort descending",
       "Clear sort",
       "Pin columns through here",
+      "Insert column left",
+      "Insert column right",
       "Delete column",
       "Create frame from this",
       "Rename",
@@ -112,7 +117,7 @@ describe("selection commands", () => {
           name: "Amount",
           descending: null,
           pinThrough: 0,
-          ownsRows: false,
+          editsColumns: false,
         },
       },
       actions
@@ -123,6 +128,57 @@ describe("selection commands", () => {
     expect(labels(commands)).not.toContain("Clear sort");
     commands.find((command) => command.label === "Unpin columns")?.run();
     expect(actions.pinColumns).toHaveBeenCalledWith("frame-1", 0);
+  });
+
+  it("offers row verbs for the selected rows and reads the count", () => {
+    const actions = selectionActions();
+    const rows = { ids: ["r1", "r2"], canInsertBetween: true, below: "r3" };
+    const commands = selectionCommands({ ...orders, column: undefined, rows }, actions);
+    expect(labels(commands)).toEqual([
+      "Insert row above",
+      "Insert row below",
+      "Delete 2 rows",
+      "Create frame from this",
+      "Rename",
+      "Fit to window",
+      "Collapse",
+      "Delete frame",
+    ]);
+    commands.find((c) => c.label === "Insert row above")?.run();
+    expect(actions.insertRow).toHaveBeenCalledWith("frame-1", "r1");
+    commands.find((c) => c.label === "Insert row below")?.run();
+    expect(actions.insertRow).toHaveBeenCalledWith("frame-1", "r3");
+    commands.find((c) => c.label === "Delete 2 rows")?.run();
+    expect(actions.deleteRows).toHaveBeenCalledWith("frame-1", ["r1", "r2"]);
+  });
+
+  it("offers no insert on a file-backed frame, and no column insert where the schema is fixed", () => {
+    const commands = selectionCommands(
+      {
+        ...orders,
+        column: { ...orders.column!, editsColumns: false },
+        rows: { ids: ["r1"], canInsertBetween: false, below: null },
+      },
+      selectionActions()
+    );
+    expect(labels(commands)).toContain("Delete row");
+    expect(labels(commands)).toContain("Hide column");
+    expect(labels(commands).filter((l) => l.startsWith("Insert"))).toEqual([]);
+  });
+
+  it("offers a plain Add row where a position cannot be honoured", () => {
+    const actions = selectionActions();
+    const commands = selectionCommands(
+      {
+        ...orders,
+        column: undefined,
+        rows: { ids: ["r1"], canInsertBetween: false, below: null },
+      },
+      actions
+    );
+    expect(labels(commands)).toContain("Add row");
+    commands.find((c) => c.label === "Add row")?.run();
+    expect(actions.insertRow).toHaveBeenCalledWith("frame-1", null);
   });
 
   it("offers only the card's own verbs when no column is selected", () => {

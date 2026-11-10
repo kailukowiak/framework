@@ -266,7 +266,7 @@ describe("PipelineEditor formula sessions", () => {
     expect(onOperation).not.toHaveBeenCalled();
   });
 
-  it("keeps a session whose draft does not parse, and says what is missing", async () => {
+  it("commits a line whose assignment was deleted as the edited column's expression", async () => {
     const view = fixtures.salesWithMargin;
     const frame = objectNamed(view, "frame", "Monthly sales");
     const onOperation = vi.fn<OperationHandler>().mockResolvedValue(null);
@@ -274,9 +274,35 @@ describe("PipelineEditor formula sessions", () => {
     render(editorFor(view, frame, onOperation));
     clickMarginAddress();
     const editing = screen.getByLabelText("Edit Margin") as HTMLTextAreaElement;
-    // The assignment was deleted along the way: nothing here can be saved
-    // as a named column, and nothing is sent to the engine.
+    // The assignment was deleted along the way. This used to be refused
+    // with "Write a column name, =, and a formula", but the surface it is
+    // typed into is labelled "Edit Margin": the subject of the sentence is
+    // on screen, so asking for it again is a refusal that teaches nothing.
+    // It is also the refusal `=10*2` typed at a cell used to end in (see
+    // GridEqualsDoorway.test.tsx), because the cell's doorway had selected
+    // the whole line and the typing replaced the name.
     fireEvent.change(editing, { target: { value: "Revenue - Cost" } });
+    fireEvent.keyDown(editing, { key: "Enter" });
+
+    await waitFor(() => expect(onOperation).toHaveBeenCalledTimes(1));
+    const saved = savedPipeline(onOperation.mock.calls[0][0]);
+    const margin = saved
+      .flatMap((step) => (step.kind === "withColumns" ? step.columns : []))
+      .find((column) => column.name === "Margin");
+    expect(margin?.formula).toBe("Revenue - Cost");
+  });
+
+  it("keeps a session whose assignment is half written, and says what is missing", async () => {
+    const view = fixtures.salesWithMargin;
+    const frame = objectNamed(view, "frame", "Monthly sales");
+    const onOperation = vi.fn<OperationHandler>().mockResolvedValue(null);
+
+    render(editorFor(view, frame, onOperation));
+    clickMarginAddress();
+    const editing = screen.getByLabelText("Edit Margin") as HTMLTextAreaElement;
+    // An assignment with nothing after it is a sentence in progress, not a
+    // bare expression, so it is still refused and nothing reaches the engine.
+    fireEvent.change(editing, { target: { value: "`Margin` =" } });
     fireEvent.keyDown(editing, { key: "Enter" });
 
     const notice = await screen.findByRole("status");

@@ -245,6 +245,10 @@ impl Document {
                 }]
             }
 
+            ReplicatedOperation::SetFrameDisplayColumnLayout { frame_id, columns } => {
+                vec![self.prior_column_layout(frame_id, columns)?]
+            }
+
             ReplicatedOperation::SetFrameDisplayCrosstab { frame_id, .. } => {
                 vec![ReplicatedOperation::SetFrameDisplayCrosstab {
                     frame_id: frame_id.clone(),
@@ -285,6 +289,17 @@ impl Document {
             operation @ (ReplicatedOperation::SetFrameSummaryRows { .. }
             | ReplicatedOperation::SetFrameSummaryDrawer { .. }) => {
                 self.invert_frame_summary(operation)?
+            }
+
+            // A range trims, removes and splits the formats beneath it, so
+            // the way back is those splices turned round; see
+            // `SpliceFrameStyles`.
+            operation @ (ReplicatedOperation::SetFrameStyle {
+                target: FrameStyleTarget::Range { .. },
+                ..
+            }
+            | ReplicatedOperation::SpliceFrameStyles { .. }) => {
+                vec![self.invert_frame_style_splices(operation)?]
             }
 
             // An absent style is restored by setting an empty one, which is
@@ -354,7 +369,8 @@ impl Document {
                 frame_id,
                 cells,
                 appended_rows,
-            } => self.invert_paste_cells(frame_id, cells, appended_rows)?,
+                added_columns,
+            } => self.invert_paste_cells(frame_id, cells, appended_rows, added_columns)?,
 
             ReplicatedOperation::SetFrameContent { frame_id, .. }
             | ReplicatedOperation::SetFrameDerivation { frame_id, .. }
@@ -371,22 +387,13 @@ impl Document {
                 restored
             }
 
-            // The row goes back where it was, which is what `after_row_id`
+            // The row goes back where it was, which is what `before_row_id`
             // is for.
             ReplicatedOperation::DeleteRow { frame_id, row_id } => {
-                let frame = self.frame(frame_id)?;
-                let index = frame
-                    .rows
-                    .iter()
-                    .position(|row| row.id == *row_id)
-                    .ok_or(CoreError::RowNotFound)?;
-                vec![ReplicatedOperation::AddRow {
-                    frame_id: frame_id.clone(),
-                    row: frame.rows[index].clone(),
-                    after_row_id: index
-                        .checked_sub(1)
-                        .map(|previous| frame.rows[previous].id.clone()),
-                }]
+                self.invert_delete_rows(frame_id, std::slice::from_ref(row_id))?
+            }
+            ReplicatedOperation::DeleteRows { frame_id, row_ids } => {
+                self.invert_delete_rows(frame_id, row_ids)?
             }
 
             ReplicatedOperation::AddColumn {
@@ -656,6 +663,14 @@ impl Document {
                     .map(str::to_owned),
             }],
 
+            // The same operation carrying what each cell held before; see
+            // `invert_set_overlay_cells` for why that is exact.
+            ReplicatedOperation::SetOverlayCells {
+                frame_id,
+                appended_rows,
+                cells,
+            } => self.invert_set_overlay_cells(frame_id, *appended_rows, cells)?,
+
             // A restore is already a prior state, so inverting one is
             // capturing the state it is about to replace.
             ReplicatedOperation::RestoreFrame { frame } => {
@@ -703,6 +718,8 @@ impl Document {
                     scenario_id: self.active_scenario.clone(),
                 }]
             }
+
+            ReplicatedOperation::Batch { operations } => self.invert_batch(operations)?,
         })
     }
 }

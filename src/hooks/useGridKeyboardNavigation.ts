@@ -10,7 +10,7 @@ import {
   resolveGridContext,
   visualGridPosition,
 } from "../FrameGrid";
-import { handleGridFormulaKey } from "../GridFormulaKeyboard";
+import { useGridChordKeys } from "./useGridChordKeys";
 import type { TransformColumnRequest } from "./usePipelineColumnRequests";
 import { clearGridRangeUpdates, fillGridRangeUpdates } from "../lib/gridEditing";
 import { movedGridFocus, rangedGridFocus, type GridFocusDestination } from "../lib/gridFocusNavigation";
@@ -84,6 +84,19 @@ export function useGridKeyboardNavigation({
   setInspectorSection: Dispatch<SetStateAction<InspectorSection>>;
   run: OperationHandler;
 }) {
+  const handleChord = useGridChordKeys({
+    document,
+    gridFocus,
+    renderedRows,
+    cellFormulaToken,
+    transformColumnToken,
+    setCellFormulaRequest,
+    setTransformColumnRequest,
+    setGridFocus,
+    setSelection,
+    setInspectorSection,
+    run,
+  });
   return useCallback(
     (event: KeyboardEvent) => {
       if (!document || !gridFocus) return;
@@ -98,22 +111,7 @@ export function useGridKeyboardNavigation({
       const editable = Boolean(
         column && isEditableGridColumn(context.computed, column, context.frame)
       );
-      if (
-        handleGridFormulaKey({
-          event,
-          context,
-          focus: gridFocus,
-          column,
-          cellToken: cellFormulaToken,
-          columnToken: transformColumnToken,
-          onCellRequest: setCellFormulaRequest,
-          onColumnRequest: setTransformColumnRequest,
-          onSelect: setSelection,
-          onOpenWrangle: () => setInspectorSection("wrangle"),
-          onOperation: run,
-        })
-      )
-        return;
+      if (handleChord(event, context, gridFocus)) return;
       const modifier = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
 
@@ -225,6 +223,7 @@ export function useGridKeyboardNavigation({
       clearActiveFormulaEditor,
       document,
       gridFocus,
+      handleChord,
       run,
       setTransformColumnRequest,
       transformColumnToken,

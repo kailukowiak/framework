@@ -350,10 +350,10 @@ fn events_merged_from_the_journal_are_not_undoable() {
     std::fs::remove_dir_all(directory).unwrap();
 }
 
-/// Undo reaches back ten edits, not forever. Every step still reachable is a
-/// version of the data the document has to be able to reproduce.
+/// Undo reaches back a hundred ordinary edits, not forever. Edits that pin a
+/// data file are held to ten; `undo_budget.rs` covers that side.
 #[test]
-fn undo_stops_ten_edits_back() {
+fn undo_stops_a_hundred_edits_back() {
     let mut store = demo_store();
     let block_id = store
         .document()
@@ -365,7 +365,7 @@ fn undo_stops_ten_edits_back() {
         })
         .expect("the demo has a block to edit");
 
-    for step in 0..14 {
+    for step in 0..104 {
         store
             .apply(Operation::SetBlockSource {
                 block_id: block_id.clone(),
@@ -374,14 +374,14 @@ fn undo_stops_ten_edits_back() {
             })
             .unwrap();
     }
-    for _ in 0..14 {
+    for _ in 0..104 {
         store.undo();
     }
     let view = store.view();
     assert!(!view.can_undo, "the stack is empty, not endless");
     assert_eq!(
         view.computed_blocks[&block_id].source, "Tax rate = 3",
-        "ten steps back from the fourteenth edit, and no further"
+        "a hundred steps back from the hundred-and-fourth edit, and no further"
     );
 }
 
@@ -557,4 +557,89 @@ fn undo_reverts_one_chain_edit_at_a_time_on_an_artifact_backed_frame() {
     );
 
     fs::remove_dir_all(directory).unwrap();
+}
+
+/// Undoing a paste that had to widen and lengthen the frame used to put the
+/// whole frame back as it stood before the paste, so a collaborator's edit
+/// to an unrelated cell of the same frame, merged in between, was undone
+/// with it. The inverse now names only what the paste did: the cells it
+/// overwrote, the rows it appended, the columns it added.
+#[test]
+fn undoing_a_widening_paste_leaves_a_peers_cell_edit_alone() {
+    let mut store = demo_store();
+    store
+        .apply(Operation::AddFrame {
+            name: "Pasteboard".into(),
+            grid: vec![
+                vec!["Qty".into(), "Note".into()],
+                vec!["1".into(), "a".into()],
+                vec!["2".into(), "b".into()],
+            ],
+            x: 0.0,
+            y: 0.0,
+        })
+        .unwrap();
+    let board = frame_id(&store, "Pasteboard");
+    let frame = store.document().frame(&board).unwrap().clone();
+    let last_row = frame.rows.last().unwrap().id.clone();
+    let last_column = frame.columns.last().unwrap().id.clone();
+    let overwritten = frame.rows.last().unwrap().cells[&last_column].raw.clone();
+    let shape = (frame.rows.len(), frame.columns.len());
+
+    store
+        .apply(Operation::PasteCells {
+            frame_id: board.clone(),
+            row_id: last_row.clone(),
+            column_id: last_column.clone(),
+            grid: vec![
+                vec!["5".into(), "wide".into()],
+                vec!["6".into(), "long".into()],
+            ],
+        })
+        .unwrap();
+    let pasted = store.document().frame(&board).unwrap();
+    assert_eq!(
+        (pasted.rows.len(), pasted.columns.len()),
+        (shape.0 + 1, shape.1 + 1)
+    );
+
+    let directory = temporary_test_directory("undo-remote-paste");
+    let path = directory.join("shared.fw");
+    store.save(&path).unwrap();
+    let journal = EventJournal::open(&path, &store.document().id.clone()).unwrap();
+    journal
+        .append(&OperationEvent::new(
+            store.document().id.clone(),
+            REMOTE_WRITER.to_string(),
+            1,
+            VersionVector::new(),
+            ReplicatedOperation::SetCell {
+                frame_id: board.clone(),
+                row_id: frame.rows[0].id.clone(),
+                column_id: frame.columns[0].id.clone(),
+                raw: "theirs".into(),
+            },
+        ))
+        .unwrap();
+    journal.merge_into(&mut store).unwrap();
+
+    store.undo();
+    let undone = store.document().frame(&board).unwrap();
+    assert_eq!((undone.rows.len(), undone.columns.len()), shape);
+    assert_eq!(
+        cell(&store, &board, 0, 0),
+        "theirs",
+        "the peer's edit stands"
+    );
+    assert_eq!(cell(&store, &board, shape.0 - 1, shape.1 - 1), overwritten);
+
+    store.redo();
+    let redone = store.document().frame(&board).unwrap();
+    assert_eq!(
+        (redone.rows.len(), redone.columns.len()),
+        (shape.0 + 1, shape.1 + 1)
+    );
+    assert_eq!(cell(&store, &board, shape.0 - 1, shape.1 - 1), "5");
+    assert_eq!(cell(&store, &board, 0, 0), "theirs");
+    std::fs::remove_dir_all(directory).unwrap();
 }

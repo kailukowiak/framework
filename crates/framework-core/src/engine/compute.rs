@@ -479,6 +479,20 @@ pub struct FrameEditing {
     pub cells: bool,
     /// Whether rows can be added or deleted by hand.
     pub rows: bool,
+    /// Whether literal columns can be added, deleted and retyped by hand —
+    /// the frame holds its rows and its chain, if any, only adds
+    /// calculations. Separate from `rows` because a file-backed frame can
+    /// grow rows through patches while its columns stay the file's, and a
+    /// frame whose chain reshapes keeps editable rows under a fixed schema.
+    ///
+    /// Optional on the TypeScript side the way `ComputedFrame::paged` is:
+    /// serializing always writes it, and an absent key reads as "no", which
+    /// is the safe answer for a menu to act on. It also keeps every
+    /// hand-built `FrameEditing` in the interface tests, and every committed
+    /// UI fixture generated before the flag existed, typed as they are.
+    #[serde(default)]
+    #[ts(optional, as = "Option<bool>")]
+    pub columns: bool,
     /// Whether a one-off override on a single cell takes effect.
     ///
     /// The narrower door in the wall, and it is not always open. An override
@@ -512,6 +526,7 @@ impl FrameEditing {
                 // document owns can have its values rewritten in place, but
                 // growing it is a different operation than editing it.
                 rows,
+                columns: frame.owns_its_columns(),
                 overrides: !paged,
                 reason: (!frame.owns_its_rows()).then(|| {
                     "These rows are read from a file. Type into them freely — each \
@@ -525,6 +540,7 @@ impl FrameEditing {
             return Self {
                 cells: false,
                 rows: true,
+                columns: frame.owns_its_columns(),
                 overrides: !paged,
                 reason: Some(
                     "This frame's visible columns are calculated. Add a row here, then edit its inputs in Wrangle."
@@ -534,7 +550,9 @@ impl FrameEditing {
         }
         let overrides = !paged;
         let mend = if overrides {
-            " Edit the chain, or set a one-off override on a cell."
+            // The interface no longer creates cell overrides, so offering one
+            // here named a remedy nobody could reach. The chain is the way.
+            " Edit the chain to change them."
         } else if paged {
             // Paging is a remedy fact, not an origin fact, which is why it
             // belongs here and not in `origin` below: every artifact-backed
@@ -581,6 +599,7 @@ impl FrameEditing {
         Self {
             cells: false,
             rows: false,
+            columns: false,
             overrides,
             reason: Some(format!("{origin}{mend}")),
         }

@@ -1,11 +1,12 @@
 import { Plus, X } from "lucide-react";
+import { useState } from "react";
 import { PipelineCommand } from "./PipelineCommand";
 import {
   draftName,
   nextBlankColumnName,
   type NamedDraft,
-  parseNamedTransformation,
 } from "./PipelineColumnNames";
+import type { CellDoorwayFold } from "./hooks/useColumnTransformRequest";
 import type { FormulaReference } from "./lib/formulaReferences";
 import { siblingReferenceInFormula } from "./lib/formulaPicking";
 import {
@@ -17,6 +18,7 @@ import {
   outputColumnIdForName,
 } from "./lib/pipelineStepCommands";
 import { namedDraft, type StepDraft, type VisibleColumn } from "./lib/pipelineSteps";
+import { transformationForTarget } from "./lib/targetedTransformation";
 import type { Column, FrameObject, FrameStepInput } from "./lib/types";
 
 /**
@@ -52,6 +54,32 @@ function rewrittenColumn(
   };
 }
 
+/**
+ * Where the caret lands when a calculation line is opened for typing.
+ *
+ * `focusAtEnd` flows put it at the end, for appending a method. Otherwise
+ * typing should replace what has not been chosen yet, and nothing more. A
+ * fresh placeholder -- `Column N` = the blank calculation -- has had
+ * nothing chosen at all, so the whole line is selected and one stroke can
+ * replace name, `=` and expression together. A line on a column that
+ * already has a name -- the cell's `=` doorway, reopening a calculation --
+ * selects only the expression after `name = `: selecting the name too was
+ * how `=10*2` typed at a cell replaced `Revenue` along with it and ended in
+ * "Write a column name, =, and a formula".
+ */
+function focusSelectionFor(
+  column: NamedDraft,
+  line: string
+): { start: number; end: number } {
+  if (column.focusAtEnd) return { start: line.length, end: line.length };
+  // Compared without whitespace: a saved chain comes back formatted, which
+  // puts the blank's `.cast` on a line of its own (formatFormulaChains only
+  // ever moves whitespace).
+  if (column.formula.replace(/\s+/g, "") === BLANK_CALCULATION)
+    return { start: 0, end: line.length };
+  return { start: line.length - column.formula.length, end: line.length };
+}
+
 /** The calculations of one Add or replace columns step. */
 export function PipelineWithColumnsStep({
   step,
@@ -68,6 +96,7 @@ export function PipelineWithColumnsStep({
   savePatch,
   rejectCommand,
   setPendingEditor,
+  cellDoorway,
 }: {
   step: Extract<StepDraft, { kind: "withColumns" }>;
   visible: VisibleColumn[];
@@ -89,11 +118,19 @@ export function PipelineWithColumnsStep({
   ) => Promise<string | null>;
   rejectCommand: (message: string) => never;
   setPendingEditor: (editorId: string) => void;
+  /** Set while a line opened by a cell's `=` is still a draft. */
+  cellDoorway?: CellDoorwayFold;
 }) {
+  // The doorway line's live draft, kept only so the bar can say whether
+  // Return will write "this cell" or the column's "all rows" -- the answer
+  // turns on what has been typed, and it changes as it is typed.
+  const [doorwayDraft, setDoorwayDraft] = useState<string | null>(null);
+  const doorway = cellDoorway?.stepId === step.id ? cellDoorway : undefined;
   return (
     <div className="pipeline-command-list">
       {step.columns.map((column) => {
         const id = commandId(step, column.id);
+        const line = namedCommand(draftName(column), column.formula);
         const update = (draft: string, saveNow: boolean) => {
           // Half a formula is not a calculation yet. The draft lives in the
           // editor and the bar until Return; it is deliberately not written
@@ -102,12 +139,17 @@ export function PipelineWithColumnsStep({
           // to arrive in the document under some unrelated gesture's save,
           // and the schema preview kept announcing "unknown name" about a
           // word still being typed.
+          if (doorway) setDoorwayDraft(draft);
           if (!saveNow) return;
-          const parsed = parseNamedTransformation(draft);
+          const parsed = transformationForTarget(draft, draftName(column));
           if (!parsed) {
             rejectCommand("Write a column name, =, and a formula");
             return;
           }
+          if (doorway) return doorway.commit(parsed, () => saveAsColumn(parsed));
+          return saveAsColumn(parsed);
+        };
+        const saveAsColumn = (parsed: { name: string; formula: string }) => {
           // A name written one line further up this step is a reference the
           // engine cannot serve — every formula in a `with_columns` reads
           // the frame as it stood before the step — but the sentence is not
@@ -143,32 +185,21 @@ export function PipelineWithColumnsStep({
             <PipelineCommand
               editorId={id}
               label={draftName(column)}
-              initialDraft={namedCommand(draftName(column), column.formula)}
+              initialDraft={line}
               references={stepReferences}
               frameId={input.completionFrameId}
               scope={scope}
               focusToken={commandFocus(id, column.focusToken)}
               targetColumnId={column.outputColumnId}
+              appliesToAllRows={
+                doorway?.foldsDraft(doorwayDraft ?? line) ? false : undefined
+              }
               anchorRowIndex={column.anchorRowIndex}
               anchorFrameId={editingFrame.id}
               focusSelection={
                 column.focusToken === undefined
                   ? undefined
-                  : {
-                      // A fresh formula selects from the very
-                      // start, name included: the placeholder
-                      // `Column N` is nobody's chosen name, so
-                      // typing should be able to replace the whole
-                      // line — name, =, and expression — in one
-                      // stroke. focusAtEnd flows keep the caret at
-                      // the end for appending instead.
-                      start: column.focusAtEnd
-                        ? namedCommand(draftName(column), column.formula)
-                            .length
-                        : 0,
-                      end: namedCommand(draftName(column), column.formula)
-                        .length,
-                    }
+                  : focusSelectionFor(column, line)
               }
               onChange={(draft) => update(draft, false)}
               onCommit={(draft) => update(draft, true)}

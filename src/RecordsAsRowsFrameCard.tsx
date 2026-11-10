@@ -9,7 +9,9 @@ import {
   useFrameSummary,
 } from "./FrameSummaryFooter";
 import { FrameTitleRow } from "./FrameTitleRow";
+import { useFrameColumnResize } from "./hooks/useColumnResize";
 import { useGridColumnWidths } from "./hooks/useGridColumnWidths";
+import { columnWidthFor, gridTableStyle, usesFixedColumns } from "./lib/columnLayout";
 import { pinnedColumnOffsets } from "./lib/pinnedColumns";
 
 export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
@@ -35,6 +37,7 @@ export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
   const columns = frame.columns.length;
   const columnWidths = useGridColumnWidths(scrollRef, drawerOpen || pinned > 0, columns);
   const pinnedOffsets = pinnedColumnOffsets(columnWidths, pinned, columns);
+  const resize = useFrameColumnResize(model, scrollRef);
   useEffect(() => setDrawerHeight(persistedHeight), [persistedHeight]);
   useEffect(() => {
     if (drawerOpen && summaryScrollRef.current && scrollRef.current)
@@ -129,16 +132,20 @@ export function RecordsAsRowsFrameCard(model: RecordsAsRowsFrameCardProps) {
             aria-rowcount={
               totalRows + 3
             }
-            style={{ minWidth: Math.max(360, frame.columns.length * 150 + 66) }}
+            className={usesFixedColumns(frame, resize.preview) ? "fixed-columns" : undefined}
+            style={gridTableStyle(frame, resize.preview)}
           >
             <colgroup>
               <col className="row-number-column" />
               {frame.columns.map((column) => (
-                <col key={column.id} />
+                <col
+                  key={column.id}
+                  style={{ width: columnWidthFor(frame, column.id, resize.preview) ?? undefined }}
+                />
               ))}
               <col className="frame-edge-column" />
             </colgroup>
-            <RecordsFrameHeader model={model} pinned={pinnedOffsets} />
+            <RecordsFrameHeader model={model} pinned={pinnedOffsets} resize={resize} />
             <RecordsFrameBody model={model} pinned={pinnedOffsets} />
           </table>
         )}

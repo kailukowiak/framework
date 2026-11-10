@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { browser, $, expect } from "@wdio/globals";
 import { Key } from "webdriverio";
-import { columnCellTexts } from "../lib/helpers";
+import {
+  columnCellTexts,
+  extendSelectionDown,
+  pasteText,
+  pointAtColumnCell,
+} from "../lib/helpers";
 
 describe("External CSV opening", () => {
   it("opens Finder data in a new window without changing the source", async () => {
@@ -216,6 +221,72 @@ describe("External CSV opening", () => {
 
       // The correction is a note against the file, so the file itself has not
       // moved. Putting it back is a separate, confirmed gesture.
+      expect(readFileSync(path, "utf8")).toBe(original);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  // The same corrections, a range at a time. Clearing a selection on an
+  // opened file used to answer "Row not found": the clear named rows by the
+  // document's own row ids, which a file-backed frame does not have — its
+  // rows are ordinals into the read. A clear and a paste are each one
+  // gesture, so each must be one history entry however many cells it wrote.
+  it("clears and pastes a block of cells in an opened file, each undone in one step", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "framework-csv-bulk-"));
+    const path = join(directory, "Bulk orders.csv");
+    const original = "SKU,Quantity\n0007,21\n0008,22\n0009,23\n";
+    writeFileSync(path, original);
+    const quantities = async () =>
+      (await columnCellTexts("Quantity")).slice(0, 3).map((text) => text.replace(/[^\d.-]/g, ""));
+    const skus = async () => (await columnCellTexts("SKU")).slice(0, 3);
+    try {
+      const previous = await browser.getWindowHandles();
+      const app = resolve("target/debug/bundle/macos/FrameWork.app");
+      execFileSync("open", ["-a", app, path]);
+      await browser.waitUntil(
+        async () => (await browser.getWindowHandles()).length > previous.length
+      );
+      const handles = await browser.getWindowHandles();
+      const opened = handles.find((handle) => !previous.includes(handle));
+      if (!opened) throw new Error("CSV window did not open");
+      await browser.switchToWindow(opened);
+      await $('button[aria-label="Sort by SKU"]').waitForExist();
+      await browser.waitUntil(async () => (await quantities()).join() === "21,22,23", {
+        timeoutMsg: "the opened file's rows never rendered",
+      });
+
+      // Two Quantity cells selected, then Delete.
+      await pointAtColumnCell("Quantity", 0);
+      await extendSelectionDown();
+      await browser.keys(Key.Delete);
+      await browser.waitUntil(async () => (await quantities()).join() === ",,23", {
+        timeoutMsg: `Delete did not clear the selected cells: ${(await columnCellTexts("Quantity")).join(" | ")}`,
+      });
+      await browser.keys([Key.Command, "z"]);
+      await browser.waitUntil(async () => (await quantities()).join() === "21,22,23", {
+        timeoutMsg: "one undo did not restore both cleared cells",
+      });
+
+      // A two-by-two block pasted over the top-left of the table.
+      await pointAtColumnCell("SKU", 0);
+      await pasteText("A7\t31\nA8\t32");
+      await browser.waitUntil(
+        async () =>
+          (await skus()).join() === "A7,A8,0009" && (await quantities()).join() === "31,32,23",
+        {
+          timeoutMsg: `the pasted block did not land: ${(await skus()).join()} / ${(await quantities()).join()}`,
+        }
+      );
+      await browser.keys([Key.Command, "z"]);
+      await browser.waitUntil(
+        async () =>
+          (await skus()).join() === "0007,0008,0009" &&
+          (await quantities()).join() === "21,22,23",
+        { timeoutMsg: "one undo did not take the whole pasted block back" }
+      );
+
+      // Every one of those was a correction recorded against the file.
       expect(readFileSync(path, "utf8")).toBe(original);
     } finally {
       rmSync(directory, { recursive: true, force: true });

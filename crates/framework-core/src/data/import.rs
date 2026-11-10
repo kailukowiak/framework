@@ -52,11 +52,20 @@ pub(crate) fn read_pasted_frame(text: &str) -> Result<pl::DataFrame, CoreError> 
         return Err(CoreError::Import("There is nothing to paste".into()));
     }
     let header = trimmed.lines().next().unwrap_or_default();
-    let separator = if header.matches('\t').count() >= header.matches(',').count() {
-        b'\t'
-    } else {
-        b','
-    };
+    // One number copied out of a spreadsheet arrives as `1,234`: no tab, one
+    // line, and a comma that is a thousands separator rather than a field
+    // break. Counting commas read it as two columns named `1` and `234`. Only
+    // that exact shape is spared — a single line that is nothing but a
+    // grouped number — so every real comma-separated paste is read as before.
+    let single_grouped_number = !trimmed.contains('\t')
+        && trimmed.lines().count() == 1
+        && is_grouped_number(trimmed.trim());
+    let separator =
+        if single_grouped_number || header.matches('\t').count() >= header.matches(',').count() {
+            b'\t'
+        } else {
+            b','
+        };
     pl::CsvReadOptions::default()
         .with_has_header(true)
         .with_n_rows(Some(MAX_IMPORT_ROWS + 1))
@@ -68,6 +77,25 @@ pub(crate) fn read_pasted_frame(text: &str) -> Result<pl::DataFrame, CoreError> 
         .into_reader_with_file_handle(std::io::Cursor::new(trimmed.as_bytes().to_vec()))
         .finish()
         .map_err(|error| CoreError::Import(error.to_string()))
+}
+
+/// Whether `text` is one number written with thousands separators:
+/// an optional sign, one to three digits, one or more `,ddd` groups, and an
+/// optional decimal part — `1,234`, `-12,345.67`. A bare `1,2` is not one;
+/// that is as likely two values as a number.
+fn is_grouped_number(text: &str) -> bool {
+    let unsigned = text.strip_prefix(['-', '+']).unwrap_or(text);
+    let (whole, fraction) = unsigned.split_once('.').unwrap_or((unsigned, ""));
+    let mut groups = whole.split(',');
+    let lead = groups.next().unwrap_or_default();
+    let rest: Vec<&str> = groups.collect();
+    let digits = |part: &str| part.bytes().all(|byte| byte.is_ascii_digit());
+    (1..=3).contains(&lead.len())
+        && digits(lead)
+        && !rest.is_empty()
+        && rest.iter().all(|group| group.len() == 3 && digits(group))
+        && digits(fraction)
+        && !(unsigned.contains('.') && fraction.is_empty())
 }
 
 pub(crate) fn read_import_frame_full(path: &Path) -> Result<pl::DataFrame, CoreError> {

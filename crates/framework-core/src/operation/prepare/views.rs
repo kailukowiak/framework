@@ -101,6 +101,47 @@ impl Document {
         })
     }
 
+    /// A width that is not a positive number is refused — it is a bug in
+    /// whatever measured it, and storing it would draw nothing — while one
+    /// merely outside what a grid can draw is held to that range, because a
+    /// drag past the edge means as narrow, or as wide, as it goes.
+    pub(crate) fn prepare_set_frame_display_column_layout(
+        &self,
+        frame_id: Id,
+        columns: Vec<FrameColumnLayoutUpdate>,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let frame = self.frame(&frame_id)?;
+        let mut seen = std::collections::HashSet::new();
+        let mut prepared = Vec::with_capacity(columns.len());
+        for mut update in columns {
+            if !frame
+                .columns
+                .iter()
+                .any(|column| column.id == update.column_id)
+            {
+                return Err(CoreError::ColumnNotFound);
+            }
+            if !seen.insert(update.column_id.clone()) {
+                return Err(CoreError::InvalidOperation(
+                    "A column layout names the same column more than once".into(),
+                ));
+            }
+            if let Some(width) = update.width {
+                if !width.is_finite() || width <= 0.0 {
+                    return Err(CoreError::InvalidOperation(
+                        "A column width must be a positive number of pixels".into(),
+                    ));
+                }
+                update.width = Some(width.clamp(MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH));
+            }
+            prepared.push(update);
+        }
+        Ok(ReplicatedOperation::SetFrameDisplayColumnLayout {
+            frame_id,
+            columns: prepared,
+        })
+    }
+
     /// A crosstab is a way of looking, so it asks only that its two columns
     /// exist and differ; the grouping of the remaining columns is worked
     /// out at render time from whatever the chain currently produces.

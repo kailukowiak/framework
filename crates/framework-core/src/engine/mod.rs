@@ -1,6 +1,7 @@
 pub mod build;
 pub mod cache;
 pub mod compute;
+mod distinct;
 mod join;
 mod matrix;
 mod matrix_dependencies;
@@ -24,6 +25,7 @@ mod frame_chain;
 // MCP consumers name directly.
 pub(crate) use cache::*;
 pub use compute::*;
+pub use distinct::*;
 pub use join::*;
 pub use plan::Layer;
 pub(crate) use plan::in_plain_words;

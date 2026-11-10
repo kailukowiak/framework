@@ -11,10 +11,12 @@ pub mod columns;
 pub mod derivation;
 pub mod dictionary;
 mod files;
+mod grid_shape;
 mod ml;
 mod model_import;
 mod model_summary;
 pub mod objects;
+mod overlay_cells;
 pub mod pass_through;
 mod rename_mapping;
 pub mod scenarios;
@@ -176,6 +178,9 @@ impl Document {
                 frame_id,
                 pinned_columns,
             } => self.prepare_set_frame_display_pinned_columns(frame_id, pinned_columns)?,
+            Operation::SetFrameDisplayColumnLayout { frame_id, columns } => {
+                self.prepare_set_frame_display_column_layout(frame_id, columns)?
+            }
             Operation::SetFrameDisplayCrosstab { frame_id, crosstab } => {
                 self.prepare_set_frame_display_crosstab(frame_id, crosstab)?
             }
@@ -224,7 +229,11 @@ impl Document {
                 raw,
             } => self.prepare_set_cell(frame_id, row_id, column_id, raw)?,
             Operation::SetCells { frame_id, cells } => self.prepare_set_cells(frame_id, cells)?,
-            Operation::AddRow { frame_id, values } => self.prepare_add_row(frame_id, values)?,
+            Operation::AddRow {
+                frame_id,
+                values,
+                before_row_id,
+            } => self.prepare_add_row(frame_id, values, before_row_id)?,
             Operation::SetFrameFromPastedText { frame_id, text } => {
                 self.prepare_set_frame_from_pasted_text(frame_id, text)?
             }
@@ -237,12 +246,24 @@ impl Document {
             Operation::DeleteRow { frame_id, row_id } => {
                 self.prepare_delete_row(frame_id, row_id)?
             }
+            Operation::DeleteRows { frame_id, row_ids } => {
+                self.prepare_delete_rows(frame_id, row_ids)?
+            }
             Operation::AddColumn {
                 frame_id,
                 name,
                 data_type,
                 after_column_id,
-            } => self.prepare_add_column(frame_id, name, data_type, after_column_id)?,
+                before_column_id,
+                values,
+            } => self.prepare_add_column(
+                frame_id,
+                name,
+                data_type,
+                after_column_id,
+                before_column_id,
+                values,
+            )?,
             Operation::DeleteColumn {
                 frame_id,
                 column_id,
@@ -439,6 +460,7 @@ impl Document {
             Operation::ActivateScenario { scenario_id } => {
                 self.prepare_activate_scenario(scenario_id)?
             }
+            Operation::Batch { operations } => self.prepare_batch(operations)?,
         })
     }
 }

@@ -9,11 +9,31 @@ import type { DocumentView, Selection } from "./types";
  * operation. A row that cannot be confirmed is therefore shed back to its
  * column (or frame), which keeps the panel and its active rule available
  * without leaving later operations aimed at an id that may have disappeared.
+ *
+ * A selection that survives whole is handed back as the *same object*. This
+ * runs after every operation, and a fresh-but-equal object is a state change
+ * to React: it re-renders the app and re-fires every effect keyed on the
+ * selection, one tick after the document arrived. The effect that keeps grid
+ * focus in step with the selection then runs holding the selection as it was
+ * at that render, and a cell pressed inside the tick is judged against it —
+ * focus and selection "disagree", grid focus is dropped, and the cell sits
+ * highlighted while F2 and typing do nothing until it is clicked again.
  */
 export function reconcileSelection(
   document: DocumentView,
   selection: Selection
 ): Selection | null {
+  const kept = reconciled(document, selection);
+  return kept &&
+    kept.objectId === selection.objectId &&
+    kept.viewId === selection.viewId &&
+    kept.columnId === selection.columnId &&
+    kept.rowId === selection.rowId
+    ? selection
+    : kept;
+}
+
+function reconciled(document: DocumentView, selection: Selection): Selection | null {
   const object = document.objects.find(
     (candidate) => candidate.id === selection.objectId
   );

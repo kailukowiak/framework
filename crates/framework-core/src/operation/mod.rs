@@ -14,4 +14,5 @@ pub use prepare::objects::SchemaDiff;
 
 mod replicated;
 pub use replicated::*;
+mod batch;
 mod invert_helpers;

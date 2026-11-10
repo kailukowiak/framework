@@ -416,6 +416,8 @@ fn comparing_two_different_lists_says_so_in_the_words_of_the_thing() {
             name: "Reported as".into(),
             data_type: DataType::String,
             after_column_id: None,
+            before_column_id: None,
+            values: Default::default(),
         })
         .unwrap();
     let reported = column_id(store.document().frame(&frame.id).unwrap(), "Reported as");

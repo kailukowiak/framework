@@ -16,6 +16,7 @@ import type {
 //     cargo test -p framework-desktop export_bindings
 // ---------------------------------------------------------------------------
 
+import type { DistinctValues } from "./valueFilter";
 import type { ArtifactSweep } from "./bindings/ArtifactSweep";
 import type { BlockLinePage } from "./bindings/BlockLinePage";
 import type { ConnectorRefreshOutcome } from "./bindings/ConnectorRefreshOutcome";
@@ -609,6 +610,37 @@ export async function frameFormulaValues(
 }
 
 /**
+ * The distinct values of one column with row counts, over the rows `steps`
+ * leaves -- the source of the column-header value checklist.
+ *
+ * `steps` replaces the saved chain for this read (as a step sample takes a
+ * draft), which is how the picker asks for the column as it stood *before* its
+ * own trailing filter: pass the chain without that predicate and an unchecked
+ * value stays on offer. The frame's display filter and sort never apply, and
+ * dates are refused, so the caller falls back to the typed filter for them.
+ *
+ * `query` narrows to values whose text contains it, ignoring case, before
+ * the limit is taken — so a value beyond the first page can still be found —
+ * and `total` then counts the matches.
+ */
+export async function getDistinctValues(
+  frameId: string,
+  columnId: string,
+  steps: FrameStepInput[],
+  limit = 200,
+  query?: string
+): Promise<DistinctValues> {
+  // Sent only when there is one: an absent argument is `None` to the command.
+  return invoke("get_distinct_values", {
+    frameId,
+    columnId,
+    steps,
+    limit,
+    ...(query ? { query } : {}),
+  });
+}
+
+/**
  * The first rows as they stand after one step of a chain being drafted.
  *
  * The one call in the step editor that runs the query. The limit is pushed
@@ -693,6 +725,18 @@ export async function openSampleDocument(
 
 export async function applyOperation(operation: Operation): Promise<DocumentView> {
   return invoke("apply_operation", { operation });
+}
+
+/**
+ * Applies several operations as one edit: in order, all or none, one
+ * revision and one undo entry. For a gesture that needs more than one
+ * operation — a paste that also grows its card — so that one ⌘Z takes all
+ * of it back. Each is prepared against what the ones before it leave. A
+ * single operation is sent as itself, so a caller need not special-case it.
+ */
+export async function applyOperations(operations: Operation[]): Promise<DocumentView> {
+  if (operations.length === 1) return applyOperation(operations[0]);
+  return applyOperation({ type: "batch", operations });
 }
 
 export async function undo(): Promise<DocumentView> {

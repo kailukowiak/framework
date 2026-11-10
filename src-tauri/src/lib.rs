@@ -427,6 +427,27 @@ fn frame_formula_values(
         .map_err(|error| error.to_string())
 }
 
+/// The distinct values of one column with row counts, over the rows a draft
+/// chain leaves -- what the column-header value checklist lists. `query`
+/// narrows them to values containing it before the limit is taken.
+#[tauri::command]
+fn get_distinct_values(
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    frame_id: String,
+    column_id: String,
+    steps: Vec<framework_core::FrameStepInput>,
+    limit: usize,
+    query: Option<String>,
+) -> Result<framework_core::DistinctValues, String> {
+    let session = state.document_for(window.label())?;
+    let session = session.lock().map_err(|error| error.to_string())?;
+    session
+        .store
+        .distinct_values(&frame_id, &column_id, steps, limit, query.as_deref())
+        .map_err(|error| error.to_string())
+}
+
 /// The first rows as they stand after one step of a draft chain.
 ///
 /// Runs the query, unlike the schema preview: the limit is pushed into the
@@ -2744,6 +2765,7 @@ fn register_commands(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
         preview_frame_pipeline,
         sample_frame_step,
         frame_formula_values,
+        get_distinct_values,
         dependency_graph,
         complete_formula,
         open_document,

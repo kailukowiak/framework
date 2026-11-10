@@ -76,8 +76,11 @@ export function useFillHandleDrag(
   );
 
   const offset = options.rowOffset ?? 0;
+  // Bounded by the rows on the page, not `frame.rows`: a frame read from a file
+  // holds none in the document, and its fill is recorded as patches like any
+  // other range edit on it.
   const target = candidate && isEditableGridColumn(options.computed, candidate.column)
-    && frame.rows.length > 0 && (selectionRange?.top ?? candidate.rowIndex) >= offset
+    && (selectionRange?.top ?? candidate.rowIndex) >= offset
     && candidate.rowIndex < offset + options.rows.length ? candidate : null;
   const cleanup = useRef<(() => void) | null>(null);
   useEffect(() => () => cleanup.current?.(), []);

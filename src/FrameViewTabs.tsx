@@ -1,12 +1,12 @@
 import { BarChart3, Filter, Plus, Table2 as FrameIcon, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
-  useEffect,
   useRef,
   useState,
   type DragEvent,
   type PointerEvent,
 } from "react";
+import { useTabAddMenu } from "./hooks/useTabAddMenu";
 import { canvasPoint } from "./lib/canvasZoom";
 import type { OperationHandler } from "./lib/handlers";
 import type {
@@ -22,8 +22,6 @@ type FrameTabDragPayload = {
 };
 const FRAME_TAB_DRAG_TYPE = "application/x-framework-frame-tab";
 const activeFrameTabDrag: FrameTabDragPayload | null = null;
-/** Kept with `.tab-add-menu`'s width, which the menu is held on screen by. */
-const TAB_ADD_MENU_WIDTH = 264;
 
 export function readFrameTabDrag(event: DragEvent): FrameTabDragPayload | null {
   try {
@@ -80,61 +78,14 @@ export function FrameViewTabs({
   defaultPlotSpec: (frame: FrameObject) => Record<string, unknown>;
 }) {
   const [dropIndex, setDropIndex] = useState<number | null>(null);
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
-  // Where the portalled menu goes, measured from the button when it opens.
-  const [menuAnchor, setMenuAnchor] = useState<{ left: number; top: number } | null>(
-    null
-  );
-  const addButtonRef = useRef<HTMLButtonElement>(null);
-  const addMenuRef = useRef<HTMLDivElement>(null);
-
-  const toggleAddMenu = () => {
-    if (addMenuOpen) {
-      setAddMenuOpen(false);
-      return;
-    }
-    const bounds = addButtonRef.current?.getBoundingClientRect();
-    setMenuAnchor(
-      bounds
-        ? {
-            // Kept on screen: the button can sit near the right edge of the
-            // window, and a menu that opens off it is no menu.
-            left: Math.max(
-              8,
-              Math.min(bounds.left, window.innerWidth - TAB_ADD_MENU_WIDTH - 8)
-            ),
-            top: bounds.bottom + 6,
-          }
-        : null
-    );
-    setAddMenuOpen(true);
-  };
-
-  // A menu anchored in screen pixels has to close when the thing it is
-  // anchored to moves, and the canvas moves on a scroll or a zoom.
-  useEffect(() => {
-    if (!addMenuOpen) return;
-    const closeOnOutside = (event: Event) => {
-      const target = event.target as Node | null;
-      if (addButtonRef.current?.contains(target)) return;
-      if (addMenuRef.current?.contains(target)) return;
-      setAddMenuOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setAddMenuOpen(false);
-    };
-    const close = () => setAddMenuOpen(false);
-    window.addEventListener("pointerdown", closeOnOutside);
-    window.addEventListener("keydown", closeOnEscape);
-    window.addEventListener("wheel", close, { passive: true });
-    window.addEventListener("resize", close);
-    return () => {
-      window.removeEventListener("pointerdown", closeOnOutside);
-      window.removeEventListener("keydown", closeOnEscape);
-      window.removeEventListener("wheel", close);
-      window.removeEventListener("resize", close);
-    };
-  }, [addMenuOpen]);
+  const {
+    addMenuOpen,
+    setAddMenuOpen,
+    menuAnchor,
+    addButtonRef,
+    addMenuRef,
+    toggleAddMenu,
+  } = useTabAddMenu();
   // New tabs read from a frame the card already shows, so a card whose own
   // source is elsewhere — a plot in a window of its own — offers none. The
   // core would refuse them anyway; the point is not to offer them.
@@ -253,13 +204,24 @@ export function FrameViewTabs({
   };
   const getFilterCount = (tab: TabObject) =>
     tab.kind === "frame" ? filterCount(computedFrames[tab.id]) : 0;
+  // One frame tab is the card's whole identity, and the title row beneath
+  // already carries that name in the field that renames it. A tab drawn as
+  // well is the same word on a second row, so the strip folds away: no tab,
+  // and the "+" floats at the right end of the title row (see the
+  // `.folded` rules) instead of owning a 36px row of its own. A plot tab is
+  // left alone -- its card has no such field to take over the job.
+  const folded = tabs.length === 1 && tabs[0].kind === "frame";
+  if (folded && !addableSource) return null;
   return (
     // The strip scrolls when the tabs outgrow the card, so the add button
     // sits outside it: an absolutely positioned menu inside a scroll
     // container is clipped by it.
     <div
-      className={`frame-view-tab-bar ${dropIndex === tabs.length ? "drop-at-end" : ""}`}
+      className={`frame-view-tab-bar ${folded ? "folded" : ""} ${
+        dropIndex === tabs.length ? "drop-at-end" : ""
+      }`}
     >
+      {!folded && (
       <div
         className="frame-view-tabs"
         data-tab-view-id={view.id}
@@ -362,6 +324,7 @@ export function FrameViewTabs({
         </div>
         ))}
       </div>
+      )}
       {addableSource && (
         // The strip draws its "drop at the end" mark on this button, so the
         // button has to accept the drop. Without these the mark points at a

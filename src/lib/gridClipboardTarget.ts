@@ -40,17 +40,3 @@ export function focusGridClipboardTarget() {
 export function isGridClipboardTarget(value: EventTarget | null): boolean {
   return value instanceof HTMLElement && value.hasAttribute(TARGET_ATTRIBUTE);
 }
-
-/**
- * Whether a key pressed here is the canvas's to handle — arrows and Tab that
- * move between cards. A control that has its own use for the key keeps it.
- * The clipboard target is a textarea only so the native Edit menu has a first
- * responder; the keyboard still belongs to the canvas while it holds focus.
- */
-export function keyboardBelongsToCanvas(target: EventTarget | null): boolean {
-  if (isGridClipboardTarget(target)) return true;
-  return (
-    target instanceof HTMLElement &&
-    !target.closest("button, a, input, textarea, select, [contenteditable]")
-  );
-}

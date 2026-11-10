@@ -7,6 +7,7 @@ use crate::model::frame::{
     CellUpdate, CrosstabDisplay, FrameCellStyle, FramePeriod, FrameStyleTarget,
     FrameViewOrientation, SummaryOperation,
 };
+use crate::model::frame_layout::FrameColumnLayoutUpdate;
 use crate::model::value::{ColumnFormat, DataType, FrozenValue, ScalarValue};
 use crate::operation::input::{
     CalculationMatrixFormulaInput, FrameStepInput, FrameStyleRuleInput, JoinColumnInput,
@@ -430,6 +431,15 @@ pub enum Operation {
         frame_id: Id,
         pinned_columns: u32,
     },
+    /// Sets each named column's whole layout — width in CSS pixels, `None`
+    /// for automatic, and whether its text wraps. Several columns in one
+    /// operation, because auto-fitting a grid or dragging a multi-column
+    /// selection's edge is one gesture and must be one undo. Display only:
+    /// every frame takes it, including those that refuse data edits.
+    SetFrameDisplayColumnLayout {
+        frame_id: Id,
+        columns: Vec<FrameColumnLayoutUpdate>,
+    },
     /// Shows a long frame wide: one column per value of the names column,
     /// cells from the values column. Display only — the data stays long,
     /// nothing downstream sees a different schema, and `None` folds the
@@ -511,6 +521,17 @@ pub enum Operation {
     AddRow {
         frame_id: Id,
         values: BTreeMap<Id, String>,
+        /// The row the new one goes above; absent appends it.
+        ///
+        /// Named for the row it precedes rather than the one it follows
+        /// because that is the one spelling that reaches every position:
+        /// "after" cannot say "at the top", which is how `AddColumn` came to
+        /// need `before_column_id`. Only a frame that holds its rows can take
+        /// a row between two others — one read from a file adds rows past the
+        /// file's end, so a position there is refused rather than ignored.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
+        before_row_id: Option<Id>,
     },
     /// Rebuilds an empty frame from pasted text.
     ///
@@ -539,11 +560,41 @@ pub enum Operation {
         frame_id: Id,
         row_id: Id,
     },
+    /// Deletes several rows as one edit, which one undo puts back exactly:
+    /// the same rows, their cells, and where each one stood.
+    ///
+    /// A variant of its own rather than a widened `DeleteRow` so that every
+    /// existing caller — the context menu, the MCP `delete_row` tool, replayed
+    /// histories — keeps sending exactly what it sends; `DeleteRow` stays the
+    /// one-row spelling of the same edit. On a frame read from a file the rows
+    /// are struck out of the result, as `DeleteRow` does there.
+    DeleteRows {
+        frame_id: Id,
+        row_ids: Vec<Id>,
+    },
     AddColumn {
         frame_id: Id,
         name: String,
         data_type: DataType,
         after_column_id: Option<Id>,
+        /// The column the new one goes to the left of. Set at most one of
+        /// this and `after_column_id`; with neither the column is appended.
+        /// It exists because "after" has no way to say "first".
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional = nullable)]
+        before_column_id: Option<Id>,
+        /// Initial cell values for the new column, keyed by row id, as
+        /// `AddRow.values` carries them for a new row. It exists because the
+        /// engine mints the column's id in `prepare`, so a caller cannot
+        /// name the new column in a `SetCell` of the same `batch`; carrying
+        /// the values here makes "type into the column that does not exist
+        /// yet" one edit and one undo step. Only a frame that owns its rows
+        /// accepts any; each value is checked against the new column's type
+        /// as `SetCell` would, and one refused value refuses the whole add.
+        /// Rows not named stay blank.
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        #[ts(optional, as = "Option<BTreeMap<Id, String>>")]
+        values: BTreeMap<Id, String>,
     },
     DeleteColumn {
         frame_id: Id,
@@ -851,6 +902,18 @@ pub enum Operation {
         #[serde(default)]
         #[ts(optional = nullable)]
         comment: Option<String>,
+    },
+    /// Several edits that are one gesture: applied in order, all or none,
+    /// as one revision and one undo entry.
+    ///
+    /// A paste that also grows its card to fit is the case that asked for
+    /// it: sent as two edits, the first ⌘Z only shrank the card back and
+    /// the pasted data stayed. Each operation is prepared against the
+    /// document the ones before it leave, so a later one may name what an
+    /// earlier one made. Not nestable, and not empty — neither means
+    /// anything a flat list does not.
+    Batch {
+        operations: Vec<Operation>,
     },
 }
 

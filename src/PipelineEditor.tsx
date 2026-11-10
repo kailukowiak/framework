@@ -10,7 +10,10 @@ import { PipelineSummarizeStep } from "./PipelineSummarizeStep";
 import { PipelineWithColumnsStep } from "./PipelineWithColumnsStep";
 import { useDocumentChainSync } from "./hooks/useDocumentChainSync";
 import { usePipelineSchemaPreview } from "./hooks/usePipelineSchemaPreview";
-import { appendColumnFilter } from "./PipelineColumnFilters";
+import { ColumnFilterPickerHost } from "./ColumnFilterPickerHost";
+import { useColumnFilterRequest } from "./hooks/useColumnFilterRequest";
+import { useColumnTransformRequest } from "./hooks/useColumnTransformRequest";
+import type { TransformColumnEditorRequest } from "./hooks/usePipelineColumnRequests";
 import { PipelineFrameStepCommand } from "./PipelineFrameStepCommand";
 import { PipelineHeading } from "./PipelineHeading";
 import { PipelineJoinStep } from "./PipelineJoinStep";
@@ -33,8 +36,6 @@ import { siblingColumnExplanation } from "./lib/formulaPicking";
 import { formatPipelineFormulas } from "./PipelineFormulaFormatting";
 import {
   appendBlankCalculatedColumn,
-  appendOrderedColumnTransformation,
-  focusExistingCalculatedColumn,
   hidePipelineColumn,
   normalizeCalculatedColumnNames,
   rearrangePipelineColumns,
@@ -70,6 +71,24 @@ import type {
   FrameObject,
   RenderedFrameStep,
 } from "./lib/types";
+
+/**
+ * The selector functions a column-list step offers beside the column names.
+ * They are the same for every step, so they are written once here rather
+ * than rebuilt inside the per-step render.
+ */
+const COLUMN_LIST_SELECTORS: FormulaReference[] = [
+  ["starts_with", 'starts_with("', "Columns whose names start with text"],
+  ["ends_with", 'ends_with("', "Columns whose names end with text"],
+  ["contains", 'contains("', "Columns whose names contain text"],
+  ["except", "except(", "Every column except those named"],
+].map(([label, token, detail]) => ({
+  id: `selector.${label}`,
+  label,
+  token,
+  kind: "function" as const,
+  detail,
+}));
 
 /**
  * A persisted step can still carry a sibling reference nobody wrote here: a
@@ -162,16 +181,7 @@ export function DerivedFrameCreator({
   };
   onAddCalculatedColumnRequestHandled?: () => void;
   /** Appends a same-id expression, optionally focusing it for another method call. */
-  transformColumnRequest?: {
-    token: number;
-    columnId: string;
-    formula: string;
-    focus?: boolean;
-    editExisting?: boolean;
-    anchorRowIndex?: number;
-    orderByColumnId?: string;
-    focusAtEnd?: boolean;
-  };
+  transformColumnRequest?: TransformColumnEditorRequest;
   onTransformColumnRequestHandled?: () => void;
   /** Opens a single-column condition in the canonical Wrangle filter step. */
   filterColumnRequest?: { token: number; columnId: string };
@@ -264,8 +274,6 @@ export function DerivedFrameCreator({
     setEditingStepId((current) => (current === stepId ? current : stepId));
   });
   const handledAddRequest = useRef<number | null>(null);
-  const handledTransformRequest = useRef<number | null>(null);
-  const handledFilterRequest = useRef<number | null>(null);
   const handledHideRequest = useRef<number | null>(null);
   const handledRearrangeRequest = useRef<number | null>(null);
 
@@ -349,74 +357,23 @@ export function DerivedFrameCreator({
     steps,
   ]);
 
-  useEffect(() => {
-    if (
-      transformColumnRequest === undefined ||
-      handledTransformRequest.current === transformColumnRequest.token
-    )
-      return;
-    handledTransformRequest.current = transformColumnRequest.token;
-    onTransformColumnRequestHandled?.();
-    const column = editingFrame.columns.find(
-      (candidate) => candidate.id === transformColumnRequest.columnId
-    );
-    if (!column) return;
-    if (transformColumnRequest.editExisting) {
-      const focused = focusExistingCalculatedColumn(
-        steps,
-        column.id,
-        transformColumnRequest.token,
-        transformColumnRequest.anchorRowIndex
-      );
-      if (focused) setSteps(focused);
-      else setFormulaError(`The calculation for ${column.name} is not in this chain.`);
-      return;
-    }
-    // Through `persist` for the same identity-preserving reason as the
-    // add-calculated-column request above.
-    void persist(
-      appendOrderedColumnTransformation(
-        steps,
-        column,
-        transformColumnRequest.formula,
-        transformColumnRequest.orderByColumnId,
-        {
-          focusToken: transformColumnRequest.focus
-            ? transformColumnRequest.token
-            : undefined,
-          focusAtEnd: transformColumnRequest.focusAtEnd,
-          anchorRowIndex: transformColumnRequest.anchorRowIndex,
-        }
-      )
-    );
-  }, [
-    transformColumnRequest,
-    editingFrame.columns,
-    onTransformColumnRequestHandled,
-    persist,
+  const cellDoorway = useColumnTransformRequest({
+    request: transformColumnRequest,
+    onHandled: onTransformColumnRequestHandled,
+    editingFrame,
     steps,
-  ]);
+    setSteps,
+    persist,
+    setFormulaError,
+    onOperation,
+  });
 
-  useEffect(() => {
-    if (
-      filterColumnRequest === undefined ||
-      handledFilterRequest.current === filterColumnRequest.token
-    )
-      return;
-    handledFilterRequest.current = filterColumnRequest.token;
-    onFilterColumnRequestHandled?.();
-    const column = editingFrame.columns.find(
-      (candidate) => candidate.id === filterColumnRequest.columnId
-    );
-    if (!column) return;
-    // This remains a local draft until Enter. Merely opening a header filter
-    // must not silently remove rows from the frame.
-    setSteps((current) => appendColumnFilter(current, column, filterColumnRequest.token));
-  }, [
-    editingFrame.columns,
-    filterColumnRequest,
-    onFilterColumnRequestHandled,
-  ]);
+  const filterPicker = useColumnFilterRequest({
+    request: filterColumnRequest,
+    onHandled: onFilterColumnRequestHandled,
+    columns: editingFrame.columns,
+    setSteps,
+  });
 
   useEffect(() => {
     if (
@@ -587,27 +544,29 @@ export function DerivedFrameCreator({
         }}
       />
       {fixedJoinStep(editingFrame, joinFrames, onOperation)}
+      {filterPicker.picking && (
+        <ColumnFilterPickerHost
+          key={filterPicker.picking.token}
+          frameId={editingFrame.id}
+          column={filterPicker.picking.column}
+          steps={steps}
+          onChangeSteps={(next) => void persist(next)}
+          onEditInWrangle={() =>
+            filterPicker.editTyped(
+              filterPicker.picking!.column,
+              filterPicker.picking!.token
+            )
+          }
+          onClose={filterPicker.close}
+        />
+      )}
       {visibleAuthored.map(({ step, index }, displayIndex) => {
         const visible = visibleBeforeStep(index);
         const stepReferences = referencesForStep(references, visible);
         const columnReferences = stepReferences.filter(
           (reference) => reference.kind === "column"
         );
-        const columnListReferences: FormulaReference[] = [
-          ...columnReferences,
-          ...[
-            ["starts_with", 'starts_with("', "Columns whose names start with text"],
-            ["ends_with", 'ends_with("', "Columns whose names end with text"],
-            ["contains", 'contains("', "Columns whose names contain text"],
-            ["except", "except(", "Every column except those named"],
-          ].map(([label, token, detail]) => ({
-            id: `selector.${label}`,
-            label,
-            token,
-            kind: "function" as const,
-            detail,
-          })),
-        ];
+        const columnListReferences = [...columnReferences, ...COLUMN_LIST_SELECTORS];
         const scope = { steps: stepScopeInputs, stepIndex: index };
     // A list step reads a whole column of another frame, live or not, so
     // the columns of every other frame are offered to it: a click on one
@@ -725,6 +684,7 @@ export function DerivedFrameCreator({
                 savePatch={savePatch}
                 rejectCommand={rejectCommand}
                 setPendingEditor={setPendingEditor}
+                cellDoorway={cellDoorway}
               />
             )}
 

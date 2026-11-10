@@ -1,6 +1,6 @@
 import { $, browser } from "@wdio/globals";
 import { Key } from "webdriverio";
-import { columnCellTexts, digits, openContextMenuOn, pointAtColumnCell, resetAndOpenTutorial } from "../lib/helpers";
+import { cardOfFrame, columnCellTexts, digits, openContextMenuOn, pointAtColumnCell, resetAndOpenTutorial } from "../lib/helpers";
 
 // The embedded driver's pointer gap is the same one documented by
 // pointAtColumnCell: dispatch pointer events on the real DOM affordance.
@@ -45,30 +45,40 @@ describe("analysis regression workflows", () => {
     await browser.waitUntil(async () => JSON.stringify((await columnCellTexts("Revenue")).map(digits)) === JSON.stringify(before));
   });
 
-  it("refuses an overflowing paste without changing even the cells that fit", async () => {
+  // A document-owned frame widens to take a paste that is wider than it is: the
+  // engine adds "New column" for the overflow, in the same history entry as the
+  // values, so one undo takes back both. (Frames the engine will not widen —
+  // file-backed or derived — still answer "Nothing pasted: the clipboard needs".)
+  // The single undo depends on the card resize that follows a widening paste
+  // travelling in one batch with the paste, so it shares the paste's entry.
+  it("widens the table for an overflowing paste and undoes it as one step", async () => {
     const before = await columnCellTexts("Cost");
+    const hasNewColumn = () => browser.execute(() =>
+      document.querySelector('button[aria-label="Sort by New column"]') !== null);
     await pointAtColumnCell("Cost", 0);
     await browser.execute(() => {
       const clipboard = new DataTransfer();
       clipboard.setData("text/plain", "999\t1000");
       document.activeElement!.dispatchEvent(new ClipboardEvent("paste", { clipboardData: clipboard, bubbles: true, cancelable: true }));
     });
-    await browser.waitUntil(() => browser.execute(() => document.body.textContent?.includes("Nothing pasted: the clipboard needs")), { timeoutMsg: "overflow paste did not explain its refusal" });
-    const after = await columnCellTexts("Cost");
-    if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error("overflowing paste partly changed the table");
+    await browser.waitUntil(hasNewColumn, { timeoutMsg: "the table did not widen for the overflowing paste" });
+    if (!(await columnCellTexts("Cost"))[0].includes("999")) throw new Error("the first pasted value did not land in Cost");
+    // The new column is a Number, so the grid shows the value grouped: "1,000".
+    if (digits((await columnCellTexts("New column"))[0]) !== "1000") throw new Error("the second pasted value did not land in the new column");
+    await browser.keys([Key.Command, "z"]);
+    await browser.waitUntil(async () => !(await hasNewColumn())
+      && JSON.stringify(await columnCellTexts("Cost")) === JSON.stringify(before),
+    { timeoutMsg: "one undo did not remove the new column and the pasted values" });
   });
 
   it("updates a paged chart after an upstream edit and after undo", async () => {
     await browser.keys([Key.Command, Key.Shift, "l"]);
     await resetAndOpenTutorial("Month-over-month formulas by pointing — Answer key");
     await $("div.cell-display*=142,000").waitForExist();
-    const sourceCard = await browser.execute(() => {
-      const tab = Array.from(document.querySelectorAll('[role="tab"]'))
-        .find((element) => element.getAttribute("title") === "Monthly sales");
-      const id = tab?.closest("[data-object-id]")?.getAttribute("data-object-id");
-      if (!id) throw new Error("Monthly sales card is missing");
-      return `[data-object-id="${id}"]`;
-    });
+    // The Answer key's Monthly sales card also holds the East only tab, so
+    // the card is found by its tab; `cardOfFrame` also accepts the folded
+    // single-tab shape, which names the frame only in its title row.
+    const sourceCard = await cardOfFrame("Monthly sales");
     await openContextMenuOn(`${sourceCard} [aria-label="Sort by Revenue"]`);
     await $("button*=Plot in a new window").click();
     await browser.waitUntil(() => chartContains("118000"), { timeoutMsg: "initial chart data did not render" }).catch(async (reason) => {
@@ -79,21 +89,32 @@ describe("analysis regression workflows", () => {
       }));
       throw new Error(`${String(reason)}: ${JSON.stringify(state)}`);
     });
-    await browser.execute(() => {
-      const tab = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]'))
+    await browser.execute((cardSelector: string) => {
+      // Bring the Monthly sales tab forward where the card has tabs at all; a
+      // folded single-tab card is already showing it.
+      const tab = Array.from(document.querySelectorAll<HTMLElement>(`${cardSelector} [role="tab"]`))
         .find((element) => element.getAttribute("title") === "Monthly sales");
-      tab!.click();
-    });
-    await browser.execute(() => {
-      const tab = Array.from(document.querySelectorAll('[role="tab"]'))
-        .find((element) => element.getAttribute("title") === "Monthly sales");
-      const card = tab!.closest("[data-object-id]")!;
+      tab?.click();
+    }, sourceCard);
+    // The switch is an operation: until it comes back the card is still
+    // showing whichever tab was forward, and a cell pressed there belongs to
+    // that tab's frame — its selection is dropped when this one arrives.
+    await browser.waitUntil(() => browser.execute((cardSelector: string) => {
+      const tabs = Array.from(document.querySelectorAll<HTMLElement>(`${cardSelector} [role="tab"]`));
+      return tabs.length === 0 || tabs.some((element) =>
+        element.getAttribute("title") === "Monthly sales" && element.getAttribute("aria-selected") === "true");
+    }, sourceCard), { timeoutMsg: "the Monthly sales tab never came forward" });
+    await browser.execute((cardSelector: string) => {
+      const card = document.querySelector(cardSelector);
+      if (!card) throw new Error("Monthly sales card is missing");
       const cell = Array.from(card.querySelectorAll("div.cell-display"))
         .find((element) => element.textContent?.replace(/[^\d.-]/g, "") === "118000");
       if (!cell) throw new Error("Monthly sales revenue cell is missing");
       cell.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0 }));
       cell.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true, button: 0 }));
-    });
+    }, sourceCard);
+    // F2 belongs to the cell only once the grid has taken it as its focus.
+    await $(`${sourceCard} td.cell-focus`).waitForExist({ timeoutMsg: "the grid never focused the Monthly sales revenue cell" });
     await browser.keys(Key.F2);
     const editor = $(".cell-editor");
     await editor.waitForExist();

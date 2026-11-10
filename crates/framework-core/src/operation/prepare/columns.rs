@@ -6,6 +6,7 @@
 //! formulas and summaries attached to a column.
 
 use crate::*;
+use std::collections::BTreeMap;
 
 impl Document {
     pub(crate) fn prepare_add_column(
@@ -14,27 +15,56 @@ impl Document {
         name: String,
         data_type: DataType,
         after_column_id: Option<Id>,
+        before_column_id: Option<Id>,
+        values: BTreeMap<Id, String>,
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             let frame = self.frame(&frame_id)?;
-            if after_column_id.as_ref().is_some_and(|column_id| {
-                !frame.columns.iter().any(|column| column.id == *column_id)
-            }) {
+            if after_column_id.is_some() && before_column_id.is_some() {
+                return Err(CoreError::InvalidOperation(
+                    "A new column goes before or after another column, not both".into(),
+                ));
+            }
+            if [&after_column_id, &before_column_id]
+                .into_iter()
+                .flatten()
+                .any(|column_id| !frame.columns.iter().any(|column| column.id == *column_id))
+            {
                 return Err(CoreError::ColumnNotFound);
+            }
+            let column = Column {
+                id: column_id(&name),
+                name,
+                source_name: None,
+                data_type,
+                scale: None,
+                categories: Vec::new(),
+                format: None,
+                formula: None,
+            };
+            if !values.is_empty() {
+                // Values are cells typed into the document, so they need a
+                // frame that owns its rows; an imported or computed frame
+                // takes a calculated column but never literal data.
+                self.ensure_rows_are_editable(&frame_id)?;
+                if !frame.owns_its_rows() {
+                    return Err(CoreError::InvalidOperation(
+                        "Values can only be typed into a frame that owns its rows".into(),
+                    ));
+                }
+                for (row_id, raw) in &values {
+                    if !frame.rows.iter().any(|row| row.id == *row_id) {
+                        return Err(CoreError::RowNotFound);
+                    }
+                    validate_cell_raw(&column, raw)?;
+                }
             }
             ReplicatedOperation::AddColumn {
                 frame_id,
-                column: Column {
-                    id: column_id(&name),
-                    name,
-                    source_name: None,
-                    data_type,
-                    scale: None,
-                    categories: Vec::new(),
-                    format: None,
-                    formula: None,
-                },
+                column,
                 after_column_id,
+                before_column_id,
+                values,
             }
         })
     }
@@ -44,6 +74,7 @@ impl Document {
         frame_id: Id,
         column_id: Id,
     ) -> Result<ReplicatedOperation, CoreError> {
+        self.ensure_not_a_chain_output(&frame_id, &column_id)?;
         Ok({
             ReplicatedOperation::DeleteColumn {
                 frame_id,
@@ -74,6 +105,7 @@ impl Document {
         data_type: DataType,
         scale: Option<u8>,
     ) -> Result<ReplicatedOperation, CoreError> {
+        self.ensure_not_a_chain_output(&frame_id, &column_id)?;
         if let Some(scale) = scale {
             if data_type != DataType::Accounting {
                 return Err(CoreError::InvalidOperation(
@@ -102,6 +134,7 @@ impl Document {
         column_id: Id,
         categories: Vec<String>,
     ) -> Result<ReplicatedOperation, CoreError> {
+        self.ensure_not_a_chain_output(&frame_id, &column_id)?;
         Ok({
             let frame = self.frame(&frame_id)?;
             let column = frame
@@ -178,6 +211,8 @@ impl Document {
                     format: None,
                     formula: Some(Formula { expression }),
                 },
+                before_column_id: None,
+                values: BTreeMap::new(),
             }
         })
     }

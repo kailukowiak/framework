@@ -5,6 +5,13 @@ pub(crate) fn validate_frame_style_target(
     frame: &FrameObject,
     target: &FrameStyleTarget,
 ) -> Result<(), CoreError> {
+    if let FrameStyleTarget::Range {
+        row_ids,
+        column_ids,
+    } = target
+    {
+        return validate_frame_style_range(frame, row_ids, column_ids);
+    }
     let column_id = match target {
         FrameStyleTarget::Column { column_id } | FrameStyleTarget::Cell { column_id, .. } => {
             Some(column_id)
@@ -27,6 +34,40 @@ pub(crate) fn validate_frame_style_target(
         && row_id.is_some_and(|row_id| !frame.rows.iter().any(|row| row.id == *row_id))
     {
         return Err(CoreError::RowNotFound);
+    }
+    Ok(())
+}
+
+/// The same checks as a single cell, over two sets — by hash rather than by
+/// scanning, since a selection can name every row of a large frame and a
+/// scan per row would make formatting it quadratic.
+fn validate_frame_style_range(
+    frame: &FrameObject,
+    row_ids: &[Id],
+    column_ids: &[Id],
+) -> Result<(), CoreError> {
+    if row_ids.is_empty() || column_ids.is_empty() {
+        return Err(CoreError::InvalidOperation(
+            "A range format needs at least one row and one column".into(),
+        ));
+    }
+    let columns: std::collections::HashSet<&str> = frame
+        .columns
+        .iter()
+        .map(|column| column.id.as_str())
+        .collect();
+    if column_ids
+        .iter()
+        .any(|column_id| !columns.contains(column_id.as_str()))
+    {
+        return Err(CoreError::ColumnNotFound);
+    }
+    if !frame.rows.is_empty() {
+        let rows: std::collections::HashSet<&str> =
+            frame.rows.iter().map(|row| row.id.as_str()).collect();
+        if row_ids.iter().any(|row_id| !rows.contains(row_id.as_str())) {
+            return Err(CoreError::RowNotFound);
+        }
     }
     Ok(())
 }

@@ -244,14 +244,46 @@ impl Document {
         Ok(())
     }
 
+    /// Record — or withdraw — a block of typed-over values, growing the rows
+    /// past the base's end first when the edit says to.
+    ///
+    /// The count goes first so a patch addressed to a row the paste just
+    /// added names a row that exists by the time the plan reads it.
+    pub(crate) fn apply_set_overlay_cells(
+        &mut self,
+        frame_id: Id,
+        appended_rows: Option<u32>,
+        cells: Vec<OverlayCellPatch>,
+    ) -> Result<(), CoreError> {
+        if let Some(appended_rows) = appended_rows {
+            self.frame_mut(&frame_id)?.appended_rows = appended_rows;
+        }
+        for cell in cells {
+            self.apply_set_overlay_cell(
+                frame_id.clone(),
+                cell.row_ordinal,
+                cell.column_id,
+                cell.raw,
+            )?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn apply_paste_cells(
         &mut self,
         frame_id: Id,
         cells: Vec<CellUpdate>,
         appended_rows: Vec<Row>,
+        added_columns: Vec<Column>,
     ) -> Result<(), CoreError> {
         if !self.frame(&frame_id)?.preserves_own_row_identity() {
             return Err(CoreError::DerivedFrameReadOnly);
+        }
+        if !added_columns.is_empty() && self.frame(&frame_id)?.column_schema_is_read_only() {
+            return Err(CoreError::DerivedFrameReadOnly);
+        }
+        for column in added_columns {
+            self.insert_literal_column(&frame_id, column, &super::grid_shape::ColumnPlace::End)?;
         }
         for row in appended_rows {
             let frame = self.frame(&frame_id)?;
@@ -275,7 +307,7 @@ impl Document {
         &mut self,
         frame_id: Id,
         row: Row,
-        after_row_id: Option<Id>,
+        before_row_id: Option<Id>,
     ) -> Result<(), CoreError> {
         if !self.frame(&frame_id)?.preserves_own_row_identity() {
             return Err(CoreError::DerivedFrameReadOnly);
@@ -314,12 +346,11 @@ impl Document {
                 "row must contain exactly one cell for each frame column".into(),
             ));
         }
-        let insert_at = match after_row_id {
+        let insert_at = match before_row_id {
             Some(row_id) => frame
                 .rows
                 .iter()
                 .position(|candidate| candidate.id == row_id)
-                .map(|index| index + 1)
                 .ok_or(CoreError::RowNotFound)?,
             None => frame.rows.len(),
         };
@@ -344,17 +375,7 @@ impl Document {
         // to paint.
         self.frame_mut(&frame_id)?
             .display
-            .styles
-            .retain(|entry| match &entry.target {
-                FrameStyleTarget::Row {
-                    row_id: styled_row_id,
-                }
-                | FrameStyleTarget::Cell {
-                    row_id: styled_row_id,
-                    ..
-                } => *styled_row_id != row_id,
-                _ => true,
-            });
+            .forget_rows(&std::collections::HashSet::from([row_id]));
         Ok(())
     }
 

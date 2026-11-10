@@ -14,6 +14,7 @@ type ColumnFormulaRequest = {
   focus: true;
   focusAtEnd: false;
   editExisting: boolean;
+  fromCell: { rowId: string; literal: boolean };
   token: number;
 };
 
@@ -73,6 +74,18 @@ export function handleGridFormulaKey({
     const target = column;
     if (!target) return false;
     const editExisting = Boolean(context.computed?.formulas[target.id]);
+    // Whether arithmetic typed here may become this one cell's value rather
+    // than the column's formula (see useColumnTransformRequest): only for a
+    // single hand-entered cell the frame lets you type into, and only while
+    // the column has no formula of its own. An entry column is left out --
+    // its values are keyed, not positional, and `setCell` is the write this
+    // promises.
+    const literal =
+      !focus.anchor &&
+      !focus.span &&
+      !editExisting &&
+      Boolean(context.computed?.editing.cells) &&
+      !context.frame.entryColumns?.some((entry) => entry.columnId === target.id);
     columnToken.current += 1;
     onCellRequest(null);
     onSelect({
@@ -88,6 +101,7 @@ export function handleGridFormulaKey({
       focus: true,
       focusAtEnd: false,
       editExisting,
+      fromCell: { rowId: focus.rowId, literal },
       token: columnToken.current,
     });
   }

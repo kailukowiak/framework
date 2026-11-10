@@ -8,6 +8,8 @@ import {
   Plus,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { ColumnResizeHandle } from "./ColumnResizeHandle";
+import type { ColumnResize } from "./hooks/useColumnResize";
 import {
   ColumnFormatBadge,
   EditableColumnHeader,
@@ -29,10 +31,13 @@ import { hasVectorDrag, readVectorDrag } from "./lib/vectorDrag";
 export function RecordsFrameHeader({
   model,
   pinned,
+  resize,
 }: {
   model: RecordsAsRowsFrameCardProps;
   /** Sticky offsets for the frozen gutter and leading columns; see `pinnedColumns`. */
   pinned: number[];
+  /** Absent where the header is shown without a grid to resize. */
+  resize?: ColumnResize;
 }) {
   const {
     frame,
@@ -62,6 +67,7 @@ export function RecordsFrameHeader({
                   column={column}
                   columnIndex={columnIndex}
                   pinned={pinned}
+                  resize={resize}
                   vectorTarget={vectorTarget}
                   setVectorTarget={setVectorTarget}
                 />
@@ -144,6 +150,7 @@ function RecordsColumnHeader({
   column,
   columnIndex,
   pinned,
+  resize,
   vectorTarget,
   setVectorTarget,
 }: {
@@ -151,6 +158,7 @@ function RecordsColumnHeader({
   column: Column;
   columnIndex: number;
   pinned: number[];
+  resize?: ColumnResize;
   vectorTarget: string | null;
   setVectorTarget: Dispatch<SetStateAction<string | null>>;
 }) {
@@ -253,6 +261,7 @@ function RecordsColumnHeader({
           ) && <KeyRound className="unique-key-icon" size={12} />}
         </button>
       </div>
+      <ColumnResizeHandle frame={frame} column={column} resize={resize} />
       {model.canAddColumns && columnIndex < frame.columns.length - 1 && (
         <button
           className="column-insert"
@@ -377,8 +386,8 @@ function ColumnFilterButton({
   return (
     <button
       className={`column-filter-toggle ${active ? "active" : ""}`}
-      title={`Filter ${column.name} in Wrangle`}
-      aria-label={`Filter ${column.name}`}
+      title={`Choose which ${column.name} values to keep`}
+      aria-label={`Filter ${column.name} by value`}
       onClick={(event) => {
         event.stopPropagation();
         model.filterColumn(column);

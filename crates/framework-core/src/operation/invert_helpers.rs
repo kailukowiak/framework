@@ -18,10 +18,111 @@ impl Document {
             })
     }
 
+    /// The inverse of an edit made of splices to a frame's direct formats,
+    /// as splices turned round.
+    ///
+    /// For a range format they are the splices it will make, read before it
+    /// applies, like every inverse, so exactly the ones
+    /// `apply_set_frame_style` is about to make. For splices already
+    /// recorded they are resolved against the list as it stands now, so one
+    /// a later edit has made inapplicable — and which will therefore be
+    /// skipped — is not undone either.
+    pub(crate) fn invert_frame_style_splices(
+        &self,
+        operation: &ReplicatedOperation,
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let (frame_id, splices) = match operation {
+            ReplicatedOperation::SetFrameStyle {
+                frame_id,
+                target:
+                    target @ FrameStyleTarget::Range {
+                        row_ids,
+                        column_ids,
+                    },
+                style,
+            } => {
+                let covered = CoveredCells::new(row_ids, column_ids);
+                let display = &self.frame(frame_id)?.display;
+                (
+                    frame_id,
+                    display.range_style_splices(target, &covered, style),
+                )
+            }
+            ReplicatedOperation::SpliceFrameStyles { frame_id, splices } => (
+                frame_id,
+                self.frame(frame_id)?.display.resolve_style_splices(splices),
+            ),
+            _ => unreachable!("only range formats and style splices are inverted as splices"),
+        };
+        Ok(ReplicatedOperation::SpliceFrameStyles {
+            frame_id: frame_id.clone(),
+            splices: invert_style_splices(&splices),
+        })
+    }
+
+    /// Each named column's layout as it stands, as the same edit: a column
+    /// with no entry is automatic and unwrapped, which is what setting it
+    /// back to that removes.
+    pub(crate) fn prior_column_layout(
+        &self,
+        frame_id: &Id,
+        columns: &[FrameColumnLayoutUpdate],
+    ) -> Result<ReplicatedOperation, CoreError> {
+        let display = &self.frame(frame_id)?.display;
+        Ok(ReplicatedOperation::SetFrameDisplayColumnLayout {
+            frame_id: frame_id.clone(),
+            columns: columns
+                .iter()
+                .map(|update| {
+                    let prior = display
+                        .column_layout
+                        .get(&update.column_id)
+                        .cloned()
+                        .unwrap_or_default();
+                    FrameColumnLayoutUpdate {
+                        column_id: update.column_id.clone(),
+                        width: prior.width,
+                        wrap: prior.wrap,
+                    }
+                })
+                .collect(),
+        })
+    }
+
     pub(crate) fn restore_frame(frame: &FrameObject) -> ReplicatedOperation {
         ReplicatedOperation::RestoreFrame {
             frame: frame.clone(),
         }
+    }
+
+    /// What a block of overlay patches is about to replace: each cell's
+    /// prior patch, or `None` where there was none, which withdraws the patch
+    /// rather than writing an empty one — the difference between a cell nobody
+    /// touched and one somebody cleared. Read once per cell from the state
+    /// before any of them applied, so a cell named twice in one block still
+    /// goes back to what it was before the block. The row count is put back
+    /// only when the forward edit set it.
+    pub(crate) fn invert_set_overlay_cells(
+        &self,
+        frame_id: &str,
+        appended_rows: Option<u32>,
+        cells: &[OverlayCellPatch],
+    ) -> Result<Vec<ReplicatedOperation>, CoreError> {
+        let frame = self.frame(frame_id)?;
+        Ok(vec![ReplicatedOperation::SetOverlayCells {
+            frame_id: frame_id.to_string(),
+            appended_rows: appended_rows.map(|_| frame.appended_rows),
+            cells: cells
+                .iter()
+                .map(|cell| OverlayCellPatch {
+                    row_ordinal: cell.row_ordinal,
+                    column_id: cell.column_id.clone(),
+                    raw: frame
+                        .overlay_value(&cell.column_id, cell.row_ordinal)
+                        .map(str::to_owned),
+                })
+                .collect(),
+        }])
     }
 
     pub(crate) fn invert_frame_summary(
@@ -146,22 +247,99 @@ impl Document {
         }])
     }
 
-    // A pasted block can add rows, and `SetCells` cannot take them away
-    // again.
+    /// A pasted block can add rows and columns, and `SetCells` cannot take
+    /// them away again.
+    ///
+    /// This used to restore the whole frame, which also reverted any
+    /// collaborator's edit to that frame merged between the paste and its
+    /// undo. The paste is fully described by three things, so the inverse
+    /// names exactly those: the overwritten cells get their prior text, the
+    /// rows it appended go, and the columns it added go — `DeleteColumn`
+    /// takes them out of every frame scored from this one too, which is
+    /// where `insert_literal_column` carried them. Cells written into an
+    /// appended row or an added column need no restoring; they leave with
+    /// it. A row the paste named but that already existed was skipped by
+    /// `apply_paste_cells`, so it is not the paste's to delete.
     pub(crate) fn invert_paste_cells(
         &self,
         frame_id: &Id,
         cells: &[CellUpdate],
         appended_rows: &[Row],
+        added_columns: &[Column],
     ) -> Result<Vec<ReplicatedOperation>, CoreError> {
-        if appended_rows.is_empty() {
-            Ok(vec![ReplicatedOperation::SetCells {
+        let frame = self.frame(frame_id)?;
+        let new_rows: Vec<Id> = appended_rows
+            .iter()
+            .filter(|row| !frame.rows.iter().any(|existing| existing.id == row.id))
+            .map(|row| row.id.clone())
+            .collect();
+        let overwritten: Vec<CellUpdate> = cells
+            .iter()
+            .filter(|cell| {
+                !new_rows.contains(&cell.row_id)
+                    && !added_columns
+                        .iter()
+                        .any(|column| column.id == cell.column_id)
+            })
+            .cloned()
+            .collect();
+        let mut inverse = Vec::new();
+        if !overwritten.is_empty() || (new_rows.is_empty() && added_columns.is_empty()) {
+            inverse.push(ReplicatedOperation::SetCells {
                 frame_id: frame_id.clone(),
-                cells: self.prior_cells(frame_id, cells)?,
-            }])
-        } else {
-            Ok(vec![Self::restore_frame(self.frame(frame_id)?)])
+                cells: self.prior_cells(frame_id, &overwritten)?,
+            });
         }
+        if !new_rows.is_empty() {
+            inverse.push(ReplicatedOperation::DeleteRows {
+                frame_id: frame_id.clone(),
+                row_ids: new_rows,
+            });
+        }
+        inverse.extend(added_columns.iter().rev().map(|column| {
+            ReplicatedOperation::DeleteColumn {
+                frame_id: frame_id.clone(),
+                column_id: column.id.clone(),
+            }
+        }));
+        Ok(inverse)
+    }
+
+    /// Puts deleted rows back where each one stood, with its cells.
+    ///
+    /// One `AddRow` per row, last row first. Each names the row that followed
+    /// it before the delete, and going from the bottom up means that row is
+    /// already back — either it survived the delete, or it was restored a
+    /// step earlier — so every row lands exactly where it was however the
+    /// selection was scattered. Row styles anchored to a deleted row are not
+    /// carried back, the same as undoing a single `DeleteRow` has never done.
+    pub(crate) fn invert_delete_rows(
+        &self,
+        frame_id: &Id,
+        row_ids: &[Id],
+    ) -> Result<Vec<ReplicatedOperation>, CoreError> {
+        let frame = self.frame(frame_id)?;
+        let mut indexes = row_ids
+            .iter()
+            .map(|row_id| {
+                frame
+                    .rows
+                    .iter()
+                    .position(|row| row.id == *row_id)
+                    .ok_or(CoreError::RowNotFound)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        indexes.sort_unstable();
+        indexes.dedup();
+        Ok(indexes
+            .into_iter()
+            .rev()
+            .map(|index| ReplicatedOperation::AddRow {
+                frame_id: frame_id.clone(),
+                row: frame.rows[index].clone(),
+                before_row_id: frame.rows.get(index + 1).map(|next| next.id.clone()),
+            })
+            .collect())
     }
 
     // Retyping a column also rebuilds its category list, so putting the

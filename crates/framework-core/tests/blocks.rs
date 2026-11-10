@@ -724,6 +724,7 @@ fn a_line_reads_derived_frames_live_until_its_answer_is_explicitly_frozen() {
             values: [(column_id.clone(), "1000".to_string())]
                 .into_iter()
                 .collect(),
+            before_row_id: None,
         })
         .unwrap();
     assert_eq!(answers(&store, &block), ["1125"]);
@@ -746,6 +747,7 @@ fn a_line_reads_derived_frames_live_until_its_answer_is_explicitly_frozen() {
         .apply(Operation::AddRow {
             frame_id,
             values: [(column_id, "2000".to_string())].into_iter().collect(),
+            before_row_id: None,
         })
         .unwrap();
     assert_eq!(answers(&store, &block), ["1125"]);
@@ -809,6 +811,7 @@ fn a_line_dependent_on_a_live_frame_aggregate_stays_live_too() {
         .apply(Operation::AddRow {
             frame_id,
             values: [(amount_id, "75".to_string())].into_iter().collect(),
+            before_row_id: None,
         })
         .unwrap();
     assert_eq!(

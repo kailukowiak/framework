@@ -115,6 +115,24 @@ describe("fill handle drag", () => {
     expect(result.current.preview).toBeNull();
   });
 
+  it("fills a frame whose rows come from the page rather than the document", () => {
+    // A file-backed frame keeps no rows in the document; the page supplies
+    // them, and the fill writes to the ids the page handed out.
+    mountRows(6);
+    const onOperation = vi.fn();
+    const { result } = renderHook(() =>
+      useFillHandleDrag({ ...frame, rows: [] }, ONE_CELL, null, null, options(onOperation))
+    );
+    expect(result.current.target).toEqual({ column: frame.columns[0], rowIndex: 1 });
+    act(() => {
+      result.current.beginFillDrag(handlePress() as unknown as React.PointerEvent);
+      window.dispatchEvent(pointerEvent("pointermove", rowY(2)));
+      window.dispatchEvent(pointerEvent("pointerup", rowY(2)));
+    });
+    expect(onOperation).toHaveBeenCalledWith({ type: "setCells", frameId: frame.id,
+      cells: [{ rowId: frame.rows[2].id, columnId: frame.columns[0].id, raw: frame.rows[1].cells[frame.columns[0].id].raw }] });
+  });
+
   it("fills upwards, but does nothing on the starting row", () => {
     mountRows(6);
     const onOperation = vi.fn();

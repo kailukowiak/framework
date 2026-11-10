@@ -52,6 +52,7 @@ fn add_seventh_launch_row(
     store.apply(Operation::AddRow {
         frame_id: source.id.clone(),
         values,
+        before_row_id: None,
     })?;
     Ok(())
 }

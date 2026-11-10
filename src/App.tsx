@@ -20,7 +20,6 @@ import { HelpBrowser } from "./HelpBrowser";
 import {
   quickCommandItems,
   type SelectionActions,
-  type SelectionTarget,
 } from "./QuickCommands";
 import { UpdateDialog } from "./UpdateDialog";
 import { useApplicationMenu } from "./useApplicationMenu";
@@ -46,7 +45,9 @@ import { useCanvasViewport } from "./hooks/useCanvasViewport";
 import { useDocumentLifecycle } from "./hooks/useDocumentLifecycle";
 import { useConnectorRefreshApproval } from "./hooks/useConnectorRefreshApproval";
 import { ConnectorRefreshConfirmDialog } from "./ConnectorRefreshConfirmDialog";
+import { useCardSelectionKeys } from "./hooks/useCardSelectionKeys";
 import { useGridKeyboardNavigation } from "./hooks/useGridKeyboardNavigation";
+import { useGridEdgeGrowth, useGridReturnListener } from "./hooks/useGridEdgeGrowth";
 import { useDocumentBootstrap } from "./hooks/useDocumentBootstrap";
 import { useOpenedDocument } from "./hooks/useOpenedDocument";
 import { CollapsedInspector, Inspector } from "./Inspector";
@@ -61,10 +62,8 @@ import {
   inspectorShown,
   rightDockInset,
 } from "./lib/inspectorPanel";
-import {
-  focusGridClipboardTarget,
-  keyboardBelongsToCanvas,
-} from "./lib/gridClipboardTarget";
+import { focusGridClipboardTarget } from "./lib/gridClipboardTarget";
+import { keyboardBelongsToCanvas } from "./lib/canvasKeyboardOwner";
 import { CanvasObject, LineageCords } from "./CanvasObject";
 import { NewDocumentDialog } from "./NewDocumentDialog";
 import { DatasetDialog } from "./DatasetDialog";
@@ -76,24 +75,23 @@ import { ProjectPanel } from "./ProjectPanel";
 import { BlockCard } from "./BlockCard";
 import { scalarFormulaReferences } from "./ScalarCards";
 import {
-  ARROW_DIRECTIONS,
   NumberDisplayContext,
   activeTabObject,
   activeTabFrame,
   chainFilterCount,
-  gridBoundsFor,
-  gridCellAt,
-  gridRangeForFocus,
   isTextEntryTarget,
+  nextColumnName,
   pipelineSortKeys,
   resolveGridContext,
   tabObjects,
-  visualGridPosition,
   type ContextMenuState,
-  type GridContext,
   type GridFocus,
   type RenderedGrid,
 } from "./FrameGrid";
+import {
+  framePermitsColumnEdits,
+  gridStructureActions,
+} from "./lib/gridStructure";
 import { hasFrameTabDrag, readFrameTabDrag } from "./FrameViewTabs";
 import { revealScroll } from "./lib/canvasReveal";
 import { useInsertPosition } from "./hooks/useInsertPosition";
@@ -128,9 +126,9 @@ import {
   stableColumnRange,
 } from "./lib/selectedColumnRange";
 import { formulaToken } from "./lib/formulaReferences";
+import { selectedStyleSelection } from "./lib/styleSelection";
 import { jumpToFindHit } from "./lib/findJump";
 import { HelpPanelContext, useHelpPanel } from "./lib/helpPanel";
-import { enterPosition, tabPosition, type GridDirection } from "./lib/gridNavigation";
 import {
   applicationShortcut,
   hasNativeMenu,
@@ -139,7 +137,10 @@ import {
 } from "./lib/applicationShortcuts";
 import { reportIgnoredFailure } from "./lib/errorReporting";
 import { selectedCanvasView, withCanvasView } from "./lib/canvasNavigation";
-import { pinnedThrough } from "./lib/pinnedColumns";
+import {
+  quickCommandSelection,
+  selectedGridColumnIds,
+} from "./lib/quickCommandSelection";
 import { outlineFrame, frameNames } from "./lib/dataSources";
 import {
   CANVAS_OUTLINE_ZOOM,
@@ -164,62 +165,6 @@ import type {
  * the canvas only ever has to know whether something is there.
  */
 export type LeftPanel = "data" | "project" | null;
-/**
- * The selected object as Quick Commands names it: the card, the column when
- * one is picked, and the few facts its verbs need to read correctly — whether
- * the card is collapsed, how the column sorts today, how far a pin would
- * reach, and whether the frame owns its rows (which decides whether a column
- * is deleted or hidden). A plain description rather than the objects
- * themselves, so `quickCommandItems` stays testable without a document.
- */
-function quickCommandSelection(
-  document: DocumentView | null,
-  selection: Selection | null
-): SelectionTarget | null {
-  if (!document || !selection) return null;
-  const object = document.objects.find(
-    (candidate) => candidate.id === selection.objectId
-  );
-  if (!object) return null;
-  const frame = object.kind === "frame" ? object : null;
-  const column =
-    frame?.columns.find((candidate) => candidate.id === selection.columnId) ?? null;
-  const sortKey =
-    frame && column
-      ? pipelineSortKeys(document.computedFrames[frame.id]).find(
-          (key) => key.columnId === column.id
-        )
-      : undefined;
-  return {
-    name: column ? `${object.name} · ${column.name}` : object.name,
-    objectId: object.id,
-    kind: object.kind,
-    collapsed: selectedCanvasView(document, selection)?.collapsed ?? false,
-    frameId: frame?.id,
-    column:
-      frame && column
-        ? {
-            id: column.id,
-            name: column.name,
-            descending: sortKey ? sortKey.descending : null,
-            pinThrough: pinnedThrough(frame, column),
-            ownsRows: Boolean(document.computedFrames[frame.id]?.editing.rows),
-          }
-        : undefined,
-  };
-}
-
-/** Ids of every column the grid selection covers, in frame order. */
-function selectedGridColumnIds(context: GridContext, focus: GridFocus): string[] {
-  const range = gridRangeForFocus(context, focus);
-  if (!range) return [];
-  const [from, to] =
-    context.orientation === "fieldsAsRows"
-      ? [range.top, range.bottom]
-      : [range.left, range.right];
-  return context.frame.columns.slice(from, to + 1).map((column) => column.id);
-}
-
 export default function App() {
   const localFormulaEditorActive = useActiveFormulaEditorPresence();
   const formulaCommands = useActiveFormulaEditorCommands();
@@ -539,8 +484,7 @@ export default function App() {
    */
   const removeColumn = (frameId: string, columnId: string, viewId?: string) => {
     if (!document) return;
-    const computed = document.computedFrames[frameId];
-    if (computed?.editing.rows) {
+    if (framePermitsColumnEdits(document, frameId)) {
       deleteFromContext({ type: "deleteColumn", frameId, columnId });
       return;
     }
@@ -911,6 +855,7 @@ export default function App() {
       void run({ type: "setFrameDisplayPinnedColumns", frameId, pinnedColumns }),
     removeColumn: (frameId, columnId) =>
       removeColumn(frameId, columnId, selection?.viewId),
+    ...gridStructureActions(document, run, nextColumnName),
   };
 
   /** Opening a recent from the palette lands the same way the library does. */
@@ -939,48 +884,34 @@ export default function App() {
   menuHandlersRef.current = menuHandlers;
   useApplicationMenu(receivesMenuCommands(), menuHandlers, setError);
 
-  // One visual step from the active cell after an editor commit (Enter/Tab family).
-  const stepGridFocus = useCallback(
-    (direction: GridDirection) => {
-      if (!document || !gridFocus) return;
-      const context = resolveGridContext(document, gridFocus, renderedRows.current);
-      const position = context
-        ? visualGridPosition(context, gridFocus.rowId, gridFocus.columnId)
-        : null;
-      const nextPosition =
-        context && position
-          ? direction === "left" || direction === "right"
-            ? tabPosition(position, direction === "left", gridBoundsFor(context))
-            : enterPosition(position, direction === "up", gridBoundsFor(context))
-          : null;
-      const target = context && nextPosition ? gridCellAt(context, nextPosition) : null;
-      const next: GridFocus = target
-        ? {
-            ...gridFocus,
-            rowId: target.row.id,
-            columnId: target.column.id,
-            mode: "navigate",
-            editSeed: null,
-            anchor: null,
-          }
-        : { ...gridFocus, mode: "navigate", editSeed: null, anchor: null };
-      setGridFocus(next);
-      setSelection({
-        objectId: next.objectId,
-        viewId: next.viewId,
-        rowId: next.rowId,
-        columnId: next.columnId,
-      });
-    },
-    [document, gridFocus]
-  );
+  // One visual step from the active cell after an editor commit (Enter/Tab
+  // family), carrying on into the ghost row or a new row at the grid's edge.
+  const { stepGridFocus } = useGridEdgeGrowth({
+    document,
+    gridFocus,
+    renderedRows,
+    setGridFocus,
+    setSelection,
+    run,
+  });
+  useGridReturnListener(stepGridFocus);
+
+  const handleCardKey = useCardSelectionKeys({
+    document,
+    selection,
+    gridFocus,
+    renderedRows,
+    setGridFocus,
+    setSelection,
+    run,
+    navigateCanvas,
+  });
 
   // Window-level dispatcher, routed by focus mode. Edit-mode keys live on the
   // cell editor itself, and keys are never hijacked from other text inputs
   // (formula editors, name fields, draft rows).
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const modifier = event.metaKey || event.ctrlKey;
       const shortcut = applicationShortcut(event);
       // ⌘S, on an application with nothing to save. Every edit is on disk
       // before the key comes back up, so the only document this can mean
@@ -1017,15 +948,8 @@ export default function App() {
         handleNavigateKey(event);
         return;
       }
-      if (selection && keyboardBelongsToCanvas(event.target)) {
-        const direction = ARROW_DIRECTIONS[event.key];
-        const cycle =
-          event.key === "Tab" ? (event.shiftKey ? "previous" : "next") : null;
-        if ((direction && !modifier && !event.shiftKey) || cycle) {
-          if (navigateCanvas(direction ?? cycle!)) event.preventDefault();
-          return;
-        }
-      }
+      if (selection && keyboardBelongsToCanvas(event.target) && handleCardKey(event))
+        return;
       if (event.key === "Escape" && !gridFocus && selection) setSelection(null);
     };
     window.addEventListener("keydown", onKeyDown);
@@ -1050,6 +974,7 @@ export default function App() {
     getFormulaEditor,
     gridFocus,
     handleCanvasPaste,
+    handleCardKey,
     handleGridCopy,
     handleGridCut,
     handleGridPaste,
@@ -1206,6 +1131,7 @@ export default function App() {
   );
   columnRangeRef.current = columnRange;
   const selectedColumnIds = columnRange.ids;
+  const styleSelection = selectedStyleSelection(selectedGridContext, gridFocus);
   const selectedCellFormulaReferences = selectedGridContext
     ? [
         ...selectedGridContext.frame.columns
@@ -1651,6 +1577,7 @@ export default function App() {
             formulaFunctions={document.formulaFunctions}
             selection={selection}
             selectedColumnIds={selectedColumnIds}
+            styleSelection={styleSelection}
             computed={
               selectedObject.kind === "frame"
                 ? document.computedFrames[selectedObject.id]
@@ -1867,7 +1794,10 @@ export default function App() {
                 canUndo: document.canUndo,
                 canRedo: document.canRedo,
                 hasSelectedView: Boolean(selectedCommandView),
-                selection: quickCommandSelection(document, selection),
+                selection: quickCommandSelection(document, selection, {
+                  context: selectedGridContext,
+                  focus: gridFocus,
+                }),
                 recents: recents.map(({ path, title }) => ({ path, title })),
               },
               { selection: selectionActions, openRecent: openRecentDocument }

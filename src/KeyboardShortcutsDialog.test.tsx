@@ -23,6 +23,13 @@ describe("KeyboardShortcutsDialog", () => {
     expect(screen.getByText("First / last column of row")).toBeTruthy();
     expect(screen.getByText("First / last cell of frame")).toBeTruthy();
 
+    // Each of these is bound in menuCommands.json or the grid's key handler.
+    expect(screen.getByText("Variable")).toBeTruthy();
+    expect(screen.getByText("Calculation matrix")).toBeTruthy();
+    expect(screen.getByText("Canvas only (hide panels)")).toBeTruthy();
+    expect(screen.getByText("Save (names a scratch document)")).toBeTruthy();
+    expect(screen.getByText("⌃Space / ⌘Space")).toBeTruthy();
+
     fireEvent.keyDown(window, { key: "Escape" });
     expect(close).toHaveBeenCalledOnce();
   });

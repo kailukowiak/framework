@@ -30,9 +30,12 @@ impl TypeVisitor for DeclarationCollector<'_> {
 /// `apply_operation`, generated from the canonical Rust enum and its inputs.
 pub fn operation_typescript() -> String {
     let config = Config::default();
+    // `Operation` is seen before the walk starts because a batch holds
+    // operations: without this the walk would reach the union through its
+    // own `batch` variant and declare it twice.
     let mut collector = DeclarationCollector {
         config: &config,
-        seen: HashSet::new(),
+        seen: HashSet::from([TypeId::of::<Operation>()]),
         declarations: Vec::new(),
     };
     Operation::visit_dependencies(&mut collector);
@@ -68,6 +71,46 @@ mod tests {
         ] {
             assert!(catalog.contains(scenario_operation), "{scenario_operation}");
         }
+    }
+
+    /// The grid-shape edits — a row placed above another, several rows
+    /// deleted as one, a column placed before another — reach an agent only
+    /// through this catalog, so it has to spell each of them.
+    #[test]
+    fn catalog_spells_the_grid_shape_edits() {
+        let catalog = operation_typescript();
+        assert!(catalog.contains(r#""type": "deleteRows""#));
+        assert!(catalog.contains("rowIds: Array<string>"));
+        assert!(catalog.contains("beforeRowId?: string | null"));
+        assert!(catalog.contains("beforeColumnId?: string | null"));
+    }
+
+    /// `addColumn` can carry the new column's first values, keyed by row id,
+    /// which is the only way a batch can fill a column whose id the engine
+    /// has not minted yet.
+    #[test]
+    fn catalog_spells_add_column_values() {
+        let catalog = operation_typescript();
+        let add_column = catalog
+            .split(r#""type": "addColumn""#)
+            .nth(1)
+            .and_then(|rest| rest.split(r#""type": "deleteColumn""#).next())
+            .expect("addColumn is in the catalog");
+        assert!(add_column.contains("values?: { [key in string]: string }"));
+    }
+
+    /// Column widths, range formats and batches reach an agent only
+    /// through this catalog. A batch holds operations, so the union is
+    /// declared once and referenced from inside itself.
+    #[test]
+    fn catalog_spells_layout_range_formats_and_batches() {
+        let catalog = operation_typescript();
+        assert!(catalog.contains(r#""type": "setFrameDisplayColumnLayout""#));
+        assert!(catalog.contains("type FrameColumnLayoutUpdate ="));
+        assert!(catalog.contains(r#""kind": "range""#));
+        assert!(catalog.contains(r#""type": "batch""#));
+        assert!(catalog.contains("operations: Array<Operation>"));
+        assert_eq!(catalog.matches("type Operation =").count(), 1);
     }
 
     #[test]

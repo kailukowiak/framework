@@ -1401,6 +1401,22 @@ impl FrameworkMcp {
             .to_string();
         let operation: Operation = serde_json::from_value(payload)
             .map_err(|error| format!("Invalid FrameWork operation: {error}"))?;
+        // The two legacy column-formula spellings below are rerouted through
+        // Wrangle one at a time; inside a batch they would skip that and
+        // reopen the hidden authoring path, so a batch may not carry them.
+        if let Operation::Batch { operations } = &operation
+            && operations.iter().any(|part| {
+                matches!(
+                    part,
+                    Operation::AddComputedColumn { .. } | Operation::SetColumnFormula { .. }
+                )
+            })
+        {
+            return Err(
+                "A batch cannot add or set a column formula; apply that operation on its own"
+                    .into(),
+            );
+        }
         match operation {
             // These two spellings predate the Wrangle chain. Keep accepting
             // their serialized contract, but do not let the generated MCP
@@ -2309,6 +2325,7 @@ impl FrameworkMcp {
         let view = session.apply(Operation::AddRow {
             frame_id: frame_id.clone(),
             values,
+            before_row_id: None,
         })?;
         let row_id = frame_by_id(&view, &frame_id)?
             .rows
@@ -2380,6 +2397,8 @@ impl FrameworkMcp {
             name: args.name.clone(),
             data_type,
             after_column_id,
+            before_column_id: None,
+            values: Default::default(),
         })?;
         let column_id = frame_by_id(&view, &frame_id)?
             .columns
@@ -4090,6 +4109,56 @@ mod tests {
         assert_eq!(total.display, "0.60");
     }
 
+    /// A batch goes through the same exact-union path as any operation: one
+    /// revision for all of it, and one undo that takes all of it back.
+    #[test]
+    fn a_batch_applies_and_undoes_as_one_edit_through_apply_operation() {
+        let (server, _path) = test_server();
+        let revision = server.lock().unwrap().store.view().document.revision;
+        server
+            .apply_operation(Parameters(ApplyOperationArgs {
+                operation: serde_json::json!({
+                    "type": "batch",
+                    "operations": [
+                        {"type": "addContainer", "name": "First", "x": 0.0, "y": 0.0},
+                        {"type": "addContainer", "name": "Second", "x": 40.0, "y": 0.0},
+                    ],
+                }),
+                expected_revision: Some(revision),
+            }))
+            .unwrap();
+        let view = server.lock().unwrap().store.view();
+        assert_eq!(view.document.revision, revision + 1);
+        assert!(resolve_any_object_id(&view, "First").is_ok());
+        assert!(resolve_any_object_id(&view, "Second").is_ok());
+
+        server
+            .undo(Parameters(HistoryArgs {
+                expected_revision: None,
+            }))
+            .unwrap();
+        let view = server.lock().unwrap().store.view();
+        assert!(resolve_any_object_id(&view, "First").is_err());
+        assert!(resolve_any_object_id(&view, "Second").is_err());
+
+        // The legacy column-formula spellings are rerouted one at a time, so
+        // a batch carrying one is turned away rather than slipping past.
+        let refusal = server
+            .apply_operation(Parameters(ApplyOperationArgs {
+                operation: serde_json::json!({
+                    "type": "batch",
+                    "operations": [{
+                        "type": "setColumnFormula",
+                        "frameId": "f", "columnId": "c", "formula": "1",
+                    }],
+                }),
+                expected_revision: None,
+            }))
+            .err()
+            .expect("a batch carrying a column formula is refused");
+        assert!(refusal.contains("column formula"), "{refusal}");
+    }
+
     /// A container and a value on it, through `apply_operation` — neither
     /// has a named tool, the same escape hatch the finance and timesheet
     /// twins use for CSV import.
@@ -4636,6 +4705,72 @@ mod tests {
                 .iter()
                 .any(|cell| { cell.column_name == "Notes" && cell.raw == "42" })
         );
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// The grid-shape edits have no named tool; the catalog spells them and
+    /// `apply_operation` takes them as written, through the same validation
+    /// and history as the desktop.
+    #[test]
+    fn grid_shape_edits_run_through_the_generic_operation() {
+        let (server, path) = test_server();
+        let orders = || {
+            server
+                .get_frame(Parameters(GetFrameArgs {
+                    frame: "Orders".into(),
+                    limit: None,
+                }))
+                .unwrap()
+                .0
+        };
+        let before = orders();
+        let apply = |operation: serde_json::Value| {
+            server
+                .apply_operation(Parameters(ApplyOperationArgs {
+                    operation,
+                    expected_revision: None,
+                }))
+                .unwrap()
+        };
+        apply(serde_json::json!({
+            "type": "addRow",
+            "frameId": before.id,
+            "values": {},
+            "beforeRowId": before.rows[0].id,
+        }));
+        assert_eq!(orders().rows.len(), before.rows.len() + 1);
+        assert_eq!(orders().rows[1].id, before.rows[0].id);
+        apply(serde_json::json!({
+            "type": "addColumn",
+            "frameId": before.id,
+            "name": "Label",
+            "dataType": "string",
+            "afterColumnId": null,
+            "beforeColumnId": before.columns[0].id,
+        }));
+        assert_eq!(orders().columns[0].name, "Label");
+        // The same operation can carry the column's first values, keyed by
+        // row id, as the one edit the grid's ghost column sends.
+        apply(serde_json::json!({
+            "type": "addColumn",
+            "frameId": before.id,
+            "name": "Note",
+            "dataType": "string",
+            "afterColumnId": null,
+            "values": { (before.rows[0].id.clone()): "hello" },
+        }));
+        let note = orders()
+            .columns
+            .iter()
+            .position(|column| column.name == "Note")
+            .unwrap();
+        assert_eq!(orders().rows[1].cells[note].raw, "hello");
+        apply(serde_json::json!({
+            "type": "deleteRows",
+            "frameId": before.id,
+            "rowIds": [before.rows[0].id, before.rows[1].id],
+        }));
+        assert_eq!(orders().rows.len(), before.rows.len() - 1);
         std::fs::remove_file(path).unwrap();
     }
 

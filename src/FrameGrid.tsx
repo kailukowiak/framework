@@ -8,6 +8,7 @@ import {
   type GridRange,
 } from "./lib/gridNavigation";
 import { expandRangeForSpan } from "./lib/gridSpan";
+import { rangeStylesAt } from "./lib/frameStyleRanges";
 import { themedColor } from "./lib/palette";
 import { parseUseThousandsSeparators } from "./lib/preferences";
 import { isGridClipboardTarget } from "./lib/gridClipboardTarget";
@@ -104,6 +105,13 @@ export function effectiveFrameCellStyle(
       style,
       exactFrameCellStyle(frame, { kind: "row", rowId })
     );
+  // Rectangle formats sit between the row and the cell: a range is a
+  // broader, later gesture than a row but a cell stays the most specific
+  // thing anyone said about itself. The engine clears a range's properties
+  // from the cells beneath it when it is applied, so a cell format that
+  // survives inside a range was made after it and rightly wins.
+  for (const range of rangeStylesAt(frameStyles(frame), rowId, columnId))
+    style = mergedFrameCellStyle(style, range);
   if (rowId && columnId)
     style = mergedFrameCellStyle(
       style,

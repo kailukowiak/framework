@@ -324,12 +324,9 @@ fn replace_source_columns(
         .iter()
         .map(|column| column.id.as_str())
         .collect::<std::collections::HashSet<_>>();
-    frame.display.styles.retain(|style| match &style.target {
-        FrameStyleTarget::Column { column_id } | FrameStyleTarget::Cell { column_id, .. } => {
-            retained.contains(column_id.as_str())
-        }
-        _ => true,
-    });
+    frame
+        .display
+        .forget_columns(|column_id| !retained.contains(column_id));
     frame.columns = columns;
     frame.base_columns = base_columns;
 }

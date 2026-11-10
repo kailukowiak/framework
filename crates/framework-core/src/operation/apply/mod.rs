@@ -8,12 +8,14 @@ pub mod calendar;
 pub mod cells;
 pub mod columns;
 pub mod derivation;
+mod grid_shape;
 mod ml;
 pub mod objects;
 pub mod scenarios;
 pub mod views;
 
 use crate::*;
+use grid_shape::ColumnPlace;
 
 impl Document {
     pub(crate) fn apply_replicated(
@@ -121,6 +123,9 @@ impl Document {
                 frame_id,
                 pinned_columns,
             } => self.apply_set_frame_display_pinned_columns(frame_id, pinned_columns)?,
+            ReplicatedOperation::SetFrameDisplayColumnLayout { frame_id, columns } => {
+                self.apply_set_frame_display_column_layout(frame_id, columns)?
+            }
             ReplicatedOperation::SetFrameDisplayCrosstab { frame_id, crosstab } => {
                 self.apply_set_frame_display_crosstab(frame_id, crosstab)?
             }
@@ -176,8 +181,8 @@ impl Document {
             ReplicatedOperation::AddRow {
                 frame_id,
                 row,
-                after_row_id,
-            } => self.apply_add_row(frame_id, row, after_row_id)?,
+                before_row_id,
+            } => self.apply_add_row(frame_id, row, before_row_id)?,
             ReplicatedOperation::SetFrameContent {
                 frame_id,
                 columns,
@@ -213,19 +218,35 @@ impl Document {
                 column_id,
                 raw,
             } => self.apply_set_overlay_cell(frame_id, row_ordinal, column_id, raw)?,
+            ReplicatedOperation::SetOverlayCells {
+                frame_id,
+                appended_rows,
+                cells,
+            } => self.apply_set_overlay_cells(frame_id, appended_rows, cells)?,
             ReplicatedOperation::PasteCells {
                 frame_id,
                 cells,
                 appended_rows,
-            } => self.apply_paste_cells(frame_id, cells, appended_rows)?,
+                added_columns,
+            } => self.apply_paste_cells(frame_id, cells, appended_rows, added_columns)?,
             ReplicatedOperation::DeleteRow { frame_id, row_id } => {
                 self.apply_delete_row(frame_id, row_id)?
+            }
+            ReplicatedOperation::DeleteRows { frame_id, row_ids } => {
+                self.apply_delete_rows(frame_id, row_ids)?
             }
             ReplicatedOperation::AddColumn {
                 frame_id,
                 column,
                 after_column_id,
-            } => self.apply_add_column(frame_id, column, after_column_id)?,
+                before_column_id,
+                values,
+            } => self.apply_add_column(
+                frame_id,
+                column,
+                ColumnPlace::new(after_column_id, before_column_id),
+                values,
+            )?,
             ReplicatedOperation::DeleteColumn {
                 frame_id,
                 column_id,
@@ -370,6 +391,10 @@ impl Document {
                 scenarios,
                 active_scenario,
             } => self.apply_restore_scenarios(scenarios, active_scenario),
+            ReplicatedOperation::SpliceFrameStyles { frame_id, splices } => {
+                self.apply_splice_frame_styles(frame_id, splices)?
+            }
+            ReplicatedOperation::Batch { operations } => self.apply_batch(operations)?,
         }
         self.validate_unique_keys()?;
         self.validate_join_derivations()?;

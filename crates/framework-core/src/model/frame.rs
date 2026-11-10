@@ -4,6 +4,7 @@ use crate::model::data_artifact::{ConnectorRecipe, DataArtifact};
 use crate::model::derivation::{
     DerivedSort, FrameDerivation, FrameStep, Materialization, UniqueKeyConstraint,
 };
+use crate::model::frame_layout::FrameColumnLayout;
 use crate::model::value::{ColumnFormat, DataType};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -196,6 +197,18 @@ impl FrameObject {
     /// hands the results back as one edit.
     pub fn has_row_patches(&self) -> bool {
         !self.cell_overlay.is_empty() || !self.deleted_rows.is_empty() || self.appended_rows > 0
+    }
+
+    /// How many rows a base of `base_rows` reads as once rows added past its
+    /// end and rows struck out of it are counted.
+    ///
+    /// The file's own count is the frame's only until somebody adds or strikes
+    /// out a row. The pager used to count from the file alone, which capped a
+    /// page at the base's length, so a row added past the end was recorded and
+    /// never shown — unless a sort happened to send the page down the route
+    /// that counts what it collected.
+    pub(crate) fn patched_row_count(&self, base_rows: usize) -> usize {
+        (base_rows + self.appended_rows as usize).saturating_sub(self.deleted_rows.len())
     }
 
     /// The text typed over one cell of the base read, if any.
@@ -596,6 +609,11 @@ pub struct FrameDisplay {
     /// columns back puts the freeze back too.
     #[serde(default, skip_serializing_if = "is_zero")]
     pub pinned_columns: u32,
+    /// How wide each column is drawn and whether its text wraps, by column
+    /// id. A column with no entry is automatic and unwrapped, which is every
+    /// column until somebody drags or fits one. See [`FrameColumnLayout`].
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub column_layout: BTreeMap<Id, FrameColumnLayout>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub styles: Vec<FrameStyle>,
     /// Ordered, row-wise presentation rules. Their predicates are formulas
@@ -616,6 +634,7 @@ impl FrameDisplay {
             && self.orientation == FrameViewOrientation::default()
             && self.crosstab.is_none()
             && self.pinned_columns == 0
+            && self.column_layout.is_empty()
     }
 
     /// The display filter, as `(predicates, match_all)`.
@@ -762,9 +781,37 @@ pub enum FrameLineStyle {
 #[ts(export)]
 pub enum FrameStyleTarget {
     Frame,
-    Column { column_id: Id },
-    Row { row_id: Id },
-    Cell { row_id: Id, column_id: Id },
+    Column {
+        column_id: Id,
+    },
+    Row {
+        row_id: Id,
+    },
+    Cell {
+        row_id: Id,
+        column_id: Id,
+    },
+    /// Every cell where one of `row_ids` meets one of `column_ids`: what bold
+    /// over a dragged selection formats.
+    ///
+    /// Stored as the two sets rather than as their product so that a
+    /// selection of ten thousand rows by ten columns is ten thousand and ten
+    /// ids, not a hundred thousand cell records. Sets of row ids rather than
+    /// two corner rows because a corner is a position in the order the grid
+    /// happens to show: sorting would stretch a range anchored by corners
+    /// over different rows, whereas these cells travel with their rows the
+    /// way a `Row` or `Cell` format already does.
+    ///
+    /// A range is cell-level formatting, so it sits above row and column
+    /// formats. Unlike the other targets it is a *patch*: only the
+    /// properties its style sets are meant, and setting one clears those
+    /// same properties from the `Cell` formats and earlier ranges it
+    /// covers, so the most recent format of a cell wins whichever gesture
+    /// made it. See `apply_set_frame_style`.
+    Range {
+        row_ids: Vec<Id>,
+        column_ids: Vec<Id>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]

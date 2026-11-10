@@ -687,6 +687,7 @@ fn ml_paired_predictions_follow_the_source_as_it_grows() {
                 spec.feature_column_ids[0].clone(),
                 "31".to_string(),
             )]),
+            before_row_id: None,
         })
         .unwrap();
     let last_of = |rows: &[Vec<String>]| {
@@ -731,6 +732,8 @@ fn ml_scored_frames_follow_their_source_columns() {
             name: "Note".into(),
             data_type: DataType::String,
             after_column_id: Some(source_columns[1].id.clone()),
+            before_column_id: None,
+            values: Default::default(),
         })
         .unwrap();
     assert_eq!(

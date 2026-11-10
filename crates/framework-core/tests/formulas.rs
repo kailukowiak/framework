@@ -971,6 +971,8 @@ fn comparing_against_null_asks_about_presence() {
                 name: "Note".into(),
                 data_type: DataType::String,
                 after_column_id: None,
+                before_column_id: None,
+                values: Default::default(),
             })
             .unwrap();
         let frame = frame_named(store.document(), "Transactions");

@@ -130,6 +130,7 @@ fn typed_columns_refuse_text_they_cannot_parse() {
         .apply(Operation::AddRow {
             frame_id: frame.id.clone(),
             values: BTreeMap::from([(revenue.id.clone(), "lots".to_string())]),
+            before_row_id: None,
         })
         .expect_err("a new row with text in a numeric column is refused");
     assert!(
@@ -142,6 +143,7 @@ fn typed_columns_refuse_text_they_cannot_parse() {
         .apply(Operation::AddRow {
             frame_id: frame.id.clone(),
             values: BTreeMap::from([(revenue.id.clone(), "1200".to_string())]),
+            before_row_id: None,
         })
         .unwrap();
     assert_eq!(frame_named(store.document(), "Sales").rows.len(), 2);

@@ -103,6 +103,12 @@ export type RecordsAsRowsFrameCardProps = {
   isReadOnly: boolean;
   canAddRows: boolean;
   canAddColumns: boolean;
+  /**
+   * Commits a value typed into the ghost column at a row, or null where the
+   * frame's literal columns cannot grow (`editing.columns`), which is also
+   * what keeps the ghost column from being drawn.
+   */
+  commitGhostColumn: ((rowId: string, raw: string) => void) | null;
   pagedLoading: boolean;
   placeholderOffsets: Set<number>;
   pagedStatus: ReactNode;

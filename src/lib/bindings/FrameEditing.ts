@@ -25,6 +25,20 @@ export type FrameEditing = {
    */
   rows: boolean;
   /**
+   * Whether literal columns can be added, deleted and retyped by hand —
+   * the frame holds its rows and its chain, if any, only adds
+   * calculations. Separate from `rows` because a file-backed frame can
+   * grow rows through patches while its columns stay the file's, and a
+   * frame whose chain reshapes keeps editable rows under a fixed schema.
+   *
+   * Optional on the TypeScript side the way `ComputedFrame::paged` is:
+   * serializing always writes it, and an absent key reads as "no", which
+   * is the safe answer for a menu to act on. It also keeps every
+   * hand-built `FrameEditing` in the interface tests, and every committed
+   * UI fixture generated before the flag existed, typed as they are.
+   */
+  columns?: boolean;
+  /**
    * Whether a one-off override on a single cell takes effect.
    *
    * The narrower door in the wall, and it is not always open. An override

@@ -1087,6 +1087,7 @@ fn rows_can_be_struck_out_and_added_without_touching_the_file() {
         .apply(Operation::AddRow {
             frame_id: frame.id.clone(),
             values: Default::default(),
+            before_row_id: None,
         })
         .unwrap();
     let page = store.get_frame_page(&frame.id, 0, 10).unwrap();
@@ -1193,6 +1194,7 @@ fn patched_stock(dir: &Path) -> (Store, FrameObject, Vec<Vec<String>>) {
         .apply(Operation::AddRow {
             frame_id: frame.id.clone(),
             values: Default::default(),
+            before_row_id: None,
         })
         .unwrap();
     // A, C, D and the new blank one: B was struck out, and the added row is
@@ -1441,6 +1443,7 @@ fn a_correction_moves_the_fingerprint_that_invalidates_a_cached_page() {
         .apply(Operation::AddRow {
             frame_id: frame.id.clone(),
             values: Default::default(),
+            before_row_id: None,
         })
         .unwrap();
     assert_ne!(fingerprint(&store), struck, "and so is an added one");
@@ -1470,6 +1473,7 @@ fn a_file_backed_table_offers_the_row_gestures_it_accepts() {
             .apply(Operation::AddRow {
                 frame_id: frame.id.clone(),
                 values: Default::default(),
+                before_row_id: None,
             })
             .is_ok(),
         "and the operation agrees"
@@ -1500,6 +1504,7 @@ fn a_file_backed_table_offers_the_row_gestures_it_accepts() {
             .apply(Operation::AddRow {
                 frame_id: frame.id.clone(),
                 values: Default::default(),
+                before_row_id: None,
             })
             .is_err()
     );

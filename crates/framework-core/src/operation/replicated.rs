@@ -1,6 +1,7 @@
 //! Fully resolved edits replay fitted state instead of rerunning training.
 use crate::*;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(
@@ -145,6 +146,13 @@ pub enum ReplicatedOperation {
         frame_id: Id,
         pinned_columns: u32,
     },
+    /// Widths already held to the drawable range, so every replica stores
+    /// the same number. Its own inverse, carrying each column's prior
+    /// layout.
+    SetFrameDisplayColumnLayout {
+        frame_id: Id,
+        columns: Vec<FrameColumnLayoutUpdate>,
+    },
     SetFrameDisplayCrosstab {
         frame_id: Id,
         crosstab: Option<CrosstabDisplay>,
@@ -214,10 +222,13 @@ pub enum ReplicatedOperation {
         frame_id: Id,
         cells: Vec<CellUpdate>,
     },
+    /// `before_row_id: None` appends. Named for the row that follows because
+    /// the inverse of deleting the first row has to say "at the top", which
+    /// a row to follow cannot.
     AddRow {
         frame_id: Id,
         row: Row,
-        after_row_id: Option<Id>,
+        before_row_id: Option<Id>,
     },
     /// The rebuilt columns and rows, resolved while preparing so every
     /// replica gets the same IDs and the same inferred types.
@@ -226,20 +237,37 @@ pub enum ReplicatedOperation {
         columns: Vec<Column>,
         rows: Vec<Row>,
     },
-    /// Cell writes plus any rows the paste had to add, as one edit.
+    /// Cell writes plus any rows and columns the paste had to add, as one
+    /// edit. The columns go on first, at the right-hand end, so every
+    /// appended row and every cell write names a column that exists.
     PasteCells {
         frame_id: Id,
         cells: Vec<CellUpdate>,
         appended_rows: Vec<Row>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        added_columns: Vec<Column>,
     },
     DeleteRow {
         frame_id: Id,
         row_id: Id,
     },
+    /// Several of the frame's own rows at once. The ids are settled at
+    /// prepare — unique, and every one present — so a replica removes exactly
+    /// the rows the author selected.
+    DeleteRows {
+        frame_id: Id,
+        row_ids: Vec<Id>,
+    },
     AddColumn {
         frame_id: Id,
         column: Column,
         after_column_id: Option<Id>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        before_column_id: Option<Id>,
+        /// Settled at prepare (rows exist, values valid), so a replica fills
+        /// exactly the cells the author did. Empty for every older history.
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        values: BTreeMap<Id, String>,
     },
     DeleteColumn {
         frame_id: Id,
@@ -446,6 +474,27 @@ pub enum ReplicatedOperation {
         column_id: Id,
         raw: Option<String>,
     },
+    /// Several typed-over values on one base read, as one edit — what a range
+    /// clear, a fill, a cut or a pasted block becomes on a frame whose rows
+    /// live in a file.
+    ///
+    /// Its own operation rather than a run of `SetOverlayCell`s because an
+    /// edit is one replicated operation and one history entry: a pasted block
+    /// that took twenty undos to take back, or that a peer could receive half
+    /// of, would not be the one rectangle somebody pasted.
+    ///
+    /// `appended_rows` is the count of rows past the base's end once this has
+    /// applied, or `None` to leave it alone. A paste that runs past the last
+    /// row is the only edit that sets it; leaving it absent otherwise keeps a
+    /// range clear from overwriting a row a peer added meanwhile. Each patch
+    /// takes `raw: None` to withdraw itself, so the inverse is this same
+    /// operation carrying the prior count and each cell's prior patch — which
+    /// is how undo tells a cell nobody touched from one somebody cleared.
+    SetOverlayCells {
+        frame_id: Id,
+        appended_rows: Option<u32>,
+        cells: Vec<OverlayCellPatch>,
+    },
     RenameDocument {
         name: String,
     },
@@ -493,4 +542,39 @@ pub enum ReplicatedOperation {
         scenarios: Vec<Scenario>,
         active_scenario: Option<Id>,
     },
+    /// Replaces runs of a frame's direct formats, in place.
+    ///
+    /// The inverse of formatting a range, which can trim, remove or split
+    /// the cell formats and earlier ranges it covers, and push itself on
+    /// the end. Order matters among ranges — a later one wins over an
+    /// earlier one — so no set of single-target edits replays that
+    /// faithfully. It used to travel as the whole list, which undid a
+    /// collaborator's formatting made in between along with this writer's
+    /// own; splices name only the entries the edit touched, so the rest of
+    /// the list, including anything added since, stays as it is. A splice
+    /// whose entries a later edit has changed is skipped rather than
+    /// forced (see `FrameDisplay::resolve_style_splices`).
+    SpliceFrameStyles {
+        frame_id: Id,
+        splices: Vec<FrameStyleSplice>,
+    },
+    /// Several edits as one: one event, one revision, one undo entry.
+    ///
+    /// Each was prepared against the document as the ones before it left
+    /// it, so applying them in order on any replica reproduces the same
+    /// state, and they apply all or not at all. See `Operation::Batch`.
+    Batch {
+        operations: Vec<ReplicatedOperation>,
+    },
+}
+
+/// One cell of a [`ReplicatedOperation::SetOverlayCells`]: the row by its
+/// ordinal in the base read, and the text typed over it, or `None` to
+/// withdraw the patch and let the base's value show again.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayCellPatch {
+    pub row_ordinal: u32,
+    pub column_id: Id,
+    pub raw: Option<String>,
 }

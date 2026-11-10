@@ -7,6 +7,7 @@ import {
 import type { Dispatch, SetStateAction } from "react";
 import { ColumnContextAuthoringActions } from "./ColumnContextAuthoringActions";
 import { InferredSeriesMenuAction } from "./InferredSeriesMenuAction";
+import { ColumnWidthMenuItems } from "./ColumnWidthMenuItems";
 import { PinColumnsMenuItem } from "./PinColumnsMenuItem";
 import type { ContextMenuState, GridContext } from "./FrameGrid";
 import { nextEntryColumnName } from "./hooks/useCanvasObjectCreation";
@@ -188,6 +189,14 @@ export function ContextMenuColumnItems({
             frameId: contextFrame.id,
             pinnedColumns,
           });
+        }}
+      />
+      <ColumnWidthMenuItems
+        frame={contextFrame}
+        column={contextColumn}
+        onOperation={(operation) => {
+          setContextMenu(null);
+          void run(operation);
         }}
       />
     </>

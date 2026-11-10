@@ -18,6 +18,8 @@ export type TransformColumnRequest = {
   anchorRowIndex?: number;
   orderByColumnId?: string;
   focusAtEnd?: boolean;
+  /** The cell `=` was typed in; see `useColumnTransformRequest`. */
+  fromCell?: { rowId: string; literal: boolean };
   token: number;
 } | null;
 export type FilterColumnRequest = {

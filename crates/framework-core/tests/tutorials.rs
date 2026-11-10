@@ -85,6 +85,7 @@ fn add_seventh_launch_row(store: &mut Store, source: &FrameObject) {
         .apply(Operation::AddRow {
             frame_id: source.id.clone(),
             values,
+            before_row_id: None,
         })
         .unwrap();
 }
@@ -390,6 +391,8 @@ fn formula_clicks_start_can_calculate_an_existing_blank_column() {
             name: "New column".into(),
             data_type: DataType::String,
             after_column_id: sales.columns.last().map(|column| column.id.clone()),
+            before_column_id: None,
+            values: Default::default(),
         })
         .unwrap();
     let calculated_id = frame_named(&store, "Monthly sales")

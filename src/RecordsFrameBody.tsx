@@ -10,7 +10,10 @@ import {
   isEditableGridColumn,
   isEntryFrameColumn,
 } from "./FrameGrid";
+import { GhostColumnCell } from "./GhostColumnCell";
+import { focusGhostColumn } from "./lib/gridEdgeGrowth";
 import { positionInRange } from "./lib/gridNavigation";
+import { isColumnWrapped } from "./lib/columnLayout";
 import { pinnedCellClass, pinnedCellStyle } from "./lib/pinnedColumns";
 
 function cellEditHandlers(
@@ -50,6 +53,7 @@ function bodyCellClasses(
     state.focus ? "cell-focus" : "",
     state.inRange ? "cell-range" : "",
     state.pinned,
+    isColumnWrapped(model.frame, column.id) ? "wrap-cell" : "",
     model.fillHandle.cellClass(column.id, rowIndex),
   ]
     .filter(Boolean)
@@ -108,6 +112,48 @@ function RowNumberCell({
   );
 }
 
+/**
+ * The strip after a row's last cell: the column that typing grows where the
+ * frame's columns can grow, and otherwise the old click-to-add-an-empty-column
+ * edge. Kept out of the body's loop so the loop stays a loop.
+ */
+function RowEdgeCell({
+  model,
+  row,
+  rowNumber,
+  nextRowId,
+}: {
+  model: RecordsAsRowsFrameCardProps;
+  row: RecordsAsRowsFrameCardProps["displayedRows"][number];
+  rowNumber: number;
+  nextRowId: string | null;
+}) {
+  const { frame, commitGhostColumn, canAddColumns, addColumn, focusCell, gridFocus } = model;
+  if (!commitGhostColumn)
+    return (
+      <td
+        className="frame-edge-cell"
+        onClick={() => {
+          if (canAddColumns) addColumn(frame.columns.at(-1)?.id ?? null);
+        }}
+      />
+    );
+  return (
+    <GhostColumnCell
+      frameId={frame.id}
+      rowId={row.id}
+      rowNumber={rowNumber}
+      nextRowId={nextRowId}
+      onCommit={commitGhostColumn}
+      onFocusRow={(rowId) => focusGhostColumn(frame.id, gridFocus?.viewId ?? "", rowId)}
+      onLeave={() => {
+        const last = frame.columns.at(-1);
+        if (last) focusCell(row, last, "navigate");
+      }}
+    />
+  );
+}
+
 export function RecordsFrameBody({
   model,
   pinned,
@@ -125,14 +171,12 @@ export function RecordsFrameBody({
     isFileBacked,
     isTransposed,
     isReadOnly,
-    canAddColumns,
     placeholderOffsets,
     beginCellSelection,
     extendCellSelection,
     focusCell,
     commitCellEdit,
     settleCellEdit,
-    addColumn,
   } = model;
   return (
           <tbody>
@@ -249,11 +293,11 @@ export function RecordsFrameBody({
                       </td>
                     );
                   })}
-                  <td
-                    className="frame-edge-cell"
-                    onClick={() => {
-                      if (canAddColumns) addColumn(frame.columns.at(-1)?.id ?? null);
-                    }}
+                  <RowEdgeCell
+                    model={model}
+                    row={row}
+                    rowNumber={rowIndex + 1}
+                    nextRowId={visibleRows[visibleIndex + 1]?.id ?? null}
                   />
                 </tr>
               );
@@ -316,6 +360,9 @@ function DraftFrameRow({
                     ) : column.dataType === "categorical" ? (
                       <select
                         className="categorical-cell"
+                        data-ghost="row"
+                        data-frame-id={frame.id}
+                        data-ghost-column-id={column.id}
                         aria-label={`New row ${column.name}`}
                         value={draftRow[column.id] ?? ""}
                         onChange={(event) =>
@@ -334,6 +381,9 @@ function DraftFrameRow({
                       </select>
                     ) : (
                       <input
+                        data-ghost="row"
+                        data-frame-id={frame.id}
+                        data-ghost-column-id={column.id}
                         aria-label={`New row ${column.name}`}
                         value={draftRow[column.id] ?? ""}
                         placeholder={

@@ -148,6 +148,9 @@ const noSelectionActions = (): SelectionActions => ({
   clearColumnSort: vi.fn(),
   pinColumns: vi.fn(),
   removeColumn: vi.fn(),
+  insertColumn: vi.fn(),
+  insertRow: vi.fn(),
+  deleteRows: vi.fn(),
 });
 
 describe("rows the menu could not declare", () => {

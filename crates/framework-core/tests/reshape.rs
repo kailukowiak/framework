@@ -1520,6 +1520,7 @@ fn a_short_list_repeats_down_the_rows_when_asked_and_only_when_it_fits() {
         .apply(Operation::AddRow {
             frame_id: scenarios,
             values: Default::default(),
+            before_row_id: None,
         })
         .unwrap();
     let error = store

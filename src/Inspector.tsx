@@ -18,6 +18,7 @@ import type {
   TakeOwnershipHandler,
 } from "./FrameGrid";
 import type { OperationHandler } from "./lib/handlers";
+import type { StyleSelection } from "./lib/styleSelection";
 import type {
   Column,
   ComputedFrame,
@@ -48,6 +49,8 @@ type InspectorProps = {
   selection: Selection;
   /** Columns under the grid selection, when it spans more than the active one. */
   selectedColumnIds?: string[];
+  /** What the format controls address when the selection is more than one cell. */
+  styleSelection?: StyleSelection | null;
   computed?: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   onClose: () => void;
@@ -87,6 +90,7 @@ export function Inspector({
   formulaFunctions,
   selection,
   selectedColumnIds,
+  styleSelection,
   computed,
   suggestedPosition,
   onClose,
@@ -192,6 +196,7 @@ export function Inspector({
           formulaFunctions={formulaFunctions}
           selection={selection}
           selectedColumnIds={selectedColumnIds}
+          styleSelection={styleSelection}
           computed={computed!}
           suggestedPosition={suggestedPosition}
           section={section}

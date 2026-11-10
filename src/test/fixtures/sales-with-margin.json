@@ -1,15 +1,15 @@
 {
-  "id": "fff8a7f8-8497-43e4-b60e-2a8513eeca32",
+  "id": "5446f064-da74-4033-ba11-74b55bdb84b7",
   "name": "Fixture",
   "revision": 4,
   "objects": [
     {
       "kind": "frame",
-      "id": "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae",
+      "id": "5a359b14-58ef-4a53-ac7a-4b3b8c089e97",
       "name": "Monthly sales",
       "columns": [
         {
-          "id": "month~pyrwj5",
+          "id": "month~9rdk88",
           "name": "Month",
           "sourceName": null,
           "dataType": "string",
@@ -18,7 +18,7 @@
           "formula": null
         },
         {
-          "id": "region~wytkfp",
+          "id": "region~de5235",
           "name": "Region",
           "sourceName": null,
           "dataType": "string",
@@ -27,7 +27,7 @@
           "formula": null
         },
         {
-          "id": "revenue~78y4cd",
+          "id": "revenue~3sv2dp",
           "name": "Revenue",
           "sourceName": null,
           "dataType": "integer",
@@ -36,7 +36,7 @@
           "formula": null
         },
         {
-          "id": "cost~7nvwbk",
+          "id": "cost~q8j7d5",
           "name": "Cost",
           "sourceName": null,
           "dataType": "integer",
@@ -56,128 +56,104 @@
       ],
       "rows": [
         {
-          "id": "5ed74eb9-779d-4533-899b-7bfd82abd9da",
+          "id": "fa15e511-bcdc-4408-b6e3-9cd20354fb5b",
           "cells": {
-            "cost~7nvwbk": {
-              "raw": "91000",
-              "overrideFormula": null
+            "cost~q8j7d5": {
+              "raw": "91000"
             },
-            "month~pyrwj5": {
-              "raw": "2026-04",
-              "overrideFormula": null
+            "month~9rdk88": {
+              "raw": "2026-04"
             },
-            "region~wytkfp": {
-              "raw": "West",
-              "overrideFormula": null
+            "region~de5235": {
+              "raw": "West"
             },
-            "revenue~78y4cd": {
-              "raw": "142000",
-              "overrideFormula": null
+            "revenue~3sv2dp": {
+              "raw": "142000"
             }
           }
         },
         {
-          "id": "7ea3ed2e-843d-46d9-90df-f09034820f1f",
+          "id": "07cc203c-896d-4e7d-ae7f-7fe5612a5752",
           "cells": {
-            "cost~7nvwbk": {
-              "raw": "76000",
-              "overrideFormula": null
+            "cost~q8j7d5": {
+              "raw": "76000"
             },
-            "month~pyrwj5": {
-              "raw": "2026-01",
-              "overrideFormula": null
+            "month~9rdk88": {
+              "raw": "2026-01"
             },
-            "region~wytkfp": {
-              "raw": "East",
-              "overrideFormula": null
+            "region~de5235": {
+              "raw": "East"
             },
-            "revenue~78y4cd": {
-              "raw": "118000",
-              "overrideFormula": null
+            "revenue~3sv2dp": {
+              "raw": "118000"
             }
           }
         },
         {
-          "id": "1ca2df04-1ad0-4db5-b144-62c5b62ba6d7",
+          "id": "efd16a13-fc1b-47b3-8467-2859543aca01",
           "cells": {
-            "cost~7nvwbk": {
-              "raw": "104000",
-              "overrideFormula": null
+            "cost~q8j7d5": {
+              "raw": "104000"
             },
-            "month~pyrwj5": {
-              "raw": "2026-06",
-              "overrideFormula": null
+            "month~9rdk88": {
+              "raw": "2026-06"
             },
-            "region~wytkfp": {
-              "raw": "East",
-              "overrideFormula": null
+            "region~de5235": {
+              "raw": "East"
             },
-            "revenue~78y4cd": {
-              "raw": "168000",
-              "overrideFormula": null
+            "revenue~3sv2dp": {
+              "raw": "168000"
             }
           }
         },
         {
-          "id": "4c4edc09-bda1-4c31-adc5-8f922ae1fc82",
+          "id": "12104328-0c07-4a0c-9ab7-3ae3f38178b3",
           "cells": {
-            "cost~7nvwbk": {
-              "raw": "85000",
-              "overrideFormula": null
+            "cost~q8j7d5": {
+              "raw": "85000"
             },
-            "month~pyrwj5": {
-              "raw": "2026-03",
-              "overrideFormula": null
+            "month~9rdk88": {
+              "raw": "2026-03"
             },
-            "region~wytkfp": {
-              "raw": "East",
-              "overrideFormula": null
+            "region~de5235": {
+              "raw": "East"
             },
-            "revenue~78y4cd": {
-              "raw": "136000",
-              "overrideFormula": null
+            "revenue~3sv2dp": {
+              "raw": "136000"
             }
           }
         },
         {
-          "id": "e30632dc-6384-4b04-bf3e-e2f2c3df85bf",
+          "id": "ea80b73a-e918-4f43-a1de-bc3731f09cb7",
           "cells": {
-            "cost~7nvwbk": {
-              "raw": "79000",
-              "overrideFormula": null
+            "cost~q8j7d5": {
+              "raw": "79000"
             },
-            "month~pyrwj5": {
-              "raw": "2026-02",
-              "overrideFormula": null
+            "month~9rdk88": {
+              "raw": "2026-02"
             },
-            "region~wytkfp": {
-              "raw": "West",
-              "overrideFormula": null
+            "region~de5235": {
+              "raw": "West"
             },
-            "revenue~78y4cd": {
-              "raw": "124000",
-              "overrideFormula": null
+            "revenue~3sv2dp": {
+              "raw": "124000"
             }
           }
         },
         {
-          "id": "432c2cd4-282b-42a6-8eae-9539992c1d4b",
+          "id": "65765ea2-7517-46d2-9e09-7c1c91209031",
           "cells": {
-            "cost~7nvwbk": {
-              "raw": "96000",
-              "overrideFormula": null
+            "cost~q8j7d5": {
+              "raw": "96000"
             },
-            "month~pyrwj5": {
-              "raw": "2026-05",
-              "overrideFormula": null
+            "month~9rdk88": {
+              "raw": "2026-05"
             },
-            "region~wytkfp": {
-              "raw": "East",
-              "overrideFormula": null
+            "region~de5235": {
+              "raw": "East"
             },
-            "revenue~78y4cd": {
-              "raw": "151000",
-              "overrideFormula": null
+            "revenue~3sv2dp": {
+              "raw": "151000"
             }
           }
         }
@@ -193,11 +169,11 @@
                 "operator": "subtract",
                 "left": {
                   "kind": "column",
-                  "column_id": "revenue~78y4cd"
+                  "column_id": "revenue~3sv2dp"
                 },
                 "right": {
                   "kind": "column",
-                  "column_id": "cost~7nvwbk"
+                  "column_id": "cost~q8j7d5"
                 }
               }
             }
@@ -206,7 +182,7 @@
       ],
       "baseColumns": [
         {
-          "id": "month~pyrwj5",
+          "id": "month~9rdk88",
           "name": "Month",
           "sourceName": null,
           "dataType": "string",
@@ -215,7 +191,7 @@
           "formula": null
         },
         {
-          "id": "region~wytkfp",
+          "id": "region~de5235",
           "name": "Region",
           "sourceName": null,
           "dataType": "string",
@@ -224,7 +200,7 @@
           "formula": null
         },
         {
-          "id": "revenue~78y4cd",
+          "id": "revenue~3sv2dp",
           "name": "Revenue",
           "sourceName": null,
           "dataType": "integer",
@@ -233,7 +209,7 @@
           "formula": null
         },
         {
-          "id": "cost~7nvwbk",
+          "id": "cost~q8j7d5",
           "name": "Cost",
           "sourceName": null,
           "dataType": "integer",
@@ -252,11 +228,11 @@
     },
     {
       "kind": "block",
-      "id": "09f1f751-e0f4-4e3d-b60d-98d33b42d436",
+      "id": "a54da07e-ae3a-42bc-b3eb-1c08b9772067",
       "name": "Checks",
       "lines": [
         {
-          "id": "5bee6bb0-7258-4668-9991-a8bac20fe86f",
+          "id": "a2658230-2340-4ebd-a3b2-f8b22fb46be3",
           "name": "Total revenue",
           "named": true,
           "nameQuoted": false,
@@ -266,8 +242,8 @@
               "kind": "method",
               "input": {
                 "kind": "foreignColumn",
-                "frame_id": "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae",
-                "column_id": "revenue~78y4cd"
+                "frame_id": "5a359b14-58ef-4a53-ac7a-4b3b8c089e97",
+                "column_id": "revenue~3sv2dp"
               },
               "path": [
                 "sum"
@@ -283,166 +259,39 @@
   ],
   "views": [
     {
-      "id": "52b93423-cdf7-452a-8d28-ee94d78a956e",
-      "objectId": "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae",
+      "id": "a9ff61b8-22b3-40f2-85f6-ba88e03b6e2c",
+      "objectId": "5a359b14-58ef-4a53-ac7a-4b3b8c089e97",
       "x": 80.0,
       "y": 80.0,
       "width": 648.0,
-      "height": 300.0,
+      "height": 450.0,
       "collapsed": false
     },
     {
-      "id": "58ab6530-33f1-4d07-8644-25404fd6eaf7",
-      "objectId": "09f1f751-e0f4-4e3d-b60d-98d33b42d436",
+      "id": "6f430cec-5357-44a5-b4eb-0a0a1e816dcf",
+      "objectId": "a54da07e-ae3a-42bc-b3eb-1c08b9772067",
       "x": 80.0,
       "y": 430.0,
-      "width": 340.0,
+      "width": 600.0,
       "height": 220.0,
       "collapsed": false
     }
   ],
   "frozenValues": {},
+  "scenarios": [],
+  "activeScenario": null,
+  "calendars": [],
+  "defaultCalendarId": null,
   "computedFrames": {
-    "f38dbe6e-c9f5-4250-85a0-e3f0210d5cae": {
-      "fingerprint": "f6374cda47260f22",
+    "5a359b14-58ef-4a53-ac7a-4b3b8c089e97": {
+      "fingerprint": "e778312cd1271de3",
       "formulas": {
         "margin~fixture": "`Revenue` - `Cost`"
       },
       "overrideFormulas": {},
       "rows": {
-        "4c4edc09-bda1-4c31-adc5-8f922ae1fc82": {
-          "revenue~78y4cd": {
-            "value": 136000.0,
-            "typedValue": {
-              "type": "number",
-              "value": 136000.0
-            },
-            "display": "136000",
-            "error": null,
-            "isOverride": false
-          },
-          "month~pyrwj5": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "2026-03"
-            },
-            "display": "2026-03",
-            "error": null,
-            "isOverride": false
-          },
-          "cost~7nvwbk": {
-            "value": 85000.0,
-            "typedValue": {
-              "type": "number",
-              "value": 85000.0
-            },
-            "display": "85000",
-            "error": null,
-            "isOverride": false
-          },
-          "margin~fixture": {
-            "value": null,
-            "typedValue": {
-              "type": "null"
-            },
-            "display": "—",
-            "error": null,
-            "isOverride": false
-          },
-          "region~wytkfp": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "East"
-            },
-            "display": "East",
-            "error": null,
-            "isOverride": false
-          }
-        },
-        "e30632dc-6384-4b04-bf3e-e2f2c3df85bf": {
-          "region~wytkfp": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "West"
-            },
-            "display": "West",
-            "error": null,
-            "isOverride": false
-          },
-          "revenue~78y4cd": {
-            "value": 124000.0,
-            "typedValue": {
-              "type": "number",
-              "value": 124000.0
-            },
-            "display": "124000",
-            "error": null,
-            "isOverride": false
-          },
-          "month~pyrwj5": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "2026-02"
-            },
-            "display": "2026-02",
-            "error": null,
-            "isOverride": false
-          },
-          "cost~7nvwbk": {
-            "value": 79000.0,
-            "typedValue": {
-              "type": "number",
-              "value": 79000.0
-            },
-            "display": "79000",
-            "error": null,
-            "isOverride": false
-          },
-          "margin~fixture": {
-            "value": null,
-            "typedValue": {
-              "type": "null"
-            },
-            "display": "—",
-            "error": null,
-            "isOverride": false
-          }
-        },
-        "7ea3ed2e-843d-46d9-90df-f09034820f1f": {
-          "region~wytkfp": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "East"
-            },
-            "display": "East",
-            "error": null,
-            "isOverride": false
-          },
-          "margin~fixture": {
-            "value": null,
-            "typedValue": {
-              "type": "null"
-            },
-            "display": "—",
-            "error": null,
-            "isOverride": false
-          },
-          "cost~7nvwbk": {
-            "value": 76000.0,
-            "typedValue": {
-              "type": "number",
-              "value": 76000.0
-            },
-            "display": "76000",
-            "error": null,
-            "isOverride": false
-          },
-          "month~pyrwj5": {
+        "07cc203c-896d-4e7d-ae7f-7fe5612a5752": {
+          "month~9rdk88": {
             "value": null,
             "typedValue": {
               "type": "string",
@@ -452,7 +301,36 @@
             "error": null,
             "isOverride": false
           },
-          "revenue~78y4cd": {
+          "region~de5235": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "East"
+            },
+            "display": "East",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~q8j7d5": {
+            "value": 76000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 76000.0
+            },
+            "display": "76000",
+            "error": null,
+            "isOverride": false
+          },
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~3sv2dp": {
             "value": 118000.0,
             "typedValue": {
               "type": "number",
@@ -463,28 +341,161 @@
             "isOverride": false
           }
         },
-        "5ed74eb9-779d-4533-899b-7bfd82abd9da": {
-          "cost~7nvwbk": {
-            "value": 91000.0,
+        "efd16a13-fc1b-47b3-8467-2859543aca01": {
+          "month~9rdk88": {
+            "value": null,
             "typedValue": {
-              "type": "number",
-              "value": 91000.0
+              "type": "string",
+              "value": "2026-06"
             },
-            "display": "91000",
+            "display": "2026-06",
             "error": null,
             "isOverride": false
           },
-          "revenue~78y4cd": {
-            "value": 142000.0,
+          "region~de5235": {
+            "value": null,
             "typedValue": {
-              "type": "number",
-              "value": 142000.0
+              "type": "string",
+              "value": "East"
             },
-            "display": "142000",
+            "display": "East",
             "error": null,
             "isOverride": false
           },
-          "month~pyrwj5": {
+          "revenue~3sv2dp": {
+            "value": 168000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 168000.0
+            },
+            "display": "168000",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~q8j7d5": {
+            "value": 104000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 104000.0
+            },
+            "display": "104000",
+            "error": null,
+            "isOverride": false
+          },
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "ea80b73a-e918-4f43-a1de-bc3731f09cb7": {
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "month~9rdk88": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-02"
+            },
+            "display": "2026-02",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~q8j7d5": {
+            "value": 79000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 79000.0
+            },
+            "display": "79000",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~3sv2dp": {
+            "value": 124000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 124000.0
+            },
+            "display": "124000",
+            "error": null,
+            "isOverride": false
+          },
+          "region~de5235": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "West"
+            },
+            "display": "West",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "65765ea2-7517-46d2-9e09-7c1c91209031": {
+          "margin~fixture": {
+            "value": null,
+            "typedValue": {
+              "type": "null"
+            },
+            "display": "—",
+            "error": null,
+            "isOverride": false
+          },
+          "region~de5235": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "East"
+            },
+            "display": "East",
+            "error": null,
+            "isOverride": false
+          },
+          "month~9rdk88": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-05"
+            },
+            "display": "2026-05",
+            "error": null,
+            "isOverride": false
+          },
+          "revenue~3sv2dp": {
+            "value": 151000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 151000.0
+            },
+            "display": "151000",
+            "error": null,
+            "isOverride": false
+          },
+          "cost~q8j7d5": {
+            "value": 96000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 96000.0
+            },
+            "display": "96000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "fa15e511-bcdc-4408-b6e3-9cd20354fb5b": {
+          "month~9rdk88": {
             "value": null,
             "typedValue": {
               "type": "string",
@@ -494,7 +505,17 @@
             "error": null,
             "isOverride": false
           },
-          "region~wytkfp": {
+          "cost~q8j7d5": {
+            "value": 91000.0,
+            "typedValue": {
+              "type": "number",
+              "value": 91000.0
+            },
+            "display": "91000",
+            "error": null,
+            "isOverride": false
+          },
+          "region~de5235": {
             "value": null,
             "typedValue": {
               "type": "string",
@@ -512,26 +533,36 @@
             "display": "—",
             "error": null,
             "isOverride": false
-          }
-        },
-        "432c2cd4-282b-42a6-8eae-9539992c1d4b": {
-          "revenue~78y4cd": {
-            "value": 151000.0,
+          },
+          "revenue~3sv2dp": {
+            "value": 142000.0,
             "typedValue": {
               "type": "number",
-              "value": 151000.0
+              "value": 142000.0
             },
-            "display": "151000",
+            "display": "142000",
+            "error": null,
+            "isOverride": false
+          }
+        },
+        "12104328-0c07-4a0c-9ab7-3ae3f38178b3": {
+          "month~9rdk88": {
+            "value": null,
+            "typedValue": {
+              "type": "string",
+              "value": "2026-03"
+            },
+            "display": "2026-03",
             "error": null,
             "isOverride": false
           },
-          "cost~7nvwbk": {
-            "value": 96000.0,
+          "region~de5235": {
+            "value": null,
             "typedValue": {
-              "type": "number",
-              "value": 96000.0
+              "type": "string",
+              "value": "East"
             },
-            "display": "96000",
+            "display": "East",
             "error": null,
             "isOverride": false
           },
@@ -544,74 +575,23 @@
             "error": null,
             "isOverride": false
           },
-          "region~wytkfp": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "East"
-            },
-            "display": "East",
-            "error": null,
-            "isOverride": false
-          },
-          "month~pyrwj5": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "2026-05"
-            },
-            "display": "2026-05",
-            "error": null,
-            "isOverride": false
-          }
-        },
-        "1ca2df04-1ad0-4db5-b144-62c5b62ba6d7": {
-          "margin~fixture": {
-            "value": null,
-            "typedValue": {
-              "type": "null"
-            },
-            "display": "—",
-            "error": null,
-            "isOverride": false
-          },
-          "month~pyrwj5": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "2026-06"
-            },
-            "display": "2026-06",
-            "error": null,
-            "isOverride": false
-          },
-          "revenue~78y4cd": {
-            "value": 168000.0,
+          "revenue~3sv2dp": {
+            "value": 136000.0,
             "typedValue": {
               "type": "number",
-              "value": 168000.0
+              "value": 136000.0
             },
-            "display": "168000",
+            "display": "136000",
             "error": null,
             "isOverride": false
           },
-          "region~wytkfp": {
-            "value": null,
-            "typedValue": {
-              "type": "string",
-              "value": "East"
-            },
-            "display": "East",
-            "error": null,
-            "isOverride": false
-          },
-          "cost~7nvwbk": {
-            "value": 104000.0,
+          "cost~q8j7d5": {
+            "value": 85000.0,
             "typedValue": {
               "type": "number",
-              "value": 104000.0
+              "value": 85000.0
             },
-            "display": "104000",
+            "display": "85000",
             "error": null,
             "isOverride": false
           }
@@ -634,17 +614,18 @@
       "editing": {
         "cells": true,
         "rows": true,
+        "columns": true,
         "overrides": false
       }
     }
   },
   "computedResults": {},
   "computedBlocks": {
-    "09f1f751-e0f4-4e3d-b60d-98d33b42d436": {
+    "a54da07e-ae3a-42bc-b3eb-1c08b9772067": {
       "source": "Total revenue = `Monthly sales`.`Revenue`.sum()",
       "lines": [
         {
-          "id": "5bee6bb0-7258-4668-9991-a8bac20fe86f",
+          "id": "a2658230-2340-4ebd-a3b2-f8b22fb46be3",
           "name": "Total revenue",
           "text": "Total revenue = `Monthly sales`.`Revenue`.sum()",
           "comment": false,
@@ -665,7 +646,93 @@
   },
   "computedTexts": {},
   "computedCalculationMatrices": {},
+  "computedValues": {},
+  "computedModels": {},
+  "parameterInputs": [],
   "formulaFunctions": [
+    {
+      "id": "root.lookup",
+      "name": "lookup",
+      "aliases": [
+        "dictionary",
+        "vlookup",
+        "xlookup"
+      ],
+      "category": "Dictionary",
+      "signature": "lookup(value, keys, values, fallback?)",
+      "description": "Look up a unique key in a dictionary table. Missing keys error unless a fallback is supplied.",
+      "minimumArguments": 3,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "matches null keys and preserves mapped nulls",
+      "arguments": [
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "keys",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "fallback",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.map_values",
+      "name": "map_values",
+      "aliases": [
+        "mapping",
+        "replace values"
+      ],
+      "category": "Dictionary",
+      "signature": "map_values(value, keys, values, fallback?)",
+      "description": "Map exact keys using a dictionary table. Unmatched values stay unchanged unless a fallback is supplied.",
+      "minimumArguments": 3,
+      "maximumArguments": 4,
+      "returnType": "dynamic",
+      "nullBehavior": "matches null keys and preserves mapped nulls",
+      "arguments": [
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "keys",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "fallback",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
     {
       "id": "root.sum_horizontal",
       "name": "sum_horizontal",
@@ -971,13 +1038,15 @@
         "to text",
         "to number",
         "tonumber",
+        "amount",
+        "decimal",
         "value"
       ],
       "category": "Conversion",
       "signature": ".cast(\"string\")",
-      "description": "Convert to another type: \"string\", \"integer\", \"number\", \"date\" or \"boolean\".",
+      "description": "Convert to another type: \"string\", \"integer\", \"number\", \"accounting\", \"date\" or \"boolean\". An amount takes two decimal places unless a second argument names them: .cast(\"accounting\", 4).",
       "minimumArguments": 1,
-      "maximumArguments": 1,
+      "maximumArguments": 2,
       "returnType": "dynamic",
       "nullBehavior": "propagates null",
       "arguments": [
@@ -1881,6 +1950,52 @@
       ]
     },
     {
+      "id": "expr.head",
+      "name": ".head",
+      "aliases": [
+        "first rows",
+        "top"
+      ],
+      "category": "Window",
+      "signature": ".head(length)",
+      "description": "The first values of a list or column; ten without a count.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "length",
+          "required": true,
+          "description": "How many values to keep; ten when left out.",
+          "example": "10"
+        }
+      ]
+    },
+    {
+      "id": "expr.tail",
+      "name": ".tail",
+      "aliases": [
+        "last rows",
+        "bottom"
+      ],
+      "category": "Window",
+      "signature": ".tail(length)",
+      "description": "The last values of a list or column; ten without a count.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "length",
+          "required": true,
+          "description": "How many values to keep; ten when left out.",
+          "example": "10"
+        }
+      ]
+    },
+    {
       "id": "expr.over",
       "name": ".over",
       "aliases": [
@@ -2424,6 +2539,1336 @@
       ]
     },
     {
+      "id": "root.pv",
+      "name": "pv",
+      "aliases": [
+        "PV",
+        "present value"
+      ],
+      "category": "Financial",
+      "signature": "pv(rate, nper, pmt, fv=0, type=0)",
+      "description": "Present value of equal periodic payments. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate is per period and must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.fv",
+      "name": "fv",
+      "aliases": [
+        "FV",
+        "future value"
+      ],
+      "category": "Financial",
+      "signature": "fv(rate, nper, pmt, pv=0, type=0)",
+      "description": "Future value of equal periodic payments. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate is per period and must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.pmt",
+      "name": "pmt",
+      "aliases": [
+        "PMT",
+        "loan payment"
+      ],
+      "category": "Financial",
+      "signature": "pmt(rate, nper, pv, fv=0, type=0)",
+      "description": "Equal periodic payment, including principal and interest. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.ipmt",
+      "name": "ipmt",
+      "aliases": [
+        "IPMT",
+        "interest payment"
+      ],
+      "category": "Financial",
+      "signature": "ipmt(rate, per, nper, pv, fv=0, type=0)",
+      "description": "Interest part of a payment, with Excel signs and argument order. per is an integer from 1 through nper. type=1 pays at period start, with no first-period interest.",
+      "minimumArguments": 4,
+      "maximumArguments": 6,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "per",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.ppmt",
+      "name": "ppmt",
+      "aliases": [
+        "PPMT",
+        "principal payment"
+      ],
+      "category": "Financial",
+      "signature": "ppmt(rate, per, nper, pv, fv=0, type=0)",
+      "description": "Principal part of a payment: pmt minus ipmt. per is an integer from 1 through nper. type=0 pays at period end; type=1 at its start.",
+      "minimumArguments": 4,
+      "maximumArguments": 6,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "per",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.nper",
+      "name": "nper",
+      "aliases": [
+        "NPER",
+        "number of payments"
+      ],
+      "category": "Financial",
+      "signature": "nper(rate, pmt, pv, fv=0, type=0)",
+      "description": "Number of periods for equal payments. Uses Excel signs and argument order; rate must exceed -1. type=0 pays at period end; type=1 at its start. Undefined solutions error.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.npv",
+      "name": "npv",
+      "aliases": [
+        "NPV",
+        "net present value"
+      ],
+      "category": "Financial",
+      "signature": "npv(rate, values)",
+      "description": "Discount a nonempty cash-flow column in supplied order. Like Excel, the first flow is one period away; add a time-zero investment separately. Missing flows error. Prefer xnpv for dated flows.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "missing inputs error",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "root.xnpv",
+      "name": "xnpv",
+      "aliases": [
+        "XNPV",
+        "dated net present value"
+      ],
+      "category": "Financial",
+      "signature": "xnpv(rate, values, dates)",
+      "description": "Discount matching cash-flow and Date columns on an actual/365 basis. The first date is time zero; earlier dates and missing values error. Rate is scalar, finite, and greater than -1.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "missing inputs error",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "dates",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.irr",
+      "name": "irr",
+      "aliases": [
+        "IRR",
+        "internal rate of return"
+      ],
+      "category": "Financial",
+      "signature": "irr(values, guess=0.1)",
+      "description": "Periodic internal rate of return for a nonempty cash-flow column in supplied order, with the first flow at time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.xirr",
+      "name": "xirr",
+      "aliases": [
+        "XIRR",
+        "dated internal rate of return"
+      ],
+      "category": "Financial",
+      "signature": "xirr(values, dates, guess=0.1)",
+      "description": "Dated internal rate of return on an actual/365 basis, using the first supplied date as time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+      "minimumArguments": 2,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "dates",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.effect",
+      "name": "effect",
+      "aliases": [
+        "EFFECT",
+        "effective rate",
+        "effective annual rate"
+      ],
+      "category": "Financial",
+      "signature": "effect(nominal_rate, npery)",
+      "description": "Effective annual rate from a nominal rate and compounding periods per year. Npery is truncated to an integer; nominal_rate must be positive and npery at least 1.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "nominal_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "npery",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.nominal",
+      "name": "nominal",
+      "aliases": [
+        "NOMINAL",
+        "nominal rate"
+      ],
+      "category": "Financial",
+      "signature": "nominal(effect_rate, npery)",
+      "description": "Nominal annual rate from an effective rate and compounding periods per year. Npery is truncated to an integer; effect_rate must be positive and npery at least 1.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "effect_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "npery",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.sln",
+      "name": "sln",
+      "aliases": [
+        "SLN",
+        "straight line depreciation",
+        "straight-line depreciation"
+      ],
+      "category": "Financial",
+      "signature": "sln(cost, salvage, life)",
+      "description": "Straight-line depreciation for one period: (cost - salvage) / life. Life must be nonzero.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "cost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.db",
+      "name": "db",
+      "aliases": [
+        "DB",
+        "declining balance depreciation",
+        "fixed declining balance"
+      ],
+      "category": "Financial",
+      "signature": "db(cost, salvage, life, period, month=12)",
+      "description": "Fixed-declining-balance depreciation for one period. Rate is rounded to three decimals; first and last periods are prorated by month. Cost must be positive, salvage between 0 and cost, life at least 1, period within the schedule, month 1 through 12.",
+      "minimumArguments": 4,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "cost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "period",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        },
+        {
+          "name": "month",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.ddb",
+      "name": "ddb",
+      "aliases": [
+        "DDB",
+        "double declining depreciation",
+        "declining balance"
+      ],
+      "category": "Financial",
+      "signature": "ddb(cost, salvage, life, period, factor=2)",
+      "description": "Declining-balance depreciation for one period, capped so book value never drops below salvage. Life and period are truncated to integers; period must be within 1 and life, factor nonnegative.",
+      "minimumArguments": 4,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "cost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "period",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        },
+        {
+          "name": "factor",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.rate",
+      "name": "rate",
+      "aliases": [
+        "RATE",
+        "interest rate",
+        "periodic rate"
+      ],
+      "category": "Financial",
+      "signature": "rate(nper, pmt, pv, fv=0, type=0, guess=0.1)",
+      "description": "Periodic interest rate of an annuity, solved with the bounded root finder. Nper must be positive, type 0 or 1, guess finite and greater than -1. Refuses with a reason when no root is found.",
+      "minimumArguments": 3,
+      "maximumArguments": 6,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.mirr",
+      "name": "mirr",
+      "aliases": [
+        "MIRR",
+        "modified internal rate of return"
+      ],
+      "category": "Financial",
+      "signature": "mirr(values, finance_rate, reinvest_rate)",
+      "description": "Modified internal rate of return: negatives discounted at finance_rate, positives compounded at reinvest_rate. Flows must contain both signs; rates must be finite scalars greater than -1.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "finance_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "reinvest_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.period_index",
+      "name": "period_index",
+      "aliases": [
+        "PERIOD_INDEX",
+        "period number",
+        "fiscal period index"
+      ],
+      "category": "Financial",
+      "signature": "period_index(date, fy_start=None, calendar=None)",
+      "description": "Period number since year zero for a date: fiscal months counted from the calendar's year start, or retail blocks read from its week table. Defaults to the document's default calendar, and fy_start overrides its year start. Offsets between two indexes are whole periods without date math.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.prior",
+      "name": "prior",
+      "aliases": [
+        "PRIOR",
+        "previous period",
+        "prior period"
+      ],
+      "category": "Financial",
+      "signature": "prior(expr, n=1, fy_start=None, calendar=None)",
+      "description": "The value expr held n periods before each row's own period, joined on the frame's declared period column — the period before, never the row above. Counts in the named calendar, or the document default. Needs a declared period; a missing earlier period reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "n",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.fiscal_year",
+      "name": "fiscal_year",
+      "aliases": [
+        "FISCAL_YEAR",
+        "fiscal year",
+        "financial year"
+      ],
+      "category": "Financial",
+      "signature": "fiscal_year(date, fy_start=None, calendar=None)",
+      "description": "The fiscal year a date falls in, numbered by its start or its end according to the calendar. With a February start under end-labelling, January 2025 is fiscal 2025 and February opens 2026. A named calendar supplies both the year start and the labelling; an explicit fy_start wins over the calendar's, and is refused outright with a retail week calendar, whose year does not start on a month boundary.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.fiscal_quarter",
+      "name": "fiscal_quarter",
+      "aliases": [
+        "FISCAL_QUARTER",
+        "fiscal quarter",
+        "financial quarter"
+      ],
+      "category": "Financial",
+      "signature": "fiscal_quarter(date, fy_start=None, calendar=None)",
+      "description": "The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start or three retail blocks under a week-pattern calendar, which takes no fy_start. Needs no period declaration; it reads the date, not the frame.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.fiscal_period",
+      "name": "fiscal_period",
+      "aliases": [
+        "FISCAL_PERIOD",
+        "fiscal period",
+        "fiscal month"
+      ],
+      "category": "Financial",
+      "signature": "fiscal_period(date, fy_start=None, calendar=None)",
+      "description": "The fiscal month from 1 to 12 a date falls in, counting from fy_start — or the retail block from 1 to 12 under a week-pattern calendar, which takes no fy_start and where a 53rd week extends the last period. This is the one-date reading of the numbering period_index counts.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.period_start",
+      "name": "period_start",
+      "aliases": [
+        "PERIOD_START",
+        "period start",
+        "month start"
+      ],
+      "category": "Financial",
+      "signature": "period_start(date, calendar=None)",
+      "description": "The first day of the calendar month holding a date, or of its retail block under a week-pattern calendar. Pair with period_end to bound a period without spelling month lengths.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.period_end",
+      "name": "period_end",
+      "aliases": [
+        "PERIOD_END",
+        "period end",
+        "month end"
+      ],
+      "category": "Financial",
+      "signature": "period_end(date, calendar=None)",
+      "description": "The last day of the calendar month holding a date — February 2024 ends on the 29th — or of its retail block under a week-pattern calendar. The month-end reading of EDATE(date, 0).",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.add_periods",
+      "name": "add_periods",
+      "aliases": [
+        "EDATE",
+        "add months",
+        "shift months"
+      ],
+      "category": "Financial",
+      "signature": "add_periods(date, n)",
+      "description": "The date n calendar months from a date, with end-of-month clamping: January 31 plus one month is February 28. The count may be a column; a missing count reads blank. EDATE is the Excel name for this exact arithmetic.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "root.ytd",
+      "name": "ytd",
+      "aliases": [
+        "YTD",
+        "year to date",
+        "fiscal year to date"
+      ],
+      "category": "Financial",
+      "signature": "ytd(expr, fy_start=None, calendar=None)",
+      "description": "The sum of expr over the fiscal year so far, joined on the frame's declared period column within its partitions. Resets when the fiscal year turns in the named calendar, or the document default; sums the periods present, and only a window with no readable value reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.ttm",
+      "name": "ttm",
+      "aliases": [
+        "TTM",
+        "trailing twelve months",
+        "last twelve months"
+      ],
+      "category": "Financial",
+      "signature": "ttm(expr, calendar=None)",
+      "description": "The sum of expr over the twelve periods ending here, joined on the frame's declared period column. Twelve indexes back is the same window under any year start, so it takes no fy_start — but which twelve periods exist is a calendar question, so it takes a calendar. Needs a declared period like prior.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.same_period_last_year",
+      "name": "same_period_last_year",
+      "aliases": [
+        "SAME_PERIOD_LAST_YEAR",
+        "same month last year",
+        "previous year"
+      ],
+      "category": "Financial",
+      "signature": "same_period_last_year(expr, calendar=None)",
+      "description": "The value expr held twelve periods ago — the same month last year, or the same retail block last year under a week-pattern calendar — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.fiscal_week",
+      "name": "fiscal_week",
+      "aliases": [
+        "FISCAL_WEEK",
+        "fiscal week",
+        "retail week"
+      ],
+      "category": "Financial",
+      "signature": "fiscal_week(date, calendar=None)",
+      "description": "The 1-based week of its fiscal year for a date: seven-day blocks from the year's start date, so a year starting on a Sunday has Sunday-to-Saturday weeks and a 53-week year reports week 53. Needs no period declaration.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.workday",
+      "name": "workday",
+      "aliases": [
+        "WORKDAY",
+        "add workdays",
+        "business days"
+      ],
+      "category": "Financial",
+      "signature": "workday(date, n, calendar=None)",
+      "description": "The date n business days from a date, skipping the calendar's weekend and holidays. The start date is day zero and never counted, so shifting by zero returns the date itself; negative counts shift back, and the count may be a column. A missing date or count reads blank.",
+      "minimumArguments": 2,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.networkdays",
+      "name": "networkdays",
+      "aliases": [
+        "NETWORKDAYS",
+        "net workdays",
+        "business days between"
+      ],
+      "category": "Financial",
+      "signature": "networkdays(start_date, end_date, calendar=None)",
+      "description": "Business days from a start date through an end date inclusive under the calendar's weekend and holidays. Negated when the end precedes the start; a missing endpoint reads blank.",
+      "minimumArguments": 2,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "start_date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "end_date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.slider",
+      "name": "slider",
+      "aliases": [],
+      "category": "Controls",
+      "signature": "slider(start, stop, step, value=start)",
+      "description": "A numeric variable with a slider UI. Literal bounds and positive step; selected value defaults to start. Exact values within the range are allowed between slider steps. A named variable or Scratchwork line displays the control.",
+      "minimumArguments": 3,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "start",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "stop",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "step",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "value",
+          "required": false,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "root.dropdown",
+      "name": "dropdown",
+      "aliases": [],
+      "category": "Controls",
+      "signature": "dropdown(options, value=first)",
+      "description": "A variable with a dropdown UI. Options are a nonempty literal list of distinct values of one type. Selection defaults to the first option. Reference the variable in formulas or filters.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "options",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "value",
+          "required": false,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "root.date_input",
+      "name": "date_input",
+      "aliases": [],
+      "category": "Controls",
+      "signature": "date_input(value)",
+      "description": "A date variable with a date-picker UI. Supply a literal date, such as date(2026,12,31). Reference the variable in a formula or filter; changing the control updates the variable's formula.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "value",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "root.under",
+      "name": "under",
+      "aliases": [
+        "what if",
+        "scenario value"
+      ],
+      "category": "Scenarios",
+      "signature": "under(scenario, expression)",
+      "description": "The expression's value as the named scenario would read it, without switching the document into that scenario. Name the scenario in backticks: under(`Upside`, ebitda). Evaluates a private copy of the document, so nothing is materialized or changed.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "scenario",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "expression",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "root.solve",
+      "name": "solve",
+      "aliases": [
+        "goal seek",
+        "find the input"
+      ],
+      "category": "Scenarios",
+      "signature": "solve(expression == target, by=value, within=[low, high], tolerance=1e-9)",
+      "description": "Goal seek: the number the named value must hold for the two sides to meet, searched by bisection between low and high. Refuses when the bracket does not contain a crossing. On its own line the answer carries its iterations and residual, and an Apply action that sets the value as an ordinary undoable edit.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expression",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "by",
+          "required": false,
+          "description": "A column or expression that supplies the grouping or ordering key.",
+          "example": "`Customer`"
+        },
+        {
+          "name": "within",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "tolerance",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
       "id": "expr.not",
       "name": ".not",
       "aliases": [],
@@ -2608,8 +4053,8 @@
         {
           "name": "length",
           "required": false,
-          "description": "A whole number.",
-          "example": "1"
+          "description": "How many values to keep; ten when left out.",
+          "example": "10"
         }
       ]
     },
@@ -2628,8 +4073,8 @@
         {
           "name": "length",
           "required": false,
-          "description": "A whole number.",
-          "example": "1"
+          "description": "How many values to keep; ten when left out.",
+          "example": "10"
         }
       ]
     },
@@ -6235,8 +7680,2075 @@
           "example": null
         }
       ]
+    },
+    {
+      "id": "namespace.finance.pv",
+      "name": "finance.pv",
+      "aliases": [
+        "FINANCE.PV"
+      ],
+      "category": "Financial",
+      "signature": "finance.pv(rate, nper, pmt, fv=0, type=0)",
+      "description": "Present value of equal periodic payments. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate is per period and must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.pv",
+      "name": ".finance.pv",
+      "aliases": [
+        ".FINANCE.PV"
+      ],
+      "category": "Financial",
+      "signature": ".finance.pv(rate, nper, fv=0, type=0)",
+      "description": "Receiver supplies pmt. Present value of equal periodic payments. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate is per period and must exceed -1; nper must be positive.",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.fv",
+      "name": "finance.fv",
+      "aliases": [
+        "FINANCE.FV"
+      ],
+      "category": "Financial",
+      "signature": "finance.fv(rate, nper, pmt, pv=0, type=0)",
+      "description": "Future value of equal periodic payments. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate is per period and must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.fv",
+      "name": ".finance.fv",
+      "aliases": [
+        ".FINANCE.FV"
+      ],
+      "category": "Financial",
+      "signature": ".finance.fv(rate, nper, pmt, type=0)",
+      "description": "Receiver supplies pv. Future value of equal periodic payments. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate is per period and must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.pmt",
+      "name": "finance.pmt",
+      "aliases": [
+        "FINANCE.PMT"
+      ],
+      "category": "Financial",
+      "signature": "finance.pmt(rate, nper, pv, fv=0, type=0)",
+      "description": "Equal periodic payment, including principal and interest. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate must exceed -1; nper must be positive.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.pmt",
+      "name": ".finance.pmt",
+      "aliases": [
+        ".FINANCE.PMT"
+      ],
+      "category": "Financial",
+      "signature": ".finance.pmt(rate, nper, fv=0, type=0)",
+      "description": "Receiver supplies pv. Equal periodic payment, including principal and interest. Outflows are negative; type=0 pays at period end, type=1 at its start. Rate must exceed -1; nper must be positive.",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.ipmt",
+      "name": "finance.ipmt",
+      "aliases": [
+        "FINANCE.IPMT"
+      ],
+      "category": "Financial",
+      "signature": "finance.ipmt(rate, per, nper, pv, fv=0, type=0)",
+      "description": "Interest part of a payment, with Excel signs and argument order. per is an integer from 1 through nper. type=1 pays at period start, with no first-period interest.",
+      "minimumArguments": 4,
+      "maximumArguments": 6,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "per",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.ipmt",
+      "name": ".finance.ipmt",
+      "aliases": [
+        ".FINANCE.IPMT"
+      ],
+      "category": "Financial",
+      "signature": ".finance.ipmt(rate, per, nper, fv=0, type=0)",
+      "description": "Receiver supplies pv. Interest part of a payment, with Excel signs and argument order. per is an integer from 1 through nper. type=1 pays at period start, with no first-period interest.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "per",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.ppmt",
+      "name": "finance.ppmt",
+      "aliases": [
+        "FINANCE.PPMT"
+      ],
+      "category": "Financial",
+      "signature": "finance.ppmt(rate, per, nper, pv, fv=0, type=0)",
+      "description": "Principal part of a payment: pmt minus ipmt. per is an integer from 1 through nper. type=0 pays at period end; type=1 at its start.",
+      "minimumArguments": 4,
+      "maximumArguments": 6,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "per",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.ppmt",
+      "name": ".finance.ppmt",
+      "aliases": [
+        ".FINANCE.PPMT"
+      ],
+      "category": "Financial",
+      "signature": ".finance.ppmt(rate, per, nper, fv=0, type=0)",
+      "description": "Receiver supplies pv. Principal part of a payment: pmt minus ipmt. per is an integer from 1 through nper. type=0 pays at period end; type=1 at its start.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "per",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.nper",
+      "name": "finance.nper",
+      "aliases": [
+        "FINANCE.NPER"
+      ],
+      "category": "Financial",
+      "signature": "finance.nper(rate, pmt, pv, fv=0, type=0)",
+      "description": "Number of periods for equal payments. Uses Excel signs and argument order; rate must exceed -1. type=0 pays at period end; type=1 at its start. Undefined solutions error.",
+      "minimumArguments": 3,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.nper",
+      "name": ".finance.nper",
+      "aliases": [
+        ".FINANCE.NPER"
+      ],
+      "category": "Financial",
+      "signature": ".finance.nper(rate, pmt, fv=0, type=0)",
+      "description": "Receiver supplies pv. Number of periods for equal payments. Uses Excel signs and argument order; rate must exceed -1. type=0 pays at period end; type=1 at its start. Undefined solutions error.",
+      "minimumArguments": 2,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.npv",
+      "name": "finance.npv",
+      "aliases": [
+        "FINANCE.NPV"
+      ],
+      "category": "Financial",
+      "signature": "finance.npv(rate, values)",
+      "description": "Discount a nonempty cash-flow column in supplied order. Like Excel, the first flow is one period away; add a time-zero investment separately. Missing flows error. Prefer xnpv for dated flows.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "missing inputs error",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        }
+      ]
+    },
+    {
+      "id": "finance.npv",
+      "name": ".finance.npv",
+      "aliases": [
+        ".FINANCE.NPV"
+      ],
+      "category": "Financial",
+      "signature": ".finance.npv(rate)",
+      "description": "Receiver supplies values. Discount a nonempty cash-flow column in supplied order. Like Excel, the first flow is one period away; add a time-zero investment separately. Missing flows error. Prefer xnpv for dated flows.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "missing inputs error",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.xnpv",
+      "name": "finance.xnpv",
+      "aliases": [
+        "FINANCE.XNPV"
+      ],
+      "category": "Financial",
+      "signature": "finance.xnpv(rate, values, dates)",
+      "description": "Discount matching cash-flow and Date columns on an actual/365 basis. The first date is time zero; earlier dates and missing values error. Rate is scalar, finite, and greater than -1.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "missing inputs error",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "dates",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.xnpv",
+      "name": ".finance.xnpv",
+      "aliases": [
+        ".FINANCE.XNPV"
+      ],
+      "category": "Financial",
+      "signature": ".finance.xnpv(rate, dates)",
+      "description": "Receiver supplies values. Discount matching cash-flow and Date columns on an actual/365 basis. The first date is time zero; earlier dates and missing values error. Rate is scalar, finite, and greater than -1.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "missing inputs error",
+      "arguments": [
+        {
+          "name": "rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "dates",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.irr",
+      "name": "finance.irr",
+      "aliases": [
+        "FINANCE.IRR"
+      ],
+      "category": "Financial",
+      "signature": "finance.irr(values, guess=0.1)",
+      "description": "Periodic internal rate of return for a nonempty cash-flow column in supplied order, with the first flow at time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.irr",
+      "name": ".finance.irr",
+      "aliases": [
+        ".FINANCE.IRR"
+      ],
+      "category": "Financial",
+      "signature": ".finance.irr(guess=0.1)",
+      "description": "Receiver supplies values. Periodic internal rate of return for a nonempty cash-flow column in supplied order, with the first flow at time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.xirr",
+      "name": "finance.xirr",
+      "aliases": [
+        "FINANCE.XIRR"
+      ],
+      "category": "Financial",
+      "signature": "finance.xirr(values, dates, guess=0.1)",
+      "description": "Dated internal rate of return on an actual/365 basis, using the first supplied date as time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+      "minimumArguments": 2,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "dates",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.xirr",
+      "name": ".finance.xirr",
+      "aliases": [
+        ".FINANCE.XIRR"
+      ],
+      "category": "Financial",
+      "signature": ".finance.xirr(dates, guess=0.1)",
+      "description": "Receiver supplies values. Dated internal rate of return on an actual/365 basis, using the first supplied date as time zero. Flows must contain both signs. Searches a bounded rate domain and chooses the discovered root nearest guess in log-rate space.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "dates",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.effect",
+      "name": "finance.effect",
+      "aliases": [
+        "FINANCE.EFFECT"
+      ],
+      "category": "Financial",
+      "signature": "finance.effect(nominal_rate, npery)",
+      "description": "Effective annual rate from a nominal rate and compounding periods per year. Npery is truncated to an integer; nominal_rate must be positive and npery at least 1.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "nominal_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "npery",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.effect",
+      "name": ".finance.effect",
+      "aliases": [
+        ".FINANCE.EFFECT"
+      ],
+      "category": "Financial",
+      "signature": ".finance.effect(npery)",
+      "description": "Receiver supplies nominal_rate. Effective annual rate from a nominal rate and compounding periods per year. Npery is truncated to an integer; nominal_rate must be positive and npery at least 1.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "npery",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.nominal",
+      "name": "finance.nominal",
+      "aliases": [
+        "FINANCE.NOMINAL"
+      ],
+      "category": "Financial",
+      "signature": "finance.nominal(effect_rate, npery)",
+      "description": "Nominal annual rate from an effective rate and compounding periods per year. Npery is truncated to an integer; effect_rate must be positive and npery at least 1.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "effect_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "npery",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.nominal",
+      "name": ".finance.nominal",
+      "aliases": [
+        ".FINANCE.NOMINAL"
+      ],
+      "category": "Financial",
+      "signature": ".finance.nominal(npery)",
+      "description": "Receiver supplies effect_rate. Nominal annual rate from an effective rate and compounding periods per year. Npery is truncated to an integer; effect_rate must be positive and npery at least 1.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "npery",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.sln",
+      "name": "finance.sln",
+      "aliases": [
+        "FINANCE.SLN"
+      ],
+      "category": "Financial",
+      "signature": "finance.sln(cost, salvage, life)",
+      "description": "Straight-line depreciation for one period: (cost - salvage) / life. Life must be nonzero.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "cost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.sln",
+      "name": ".finance.sln",
+      "aliases": [
+        ".FINANCE.SLN"
+      ],
+      "category": "Financial",
+      "signature": ".finance.sln(salvage, life)",
+      "description": "Receiver supplies cost. Straight-line depreciation for one period: (cost - salvage) / life. Life must be nonzero.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.db",
+      "name": "finance.db",
+      "aliases": [
+        "FINANCE.DB"
+      ],
+      "category": "Financial",
+      "signature": "finance.db(cost, salvage, life, period, month=12)",
+      "description": "Fixed-declining-balance depreciation for one period. Rate is rounded to three decimals; first and last periods are prorated by month. Cost must be positive, salvage between 0 and cost, life at least 1, period within the schedule, month 1 through 12.",
+      "minimumArguments": 4,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "cost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "period",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        },
+        {
+          "name": "month",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.db",
+      "name": ".finance.db",
+      "aliases": [
+        ".FINANCE.DB"
+      ],
+      "category": "Financial",
+      "signature": ".finance.db(salvage, life, period, month=12)",
+      "description": "Receiver supplies cost. Fixed-declining-balance depreciation for one period. Rate is rounded to three decimals; first and last periods are prorated by month. Cost must be positive, salvage between 0 and cost, life at least 1, period within the schedule, month 1 through 12.",
+      "minimumArguments": 3,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "period",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        },
+        {
+          "name": "month",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.ddb",
+      "name": "finance.ddb",
+      "aliases": [
+        "FINANCE.DDB"
+      ],
+      "category": "Financial",
+      "signature": "finance.ddb(cost, salvage, life, period, factor=2)",
+      "description": "Declining-balance depreciation for one period, capped so book value never drops below salvage. Life and period are truncated to integers; period must be within 1 and life, factor nonnegative.",
+      "minimumArguments": 4,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "cost",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "period",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        },
+        {
+          "name": "factor",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.ddb",
+      "name": ".finance.ddb",
+      "aliases": [
+        ".FINANCE.DDB"
+      ],
+      "category": "Financial",
+      "signature": ".finance.ddb(salvage, life, period, factor=2)",
+      "description": "Receiver supplies cost. Declining-balance depreciation for one period, capped so book value never drops below salvage. Life and period are truncated to integers; period must be within 1 and life, factor nonnegative.",
+      "minimumArguments": 3,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "salvage",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "life",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "period",
+          "required": true,
+          "description": "A duration; use d, w, mo, or y for calendar units.",
+          "example": "7d or 1mo"
+        },
+        {
+          "name": "factor",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.rate",
+      "name": "finance.rate",
+      "aliases": [
+        "FINANCE.RATE"
+      ],
+      "category": "Financial",
+      "signature": "finance.rate(nper, pmt, pv, fv=0, type=0, guess=0.1)",
+      "description": "Periodic interest rate of an annuity, solved with the bounded root finder. Nper must be positive, type 0 or 1, guess finite and greater than -1. Refuses with a reason when no root is found.",
+      "minimumArguments": 3,
+      "maximumArguments": 6,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pv",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.rate",
+      "name": ".finance.rate",
+      "aliases": [
+        ".FINANCE.RATE"
+      ],
+      "category": "Financial",
+      "signature": ".finance.rate(nper, pmt, fv=0, type=0, guess=0.1)",
+      "description": "Receiver supplies pv. Periodic interest rate of an annuity, solved with the bounded root finder. Nper must be positive, type 0 or 1, guess finite and greater than -1. Refuses with a reason when no root is found.",
+      "minimumArguments": 2,
+      "maximumArguments": 5,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "nper",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "pmt",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fv",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "type",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "guess",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.mirr",
+      "name": "finance.mirr",
+      "aliases": [
+        "FINANCE.MIRR"
+      ],
+      "category": "Financial",
+      "signature": "finance.mirr(values, finance_rate, reinvest_rate)",
+      "description": "Modified internal rate of return: negatives discounted at finance_rate, positives compounded at reinvest_rate. Flows must contain both signs; rates must be finite scalars greater than -1.",
+      "minimumArguments": 3,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "values",
+          "required": true,
+          "description": "A literal, column, or formula expression.",
+          "example": "0 or `Budget`"
+        },
+        {
+          "name": "finance_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "reinvest_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.mirr",
+      "name": ".finance.mirr",
+      "aliases": [
+        ".FINANCE.MIRR"
+      ],
+      "category": "Financial",
+      "signature": ".finance.mirr(finance_rate, reinvest_rate)",
+      "description": "Receiver supplies values. Modified internal rate of return: negatives discounted at finance_rate, positives compounded at reinvest_rate. Flows must contain both signs; rates must be finite scalars greater than -1.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "finance_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "reinvest_rate",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.period_index",
+      "name": "finance.period_index",
+      "aliases": [
+        "FINANCE.PERIOD_INDEX"
+      ],
+      "category": "Financial",
+      "signature": "finance.period_index(date, fy_start=None, calendar=None)",
+      "description": "Period number since year zero for a date: fiscal months counted from the calendar's year start, or retail blocks read from its week table. Defaults to the document's default calendar, and fy_start overrides its year start. Offsets between two indexes are whole periods without date math.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.period_index",
+      "name": ".finance.period_index",
+      "aliases": [
+        ".FINANCE.PERIOD_INDEX"
+      ],
+      "category": "Financial",
+      "signature": ".finance.period_index(fy_start=None, calendar=None)",
+      "description": "Receiver supplies date. Period number since year zero for a date: fiscal months counted from the calendar's year start, or retail blocks read from its week table. Defaults to the document's default calendar, and fy_start overrides its year start. Offsets between two indexes are whole periods without date math.",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.prior",
+      "name": "finance.prior",
+      "aliases": [
+        "FINANCE.PRIOR"
+      ],
+      "category": "Financial",
+      "signature": "finance.prior(expr, n=1, fy_start=None, calendar=None)",
+      "description": "The value expr held n periods before each row's own period, joined on the frame's declared period column — the period before, never the row above. Counts in the named calendar, or the document default. Needs a declared period; a missing earlier period reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 4,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "n",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.prior",
+      "name": ".finance.prior",
+      "aliases": [
+        ".FINANCE.PRIOR"
+      ],
+      "category": "Financial",
+      "signature": ".finance.prior(n=1, fy_start=None, calendar=None)",
+      "description": "Receiver supplies expr. The value expr held n periods before each row's own period, joined on the frame's declared period column — the period before, never the row above. Counts in the named calendar, or the document default. Needs a declared period; a missing earlier period reads blank.",
+      "minimumArguments": 0,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "n",
+          "required": false,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.fiscal_year",
+      "name": "finance.fiscal_year",
+      "aliases": [
+        "FINANCE.FISCAL_YEAR"
+      ],
+      "category": "Financial",
+      "signature": "finance.fiscal_year(date, fy_start=None, calendar=None)",
+      "description": "The fiscal year a date falls in, numbered by its start or its end according to the calendar. With a February start under end-labelling, January 2025 is fiscal 2025 and February opens 2026. A named calendar supplies both the year start and the labelling; an explicit fy_start wins over the calendar's, and is refused outright with a retail week calendar, whose year does not start on a month boundary.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.fiscal_year",
+      "name": ".finance.fiscal_year",
+      "aliases": [
+        ".FINANCE.FISCAL_YEAR"
+      ],
+      "category": "Financial",
+      "signature": ".finance.fiscal_year(fy_start=None, calendar=None)",
+      "description": "Receiver supplies date. The fiscal year a date falls in, numbered by its start or its end according to the calendar. With a February start under end-labelling, January 2025 is fiscal 2025 and February opens 2026. A named calendar supplies both the year start and the labelling; an explicit fy_start wins over the calendar's, and is refused outright with a retail week calendar, whose year does not start on a month boundary.",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.fiscal_quarter",
+      "name": "finance.fiscal_quarter",
+      "aliases": [
+        "FINANCE.FISCAL_QUARTER"
+      ],
+      "category": "Financial",
+      "signature": "finance.fiscal_quarter(date, fy_start=None, calendar=None)",
+      "description": "The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start or three retail blocks under a week-pattern calendar, which takes no fy_start. Needs no period declaration; it reads the date, not the frame.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.fiscal_quarter",
+      "name": ".finance.fiscal_quarter",
+      "aliases": [
+        ".FINANCE.FISCAL_QUARTER"
+      ],
+      "category": "Financial",
+      "signature": ".finance.fiscal_quarter(fy_start=None, calendar=None)",
+      "description": "Receiver supplies date. The fiscal quarter from 1 to 4 a date falls in, counting three-month quarters from fy_start or three retail blocks under a week-pattern calendar, which takes no fy_start. Needs no period declaration; it reads the date, not the frame.",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.fiscal_period",
+      "name": "finance.fiscal_period",
+      "aliases": [
+        "FINANCE.FISCAL_PERIOD"
+      ],
+      "category": "Financial",
+      "signature": "finance.fiscal_period(date, fy_start=None, calendar=None)",
+      "description": "The fiscal month from 1 to 12 a date falls in, counting from fy_start — or the retail block from 1 to 12 under a week-pattern calendar, which takes no fy_start and where a 53rd week extends the last period. This is the one-date reading of the numbering period_index counts.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.fiscal_period",
+      "name": ".finance.fiscal_period",
+      "aliases": [
+        ".FINANCE.FISCAL_PERIOD"
+      ],
+      "category": "Financial",
+      "signature": ".finance.fiscal_period(fy_start=None, calendar=None)",
+      "description": "Receiver supplies date. The fiscal month from 1 to 12 a date falls in, counting from fy_start — or the retail block from 1 to 12 under a week-pattern calendar, which takes no fy_start and where a 53rd week extends the last period. This is the one-date reading of the numbering period_index counts.",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.period_start",
+      "name": "finance.period_start",
+      "aliases": [
+        "FINANCE.PERIOD_START"
+      ],
+      "category": "Financial",
+      "signature": "finance.period_start(date, calendar=None)",
+      "description": "The first day of the calendar month holding a date, or of its retail block under a week-pattern calendar. Pair with period_end to bound a period without spelling month lengths.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.period_start",
+      "name": ".finance.period_start",
+      "aliases": [
+        ".FINANCE.PERIOD_START"
+      ],
+      "category": "Financial",
+      "signature": ".finance.period_start(calendar=None)",
+      "description": "Receiver supplies date. The first day of the calendar month holding a date, or of its retail block under a week-pattern calendar. Pair with period_end to bound a period without spelling month lengths.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.period_end",
+      "name": "finance.period_end",
+      "aliases": [
+        "FINANCE.PERIOD_END"
+      ],
+      "category": "Financial",
+      "signature": "finance.period_end(date, calendar=None)",
+      "description": "The last day of the calendar month holding a date — February 2024 ends on the 29th — or of its retail block under a week-pattern calendar. The month-end reading of EDATE(date, 0).",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.period_end",
+      "name": ".finance.period_end",
+      "aliases": [
+        ".FINANCE.PERIOD_END"
+      ],
+      "category": "Financial",
+      "signature": ".finance.period_end(calendar=None)",
+      "description": "Receiver supplies date. The last day of the calendar month holding a date — February 2024 ends on the 29th — or of its retail block under a week-pattern calendar. The month-end reading of EDATE(date, 0).",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.add_periods",
+      "name": "finance.add_periods",
+      "aliases": [
+        "FINANCE.ADD_PERIODS"
+      ],
+      "category": "Financial",
+      "signature": "finance.add_periods(date, n)",
+      "description": "The date n calendar months from a date, with end-of-month clamping: January 31 plus one month is February 28. The count may be a column; a missing count reads blank. EDATE is the Excel name for this exact arithmetic.",
+      "minimumArguments": 2,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "finance.add_periods",
+      "name": ".finance.add_periods",
+      "aliases": [
+        ".FINANCE.ADD_PERIODS"
+      ],
+      "category": "Financial",
+      "signature": ".finance.add_periods(n)",
+      "description": "Receiver supplies date. The date n calendar months from a date, with end-of-month clamping: January 31 plus one month is February 28. The count may be a column; a missing count reads blank. EDATE is the Excel name for this exact arithmetic.",
+      "minimumArguments": 1,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.ytd",
+      "name": "finance.ytd",
+      "aliases": [
+        "FINANCE.YTD"
+      ],
+      "category": "Financial",
+      "signature": "finance.ytd(expr, fy_start=None, calendar=None)",
+      "description": "The sum of expr over the fiscal year so far, joined on the frame's declared period column within its partitions. Resets when the fiscal year turns in the named calendar, or the document default; sums the periods present, and only a window with no readable value reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.ytd",
+      "name": ".finance.ytd",
+      "aliases": [
+        ".FINANCE.YTD"
+      ],
+      "category": "Financial",
+      "signature": ".finance.ytd(fy_start=None, calendar=None)",
+      "description": "Receiver supplies expr. The sum of expr over the fiscal year so far, joined on the frame's declared period column within its partitions. Resets when the fiscal year turns in the named calendar, or the document default; sums the periods present, and only a window with no readable value reads blank.",
+      "minimumArguments": 0,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "fy_start",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.ttm",
+      "name": "finance.ttm",
+      "aliases": [
+        "FINANCE.TTM"
+      ],
+      "category": "Financial",
+      "signature": "finance.ttm(expr, calendar=None)",
+      "description": "The sum of expr over the twelve periods ending here, joined on the frame's declared period column. Twelve indexes back is the same window under any year start, so it takes no fy_start — but which twelve periods exist is a calendar question, so it takes a calendar. Needs a declared period like prior.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.ttm",
+      "name": ".finance.ttm",
+      "aliases": [
+        ".FINANCE.TTM"
+      ],
+      "category": "Financial",
+      "signature": ".finance.ttm(calendar=None)",
+      "description": "Receiver supplies expr. The sum of expr over the twelve periods ending here, joined on the frame's declared period column. Twelve indexes back is the same window under any year start, so it takes no fy_start — but which twelve periods exist is a calendar question, so it takes a calendar. Needs a declared period like prior.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.same_period_last_year",
+      "name": "finance.same_period_last_year",
+      "aliases": [
+        "FINANCE.SAME_PERIOD_LAST_YEAR"
+      ],
+      "category": "Financial",
+      "signature": "finance.same_period_last_year(expr, calendar=None)",
+      "description": "The value expr held twelve periods ago — the same month last year, or the same retail block last year under a week-pattern calendar — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "expr",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.same_period_last_year",
+      "name": ".finance.same_period_last_year",
+      "aliases": [
+        ".FINANCE.SAME_PERIOD_LAST_YEAR"
+      ],
+      "category": "Financial",
+      "signature": ".finance.same_period_last_year(calendar=None)",
+      "description": "Receiver supplies expr. The value expr held twelve periods ago — the same month last year, or the same retail block last year under a week-pattern calendar — joined on the frame's declared period column. The prior machinery with a fixed offset of twelve; a missing period reads blank.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.fiscal_week",
+      "name": "finance.fiscal_week",
+      "aliases": [
+        "FINANCE.FISCAL_WEEK"
+      ],
+      "category": "Financial",
+      "signature": "finance.fiscal_week(date, calendar=None)",
+      "description": "The 1-based week of its fiscal year for a date: seven-day blocks from the year's start date, so a year starting on a Sunday has Sunday-to-Saturday weeks and a 53-week year reports week 53. Needs no period declaration.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.fiscal_week",
+      "name": ".finance.fiscal_week",
+      "aliases": [
+        ".FINANCE.FISCAL_WEEK"
+      ],
+      "category": "Financial",
+      "signature": ".finance.fiscal_week(calendar=None)",
+      "description": "Receiver supplies date. The 1-based week of its fiscal year for a date: seven-day blocks from the year's start date, so a year starting on a Sunday has Sunday-to-Saturday weeks and a 53-week year reports week 53. Needs no period declaration.",
+      "minimumArguments": 0,
+      "maximumArguments": 1,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.workday",
+      "name": "finance.workday",
+      "aliases": [
+        "FINANCE.WORKDAY"
+      ],
+      "category": "Financial",
+      "signature": "finance.workday(date, n, calendar=None)",
+      "description": "The date n business days from a date, skipping the calendar's weekend and holidays. The start date is day zero and never counted, so shifting by zero returns the date itself; negative counts shift back, and the count may be a column. A missing date or count reads blank.",
+      "minimumArguments": 2,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.workday",
+      "name": ".finance.workday",
+      "aliases": [
+        ".FINANCE.WORKDAY"
+      ],
+      "category": "Financial",
+      "signature": ".finance.workday(n, calendar=None)",
+      "description": "Receiver supplies date. The date n business days from a date, skipping the calendar's weekend and holidays. The start date is day zero and never counted, so shifting by zero returns the date itself; negative counts shift back, and the count may be a column. A missing date or count reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "n",
+          "required": true,
+          "description": "A whole number.",
+          "example": "1"
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "namespace.finance.networkdays",
+      "name": "finance.networkdays",
+      "aliases": [
+        "FINANCE.NETWORKDAYS"
+      ],
+      "category": "Financial",
+      "signature": "finance.networkdays(start_date, end_date, calendar=None)",
+      "description": "Business days from a start date through an end date inclusive under the calendar's weekend and holidays. Negated when the end precedes the start; a missing endpoint reads blank.",
+      "minimumArguments": 2,
+      "maximumArguments": 3,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "start_date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "end_date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
+    },
+    {
+      "id": "finance.networkdays",
+      "name": ".finance.networkdays",
+      "aliases": [
+        ".FINANCE.NETWORKDAYS"
+      ],
+      "category": "Financial",
+      "signature": ".finance.networkdays(end_date, calendar=None)",
+      "description": "Receiver supplies start_date. Business days from a start date through an end date inclusive under the calendar's weekend and holidays. Negated when the end precedes the start; a missing endpoint reads blank.",
+      "minimumArguments": 1,
+      "maximumArguments": 2,
+      "returnType": "number",
+      "nullBehavior": "propagates null",
+      "arguments": [
+        {
+          "name": "end_date",
+          "required": true,
+          "description": "The value for this parameter.",
+          "example": null
+        },
+        {
+          "name": "calendar",
+          "required": false,
+          "description": "The value for this parameter.",
+          "example": null
+        }
+      ]
     }
   ],
   "canUndo": true,
-  "canRedo": false
+  "canRedo": false,
+  "safeMode": false
 }

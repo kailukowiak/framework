@@ -1424,11 +1424,26 @@ impl Document {
             (entry.frame.slice(offset as i64, limit), entry.total_rows)
         } else if paged {
             let plan = plan()?;
+            // The stored count is the answer only while nothing between the
+            // file and the page changes how many rows there are. A display
+            // filter does, and so does the frame's own chain whenever it
+            // holds anything but row-for-row steps: a chain Filter used to be
+            // counted as the whole file, so the pager promised rows the plan
+            // never produced.
+            let chain_keeps_count = frame.steps.iter().all(|step| {
+                matches!(
+                    step,
+                    FrameStep::WithColumns { .. }
+                        | FrameStep::Select { .. }
+                        | FrameStep::Sort { .. }
+                        | FrameStep::Comment { .. }
+                )
+            });
             let total_rows = frame
                 .artifact
                 .as_ref()
-                .filter(|_| !filtered)
-                .map(|artifact| Ok(artifact.row_count))
+                .filter(|_| !filtered && chain_keeps_count)
+                .map(|artifact| Ok(frame.patched_row_count(artifact.row_count)))
                 .unwrap_or_else(|| lazy_row_count(plan.clone()))?;
             let limit = page_limit(offset, limit, total_rows);
             // The one route where the rows in hand are not all the rows.

@@ -1,0 +1,14 @@
+/* The column that typing grows. Idle, it is the 26px edge strip the table
+   already had and costs nothing more; focused, the input floats leftwards
+   over the last column so what is typed can be read. */
+.ghost-column-cell { position: relative; }
+.ghost-column-cell input {
+  position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box;
+  margin: 0; padding: 0 2px; border: 0; background: transparent; color: transparent;
+  font: inherit; outline: none; cursor: pointer;
+}
+.ghost-column-cell input:focus {
+  left: auto; right: 0; width: 160px; z-index: 3; padding: 0 4px;
+  color: var(--ink); background: var(--paper); cursor: text;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}

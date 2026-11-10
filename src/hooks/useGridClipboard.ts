@@ -1,4 +1,5 @@
-import { frameCardSize, grownFrameCardHeight } from "../lib/cardPlacement";
+import { frameCardSize } from "../lib/cardPlacement";
+import { pasteOperation } from "../lib/pasteCardGrowth";
 import { useCallback, useState, type RefObject } from "react";
 import {
   COPY_CONFIRM_CELLS,
@@ -239,18 +240,18 @@ export function useGridClipboard({
       // decide it — headers, column count, and types all come from the
       // core's Polars reader, exactly as a file import would.
       if (isEmptyLiteralFrame(context.frame) && context.frame.uniqueKeys.length === 0) {
-        const viewId = gridFocus.viewId;
+        // The stub the paste replaced was two columns by two rows; the card
+        // keeping that size clipped the result both ways. The size comes from
+        // the same text the core parses, so it travels in the paste's batch
+        // and one undo takes back both.
+        const grid = parseGrid(source, { csv: true });
+        const size = frameCardSize(grid[0]?.length ?? 1, Math.max(0, grid.length - 1));
         void run({
-          type: "setFrameFromPastedText",
-          frameId: context.frame.id,
-          text: source,
-        }).then((failure) => {
-          if (failure) return;
-          // The stub the paste replaced was two columns by two rows; the
-          // card keeping that size clipped the result both ways.
-          const grid = parseGrid(source);
-          const size = frameCardSize(grid[0]?.length ?? 1, Math.max(0, grid.length - 1));
-          return run({ type: "resizeView", viewId, ...size });
+          type: "batch",
+          operations: [
+            { type: "setFrameFromPastedText", frameId: context.frame.id, text: source },
+            { type: "resizeView", viewId: gridFocus.viewId, ...size },
+          ],
         });
         return;
       }
@@ -277,24 +278,21 @@ export function useGridClipboard({
       }
 
       // Otherwise the clipboard decides: the core writes from the anchor and
-      // grows the frame when the block runs past the last row.
+      // grows the frame when the block runs past the last row —
+      // and widens a document-owned one past the last column. Whether it may is
+      // the engine's call, so a too-wide block is sent as it is and a refusal
+      // comes back as the failure shown to the person.
       const anchor = gridCellAt(context, { row: range.top, col: range.left });
       if (!anchor) return;
-      void run({
-        type: "pasteCells",
-        frameId: context.frame.id,
-        rowId: anchor.row.id,
-        columnId: anchor.column.id,
-        grid:
-          context.orientation === "fieldsAsRows"
-            ? // Fields as rows means the clipboard's rows are this frame's
-              // columns, so the block is transposed back before it is sent.
-              (matrix[0] ?? []).map((_, index) => matrix.map((line) => line[index] ?? ""))
-            : matrix,
-      }).then((failure) =>
-        failure || context.orientation === "fieldsAsRows"
-          ? null
-          : growCardForPastedRows(document, gridFocus, range.top + matrix.length, run)
+      void run(
+        pasteOperation(document, {
+          frameId: context.frame.id,
+          viewId: gridFocus.viewId,
+          anchor: { rowId: anchor.row.id, columnId: anchor.column.id },
+          at: { row: range.top, col: range.left },
+          matrix,
+          fieldsAsRows: context.orientation === "fieldsAsRows",
+        })
       );
     },
     [document, gridFocus, renderedRows, run]
@@ -309,25 +307,4 @@ export function useGridClipboard({
     handleGridCut,
     handleGridPaste,
   };
-}
-
-/**
- * A paste that runs past the last row grows the frame; a card that is still
- * the size the app gave it grows with it, up to the dozen-row cap after which
- * a table is a thing to scroll rather than a card to unroll. A card someone
- * has dragged to a size of their own is left exactly as they left it —
- * `grownFrameCardHeight` is where that judgement is made and argued.
- */
-function growCardForPastedRows(
-  document: DocumentView,
-  gridFocus: GridFocus,
-  rowCount: number,
-  run: (operation: Operation) => Promise<string | null>
-): Promise<string | null> | null {
-  const view = document.views.find((candidate) => candidate.id === gridFocus.viewId);
-  if (!view) return null;
-  const height = grownFrameCardHeight(view.height, rowCount);
-  return height === null
-    ? null
-    : run({ type: "resizeView", viewId: view.id, width: view.width, height });
 }

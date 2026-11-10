@@ -105,6 +105,34 @@ impl Document {
         Ok(())
     }
 
+    /// A column this replica no longer has is skipped rather than refused,
+    /// the same bargain `apply_set_view_layout` makes: a peer may have
+    /// deleted it meanwhile, and a width for nothing is not worth rejecting
+    /// the rest of the edit over.
+    pub(crate) fn apply_set_frame_display_column_layout(
+        &mut self,
+        frame_id: Id,
+        columns: Vec<FrameColumnLayoutUpdate>,
+    ) -> Result<(), CoreError> {
+        let frame = self.frame_mut(&frame_id)?;
+        for update in columns {
+            if !frame
+                .columns
+                .iter()
+                .any(|column| column.id == update.column_id)
+            {
+                continue;
+            }
+            let layout = update.layout();
+            if layout.is_automatic() {
+                frame.display.column_layout.remove(&update.column_id);
+            } else {
+                frame.display.column_layout.insert(update.column_id, layout);
+            }
+        }
+        Ok(())
+    }
+
     pub(crate) fn apply_set_frame_display_crosstab(
         &mut self,
         frame_id: Id,
@@ -327,6 +355,16 @@ impl Document {
         let frame = self.frame_mut(&frame_id)?;
         validate_frame_style_target(frame, &target)?;
         validate_frame_cell_style(&style)?;
+        if let FrameStyleTarget::Range {
+            row_ids,
+            column_ids,
+        } = &target
+        {
+            let covered = CoveredCells::new(row_ids, column_ids);
+            let splices = frame.display.range_style_splices(&target, &covered, &style);
+            frame.display.apply_style_splices(splices);
+            return Ok(());
+        }
         let styles = &mut frame.display.styles;
         match styles
             .iter()
@@ -339,6 +377,17 @@ impl Document {
             None if !style.is_empty() => styles.push(FrameStyle { target, style }),
             None => {}
         }
+        Ok(())
+    }
+
+    pub(crate) fn apply_splice_frame_styles(
+        &mut self,
+        frame_id: Id,
+        splices: Vec<FrameStyleSplice>,
+    ) -> Result<(), CoreError> {
+        let display = &mut self.frame_mut(&frame_id)?.display;
+        let resolved = display.resolve_style_splices(&splices);
+        display.apply_style_splices(resolved);
         Ok(())
     }
 

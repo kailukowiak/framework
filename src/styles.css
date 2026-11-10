@@ -511,6 +511,13 @@ button.block-gutter-row.stale::after { content: none; }
 /* The strip scrolls horizontally, so the menu is anchored to the button
    rather than to the strip -- otherwise it would clip at the overflow edge. */
 .frame-view-tab-add-menu { position: relative; flex: 0 0 31px; }
+/* A card with a single frame tab draws no strip: the bar collapses to nothing
+   and its "+" is lifted onto the title row that follows it, which makes room
+   by keeping its right edge clear. Same button, same drop target, no row. */
+.frame-view-tab-bar.folded { position: relative; z-index: 2; height: 0; flex: 0 0 0; padding: 0; border: 0; overflow: visible; background: transparent; }
+.frame-view-tab-bar.folded .frame-view-tab-add-menu { position: absolute; top: 4px; right: 10px; flex: none; }
+.frame-view-tab-bar.folded .frame-view-tab-add { width: 28px; height: 28px; border-radius: 6px; }
+.frame-view-tab-bar.folded ~ .frame-card .frame-title-row { padding-right: 46px; }
 .tab-add-menu { width: 264px; }
 .tab-add-menu button { min-height: 54px; }
 .tab-add-menu button > span { display: block; }
@@ -521,7 +528,7 @@ button.block-gutter-row.stale::after { content: none; }
 /* Everything reads left to right from the name: with the row spaced apart
    instead, three children meant the name floated into the middle of the card
    and what it is about sat at the far edge, a card's width away from it. */
-.frame-title-row { height: 50px; display: flex; align-items: center; gap: 10px; padding: 0 17px; overflow: hidden; }
+.frame-title-row { height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 17px; overflow: hidden; }
 .frame-title-meta { min-width: 0; flex: 0 1 auto; overflow: hidden; }
 .frame-title-meta > span { flex: 0 0 auto; }
 .frame-title-lineage,
@@ -591,9 +598,27 @@ button.block-gutter-row.stale::after { content: none; }
 .frame-scroll::-webkit-scrollbar { width: 11px; height: 11px; }
 .frame-scroll::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: light-dark(#b9bab3, #1c1d17); background-clip: padding-box; }
 .frame-scroll::-webkit-scrollbar-corner { background: transparent; }
-.frame-scroll frame { border-collapse: separate; border-spacing: 0; width: 100%; frame-layout: fixed; font-size: var(--text-base); }
 .row-number-column { width: 40px; }
 .frame-edge-column { width: 26px; }
+.frame-scroll tbody td { height: var(--grid-row-height, 34px); }
+/* Columns with a stored width (or wrapping) lay the table out as fixed, so the
+   width is a decision rather than a suggestion the content can override. What
+   no longer fits is clipped with an ellipsis. A flex cell cannot draw one for
+   its bare text, so inside a fixed table the cell's content is a block, which
+   keeps the alignment (text-align is inherited from the cell's style). */
+.frame-scroll table.fixed-columns .cell-display,
+.frame-scroll table.fixed-columns .computed-cell { display: block; overflow: hidden; line-height: calc(var(--grid-row-height, 34px) - 1px); text-align: inherit; text-overflow: ellipsis; white-space: nowrap; }
+.frame-scroll table.fixed-columns .column-header-row { overflow: hidden; }
+/* A wrapped cell shows at most three lines: rows stay one known height, which
+   the row virtualisation depends on. */
+.frame-scroll table.fixed-columns td.wrap-cell .cell-display,
+.frame-scroll table.fixed-columns td.wrap-cell .computed-cell { display: -webkit-box; padding-top: 4px; padding-bottom: 4px; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-height: 18px; white-space: normal; overflow-wrap: anywhere; text-overflow: clip; }
+/* Header names never wrap; they give way with an ellipsis. */
+.column-header .column-select { white-space: nowrap; }
+.column-header .column-select > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.column-resize-handle { position: absolute; z-index: 5; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; touch-action: none; }
+.column-resize-handle:hover,
+.column-resize-handle:focus-visible { background: var(--accent); opacity: 0.45; outline: 0; }
 .frame-scroll th,
 .frame-scroll td { height: 34px; border-right: 1px solid light-dark(#e3e0d8, #3a3c30); border-bottom: 1px solid light-dark(#e3e0d8, #3a3c30); background: light-dark(#fff, #2c2d24); text-align: left; padding: 0; }
 .frame-scroll th:first-child,
@@ -669,7 +694,6 @@ td.row-number.selectable-header:hover { background: light-dark(#e7ece8, #223229)
 .transposed-field-header.styled-frame-cell { background: var(--cell-fill, light-dark(#eeece6, #1c1d17)) !important; }
 .frame-scroll td input:focus,
 .frame-scroll td .categorical-cell:focus { box-shadow: inset 0 0 0 2px var(--accent); background: light-dark(#fff, #2c2d24); }
-.transposed-frame-scroll frame { frame-layout: fixed; }
 .transposed-corner,
 .transposed-field-header { position: sticky; left: 0; z-index: 5; width: 180px; min-width: 180px; background: light-dark(#eeece6, #1c1d17) !important; }
 .transposed-corner { padding: 0 10px !important; color: light-dark(#71746d, #8f928b); font: 600 var(--text-sm) "DM Mono", monospace; }

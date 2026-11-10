@@ -44,8 +44,22 @@ export type SelectionTarget = {
     descending: boolean | null;
     /** Leading columns a pin through here would freeze; 0 unpins. */
     pinThrough: number;
-    /** A frame that owns its rows deletes a column; a computed one hides it. */
-    ownsRows: boolean;
+    /**
+     * `editing.columns` — the engine's rule, not `editing.rows`. A frame whose
+     * chain fixes its schema owns rows and still hides a column rather than
+     * deleting it, and is offered no insert.
+     */
+    editsColumns: boolean;
+  };
+  /**
+   * The rows the grid selection names, when one does. `canInsertBetween` is
+   * false on a frame read from a file, which only grows at its end; `below` is
+   * the row the next one goes before (null appends).
+   */
+  rows?: {
+    ids: string[];
+    canInsertBetween: boolean;
+    below: string | null;
   };
 };
 
@@ -64,6 +78,9 @@ export type SelectionActions = {
   clearColumnSort: (frameId: string, columnId: string) => void;
   pinColumns: (frameId: string, pinnedColumns: number) => void;
   removeColumn: (frameId: string, columnId: string) => void;
+  insertColumn: (frameId: string, columnId: string, side: "left" | "right") => void;
+  insertRow: (frameId: string, beforeRowId: string | null) => void;
+  deleteRows: (frameId: string, rowIds: string[]) => void;
 };
 
 /** A document the application has open before, as the recents list holds it. */
@@ -169,11 +186,40 @@ export function selectionCommands(
       () => actions.pinColumns(frameId, column.pinThrough),
       "freeze"
     );
+    if (column.editsColumns) {
+      add("insert-column-left", "Insert column left", () =>
+        actions.insertColumn(frameId, column.id, "left")
+      );
+      add("insert-column-right", "Insert column right", () =>
+        actions.insertColumn(frameId, column.id, "right")
+      );
+    }
     add(
       "remove-column",
-      column.ownsRows ? "Delete column" : "Hide column",
+      column.editsColumns ? "Delete column" : "Hide column",
       () => actions.removeColumn(frameId, column.id),
       "drop"
+    );
+  }
+  const { rows } = target;
+  if (frameId && rows?.ids.length) {
+    if (rows.canInsertBetween) {
+      add("insert-row-above", "Insert row above", () =>
+        actions.insertRow(frameId, rows.ids[0])
+      );
+      add("insert-row-below", "Insert row below", () =>
+        actions.insertRow(frameId, rows.below)
+      );
+    } else {
+      // A file-backed frame, or one shown sorted or filtered, has no slot
+      // the person can point at; the one honest add is at the end.
+      add("add-row", "Add row", () => actions.insertRow(frameId, null));
+    }
+    add(
+      "delete-rows",
+      rows.ids.length > 1 ? `Delete ${rows.ids.length} rows` : "Delete row",
+      () => actions.deleteRows(frameId, rows.ids),
+      "remove"
     );
   }
   if (frameId)

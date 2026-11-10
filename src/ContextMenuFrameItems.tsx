@@ -10,7 +10,23 @@ import {
   Trash2,
 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
-import { nextColumnName, type ContextMenuState } from "./FrameGrid";
+import {
+  nextColumnName,
+  type ContextMenuState,
+  type GridContext,
+  type GridFocus,
+} from "./FrameGrid";
+import {
+  deleteRowsLabel,
+  deleteRowsOperation,
+  appendColumnOperation,
+  appendRowOperation,
+  framePermitsColumnEdits,
+  gridPositionIsMeaningful,
+  insertColumnOperation,
+  insertRowOperation,
+  selectedRowIds,
+} from "./lib/gridStructure";
 import { defaultPlotSpec, viewHolding } from "./lib/canvasCards";
 import type { InspectorPanelAction } from "./lib/inspectorPanel";
 import type { JoinState } from "./lib/joinState";
@@ -274,6 +290,9 @@ export type ContextMenuFrameEditItemsProps = {
     options?: { inlineError?: boolean }
   ) => Promise<string | null>;
   setContextMenu: Dispatch<SetStateAction<ContextMenuState | null>>;
+  /** With these, Delete row acts on every row the selection spans. */
+  contextGrid?: GridContext | null;
+  gridFocus?: GridFocus | null;
 };
 
 /**
@@ -289,45 +308,94 @@ export function ContextMenuFrameEditItems({
   deleteFromContext,
   run,
   setContextMenu,
+  contextGrid = null,
+  gridFocus = null,
 }: ContextMenuFrameEditItemsProps) {
+  const computed = document.computedFrames[contextFrame.id];
+  const editsRows = Boolean(computed?.editing.rows);
+  const editsColumns = framePermitsColumnEdits(document, contextFrame.id);
+  const positionable = gridPositionIsMeaningful(contextFrame, computed, contextGrid);
+  const rowIds = selectedRowIds(contextGrid, gridFocus, contextMenu.rowId);
+  const insertRow = (where: "above" | "below") => {
+    if (!contextMenu.rowId) return;
+    setContextMenu(null);
+    run(insertRowOperation(contextFrame, contextMenu.rowId, where));
+  };
+  const insertColumn = (side: "left" | "right") => {
+    if (!contextColumn) return;
+    setContextMenu(null);
+    run(
+      insertColumnOperation(contextFrame, contextColumn.id, side, nextColumnName(contextFrame))
+    );
+  };
   return (
     <>
-      {/* A read-only grid can still choose which outputs it shows.
-          This is exactly unchecking the column in a final Select;
-          owned rows keep the structural delete offered below. */}
-      {!document.computedFrames[contextFrame.id]?.editing.rows && contextColumn && (
+      {/* A grid whose columns the engine will not edit can still choose
+          which outputs it shows. This is exactly unchecking the column in a
+          final Select. The gate is `editing.columns`, not `editing.rows`: a
+          frame can own its rows and still have a chain that fixes its
+          schema, and offering "Delete column" there is offering a refusal.
+          "Hide" here and "Delete" below each name what the click writes. */}
+      {!editsColumns && contextColumn && (
         <button className="destructive" onClick={deleteContextColumn}>
           <Trash2 size={14} />
-          <span>Delete column</span>
+          <span>Hide column</span>
         </button>
       )}
-      {document.computedFrames[contextFrame.id]?.editing.rows && (
+      {editsRows && (
         <>
-          <button
-            onClick={() => {
-              setContextMenu(null);
-              run({ type: "addRow", frameId: contextFrame.id, values: {} });
-            }}
-          >
-            <Plus size={14} />
-            <span>Add empty row</span>
-          </button>
-          <button
-            onClick={() => {
-              setContextMenu(null);
-              run({
-                type: "addColumn",
-                frameId: contextFrame.id,
-                name: nextColumnName(contextFrame),
-                dataType: "string",
-                afterColumnId:
-                  contextColumn?.id ?? contextFrame.columns.at(-1)?.id ?? null,
-              });
-            }}
-          >
-            <Plus size={14} />
-            <span>{contextColumn ? "Insert column here" : "Add column"}</span>
-          </button>
+          {/* A row with a position gets above/below; the append is only for
+              a click that is not on a row, a frame read from a file, where
+              the engine refuses a position, or a sorted or filtered view,
+              where a position on screen is not one the engine can keep. */}
+          {contextMenu.rowId && positionable ? (
+            <>
+              <button onClick={() => insertRow("above")}>
+                <Plus size={14} />
+                <span>Insert row above</span>
+              </button>
+              <button onClick={() => insertRow("below")}>
+                <Plus size={14} />
+                <span>Insert row below</span>
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                setContextMenu(null);
+                run(appendRowOperation(contextFrame.id));
+              }}
+            >
+              <Plus size={14} />
+              <span>Add empty row</span>
+            </button>
+          )}
+        </>
+      )}
+      {editsColumns && (
+        <>
+          {contextColumn ? (
+            <>
+              <button onClick={() => insertColumn("left")}>
+                <Plus size={14} />
+                <span>Insert column left</span>
+              </button>
+              <button onClick={() => insertColumn("right")}>
+                <Plus size={14} />
+                <span>Insert column right</span>
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                setContextMenu(null);
+                run(appendColumnOperation(contextFrame, nextColumnName(contextFrame)));
+              }}
+            >
+              <Plus size={14} />
+              <span>Add column</span>
+            </button>
+          )}
           {contextColumn && (
             <label className="context-menu-field">
               <span>Column type</span>
@@ -355,29 +423,27 @@ export function ContextMenuFrameEditItems({
               </select>
             </label>
           )}
-          {(contextMenu.rowId || contextColumn) && <span className="menu-separator" />}
-          {contextMenu.rowId && (
-            <button
-              className="destructive"
-              onClick={() =>
-                deleteFromContext({
-                  type: "deleteRow",
-                  frameId: contextFrame.id,
-                  rowId: contextMenu.rowId!,
-                })
-              }
-            >
-              <Trash2 size={14} />
-              <span>Delete row</span>
-            </button>
-          )}
-          {contextColumn && (
-            <button className="destructive" onClick={deleteContextColumn}>
-              <Trash2 size={14} />
-              <span>Delete column</span>
-            </button>
-          )}
         </>
+      )}
+      {((editsRows && contextMenu.rowId) || (editsColumns && contextColumn)) && (
+        <span className="menu-separator" />
+      )}
+      {editsRows && contextMenu.rowId && (
+        <button
+          className="destructive"
+          onClick={() =>
+            deleteFromContext(deleteRowsOperation(contextFrame.id, rowIds))
+          }
+        >
+          <Trash2 size={14} />
+          <span>{deleteRowsLabel(rowIds.length)}</span>
+        </button>
+      )}
+      {editsColumns && contextColumn && (
+        <button className="destructive" onClick={deleteContextColumn}>
+          <Trash2 size={14} />
+          <span>Delete column</span>
+        </button>
       )}
     </>
   );

@@ -4,4 +4,5 @@ export type FrameStyleTarget =
   | { "kind": "frame" }
   | { "kind": "column"; columnId: string }
   | { "kind": "row"; rowId: string }
-  | { "kind": "cell"; rowId: string; columnId: string };
+  | { "kind": "cell"; rowId: string; columnId: string }
+  | { "kind": "range"; rowIds: Array<string>; columnIds: Array<string> };

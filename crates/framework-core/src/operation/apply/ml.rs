@@ -193,16 +193,9 @@ impl Document {
             frame
                 .summaries
                 .retain(|summary| summary.column_id != column_id);
-            frame.display.styles.retain(|entry| match &entry.target {
-                FrameStyleTarget::Column {
-                    column_id: styled_column_id,
-                }
-                | FrameStyleTarget::Cell {
-                    column_id: styled_column_id,
-                    ..
-                } => styled_column_id != column_id,
-                _ => true,
-            });
+            frame
+                .display
+                .forget_columns(|styled_column_id| styled_column_id == column_id);
         }
     }
 

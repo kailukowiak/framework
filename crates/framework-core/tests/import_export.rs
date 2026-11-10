@@ -1113,7 +1113,7 @@ fn pasting_past_the_last_row_appends_rows_instead_of_dropping_them() {
 
 /// A paste wider than the available columns is refused without partial edits.
 #[test]
-fn pasting_beyond_the_last_column_is_atomic_and_explains_the_remedy() {
+fn pasting_beyond_the_last_column_widens_an_owned_frame_as_one_edit() {
     let mut store = Store::new(Document::blank("Paste"));
     store
         .apply(Operation::AddFrame {
@@ -1128,22 +1128,27 @@ fn pasting_beyond_the_last_column_is_atomic_and_explains_the_remedy() {
         .unwrap();
     let frame = frame_named(store.document(), "Scratch").clone();
 
-    let before = store.document().clone();
-    let error = store
+    let before = frame_named(store.document(), "Scratch").clone();
+    store
         .apply(Operation::PasteCells {
             frame_id: frame.id.clone(),
             row_id: frame.rows[0].id.clone(),
             column_id: frame.columns[1].id.clone(),
             // Two columns wide, but only one column remains to its right.
+            // A frame the document owns grows the column it needs; a frame
+            // read from a file still refuses the whole paste
+            // (grid_structure.rs).
             grid: vec![
-                vec!["11".into(), "ignored".into()],
-                vec!["22".into(), "ignored".into()],
+                vec!["11".into(), "kept".into()],
+                vec!["22".into(), "kept".into()],
             ],
         })
-        .unwrap_err();
-    assert!(error.to_string().contains("Nothing pasted"));
-    assert!(error.to_string().contains("Add columns"));
-    assert_eq!(store.document(), &before);
+        .unwrap();
+    let widened = frame_named(store.document(), "Scratch");
+    assert_eq!(widened.columns.len(), 3);
+    assert_eq!(widened.rows.len(), 2);
+    store.undo();
+    assert_eq!(frame_named(store.document(), "Scratch"), &before);
 }
 
 /// Whether a frame can be typed into is a property of the frame, and the
@@ -1248,6 +1253,7 @@ fn a_frame_reports_what_can_be_edited_by_hand_and_why_not() {
         .apply(Operation::AddRow {
             frame_id: ledger_id.clone(),
             values: Default::default(),
+            before_row_id: None,
         })
         .unwrap_err();
     assert!(error.to_string().contains("come from its source"));

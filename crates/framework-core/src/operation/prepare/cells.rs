@@ -20,7 +20,7 @@ impl Document {
     /// Applies to the `prepare` side only, which is where a person's edit
     /// enters. Replicated operations from a peer or from an undo inverse are
     /// already-decided facts and are applied as given.
-    fn ensure_rows_are_editable(&self, frame_id: &str) -> Result<(), CoreError> {
+    pub(super) fn ensure_rows_are_editable(&self, frame_id: &str) -> Result<(), CoreError> {
         if self.frame_cells_are_editable(frame_id) {
             return Ok(());
         }
@@ -37,7 +37,11 @@ impl Document {
         ))
     }
 
-    fn ensure_column_is_editable(&self, frame_id: &str, column_id: &str) -> Result<(), CoreError> {
+    pub(super) fn ensure_column_is_editable(
+        &self,
+        frame_id: &str,
+        column_id: &str,
+    ) -> Result<(), CoreError> {
         if self.frame_column_is_editable(frame_id, column_id) {
             return Ok(());
         }
@@ -56,7 +60,7 @@ impl Document {
     /// `page_row_ids` writes these, and they are the only identity such a
     /// row has: `source:<frame>:<n>`, where `n` is the row's position in the
     /// data layer — before any display sort or filter moved it around.
-    fn artifact_row_ordinal(frame_id: &str, row_id: &str) -> Option<usize> {
+    pub(super) fn artifact_row_ordinal(frame_id: &str, row_id: &str) -> Option<usize> {
         row_id
             .strip_prefix(&format!("source:{frame_id}:"))
             .and_then(|ordinal| ordinal.parse().ok())
@@ -89,15 +93,10 @@ impl Document {
                 .find(|column| column.id == column_id)
                 .ok_or(CoreError::ColumnNotFound)?;
             validate_cell_raw(column, &raw)?;
-            let row_ordinal =
-                Self::artifact_row_ordinal(&frame_id, &row_id).ok_or(CoreError::RowNotFound)?;
+            let row_ordinal = Self::overlay_row_ordinal(frame, &row_id)?;
             return Ok(ReplicatedOperation::SetOverlayCell {
                 frame_id,
-                row_ordinal: u32::try_from(row_ordinal).map_err(|_| {
-                    CoreError::InvalidOperation(
-                        "This table has more rows than a cell edit can address".into(),
-                    )
-                })?,
+                row_ordinal,
                 column_id,
                 raw: Some(raw),
             });
@@ -127,6 +126,10 @@ impl Document {
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             self.ensure_rows_are_editable(&frame_id)?;
+            // The same branch `prepare_set_cell` makes, for the same reason.
+            if !self.frame(&frame_id)?.owns_its_rows() {
+                return self.prepare_set_overlay_cells(frame_id, cells);
+            }
             let frame = self.frame(&frame_id)?;
             for update in &cells {
                 if !frame.rows.iter().any(|row| row.id == update.row_id) {
@@ -201,11 +204,6 @@ impl Document {
     ) -> Result<ReplicatedOperation, CoreError> {
         self.ensure_rows_are_editable(&frame_id)?;
         let frame = self.frame(&frame_id)?;
-        let first_row = frame
-            .rows
-            .iter()
-            .position(|row| row.id == row_id)
-            .ok_or(CoreError::RowNotFound)?;
         let first_column = frame
             .columns
             .iter()
@@ -215,17 +213,30 @@ impl Document {
         // A paste is one rectangle, not a best-effort collection of edits.
         // Refuse it before preparing any changes when part of that rectangle
         // would disappear or land on a calculated column. Keeping the schema
-        // fixed must never look like successfully pasting data we discarded.
+        // fixed must never look like successfully pasting data we discarded —
+        // so the part that runs past the right-hand edge either gets columns
+        // of its own, on a frame that owns its columns, or refuses the whole.
         let width = grid.iter().map(Vec::len).max().unwrap_or(0);
-        if width > frame.columns.len() - first_column {
-            return Err(CoreError::InvalidOperation(format!(
-                "Nothing pasted: the clipboard needs {width} columns, but only {} fit here. Add columns first, or paste onto empty canvas to create a new table.",
-                frame.columns.len() - first_column
-            )));
-        }
+        let added_columns = self.columns_a_paste_adds(frame, first_column, &grid)?;
         for column in frame.columns.iter().skip(first_column).take(width) {
             self.ensure_column_is_editable(&frame_id, &column.id)?;
         }
+        // The rectangle is settled; only where its rows live differs.
+        if !frame.owns_its_rows() {
+            return self.prepare_paste_overlay_cells(frame_id, &row_id, first_column, grid);
+        }
+        let widened;
+        let frame = if added_columns.is_empty() {
+            frame
+        } else {
+            widened = frame.with_appended_columns(&added_columns);
+            &widened
+        };
+        let first_row = frame
+            .rows
+            .iter()
+            .position(|row| row.id == row_id)
+            .ok_or(CoreError::RowNotFound)?;
 
         let mut cells = Vec::new();
         let mut appended_rows: Vec<Row> = Vec::new();
@@ -235,7 +246,11 @@ impl Document {
                 let Some(column) = frame.columns.get(first_column + column_offset) else {
                     break;
                 };
-                if !self.frame_column_is_editable(&frame_id, &column.id) {
+                // Asked of the frame in hand rather than the document, so a
+                // column this paste is adding counts as the input it will be.
+                // On this path the two questions agree: the frame owns its
+                // rows, where `frame_column_is_editable` is exactly this.
+                if !frame.column_is_editable_input(&column.id) {
                     continue;
                 }
                 validate_cell_raw(column, raw)?;
@@ -273,6 +288,7 @@ impl Document {
             frame_id,
             cells,
             appended_rows,
+            added_columns,
         })
     }
 
@@ -280,9 +296,11 @@ impl Document {
         &self,
         frame_id: Id,
         values: BTreeMap<Id, String>,
+        before_row_id: Option<Id>,
     ) -> Result<ReplicatedOperation, CoreError> {
         Ok({
             let frame = self.frame(&frame_id)?;
+            self.ensure_row_position_is_addressable(frame, before_row_id.as_deref())?;
             // A frame reading a base it can address gets the row as a patch
             // past the base's end, where ordinals continue and every value is
             // already a patch. Anything whose rows are made by a reshape step
@@ -316,7 +334,7 @@ impl Document {
             }
             ReplicatedOperation::AddRow {
                 frame_id,
-                after_row_id: frame.rows.last().map(|row| row.id.clone()),
+                before_row_id,
                 row: Row {
                     id: id(),
                     cells: frame
@@ -617,6 +635,7 @@ mod tests {
             .apply(Operation::AddRow {
                 frame_id: frame_id.clone(),
                 values: BTreeMap::from([(first_column_id.clone(), "9".into())]),
+                before_row_id: None,
             })
             .unwrap();
         let frame = view
@@ -637,6 +656,8 @@ mod tests {
                 name: "Discount".into(),
                 data_type: DataType::Currency,
                 after_column_id: Some(first_column_id.clone()),
+                before_column_id: None,
+                values: Default::default(),
             })
             .unwrap();
         let frame = view

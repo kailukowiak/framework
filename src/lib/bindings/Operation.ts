@@ -8,6 +8,7 @@ import type { DataArtifact } from "./DataArtifact";
 import type { DataType } from "./DataType";
 import type { DerivedSort } from "./DerivedSort";
 import type { FrameCellStyle } from "./FrameCellStyle";
+import type { FrameColumnLayoutUpdate } from "./FrameColumnLayoutUpdate";
 import type { FrameJoinType } from "./FrameJoinType";
 import type { FramePeriod } from "./FramePeriod";
 import type { FrameStepInput } from "./FrameStepInput";
@@ -279,6 +280,11 @@ export type Operation =
     pinnedColumns: number;
   }
   | {
+    "type": "setFrameDisplayColumnLayout";
+    frameId: string;
+    columns: Array<FrameColumnLayoutUpdate>;
+  }
+  | {
     "type": "setFrameDisplayCrosstab";
     frameId: string;
     crosstab: CrosstabDisplay | null;
@@ -336,7 +342,22 @@ export type Operation =
     raw: string;
   }
   | { "type": "setCells"; frameId: string; cells: Array<CellUpdate> }
-  | { "type": "addRow"; frameId: string; values: { [key in string]: string } }
+  | {
+    "type": "addRow";
+    frameId: string;
+    values: { [key in string]: string };
+    /**
+     * The row the new one goes above; absent appends it.
+     *
+     * Named for the row it precedes rather than the one it follows
+     * because that is the one spelling that reaches every position:
+     * "after" cannot say "at the top", which is how `AddColumn` came to
+     * need `before_column_id`. Only a frame that holds its rows can take
+     * a row between two others — one read from a file adds rows past the
+     * file's end, so a position there is refused rather than ignored.
+     */
+    beforeRowId?: string | null;
+  }
   | { "type": "setFrameFromPastedText"; frameId: string; text: string }
   | {
     "type": "pasteCells";
@@ -346,12 +367,31 @@ export type Operation =
     grid: Array<Array<string>>;
   }
   | { "type": "deleteRow"; frameId: string; rowId: string }
+  | { "type": "deleteRows"; frameId: string; rowIds: Array<string> }
   | {
     "type": "addColumn";
     frameId: string;
     name: string;
     dataType: DataType;
     afterColumnId: string | null;
+    /**
+     * The column the new one goes to the left of. Set at most one of
+     * this and `after_column_id`; with neither the column is appended.
+     * It exists because "after" has no way to say "first".
+     */
+    beforeColumnId?: string | null;
+    /**
+     * Initial cell values for the new column, keyed by row id, as
+     * `AddRow.values` carries them for a new row. It exists because the
+     * engine mints the column's id in `prepare`, so a caller cannot
+     * name the new column in a `SetCell` of the same `batch`; carrying
+     * the values here makes "type into the column that does not exist
+     * yet" one edit and one undo step. Only a frame that owns its rows
+     * accepts any; each value is checked against the new column's type
+     * as `SetCell` would, and one refused value refuses the whole add.
+     * Rows not named stay blank.
+     */
+    values?: { [key in string]: string };
   }
   | { "type": "deleteColumn"; frameId: string; columnId: string }
   | { "type": "renameColumn"; frameId: string; columnId: string; name: string }
@@ -509,4 +549,5 @@ export type Operation =
     frameId: string;
     steps: Array<FrameStepInput>;
   }
-  | { "type": "setFrameComment"; frameId: string; comment?: string | null };
+  | { "type": "setFrameComment"; frameId: string; comment?: string | null }
+  | { "type": "batch"; operations: Array<Operation> };

@@ -222,6 +222,146 @@ export async function columnCellTexts(columnName: string): Promise<string[]> {
  */
 export async function pointAtColumnCell(
   columnName: string,
+  rowIndex: number,
+  // Shift-press is how a person drags out a rectangle without dragging:
+  // the grid reads `shiftKey` off the press itself (`beginCellSelection` in
+  // FrameCard.tsx) and keeps the earlier cell as the anchor.
+  { shift = false }: { shift?: boolean } = {}
+): Promise<void> {
+  await browser.execute(
+    (name: string, index: number, shiftKey: boolean) => {
+      const header = document
+        .querySelector<HTMLElement>(`button[aria-label="Sort by ${name}"]`)
+        ?.closest("th");
+      const columnId = header?.getAttribute("data-column-id");
+      if (!columnId) throw new Error(`no column header for ${name}`);
+      const cell = Array.from(
+        document.querySelectorAll<HTMLElement>(`td[data-column-id="${columnId}"]`)
+      )[index];
+      if (!cell) throw new Error(`no ${name} cell at row ${index}`);
+      const press = { bubbles: true, cancelable: true, button: 0, shiftKey };
+      cell.dispatchEvent(new PointerEvent("pointerdown", press));
+      cell.dispatchEvent(new PointerEvent("pointerup", press));
+    },
+    columnName,
+    rowIndex,
+    shift
+  );
+}
+
+/**
+ * `pointAtColumnCell`, then waits for the grid to have taken the cell as its
+ * keyboard focus. Use it when the next thing sent is a key meant for that
+ * cell (F2, a typed character).
+ *
+ * A key is the grid's to handle only while a cell holds grid focus, which is
+ * a render after the press; the `cell-focus` class is that state made
+ * visible, so this waits for it rather than hoping the round trip was long
+ * enough. Not folded into `pointAtColumnCell` itself because, while a formula
+ * editor is active, the same press is formula-pointing and never focuses the
+ * cell.
+ */
+export async function focusColumnCell(columnName: string, rowIndex: number): Promise<void> {
+  await pointAtColumnCell(columnName, rowIndex);
+  await browser.waitUntil(
+    () =>
+      browser.execute(
+        (name: string, index: number) => {
+          const columnId = document
+            .querySelector<HTMLElement>(`button[aria-label="Sort by ${name}"]`)
+            ?.closest("th")
+            ?.getAttribute("data-column-id");
+          const cells = document.querySelectorAll<HTMLElement>(
+            `td[data-column-id="${columnId}"]`
+          );
+          return cells[index]?.classList.contains("cell-focus") ?? false;
+        },
+        columnName,
+        rowIndex
+      ),
+    { timeoutMsg: `the grid never focused the ${columnName} cell at row ${rowIndex}` }
+  );
+}
+
+/**
+ * The rendered text of one column's *record* cells, top to bottom: the cells
+ * of `tr[data-row-id]` rows only. `columnCellTexts` also reads the new-row
+ * line under the last record (its `td` carries the column id too, holding
+ * an input whose text is empty), which is harmless when a spec indexes from
+ * the top and wrong when it counts rows — and counting rows is how the
+ * grid-growth specs see a row arrive or leave.
+ */
+export async function recordCellTexts(columnName: string): Promise<string[]> {
+  return browser.execute((name: string) => {
+    const header = document
+      .querySelector<HTMLElement>(`button[aria-label="Sort by ${name}"]`)
+      ?.closest("th");
+    const columnId = header?.getAttribute("data-column-id");
+    if (!columnId) throw new Error(`no column header for ${name}`);
+    const table = header!.closest("table");
+    return Array.from(
+      table?.querySelectorAll<HTMLElement>(
+        `tbody tr[data-row-id] td[data-column-id="${columnId}"]`
+      ) ?? []
+    ).map((cell) => cell.textContent?.trim() ?? "");
+  }, columnName);
+}
+
+/** The column names of the canvas's first frame, left to right, as drawn. */
+export async function frameHeaderNames(): Promise<string[]> {
+  return browser.execute(() =>
+    Array.from(
+      document
+        .querySelector<HTMLElement>(".frame-object")
+        ?.querySelectorAll<HTMLElement>('button[aria-label^="Sort by "]') ?? []
+    ).map((button) => button.getAttribute("aria-label")!.replace("Sort by ", ""))
+  );
+}
+
+/**
+ * Sends one keydown, with exactly the modifier flags and `code` given, to
+ * the element holding the keyboard (the grid's clipboard target while a
+ * cell is selected), from where it bubbles to the window-level dispatcher in
+ * App.tsx. In-page for the reason `extendSelectionDown` gives — the driver's
+ * modifier-plus-key actions do not reliably set the event's modifier flags —
+ * and because the structure chords are matched on `event.code`
+ * (`structureChord` in src/lib/gridEdgeGrowth.ts): ⌥ turns `=` into `≠` on a
+ * Mac keyboard, so only the physical key name says which chord it was. The
+ * handler that runs is the application's own.
+ */
+export async function pressGridKey(init: KeyboardEventInit): Promise<void> {
+  await browser.execute((eventInit: KeyboardEventInit) => {
+    (document.activeElement ?? window).dispatchEvent(
+      new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...eventInit })
+    );
+  }, init);
+}
+
+/**
+ * Pastes `text` where the keyboard is, as the Edit menu's Paste would: a
+ * ClipboardEvent on the focused element (see grid-clipboard.e2e.ts for why
+ * the menu-less e2e shell dispatches it by hand). With a cell selected that
+ * is the grid's clipboard target; with nothing selected, the canvas.
+ */
+export async function pasteText(text: string): Promise<void> {
+  await browser.execute((value: string) => {
+    const clipboard = new DataTransfer();
+    clipboard.setData("text/plain", value);
+    (document.activeElement ?? window).dispatchEvent(
+      new ClipboardEvent("paste", { clipboardData: clipboard, bubbles: true, cancelable: true })
+    );
+  }, text);
+}
+
+/**
+ * Opens the context menu on one record cell, found by column name and row
+ * index the way `pointAtColumnCell` finds it. The menu reads the row from
+ * the cell's `tr[data-row-id]` and the column from its `data-column-id`
+ * (`contextMenuAt` in src/hooks/useContextMenu.ts), so this is the same
+ * question a right-click on that cell asks.
+ */
+export async function openContextMenuOnColumnCell(
+  columnName: string,
   rowIndex: number
 ): Promise<void> {
   await browser.execute(
@@ -232,19 +372,74 @@ export async function pointAtColumnCell(
       const columnId = header?.getAttribute("data-column-id");
       if (!columnId) throw new Error(`no column header for ${name}`);
       const cell = Array.from(
-        document.querySelectorAll<HTMLElement>(`td[data-column-id="${columnId}"]`)
+        document.querySelectorAll<HTMLElement>(
+          `tbody tr[data-row-id] td[data-column-id="${columnId}"]`
+        )
       )[index];
       if (!cell) throw new Error(`no ${name} cell at row ${index}`);
-      cell.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0 })
-      );
-      cell.dispatchEvent(
-        new PointerEvent("pointerup", { bubbles: true, cancelable: true, button: 0 })
-      );
+      cell.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
     },
     columnName,
     rowIndex
   );
+}
+
+/**
+ * A selector for the canvas card that shows the frame called `name`. A card
+ * holding several tabs names each one on a `[role="tab"]` (titled with the
+ * tab's name, or with its filter count when it has filters); a card holding
+ * one frame folds its tab strip away and names it only in the title row's
+ * `Frame name` field (`FrameViewTabs.tsx`, the `folded` comment). Either
+ * shape is a person's way of finding the card, so either is accepted.
+ *
+ * Keyed by the card's view, not its object: a card's `data-object-id` is
+ * its *active tab's* object (App.tsx draws each view from `view.objectId`),
+ * so it changes the moment another tab is brought forward, while the view
+ * is the card itself.
+ */
+export async function cardOfFrame(name: string): Promise<string> {
+  const id = await browser.execute((frameName: string) => {
+    const tab = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+      (element) =>
+        element.getAttribute("title") === frameName ||
+        element.textContent?.trim() === frameName
+    );
+    const field = Array.from(
+      document.querySelectorAll<HTMLInputElement>('input[aria-label="Frame name"]')
+    ).find((input) => input.value === frameName);
+    return (tab ?? field)?.closest("[data-view-id]")?.getAttribute("data-view-id") ?? null;
+  }, name);
+  if (!id) throw new Error(`no card shows the frame ${name}`);
+  return `[data-view-id="${id}"]`;
+}
+
+/**
+ * The first frame's saved Wrangle chain, as the Rust store holds it — the
+ * answer to "did that gesture write a step", which the grid alone cannot
+ * give (a draft line is drawn in the chain before it is saved).
+ */
+export async function savedFrameSteps(): Promise<Array<{ kind: string }>> {
+  const view = JSON.parse(await documentJson()) as {
+    objects: Array<{ kind: string; steps?: Array<{ kind: string }> }>;
+  };
+  return view.objects.find((object) => object.kind === "frame")?.steps ?? [];
+}
+
+/**
+ * A fresh scratch canvas with one hand-entered frame on it, made the way a
+ * person makes one without a dialog: paste tab-separated text onto the bare
+ * canvas. The first line becomes the headers. The frame is document-owned,
+ * with no chain, so its rows and columns both take hand edits.
+ */
+export async function pasteFrameOntoScratchCanvas(
+  text: string,
+  firstHeader: string
+): Promise<void> {
+  await $('[aria-label="Free-form data canvas"]').waitForExist();
+  await closeDataLibrary();
+  await pressAndRelease('[aria-label="Free-form data canvas"]');
+  await pasteText(text);
+  await $(`button[aria-label="Sort by ${firstHeader}"]`).waitForExist();
 }
 
 /**

@@ -91,6 +91,7 @@ fn a_series_fill_keeps_other_columns_and_row_entry_editable() {
         .apply(Operation::AddRow {
             frame_id: frame.id.clone(),
             values: BTreeMap::from([(sku.id.clone(), "D-400".into())]),
+            before_row_id: None,
         })
         .unwrap();
     let grown = store.get_frame_page(&frame.id, 0, 10).unwrap();

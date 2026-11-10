@@ -18,7 +18,7 @@ import {
   Workflow,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormulaErrorDetails } from "./FormulaEditor";
 import { QueryPlanDetails } from "./DebugTracePanel";
 import { ColumnFormatEditor } from "./ColumnFormatEditor";
@@ -30,20 +30,18 @@ import {
   type RuleTarget,
 } from "./ConditionalFormattingRules";
 import {
-  ruleInput,
-  ruleWithStopStyle,
   scalePropertyLabel,
   stopLabel,
   stopStyle,
 } from "./lib/conditionalFormatting";
 import { Field } from "./Field";
+import type { StyleSelection } from "./lib/styleSelection";
+import { useDirectFrameStyle } from "./hooks/useDirectFrameStyle";
 import {
   effectiveFrameCellStyle,
   emptyFrameCellStyle,
   exactFrameCellStyle,
   frameStyleRules,
-  frameStyles,
-  sameStyleTarget,
   styleTargetForSelection,
   type FreezeCopyHandler,
   type SetFrameCachedHandler,
@@ -89,6 +87,7 @@ export function FrameInspector({
   formulaFunctions,
   selection,
   selectedColumnIds,
+  styleSelection,
   computed,
   suggestedPosition,
   section,
@@ -121,6 +120,8 @@ export function FrameInspector({
   selection: Selection;
   /** Columns under the grid selection, when it spans more than the active one. */
   selectedColumnIds?: string[];
+  /** A multi-cell, multi-row or multi-column selection the format controls address as a whole. */
+  styleSelection?: StyleSelection | null;
   computed: ComputedFrame;
   suggestedPosition: { x: number; y: number };
   section: InspectorSection;
@@ -304,35 +305,18 @@ export function FrameInspector({
   const colorOnly = styleRule?.output.kind === "scale" && Boolean(activeStop);
   const activeScale = styleRule?.output.kind === "scale" ? styleRule.output.scale : null;
   const clearingScaleMid = activeStop?.kind === "scale" && activeStop.end === "mid";
-  const pendingStyleRef = useRef(exactStyle);
-  useEffect(() => {
-    pendingStyleRef.current = exactStyle;
-  }, [activeFrameView?.id, exactStyle, ruleTarget, selection.columnId, selection.rowId]);
-  const setDirectStyle = (patch: Partial<FrameCellStyle> | null) => {
-    if (!activeFrameView) return;
-    const style = patch
-      ? { ...pendingStyleRef.current, ...patch }
-      : emptyFrameCellStyle();
-    pendingStyleRef.current = style;
-    if (styleRule && activeStop) {
-      const rules = frameStyleRules(activeFrameView);
-      const edited = ruleWithStopStyle(styleRule, activeStop, style);
-      void onOperation({
-        type: "setFrameStyleRules",
-        frameId: activeFrameView.id,
-        rules: rules.map((rule) =>
-          ruleInput(rule.id === edited.id ? edited : rule, computed.styleRuleFormulas ?? {})
-        ),
-      });
-      return;
-    }
-    void onOperation({
-      type: "setFrameStyle",
-      frameId: activeFrameView.id,
-      target: styleTarget,
-      style,
-    });
-  };
+  const { setDirectStyle, hasFormatting } = useDirectFrameStyle({
+    frame: activeFrameView,
+    computed,
+    selection,
+    styleSelection,
+    styleTarget,
+    styleRule,
+    activeStop,
+    exactStyle,
+    ruleKey: ruleTarget,
+    onOperation,
+  });
 
   // Hoisted out of the section list because two tabs render it. Selecting
   // a frame without picking a column out of it *is* selecting the frame,
@@ -681,11 +665,7 @@ export function FrameInspector({
           ) : (
             <button
               className="secondary-action clear-formatting"
-              disabled={
-                !frameStyles(activeFrameView).some((entry) =>
-                  sameStyleTarget(entry.target, styleTarget)
-                )
-              }
+              disabled={!hasFormatting}
               onClick={() => setDirectStyle(null)}
             >
               <X size={13} /> Clear formatting for {rangeColumns.length > 1 ? "these" : "this"}{" "}

@@ -238,6 +238,8 @@ fn a_model_column_on_an_import_is_not_a_missing_source_field() {
             name: "Reviewed".into(),
             data_type: DataType::Boolean,
             after_column_id: None,
+            before_column_id: None,
+            values: Default::default(),
         })
         .unwrap();
 
