@@ -11,6 +11,8 @@ tagged and opens a fresh `## Unreleased` above it.
 
 ## Unreleased
 
+## 0.1.13
+
 - Quick Commands (**⇧⌘P**) is now the one search box. A query lists the commands it names, then the matches in the workbook, then answers from the Reference, all in one list: choose a command to run it, a match to go there, or an answer to open it. **⌘F** is the same palette looking only at the workbook; when there are more matches than Quick Commands shows, its last workbook row lists them all without retyping the query.
 - The Reference is docked at the right edge, beside the inspector, instead of floating over the canvas, so the frames a formula points at stay visible and clickable while it is open. It has one search across functions and how-to answers, with no Formulas / How FrameWork works sections to choose between first, one line per result, and **Insert** puts an example into the formula without closing it. Escape closes it from inside the panel; Escape on the canvas is left to the cell you are editing.
 - **⌘K** while writing a formula opens the Reference on the function the cursor is inside — the same entry the formula bar's Help button opens — in Scratchwork lines as well as Wrangle steps. Wrangle help shows how comma-separated column lists and selectors such as `except(...)` work, and Pivot and Unpivot include complete examples that distinguish existing input columns from newly named output columns.
